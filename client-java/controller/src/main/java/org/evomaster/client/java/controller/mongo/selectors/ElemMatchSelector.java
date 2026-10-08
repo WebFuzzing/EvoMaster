@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.mongo.QueryParser;
 
 import java.util.Objects;
 
-import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.isBsonDocument;
+import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.isDocument;
 /**
  * { field: { $elemMatch: { query1, query2, ... } } }
  */
@@ -16,11 +16,10 @@ public class ElemMatchSelector extends SingleConditionQuerySelector {
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
         Objects.requireNonNull(fieldName);
-        Objects.requireNonNull(value);
 
-        if (isBsonDocument(value)) {
+        if (isDocument(value)) {
             QueryOperation condition = new QueryParser().parse(value);
-            return new ElemMatchOperation(fieldName, condition);
+            return condition == null ? null : new ElemMatchOperation(fieldName, condition);
         } else {
             return null;
         }

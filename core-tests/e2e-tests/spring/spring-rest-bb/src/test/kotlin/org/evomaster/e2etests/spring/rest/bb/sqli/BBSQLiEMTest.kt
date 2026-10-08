@@ -47,7 +47,7 @@ class BBSQLiEMTest : SpringTestBase() {
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
 
             assertTrue(solution.individuals.size >= 1)
-            assertTrue({ DefinedFaultCategory.SQL_INJECTION in faultCategories })
+            assertTrue({ DefinedFaultCategory.SECURITY_SQL_INJECTION in faultCategories })
         }
     }
 }

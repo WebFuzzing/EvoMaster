@@ -106,7 +106,7 @@ object CreateUsersWriter {
                 lines.add(".then()")
                 lines.add(".statusCode(both(greaterThanOrEqualTo(200)).and(Matchers.lessThan(400)))")
             }
-            if(format.isJavaScript()){
+            if(format.isJavaScript() && !format.isPlaywright()){
                 lines.add(".ok(res => res.status >= 200 && res.status < 400)")
             }
             lines.appendSemicolon()

@@ -1,0 +1,55 @@
+package org.evomaster.core.database.sql
+
+import org.evomaster.client.java.controller.api.dto.database.operations.*
+
+
+interface DatabaseExecutor {
+
+    /**
+     * Execute the given SQL command (in DTO format).
+     * Return true if it was successful.
+     */
+    fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean
+
+    /**
+     * Execute the given SQL command (in DTO format).
+     * Return the result of whether it success (first) and such command (second), if any
+     */
+    fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto?
+
+    /**
+     * Execute the given INSERT SQL command (in DTO format).
+     * Return the result of whether it success (first) and new pks in such insertions (second), if any
+     */
+    fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto?
+
+    /**
+     * Execute the given INSERT MONGO command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto?
+
+    /**
+     * Execute the given INSERT REDIS command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandsDto): RedisInsertionResultsDto?
+
+    /**
+     * Execute the given INSERT DynamoDB command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto?
+
+    /**
+     * Execute the given INSERT CASSANDRA command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto?
+
+    /**
+     * Execute the given INSERT Neo4j command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto?
+}

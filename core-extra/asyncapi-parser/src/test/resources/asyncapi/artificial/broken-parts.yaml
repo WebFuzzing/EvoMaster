@@ -1,0 +1,52 @@
+asyncapi: 3.0.0
+info:
+  title: A document with several unusable parts
+  version: 1.0.0
+
+channels:
+  good:
+    address: good.request
+    messages:
+      request:
+        $ref: '#/components/messages/request'
+      dangling:
+        $ref: '#/components/messages/doesNotExist'
+
+operations:
+  # this one is fine, and must survive everything below
+  works:
+    action: receive
+    channel:
+      $ref: '#/channels/good'
+
+  noAction:
+    channel:
+      $ref: '#/channels/good'
+
+  wrongAction:
+    action: publish
+    channel:
+      $ref: '#/channels/good'
+
+  missingChannel:
+    action: receive
+    channel:
+      $ref: '#/channels/notThere'
+
+  badCorrelationTarget:
+    action: send
+    channel:
+      $ref: '#/channels/good'
+
+components:
+  messages:
+    request:
+      name: Request
+      # not one of the two runtime expressions the specification defines
+      correlationId:
+        location: 'somewhere/else'
+      payload:
+        type: object
+        properties:
+          value:
+            type: integer

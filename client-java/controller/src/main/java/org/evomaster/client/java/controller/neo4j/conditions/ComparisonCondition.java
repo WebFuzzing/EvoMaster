@@ -32,6 +32,11 @@ public class ComparisonCondition implements CypherCondition {
     }
 
     @Override
+    public <T> T accept(CypherConditionVisitor<T> visitor) {
+        return visitor.visitComparison(this);
+    }
+
+    @Override
     public String toString() {
         if (right == null) {
             return left + " " + operator.getSymbol();

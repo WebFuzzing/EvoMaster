@@ -7,30 +7,37 @@ import org.evomaster.core.utils.MultiCharacterRange
 import org.evomaster.core.utils.ParsedFlagExpression
 import org.evomaster.core.utils.RegexFlags
 
-private const val EOF_TOKEN = "<EOF>"
 /**
  * Created by arcuri82 on 11-Sep-19.
  */
-class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : RegexJavaParserBaseVisitor<VisitResult>(){
+class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: RegexFlags = RegexFlags()) : RegexJavaParserBaseVisitor<VisitResult>(){
 
-    private val hexEscapePrefixes = setOf('x', 'u')
+    companion object {
+        /**
+         * Prefixes for hexadecimal escape sequences like \x00 or \u0000, etc.
+         */
+        private val hexEscapePrefixes = setOf('x', 'u')
 
-    /**
-     * Mappings of various escapes to their matching characters.
-     */
-    private val escapeMap = mapOf(
-        'a' to "\u0007",
-        'e' to "\u001B",
-        'f' to "\u000C",
-        'n' to "\u000A",
-        'r' to "\u000D",
-        't' to "\u0009"
-    )
+        /**
+         * Mappings of various escapes to their matching characters.
+         */
+        private val escapeMap = mapOf(
+            'a' to "\u0007",
+            'e' to "\u001B",
+            'f' to "\u000C",
+            'n' to "\u000A",
+            'r' to "\u000D",
+            't' to "\u0009"
+        )
 
-    /**
-     * None of these can be escaped to be treated as literals. Some may be part of legal escape sequences.
-     */
-    private val notIdentityEscapes = ('a'..'z').toList() + ('A'..'Z').toList() + ('0'..'9').toList()
+        /**
+         * All single character line break characters, part of \R linebreak matcher.
+         */
+        private val linebreakCharRanges = MultiCharacterRange(
+            false,
+            listOf(CharacterRange('\n', '\r'), CharacterRange('\u0085'), CharacterRange('\u2028', '\u2029'))
+        )
+    }
 
     /**
      * Capture groups in order of appearance (1-based index -> list index 0).
@@ -77,7 +84,6 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
 
         val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
 
-        //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
         for (gene in disjList.disjunctions) {
             gene.extraPrefix = false
             gene.extraPostfix = false
@@ -87,11 +93,96 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
         return disjList
     }
 
+    /**
+     * Walks up [ctx]'s ancestry towards the top-level pattern, searching for one of
+     * the currently-unsupported ways an assertion's ancestry can appear (nested).
+     * Returns true if it reaches the top-level pattern without hitting either, false otherwise.
+     */
+    private fun isAssertionNested(ctx: RegexJavaParser.AssertionContext): Boolean {
+        var current = ctx.parent
+        while (current != null && current !is RegexJavaParser.PatternContext) {
+            if (current is RegexJavaParser.AssertionContext) {
+                // assertion within assertion
+                return true
+            }
+            if (current is RegexJavaParser.AtomContext && current.disjunction() != null) {
+                val enclosingTerm = current.parent as? RegexJavaParser.TermContext
+                if (enclosingTerm?.quantifier() != null) {
+                    // assertion within quantified group
+                    return true
+                }
+            }
+            current = current.parent
+        }
+        return false
+    }
+
+    /**
+     * Shared code for `AtomEscape` and `ClassEscape`, resolving `CharacterEscape`s into the required string.
+     */
+    private fun resolveCharacterEscapeString(txt: String): String = when (txt[1]) {
+        '0' -> Character.toString(txt.substring(2).toInt(8))
+        'c' -> Character.toString(txt.codePointAt(2).xor(0x40))
+        in escapeMap -> escapeMap[txt[1]]!!
+        in hexEscapePrefixes -> {
+            val hexValue = if (txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt.last() == '}') {
+                txt.substring(3, txt.length - 1).toInt(16)
+            } else {
+                txt.substring(2).toInt(16)
+            }
+            if (hexValue !in Character.MIN_CODE_POINT..Character.MAX_CODE_POINT)
+                throw IllegalArgumentException("Hexadecimal escape out of range: $txt")
+            Character.toString(hexValue)
+        }
+        else -> txt.substring(1) // identity escape
+    }
+
+    private fun resolveClassRangeEndpoint(ctx: RegexJavaParser.ClassAtomContext): Char =
+        resolveClassRangeEndpoint(ctx.classAtomNoDash()?.classEscape(), ctx.text)
+
+    private fun resolveClassRangeEndpoint(ctx: RegexJavaParser.ClassAtomNoDashContext): Char =
+        resolveClassRangeEndpoint(ctx.classEscape(), ctx.text)
+
+    /**
+     * Resolves a single character-class range endpoint (the classAtom/classAtomNoDash on either side
+     * of a MINUS) to the Char it represents.
+     *
+     * @throws IllegalArgumentException when [escapeCtx] does not resolve to a valid range endpoint.
+     */
+    private fun resolveClassRangeEndpoint(escapeCtx: RegexJavaParser.ClassEscapeContext?, text: String): Char {
+        if (escapeCtx == null) return text[0]
+
+        require(escapeCtx.CharacterClassEscape() == null){
+            "Illegal range near '$text': character class escapes (\\w, etc.) cannot be used as a range boundary"
+        }
+
+        val ranges = escapeCtx.accept(this).data as List<CharacterRange>
+        require(ranges.size == 1 && ranges[0].start == ranges[0].end){
+            "Illegal range near '$text': escape does not resolve to a single character"
+        }
+        return ranges[0].start
+    }
+
+    /**
+     * Builds gene for linebreak matcher `\R`, which is equivalent to `\r\n|[\n-\r\u0085\u2028-\u2029]`.
+     */
+    private fun buildLinebreakMatcherGene(): DisjunctionListRxGene {
+        val crlfBranch = DisjunctionRxGene(
+            "linebreak_crlf",
+            listOf(PatternCharacterBlockGene("crlf", "\r\n")),
+            matchStart = true, matchEnd = true
+        )
+        val singleCharBranch = DisjunctionRxGene(
+            "linebreak_char",
+            listOf(CharacterRangeRxGene(linebreakCharRanges, RegexFlags())),
+            matchStart = true, matchEnd = true
+        )
+        return DisjunctionListRxGene(listOf(crlfBranch, singleCharBranch))
+    }
+
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
-
-        val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
         val satisfiableDisjunctions = res.genes
             .map { it as DisjunctionRxGene }
@@ -107,8 +198,9 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
         val gene = RegexGene(
             "regex",
             disjList,
-            text.substring(0, text.length - EOF_TOKEN.length),
-            RegexType.JVM
+            sourceRegex,
+            RegexType.JVM,
+            externalRegexFlags = externalRegexFlags
         )
 
         return VisitResult(gene)
@@ -117,24 +209,20 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
     override fun visitDisjunction(ctx: RegexJavaParser.DisjunctionContext): VisitResult {
 
         val altRes = ctx.alternative().accept(this)
-        val assertionMatches = altRes.data as Pair<Boolean, Boolean>
-
-        val matchStart = assertionMatches.first
-        val matchEnd = assertionMatches.second
 
         val res = VisitResult()
 
-        // add disjunction if it has genes, OR if the alternative was purely assertions (^$) or flag scopes
+        // add disjunction if it has genes, OR if the alternative was purely flag scopes
         // in that case altRes.genes is empty but the alternative is valid (matches "")
-        val hasOnlyAssertionsOrFlagScopes = ctx.alternative().term().isNotEmpty() &&
-                ctx.alternative().term().all { it.assertion() != null || it.FLAG_SCOPE_OPEN() != null }
+        val hasOnlyFlagScopes = ctx.alternative().term().isNotEmpty() &&
+                ctx.alternative().term().all { it.FLAG_SCOPE_OPEN() != null }
 
-        if (altRes.genes.isNotEmpty() || hasOnlyAssertionsOrFlagScopes || ctx.alternative().term().isEmpty()) {
-            val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart, matchEnd)
+        if (altRes.genes.isNotEmpty() || hasOnlyFlagScopes || ctx.alternative().term().isEmpty()) {
+            val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart = true, matchEnd = true)
 
             res.genes.add(disj)
         }
-        // else: had non-assertion terms but all produced nothing (empty char class etc.), skip
+        // else: had non-flag scope terms but all produced nothing (empty char class etc.), skip
 
         if(ctx.disjunction() != null){
             val disjRes = ctx.disjunction().accept(this)
@@ -148,9 +236,6 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
 
         val res = VisitResult()
 
-        var caret = false
-        var dollar = false
-
         for(i in 0 until ctx.term().size){
 
             val term = ctx.term()[i]
@@ -161,8 +246,6 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
                 val merged = currentFlags.merge(
                     ParsedFlagExpression.fromFlagToken(term.FLAG_SCOPE_OPEN().text)
                 )
-
-                merged.validate()
 
                 currentFlags = merged
 
@@ -200,28 +283,11 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
                 // term is not a back ref: we use the default behavior, term results may only have 0-1 genes
                 // if there is a gene, we add it to result
                 res.genes.add(gene)
-            } else if (resTerm.data is String) {
-
-                val assertion = resTerm.data as String
-                if(i==0 && assertion == "^"){
-                    caret = true
-                } else if(i==ctx.term().size-1 && assertion== "$"){
-                    dollar = true
-                } else {
-                    /*
-                        TODO in a regex, ^ and $ could be in any position, as representing
-                        beginning and end of a line, and a regex could be multiline with
-                        line terminator symbols
-                     */
-                    throw IllegalStateException("Cannot support $assertion at position $i")
-                }
             } else {
                 // unsatisfiable term, return with no genes
                 return VisitResult(data=Pair(false, false))
             }
         }
-
-        res.data = Pair(caret, dollar)
 
         return res
     }
@@ -231,7 +297,26 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
         val res = VisitResult()
 
         if(ctx.assertion() != null){
-            res.data = ctx.assertion().text
+            val assertionCtx = ctx.assertion()
+            require(!isAssertionNested(ctx.assertion())){
+                "Nested assertions are not currently supported."
+            }
+
+            val assertionType = when{
+                assertionCtx.WordBoundaryAssertion() != null -> AssertionType.WORD_BOUNDARY
+                assertionCtx.NonWordBoundaryAssertion() != null -> AssertionType.NON_WORD_BOUNDARY
+                assertionCtx.StartOfInputAssertion() != null -> AssertionType.START_OF_INPUT
+                assertionCtx.EndOfInputAssertion() != null -> AssertionType.END_OF_INPUT
+                assertionCtx.EndOfInputOrFinalLineTerminatorAssertion() != null -> AssertionType.END_OF_INPUT_OR_FINAL_LINE_TERMINATOR
+                assertionCtx.CARET() != null -> AssertionType.CARET
+                assertionCtx.DOLLAR() != null -> AssertionType.DOLLAR
+                assertionCtx.LESS_THAN() != null -> AssertionType.LOOKBEHIND
+                else -> AssertionType.LOOKAHEAD
+            }
+            val innerGene = if (assertionType.usesInnerGene) buildDisjunctionList(assertionCtx.disjunction()) else null
+
+            val gene = AssertionRxGene(innerGene, assertionType, currentFlags)
+            res.genes.add(gene)
             return res
         }
 
@@ -348,8 +433,6 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
                 ParsedFlagExpression.fromFlagToken(ctx.FLAG_GROUP_OPEN().text)
             )
 
-            merged.validate()
-
             currentFlags = merged
 
             val disjList = buildDisjunctionList(ctx.disjunction())
@@ -438,6 +521,12 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
 
         val multiCharRanges = MultiCharacterRange(negated, innerMultiCharRanges)
 
+        if(ctx.classContents().classRanges().all{ it.text.isEmpty() }){
+            // [], [^] and [&&] are not legal in java, however "[a&&b]" (unsatisfiable) is
+            // so here we throw when all classRange elements are empty, to give a more accurate message.
+            throw IllegalArgumentException("Empty character class (e.g., [] or [^]) are invalid")
+        }
+
         return if (ctx.parent is RegexJavaParser.AtomContext){
             // top level character class, create gene
             VisitResult(CharacterRangeRxGene(multiCharRanges, currentFlags))
@@ -450,28 +539,21 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
     override fun visitClassContents(ctx: RegexJavaParser.ClassContentsContext): VisitResult {
 
         // intersect the unions of ranges
-        val mcr = ctx.classUnion()
-            .map { it.accept(this).data as MultiCharacterRange }
+        val mcr = ctx.classRanges()
+            .map {
+                if(it.text.isNotEmpty()) {
+                    // non-empty classRange, use the result for intersection
+                    MultiCharacterRange(false, it.accept(this).data as List<CharacterRange>)
+                } else {
+                    // empty classRange for intersection (like [a&&] or [&&a], which are both equivalent to [a])
+                    // java treats them as no-ops, so we intersect with full range to make this a no-op
+                    // note: [&&], [] and [^] throw (see above on visitCharacterClass) so these are not affected
+                    MultiCharacterRange(true, emptyList<CharacterRange>())
+                }
+            }
             .reduce { acc, item -> MultiCharacterRange.intersect(acc, item) }
 
         return VisitResult(data=mcr)
-    }
-
-    override fun visitClassUnion(ctx: RegexJavaParser.ClassUnionContext): VisitResult {
-
-        return if (ctx.characterClass().isNotEmpty()) {
-            // union of char classes
-            val mcr = ctx.characterClass()
-                .map { it.accept(this).data as MultiCharacterRange }
-                .reduce { acc, item -> MultiCharacterRange.union(acc, item) }
-
-            VisitResult(data=mcr)
-        } else {
-            // single classRanges
-            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
-
-            VisitResult(data=MultiCharacterRange(false, ranges))
-        }
     }
 
     override fun visitClassRanges(ctx: RegexJavaParser.ClassRangesContext): VisitResult {
@@ -482,6 +564,14 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
         if(ctx.nonemptyClassRanges() != null){
             val ranges = ctx.nonemptyClassRanges().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
+        } else if (ctx.characterClass() != null) {
+            val nestedMcr = ctx.characterClass().accept(this).data as MultiCharacterRange
+            list.addAll(nestedMcr.ranges)
+
+            if (ctx.classRanges() != null) {
+                val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
+                list.addAll(ranges)
+            }
         }
 
         res.data = list
@@ -493,42 +583,19 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
 
         val list = mutableListOf<CharacterRange>()
 
-        if (ctx.classAtom()[0]?.classAtomNoDash()?.classEscape() != null){
-            if (ctx.classAtom().size == 2) throw IllegalArgumentException("Not implemented yet")
+        if (ctx.MINUS() != null) {
+            // range, get endpoints and build CharacterRange
+            val start = resolveClassRangeEndpoint(ctx.classAtom()[0])
+            val end = resolveClassRangeEndpoint(ctx.classAtom()[1])
+            list.add(CharacterRange(start, end))
+        } else if (ctx.classAtom()[0]?.classAtomNoDash()?.classEscape() != null){
+            // class escape (like \d, \w, \cX, etc.), keep all ranges
             val rec = ctx.classAtom()[0].accept(this).data as List<CharacterRange>
             list.addAll(rec)
-        } else if (
-                ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_SCOPE_OPEN() != null
-                || ctx.classAtom()[0]?.classAtomNoDash()?.FLAG_GROUP_OPEN() != null
-                || ctx.classAtom()[0]?.classAtomNoDash()?.NAMED_CAPTURE_GROUP_OPEN() != null
-            ) {
-            // these should be interpreted literally within a charclass.
-            val ranges = ctx.text.map { ch -> CharacterRange(ch, ch) }
-            list.addAll(ranges)
         } else {
-            val startText = ctx.classAtom()[0].text
-            assert(startText.length == 1 || startText.length == 2) // single chars or \+ and \. escaped chars
-
-            val start: Char
-            val end: Char
-
-            if (startText.length == 1) {
-                start = startText[0]
-                end = if (ctx.classAtom().size == 2) {
-                    ctx.classAtom()[1].text[0]
-                } else {
-                    //single char, not an actual range
-                    start
-                }
-            } else {
-                // This case handles the escaped syntax characters, like "\." and "\+", etc. cases
-                // where '.' and '+', etc. should be treated as regular chars
-                assert(startText[0] == '\\' && startText[1] !in notIdentityEscapes)
-                start = startText[1]
-                end = start
-            }
-
-            list.add(CharacterRange(start, end))
+            // character, build a 1 char range
+            val c = resolveClassRangeEndpoint(ctx.classAtom()[0])
+            list.add(CharacterRange(c, c))
         }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
@@ -554,9 +621,14 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
 
         if(ctx.MINUS() != null){
 
-            val start = ctx.classAtomNoDash().text[0]
-            val end = ctx.classAtom().text[0]
+            val start = resolveClassRangeEndpoint(ctx.classAtomNoDash())
+            val end = resolveClassRangeEndpoint(ctx.classAtom())
             list.add(CharacterRange(start, end))
+
+        } else if (ctx.characterClass() != null) {
+
+            val nestedMcr = ctx.characterClass().accept(this).data as MultiCharacterRange
+            list.addAll(nestedMcr.ranges)
 
         } else {
 
@@ -565,12 +637,7 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
                 list.addAll(rec)
             } else {
                 val text = (ctx.classAtom() ?: ctx.classAtomNoDash()).text
-                if(text.length==1) {
-                    list.add(CharacterRange(text[0], text[0]))
-                }
-                else {
-                    list.add(CharacterRange(text[1], text[1]))
-                }
+                list.add(CharacterRange(text[0]))
             }
         }
 
@@ -592,31 +659,17 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
 
     override fun visitClassEscape(ctx: RegexJavaParser.ClassEscapeContext): VisitResult {
 
-        val res = VisitResult()
-        res.data = if(ctx.atomEscape() != null &&
-            (ctx.atomEscape().BackReference() != null || ctx.atomEscape().NamedBackReference() != null)
-            ) {
-            // In Java using backrefs or named backrefs is illegal within char classes. (i.e.: [\1\k<name>])
-            throw IllegalArgumentException("Illegal/unsupported escape sequence")
-        } else if (ctx.atomEscape() != null) {
-            when (val rec = ctx.atomEscape().accept(this).genes[0]) {
-                is CharacterClassEscapeRxGene -> {
-                    rec.multiCharRange.ranges
-                }
-
-                is PatternCharacterBlockGene -> {
-                    if (rec.stringBlock.length > 1) {
-                        throw IllegalArgumentException("CharClass element cannot be strings")
-                    }
-                    else listOf(CharacterRange(rec.stringBlock[0], rec.stringBlock[0]))
-                }
-
-                else -> throw IllegalArgumentException("Unexpected CharClass content")
+        val txt = ctx.text
+        val ranges = when {
+            ctx.CharacterClassEscape() != null ->
+                CharacterClassEscapeRxGene(txt.substring(1), currentFlags).multiCharRange.ranges
+            else -> { // character escape
+                val s = resolveCharacterEscapeString(txt)
+                if (s.length > 1) throw IllegalArgumentException("CharClass element cannot be strings")
+                listOf(CharacterRange(s[0], s[0]))
             }
-        } else {
-            throw IllegalArgumentException("Not implemented yet")
         }
-        return res
+        return VisitResult(data = ranges)
     }
 
     override fun visitAtomEscape(ctx: RegexJavaParser.AtomEscapeContext): VisitResult {
@@ -663,44 +716,15 @@ class GeneRegexJavaVisitor(externalRegexFlags: RegexFlags = RegexFlags()) : Rege
             return VisitResult(BackReferenceRxGene(groupIndex, group))
         }
 
-        return VisitResult(when (txt[1]) {
-            '0' -> {
-                val octalValue = txt.substring(2).toInt(8)
-                PatternCharacterBlockGene(
-                        txt,
-                        String(Character.toChars(octalValue)),
-                        currentFlags
-                )
-            }
-            'c' -> {
-                val controlLetterValue = if (txt[2].isLowerCase()){
-                    txt[2].uppercaseChar().code.xor(0x60)
-                } else {
-                    txt[2].code.xor(0x40)
-                }
-                PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString(), currentFlags)
-            }
-            in escapeMap -> {
-                val escape = escapeMap[txt[1]]!!
-                PatternCharacterBlockGene(txt, escape, currentFlags)
-            }
-            in hexEscapePrefixes -> {
-                val hexValue = if (txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt[txt.length - 1] == '}') {
-                    txt.substring(3, txt.length - 1).toInt(16)
-                } else {
-                    txt.substring(2).toInt(16)
-                }
-                if(hexValue !in Character.MIN_CODE_POINT..Character.MAX_CODE_POINT){
-                    throw IllegalArgumentException("Hexadecimal escape out of range: ${ctx.text}")
-                }
-                PatternCharacterBlockGene(
-                        txt,
-                        String(Character.toChars(hexValue)),
-                        currentFlags
-                )
-            }
-            !in notIdentityEscapes -> PatternCharacterBlockGene(txt, txt.substring(1), currentFlags)
-            else -> CharacterClassEscapeRxGene(txt.substring(1), currentFlags)
-        })
+        if (ctx.LinebreakMatcher() != null){
+            return VisitResult(buildLinebreakMatcherGene())
+        }
+
+        if (ctx.CharacterClassEscape() != null) {
+            return VisitResult(CharacterClassEscapeRxGene(ctx.CharacterClassEscape().text.substring(1), currentFlags))
+        }
+
+        // character escape
+        return VisitResult(PatternCharacterBlockGene(txt, resolveCharacterEscapeString(txt), currentFlags))
     }
 }

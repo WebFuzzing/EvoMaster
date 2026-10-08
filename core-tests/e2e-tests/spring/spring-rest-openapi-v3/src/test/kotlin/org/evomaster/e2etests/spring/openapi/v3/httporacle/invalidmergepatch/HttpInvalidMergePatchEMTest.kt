@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.invalidmergepatch
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.invalidmergepatch.InvalidMergePatchController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -42,10 +43,10 @@ class HttpInvalidMergePatchEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.PATCH, 200, "/api/mergepatch/correct/{id}", null)
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertTrue(faults.contains(ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH))
+            assertTrue(faults.contains(DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH))
 
             val mergePatchFaults = DetectedFaultUtils.getDetectedFaults(solution)
-                .filter { it.category == ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH }
+                .filter { it.category == DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH }
             // the buggy resource must be flagged...
             assertTrue(mergePatchFaults.any { it.operationId.contains("/api/mergepatch/buggy/") })
             // ...and the correct resource must NOT be flagged

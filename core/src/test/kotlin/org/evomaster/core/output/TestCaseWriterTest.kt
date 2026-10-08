@@ -1,15 +1,16 @@
 package org.evomaster.core.output
 
+import io.restassured.path.json.JsonPath
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionGeneBuilder
-import org.evomaster.core.sql.SqlActionResult
-import org.evomaster.core.sql.schema.Column
-import org.evomaster.core.sql.schema.ColumnDataType.*
-import org.evomaster.core.sql.schema.ForeignKey
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionGeneBuilder
+import org.evomaster.core.database.sql.SqlActionResult
+import org.evomaster.core.database.sql.schema.Column
+import org.evomaster.core.database.sql.schema.ColumnDataType.*
+import org.evomaster.core.database.sql.schema.ForeignKey
+import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResourceEvaluatedIndividual
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
@@ -35,7 +36,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import javax.ws.rs.core.MediaType
@@ -143,6 +144,92 @@ class TestCaseWriterTest : WriterTestBase(){
 
         assertTrue(lines.toString().contains("containsString(\"Unable to obtain a new access token for resource\")"))
         assertFalse(lines.toString().contains("&#39"))
+    }
+
+    @Test
+    fun testJvmResponseAssertionEscapesBackslashForSourceAndGPath() {
+        val body = """{"\\g":{"name":"disabled"}}"""
+
+        listOf(OutputFormat.JAVA_JUNIT_5, OutputFormat.KOTLIN_JUNIT_5).forEach { format ->
+            val output = generateJsonResponseAssertions(format, body)
+
+            assertTrue(
+                output.contains(".body(\"'\\\\\\\\g'.'name'\", containsString(\"disabled\"))"),
+                "Expected a backslash escaped for both the JVM source and Groovy GPath in $format, got:\n$output"
+            )
+            assertFalse(
+                output.contains(".body(\"'\\g'.'name'\""),
+                "An unescaped backslash would make the generated JVM test invalid in $format"
+            )
+        }
+    }
+
+    @Test
+    fun testJvmResponseAssertionGPathResolvesBackslashAndSingleQuoteKeys() {
+        val body = """{"\\g":{"single'quote":"disabled"}}"""
+        val pathAsGroovySource = "'\\\\g'.'single\\'quote'"
+
+        assertEquals("disabled", JsonPath.from(body).getString(pathAsGroovySource))
+
+        listOf(OutputFormat.JAVA_JUNIT_5, OutputFormat.KOTLIN_JUNIT_5).forEach { format ->
+            val output = generateJsonResponseAssertions(format, body)
+
+            assertTrue(
+                output.contains(".body(\"'\\\\\\\\g'.'single\\\\'quote'\", containsString(\"disabled\"))"),
+                "Expected field names to be escaped for both JVM source and Groovy GPath in $format, got:\n$output"
+            )
+        }
+    }
+
+    @Test
+    fun testKotlinResponseAssertionStillEscapesDollarInFieldName() {
+        val output = generateJsonResponseAssertions(
+            OutputFormat.KOTLIN_JUNIT_5,
+            """{"dollar${'$'}key":"value"}"""
+        )
+
+        assertTrue(
+            output.contains(".body(\"'dollar\\\$key'\", containsString(\"value\"))"),
+            "Expected the dollar sign to remain escaped in generated Kotlin, got:\n$output"
+        )
+    }
+
+    @Test
+    fun testNonJvmResponseAssertionsEscapeBackslashInBracketAccess() {
+        val body = """{"\\g":{"name":"disabled"}}"""
+
+        val javaScriptOutput = generateJsonResponseAssertions(OutputFormat.JS_JEST, body)
+        assertTrue(
+            javaScriptOutput.contains("expect(res_0.body[\"\\\\g\"].name).toBe(\"disabled\");"),
+            "Expected a JavaScript string-safe bracket access, got:\n$javaScriptOutput"
+        )
+
+        val pythonOutput = generateJsonResponseAssertions(OutputFormat.PYTHON_UNITTEST, body)
+        assertTrue(
+            pythonOutput.contains("assert res_0.json()[\"\\\\g\"][\"name\"] == \"disabled\""),
+            "Expected a Python string-safe bracket access, got:\n$pythonOutput"
+        )
+    }
+
+    private fun generateJsonResponseAssertions(format: OutputFormat, body: String): String {
+        val action = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val (_, baseUrlOfSut, evaluatedIndividual) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(mutableListOf<SqlAction>() to mutableListOf(action)),
+            format = format
+        )
+
+        val result = evaluatedIndividual.seeResult(action.getLocalId()) as RestCallResult
+        result.setTimedout(false)
+        result.setStatusCode(200)
+        result.setBody(body)
+        result.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        return writer.convertToCompilableTestCode(
+            TestCase(test = evaluatedIndividual, name = "test"),
+            baseUrlOfSut
+        ).toString()
     }
 
 

@@ -3,17 +3,14 @@ package org.evomaster.core.problem.rest.securityrestoracle
 import bar.examples.it.spring.securityforbiddenoperation.SecurityForbiddenOperationApplication
 import bar.examples.it.spring.securityforbiddenoperation.SecurityForbiddenOperationController
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.JdkIssue
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallResult
-import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -35,6 +32,10 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
     @BeforeEach
     fun initializeTest(){
         SecurityForbiddenOperationApplication.reset()
+        getEMConfig().security = true
+        getEMConfig().schemaOracles = false
+        getEMConfig().httpOracles = false
+        getEMConfig().statusOracles = false
     }
 
     private fun makeSureCanRunSecurityPhase(){
@@ -81,9 +82,9 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val a = pirTest.fromVerbPath("POST", "/api/resources")!!
         val b = pirTest.fromVerbPath("DELETE", "/api/resources/1234")!!
-        CreateResourceUtils.linkDynamicCreateResource(a,b)//FIXME should be in PirToRest
+        DynamicPathUtils.linkDynamicCreateResource(a,b)//FIXME should be in PirToRest
         val c = pirTest.fromVerbPath("PUT", "/api/resources/333")!!
-        CreateResourceUtils.linkDynamicCreateResource(a,c)//FIXME should be in PirToRest
+        DynamicPathUtils.linkDynamicCreateResource(a,c)//FIXME should be in PirToRest
 
         val auth = controller.getInfoForAuthentication()
         val foo = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "FOO" }!!)
@@ -143,7 +144,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
         assertEquals(1, faults.size)
-        assertEquals(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, faults.first())
+        assertEquals(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, faults.first())
 
         assertEquals(3, target.individual.size())
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())
@@ -201,7 +202,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
         assertEquals(1, faults.size)
-        assertEquals(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, faults.first())
+        assertEquals(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, faults.first())
 
         assertEquals(3, target.individual.size())
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())
@@ -248,7 +249,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
         assertEquals(1, faults.size)
-        assertEquals(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, faults.first())
+        assertEquals(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, faults.first())
 
         assertEquals(3, target.individual.size())
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())

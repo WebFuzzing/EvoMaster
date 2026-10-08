@@ -1,0 +1,58 @@
+asyncapi: 3.0.0
+info:
+  title: Messages written inline in their channel
+  version: 1.0.0
+
+# no servers block at all, which is common: the broker is supplied at deploy time
+
+channels:
+  signup:
+    address: user/signup
+    parameters:
+      tenantId:
+        description: The tenant the signup belongs to
+        default: acme
+        enum:
+          - acme
+          - globex
+    messages:
+      request:
+        name: SignupRequest
+        contentType: application/json
+        correlationId:
+          location: '$message.header#/correlationId'
+        payload:
+          type: object
+          required: [email]
+          properties:
+            email:
+              type: string
+              format: email
+        headers:
+          type: object
+          properties:
+            correlationId:
+              type: string
+
+  signupReply:
+    # deliberately unknown at design time
+    address: null
+    messages:
+      ok:
+        name: SignupOk
+        payload:
+          type: object
+          properties:
+            userId:
+              type: string
+
+operations:
+  onSignup:
+    action: receive
+    channel:
+      $ref: '#/channels/signup'
+    reply:
+      channel:
+        $ref: '#/channels/signupReply'
+      address:
+        location: '$message.header#/replyTo'

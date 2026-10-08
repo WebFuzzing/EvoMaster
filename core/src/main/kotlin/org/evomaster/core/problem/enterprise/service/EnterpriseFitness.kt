@@ -5,28 +5,40 @@ import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.ExtraHeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.StaticCounter
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraDbActionResult
+import org.evomaster.core.database.cassandra.CassandraDbActionTransformer
+import org.evomaster.core.database.cassandra.CassandraExecution
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoDbActionResult
+import org.evomaster.core.database.mongo.MongoDbActionTransformer
+import org.evomaster.core.database.mongo.MongoExecution
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.redis.RedisDbActionResult
+import org.evomaster.core.database.redis.RedisDbActionTransformer
+import org.evomaster.core.database.redis.RedisExecution
+import org.evomaster.core.database.sql.*
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbActionResult
+import org.evomaster.core.database.dynamodb.DynamoDbActionTransformer
+import org.evomaster.core.database.dynamodb.DynamoDbExecution
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbActionResult
+import org.evomaster.core.database.neo4j.Neo4jDbActionTransformer
+import org.evomaster.core.database.neo4j.Neo4jExecution
+import org.evomaster.core.extra.shared.AdditionalTargetCollector
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.mongo.MongoDbActionResult
-import org.evomaster.core.mongo.MongoDbActionTransformer
-import org.evomaster.core.mongo.MongoExecution
-import org.evomaster.core.redis.RedisDbAction
-import org.evomaster.core.redis.RedisDbActionResult
-import org.evomaster.core.redis.RedisDbActionTransformer
-import org.evomaster.core.redis.RedisExecution
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.AdditionalTargetCollector
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.time.SearchTimeController
-import org.evomaster.core.sql.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -145,7 +157,24 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         }
         dto.idCounter = StaticCounter.getAndIncrease()
 
-        val sqlResults = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
+        /*
+            Timed because this is where generated SQL rows are actually paid for. The insertions run
+            against the SUT's database on every evaluation of an individual that carries them, so a
+            single solver call can impose a cost repeated for the rest of the search — a cost that no
+            solver-side counter observes, since it is incurred here rather than in solve().
+
+            Only measured when the statistics that would report it are being collected, since the
+            columns are emitted under the same flag.
+         */
+        val timeInsertions = config.collectSqlZ3Stats
+        val insertionStart = if (timeInsertions) System.currentTimeMillis() else 0L
+        val sqlResults = try {
+            rc.executeDatabaseInsertionsAndGetIdMapping(dto)
+        } finally {
+            if (timeInsertions) {
+                statistics.reportSqlInsertionExecution(System.currentTimeMillis() - insertionStart)
+            }
+        }
         val map = sqlResults?.idMapping
         val executedResults = sqlResults?.executionResults
 
@@ -242,6 +271,107 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 }
                 redisResults[actionIndex].setInsertExecutionResult(success)
                 dtoIndex += count
+            }
+        }
+
+        return true
+    }
+
+    /**
+     * Transforms and executes a list of [CassandraDbAction] as insertion commands against the
+     * remote Cassandra database via the SUT controller.
+     *
+     * @param allCassandraActions Cassandra actions to be transformed into insertion commands and executed.
+     * @param actionResults mutable list shared with the caller where the result of each Cassandra
+     *                      action will be appended, preserving the same order as [allCassandraActions].
+     * @return always true, as a failed insertion does not stop the evaluation of the individual: the
+     * outcome of each insertion is instead recorded in the [CassandraDbActionResult] of its action
+     * @throws IllegalStateException if the controller answers with a number of results different from
+     * the number of insertions sent
+     */
+    fun doCassandraDbCalls(
+        allCassandraActions: List<CassandraDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+
+        if (allCassandraActions.isEmpty()) {
+            return true
+        }
+
+        val cassandraResults = allCassandraActions.map { CassandraDbActionResult(it.getLocalId()) }
+        actionResults.addAll(cassandraResults)
+
+        val dto = CassandraDbActionTransformer.transform(allCassandraActions)
+
+        // null when the controller could not be reached or rejected the command, leaving all the insertions as failed
+        val executedResults = rc.executeCassandraDatabaseInsertions(dto)?.executionResults ?: return true
+
+        /*
+            The controller records one result per insertion, even for a failed one, and the transformer
+            builds exactly one insertion per action, so any other number of results is a bug rather than
+            a degraded answer.
+         */
+        if (executedResults.size != allCassandraActions.size) {
+            throw IllegalStateException("Received ${executedResults.size} insertion results for" +
+                    " ${allCassandraActions.size} Cassandra insertions")
+        }
+
+        executedResults.forEachIndexed { index, success ->
+            cassandraResults[index].setInsertExecutionResult(success)
+        }
+
+        return true
+    }
+
+    fun doDynamoDbCalls(
+        allDynamoDbActions: List<DynamoDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+        if (allDynamoDbActions.isEmpty()) return true
+        val results = allDynamoDbActions.map { DynamoDbActionResult(it.getLocalId()) }
+        actionResults.addAll(results)
+        val execution = rc.executeDynamoDbInsertions(DynamoDbActionTransformer.transform(allDynamoDbActions))
+        execution?.executionResults?.forEachIndexed { index, success ->
+            results.getOrNull(index)?.setInsertExecutionResult(success)
+        }
+        return execution?.executionResults?.all { it } ?: false
+    }
+
+    /**
+     * Transforms and executes the Neo4j actions as one batch of node and relationship insertions
+     * against the SUT's database via the controller. An action succeeds when every node and
+     * relationship it holds was inserted.
+     *
+     * @param allNeo4jActions Neo4j actions to insert
+     * @param actionResults mutable list shared with the caller where the result of each
+     *                      Neo4j action is appended, in the same order as [allNeo4jActions]
+     * @return whether [allNeo4jActions] execute successfully
+     */
+    fun doNeo4jDbCalls(
+        allNeo4jActions: List<Neo4jDbAction>,
+        actionResults: MutableList<ActionResult>
+    ): Boolean {
+        if (allNeo4jActions.isEmpty()) return true
+
+        val neo4jResults = allNeo4jActions.map { Neo4jDbActionResult(it.getLocalId()) }
+        actionResults.addAll(neo4jResults)
+
+        val dto = Neo4jDbActionTransformer.transform(allNeo4jActions)
+
+        val results = rc.executeNeo4jInsertions(dto)
+        if (results != null) {
+            var nodeIndex = 0
+            var edgeIndex = 0
+            allNeo4jActions.forEachIndexed { actionIndex, action ->
+                val nodesOk = (nodeIndex until nodeIndex + action.nodes.size).all { results.nodeExecutionResults[it] }
+                val edgesOk = (edgeIndex until edgeIndex + action.edges.size).all { results.edgeExecutionResults[it] }
+                nodeIndex += action.nodes.size
+                edgeIndex += action.edges.size
+                val success = nodesOk && edgesOk
+                if (!success) {
+                    log.warn("FAILED insertion $actionIndex: ${action.getName()}")
+                }
+                neo4jResults[actionIndex].setInsertExecutionResult(success)
             }
         }
 
@@ -378,12 +508,47 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             handleRedisHeuristics(dto, fv)
         }
 
+        if (configuration.heuristicsForDynamoDb) {
+            handleDynamoDbHeuristics(dto, fv)
+        }
+
+        if (configuration.heuristicsForNeo4j) {
+            handleNeo4jHeuristics(dto, fv)
+        }
+
         if (configuration.extractRedisExecutionInfo) {
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
                 fv.setRedisExecution(i, RedisExecution.fromDto(extra.redisExecutionsDto))
             }
             fv.aggregateRedisDatabaseData()
+        }
+
+        if (configuration.extractDynamoDbExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                fv.setDynamoDbExecution(i, DynamoDbExecution.fromDto(dto.extraHeuristics[i].dynamoDbExecutionsDto))
+            }
+            fv.aggregateDynamoDbData()
+        }
+
+        if (configuration.extractNeo4jExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                val extra = dto.extraHeuristics[i]
+                fv.setNeo4jExecution(i, Neo4jExecution.fromDto(extra.neo4jExecutionsDto))
+            }
+            fv.aggregateNeo4jDatabaseData()
+        }
+
+        if (configuration.heuristicsForCassandra) {
+            handleCassandraHeuristics(dto, fv)
+        }
+
+        if (configuration.extractCassandraExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                val extra = dto.extraHeuristics[i]
+                fv.setCassandraExecution(i, CassandraExecution.fromDto(extra.cassandraExecutionsDto))
+            }
+            fv.aggregateCassandraDatabaseData()
         }
     }
 
@@ -409,7 +574,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (!toMinimize.isEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
@@ -444,7 +609,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (toMinimize.isNotEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
@@ -477,7 +642,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 .toList()
 
             if (toMinimize.isNotEmpty()) {
-                fv.setExtraToMinimize(i, toMinimize)
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
             }
 
             extra.heuristics
@@ -488,6 +653,106 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                             statistics.reportRedisHeuristicEvaluationFailure()
                         } else {
                             statistics.reportRedisHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
+        }
+    }
+
+    /** Applies CQL WHERE distances and records their evaluation metrics. */
+    private fun handleCassandraHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        for (i in 0 until dto.extraHeuristics.size) {
+
+            val extra = dto.extraHeuristics[i]
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.CASSANDRA
+                }.map { it.value }
+                .toList()
+
+            if (toMinimize.isNotEmpty()) {
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.CASSANDRA) {
+                        statistics.reportNumberOfEvaluatedRowsForCassandraHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportCassandraHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportCassandraHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
+        }
+    }
+
+    /** Applies DynamoDB predicate distances and records their evaluation metrics. */
+    private fun handleDynamoDbHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        for (i in 0 until dto.extraHeuristics.size) {
+            val extra = dto.extraHeuristics[i]
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.DYNAMODB
+                }.map { it.value }
+                .toList()
+
+            if (toMinimize.isNotEmpty()) {
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.DYNAMODB) {
+                        statistics.reportNumberOfEvaluatedItemsForDynamoDbHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportDynamoDbHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportDynamoDbHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
+        }
+    }
+
+    /** Applies Cypher pattern distances and records their evaluation metrics. */
+    private fun handleNeo4jHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        for (i in 0 until dto.extraHeuristics.size) {
+            val extra = dto.extraHeuristics[i]
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.NEO4J
+                }.map { it.value }
+                .toList()
+
+            if (toMinimize.isNotEmpty()) {
+                fv.addExtraObjectivesToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.NEO4J) {
+                        statistics.reportNumberOfEvaluatedNodesForNeo4jHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportNeo4jHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportNeo4jHeuristicEvaluationSuccess()
                         }
                     }
                 }

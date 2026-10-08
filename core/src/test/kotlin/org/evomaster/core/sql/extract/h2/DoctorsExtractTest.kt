@@ -1,9 +1,9 @@
 package org.evomaster.core.sql.extract.h2
 
 import org.evomaster.client.java.sql.DbInfoExtractor
-import org.evomaster.core.sql.SqlActionTransformer
-import org.evomaster.core.sql.SqlActionUtils
-import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.SqlActionTransformer
+import org.evomaster.core.database.sql.SqlActionUtils
+import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.service.Randomness

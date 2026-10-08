@@ -1,6 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.Individual
 
 /**
  * this can be used to represent a mutated gene in detail, including
@@ -8,7 +9,8 @@ import org.evomaster.core.search.gene.Gene
  * @property previous gene before mutation
  * @property actionName refers to an action which contains the gene
  * @property actionTypeClass refers to the class name of the action which contains the gene
- * @property position indicates where the gene located in a view of an individual, e.g., index of action
+ * @property position index of the action containing the gene. For initialization actions, this is
+ * the absolute position in [Individual.seeInitializingActions], across all action types.
  * @property actionLocalId indicates the local id of the action
  * @property isDynamicAction indicates whether the action belongs to [Individual.seeDynamicMainActions]
  */

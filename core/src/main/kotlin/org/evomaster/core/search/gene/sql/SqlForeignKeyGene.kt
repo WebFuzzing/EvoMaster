@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.root.SimpleGene
@@ -10,8 +9,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.schema.TableId
 
 /**
  * A gene specifically designed to handle Foreign Keys in SQL databases.

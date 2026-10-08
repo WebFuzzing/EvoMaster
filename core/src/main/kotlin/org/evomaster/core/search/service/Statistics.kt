@@ -4,8 +4,10 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.enterprise.service.OracleApplicability
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.remote.service.RemoteController
@@ -18,6 +20,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+import java.util.Locale
 import javax.annotation.PostConstruct
 
 
@@ -41,6 +45,8 @@ class Statistics : SearchListener {
         const val COVERED_LINES = "coveredLines"
         const val COVERED_BRANCHES = "coveredBranches"
         const val ELAPSED_SECONDS = "elapsedSeconds"
+
+        private const val AI_ENDPOINT_HEADERS = "id,randomSeed,httpMethod,path,ai_model_type,ai_accuracy,ai_precision,ai_sensitivity,ai_specificity,ai_npv,ai_f1Score400,ai_mcc400"
     }
 
     @Inject
@@ -70,6 +76,9 @@ class Statistics : SearchListener {
     @Inject(optional = true)
     private lateinit var callGraphService: CallGraphService
 
+    @Inject
+    private lateinit var oracleApplicability: OracleApplicability
+
     /**
      * How often test executions did timeout
      */
@@ -97,12 +106,39 @@ class Statistics : SearchListener {
     private var sqlZ3UnknownCount = 0
     private var sqlZ3ErrorCount = 0
     private var sqlZ3ParseFailureCount = 0
+    // Breakdown of sqlZ3ParseFailureCount, which on its own cannot direct a fix: the two failures
+    // live in different components and are corrected in different places.
+    // Invariant: sqlZ3ParseFailureCount == sqlZ3SqlParseFailureCount + sqlZ3SmtlibGenFailureCount
+    private var sqlZ3SqlParseFailureCount = 0
+    private var sqlZ3SmtlibGenFailureCount = 0
     private var sqlZ3PartialTranslationCount = 0
     private var sqlZ3TimeMs = 0L
     private var sqlZ3SmtlibGenTimeMs = 0L
+    /**
+     * Wall-clock time inside solve(), covering every call including the ones served from cache.
+     *
+     * Deliberately overlaps sqlZ3TimeMs and sqlZ3SmtlibGenTimeMs rather than replacing them: those
+     * two bracket only the Z3 invocation and the formula construction, which between them leave out
+     * writing the .smt2 file, rebuilding the gene tree from a solution — done on every cache hit as
+     * well — and the call overhead itself. The difference between this and the sum of the other two
+     * is precisely the cost that was previously unaccounted for.
+     */
+    private var sqlZ3SolveTimeMs = 0L
     private val sqlZ3SmtlibSizeBytes = IncrementalAverage()
     private val sqlZ3SeenQueryHashes = mutableSetOf<Int>()
     private var sqlZ3UniqueQueriesCount = 0
+
+    /**
+     * Time spent executing the SQL insertions that were generated for the test setup, and how many
+     * batches were executed.
+     *
+     * Not a solver metric: these rows are inserted into the SUT's own database on every evaluation
+     * of an individual that carries them, so the cost is paid over and over, far from solve(). It is
+     * measured here because no existing counter covers it, which left a large part of the observed
+     * slowdown unattributable.
+     */
+    private var sqlInsertionExecutionTimeMs = 0L
+    private var sqlInsertionExecutionCount = 0
 
     // mongo heuristic evaluation statistic
     private var mongoHeuristicEvaluationSuccessCount = 0
@@ -114,6 +150,24 @@ class Statistics : SearchListener {
     private var redisHeuristicEvaluationFailureCount = 0
     private val redisDocumentsAverageCalculator = IncrementalAverage()
 
+    // DynamoDB heuristic evaluation statistics
+    private var dynamoDbHeuristicEvaluationSuccessCount = 0
+    private var dynamoDbHeuristicEvaluationFailureCount = 0
+    private val dynamoDbItemsAverageCalculator = IncrementalAverage()
+
+    // neo4j heuristic evaluation statistic
+    private var neo4jHeuristicEvaluationSuccessCount = 0
+    private var neo4jHeuristicEvaluationFailureCount = 0
+    private val neo4jNodesAverageCalculator = IncrementalAverage()
+
+    // cassandra heuristic evaluation statistic
+    private var cassandraHeuristicEvaluationSuccessCount = 0
+    private var cassandraHeuristicEvaluationFailureCount = 0
+    private val cassandraRowsAverageCalculator = IncrementalAverage()
+
+    //how long time spent in choosing names for the generated test cases
+    private var timeSpentChoosingTestNamesMs = 0L
+
    class Pair(val header: String, val element: String)
 
 
@@ -123,6 +177,16 @@ class Statistics : SearchListener {
      * budget evaluations
      */
     private val snapshots: MutableMap<Double, List<Pair>> = mutableMapOf()
+
+    /**
+     * Values captured at each interval rather than recomputed from the final classifier state.
+     * Endpoint-level AI statistics are captured at each snapshot interval.
+     *
+     * Key: snapshot interval/progress value (as 0.0,5.0, 10.0,...,100).
+     * Value: one CSV row per REST endpoint, where each inner List<String>
+     * contains the endpoint metadata and AI metrics returned by [getAIEndpointRows].
+     */
+    private val aiEndpointSnapshots: MutableMap<Double, List<List<String>>> = mutableMapOf()
 
     private var snapshotThreshold = -1.0
 
@@ -156,7 +220,71 @@ class Statistics : SearchListener {
         }
 
         path.toFile().appendText("$elements\n")
+
+        writeAIEndpointStatistics()
     }
+
+    /**
+     * Report every available REST endpoint, including those with no evaluation data (zero metrics).
+     * Ensembles use the best model's metrics for each endpoint, as selected by the classifier.
+     */
+    internal fun writeAIEndpointStatistics() {
+        if (!canReportAIEndpointStatistics()) {
+            return
+        }
+
+        writeAIEndpointCsv(config.aiEndpointStatisticsFile, AI_ENDPOINT_HEADERS, getAIEndpointRows().asSequence())
+    }
+
+    private fun canReportAIEndpointStatistics(): Boolean =
+        config.writeAIEndpointStatistics &&
+                config.isEnabledAIModelForResponseClassification() &&
+                this::aiResponseClassifier.isInitialized
+
+    private fun canReportAIEndpointSnapshotStatistics(): Boolean =
+        config.writeAIEndpointSnapshotStatistics &&
+                config.isEnabledAIModelForResponseClassification() &&
+                this::aiResponseClassifier.isInitialized
+
+    private fun getAIEndpointRows(): List<List<String>> {
+        val endpoints = sampler?.seeAvailableActions().orEmpty()
+            .filterIsInstance<RestCallAction>()
+            .map { it.endpoint }
+            .distinct()
+            .sortedWith(compareBy<Endpoint> { it.path.toString() }.thenBy { it.verb.name })
+        val modelType = config.aiModelForResponseClassification.joinToString(",") { it.name }
+        return endpoints.map { endpoint ->
+            val metrics = aiResponseClassifier.estimateMetrics(endpoint)
+            listOf(
+                config.statisticsColumnId, config.seed.toString(), endpoint.verb.name,
+                endpoint.path.toString(), modelType
+            ) + listOf(
+                metrics.accuracy, metrics.precision400, metrics.sensitivity400,
+                metrics.specificity, metrics.npv, metrics.f1Score400, metrics.mcc
+            ).map { String.format(Locale.ROOT, "%.4f", it) }
+        }
+    }
+
+    private fun writeAIEndpointCsv(file: String, headers: String, rows: Sequence<List<String>>) {
+        val path = Paths.get(file).toAbsolutePath()
+        Files.createDirectories(path.parent)
+        val append = config.appendToStatisticsFile && Files.exists(path) && Files.size(path) > 0
+
+        val mode = if (append) StandardOpenOption.APPEND else StandardOpenOption.TRUNCATE_EXISTING
+        Files.newBufferedWriter(path, Charsets.UTF_8, StandardOpenOption.CREATE, mode).use { writer ->
+            if (!append) {
+                writer.appendLine(headers)
+            }
+            rows.forEach { values ->
+                writer.appendLine(values.joinToString(",") { csvField(it) })
+            }
+        }
+    }
+
+    private fun csvField(value: String): String =
+        if (value.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) {
+            "\"${value.replace("\"", "\"\"")}\""
+        } else value
 
     fun writeSnapshot() {
         if (snapshotThreshold <= 100) {
@@ -186,8 +314,22 @@ class Statistics : SearchListener {
                 val elements = pairs.joinToString(",") { it.element }
                 path.toFile().appendText("$key,$elements\n")
             }
+
+        if (config.snapshotInterval > 0 && canReportAIEndpointSnapshotStatistics()) {
+            val rows = aiEndpointSnapshots.toSortedMap().asSequence().flatMap { (interval, endpoints) ->
+                endpoints.asSequence().map { listOf(interval.toString()) + it }
+            }
+            writeAIEndpointCsv(config.aiEndpointSnapshotStatisticsFile, "interval,$AI_ENDPOINT_HEADERS", rows)
+        }
     }
 
+
+    fun reportTimeSpentInChoosingTestNames(ms: Long) {
+        if(ms < 0){
+            throw IllegalArgumentException("Passed time cannot be negative: $ms")
+        }
+        timeSpentChoosingTestNamesMs += ms
+    }
 
     fun reportTimeout() {
         timeouts++
@@ -208,6 +350,20 @@ class Statistics : SearchListener {
 
     fun reportNumberOfEvaluatedDocumentsForRedisHeuristic(numberOfEvaluatedDocuments: Int) {
         redisDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
+    }
+
+    /** Records the number of items inspected by one DynamoDB heuristic evaluation. */
+    fun reportNumberOfEvaluatedItemsForDynamoDbHeuristic(numberOfEvaluatedItems: Int) {
+        dynamoDbItemsAverageCalculator.addValue(numberOfEvaluatedItems)
+    }
+
+    /** Records the number of nodes inspected by one Neo4j heuristic evaluation. */
+    fun reportNumberOfEvaluatedNodesForNeo4jHeuristic(numberOfEvaluatedNodes: Int) {
+        neo4jNodesAverageCalculator.addValue(numberOfEvaluatedNodes)
+    }
+
+    fun reportNumberOfEvaluatedRowsForCassandraHeuristic(numberOfEvaluatedRows: Int) {
+        cassandraRowsAverageCalculator.addValue(numberOfEvaluatedRows)
     }
 
     fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
@@ -241,6 +397,24 @@ class Statistics : SearchListener {
         redisHeuristicEvaluationFailureCount++
     }
 
+    /** Records one successful DynamoDB heuristic evaluation. */
+    fun reportDynamoDbHeuristicEvaluationSuccess() {
+        dynamoDbHeuristicEvaluationSuccessCount++
+    }
+
+    /** Records one failed DynamoDB heuristic evaluation. */
+    fun reportDynamoDbHeuristicEvaluationFailure() {
+        dynamoDbHeuristicEvaluationFailureCount++
+    }
+
+    fun reportCassandraHeuristicEvaluationSuccess() {
+        cassandraHeuristicEvaluationSuccessCount++
+    }
+
+    fun reportCassandraHeuristicEvaluationFailure() {
+        cassandraHeuristicEvaluationFailureCount++
+    }
+
     fun reportSqlZ3Sat(z3TimeMs: Long) {
         sqlZ3CacheMissCount++
         sqlZ3SatCount++
@@ -265,9 +439,29 @@ class Statistics : SearchListener {
         sqlZ3TimeMs += z3TimeMs
     }
 
-    fun reportSqlZ3ParseFailure() {
+    /**
+     * A query that never reached Z3 because it could not be turned into an SMT-LIB problem.
+     *
+     * [kind] records which step gave up. The distinction matters because the two are fixed in
+     * different components — one in the SQL parser, the other in the SMT-LIB generator's handling of
+     * schemas and query shapes — and an aggregate figure cannot say which to work on.
+     */
+    fun reportSqlZ3ParseFailure(kind: SqlZ3TranslationFailure) {
         sqlZ3CacheMissCount++
         sqlZ3ParseFailureCount++
+        when (kind) {
+            SqlZ3TranslationFailure.SQL_PARSE -> sqlZ3SqlParseFailureCount++
+            SqlZ3TranslationFailure.SMTLIB_GENERATION -> sqlZ3SmtlibGenFailureCount++
+        }
+    }
+
+    /** Which step failed to translate a query into an SMT-LIB problem. */
+    enum class SqlZ3TranslationFailure {
+        /** JSQLParser could not read the SQL at all. */
+        SQL_PARSE,
+
+        /** The SQL parsed, but a formula could not be built for it or for its schema. */
+        SMTLIB_GENERATION
     }
 
     /**
@@ -277,6 +471,17 @@ class Statistics : SearchListener {
      */
     fun reportSqlZ3PartialTranslation() {
         sqlZ3PartialTranslationCount++
+    }
+
+    /** Total wall-clock time of one solve() call, cache hits included. See [sqlZ3SolveTimeMs]. */
+    fun reportSqlZ3SolveTime(ms: Long) {
+        sqlZ3SolveTimeMs += ms
+    }
+
+    /** One execution of a batch of generated SQL insertions against the SUT's database. */
+    fun reportSqlInsertionExecution(ms: Long) {
+        sqlInsertionExecutionTimeMs += ms
+        sqlInsertionExecutionCount++
     }
 
     fun reportSqlZ3SmtlibGenTime(ms: Long, sizeBytes: Int) {
@@ -301,6 +506,25 @@ class Statistics : SearchListener {
     internal fun getSqlZ3CacheHitCount() = sqlZ3CacheHitCount
     internal fun getSqlZ3CacheMissCount() = sqlZ3CacheMissCount
 
+    /** Records one successful Neo4j heuristic evaluation. */
+    fun reportNeo4jHeuristicEvaluationSuccess() {
+        neo4jHeuristicEvaluationSuccessCount++
+    }
+
+    /** Records one failed Neo4j heuristic evaluation. */
+    fun reportNeo4jHeuristicEvaluationFailure() {
+        neo4jHeuristicEvaluationFailureCount++
+    }
+
+    // Exposed for tests: verify the failure breakdown adds up to the aggregate, and that the two
+    // duration accumulators only ever move forward.
+    internal fun getSqlZ3ParseFailureCount() = sqlZ3ParseFailureCount
+    internal fun getSqlZ3SqlParseFailureCount() = sqlZ3SqlParseFailureCount
+    internal fun getSqlZ3SmtlibGenFailureCount() = sqlZ3SmtlibGenFailureCount
+    internal fun getSqlZ3SolveTimeMs() = sqlZ3SolveTimeMs
+    internal fun getSqlInsertionExecutionTimeMs() = sqlInsertionExecutionTimeMs
+    internal fun getSqlInsertionExecutionCount() = sqlInsertionExecutionCount
+
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
 
     fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicEvaluationSuccessCount + sqlHeuristicEvaluationFailureCount
@@ -312,6 +536,26 @@ class Statistics : SearchListener {
     fun getRedisHeuristicsEvaluationCount(): Int = redisHeuristicEvaluationSuccessCount + redisHeuristicEvaluationFailureCount
 
     fun averageNumberOfEvaluatedDocumentsForRedisHeuristics(): Double = redisDocumentsAverageCalculator.mean
+
+    /** Returns the total number of DynamoDB heuristic evaluations. */
+    fun getDynamoDbHeuristicsEvaluationCount(): Int =
+        dynamoDbHeuristicEvaluationSuccessCount + dynamoDbHeuristicEvaluationFailureCount
+
+    /** Returns the average number of items inspected by DynamoDB heuristics. */
+    fun averageNumberOfEvaluatedItemsForDynamoDbHeuristics(): Double = dynamoDbItemsAverageCalculator.mean
+
+    /** Returns the total number of Neo4j heuristic evaluations. */
+    fun getNeo4jHeuristicsEvaluationCount(): Int =
+        neo4jHeuristicEvaluationSuccessCount + neo4jHeuristicEvaluationFailureCount
+
+    /** Returns the average number of nodes inspected by Neo4j heuristics. */
+    fun averageNumberOfEvaluatedNodesForNeo4jHeuristics(): Double = neo4jNodesAverageCalculator.mean
+
+    /** Returns the total number of Cassandra heuristic evaluations. */
+    fun getCassandraHeuristicsEvaluationCount(): Int = cassandraHeuristicEvaluationSuccessCount + cassandraHeuristicEvaluationFailureCount
+
+    /** Returns the average number of rows inspected by DynamoDB heuristics. */
+    fun averageNumberOfEvaluatedRowsForCassandraHeuristics(): Double = cassandraRowsAverageCalculator.mean
 
     override fun newActionsEvaluated(n: Int) {
 
@@ -342,13 +586,17 @@ class Statistics : SearchListener {
 
         snapshots[key] = snap
 
+        if (config.writeStatistics && canReportAIEndpointSnapshotStatistics()) {
+            aiEndpointSnapshots[key] = getAIEndpointRows()
+        }
+
         //next step
         snapshotThreshold += config.snapshotInterval
     }
 
     fun getData(solution: Solution<*>): List<Pair> {
 
-        val sutInfo : SutInfoDto? = if(!config.blackBox || config.bbExperiments) {
+        val sutInfo : SutInfoDto? = if(config.usesDriver()) {
             remoteController?.getSutInfo()
         } else {
             null
@@ -453,6 +701,11 @@ class Statistics : SearchListener {
             add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristics","${averageNumberOfEvaluatedDocumentsForMongoHeuristics()}"))
             add(Pair("mongoHeuristicsEvaluationCount","${getMongoHeuristicsEvaluationCount()}"))
 
+            // statistics info for DynamoDB Heuristics
+            add(Pair("averageNumberOfEvaluatedItemsForDynamoDbHeuristics",
+                "${averageNumberOfEvaluatedItemsForDynamoDbHeuristics()}"))
+            add(Pair("dynamoDbHeuristicsEvaluationCount", "${getDynamoDbHeuristicsEvaluationCount()}"))
+
             // statistics info for SQL Heuristics
             add(Pair("sqlParsingFailureCount","$sqlParsingFailureCount"))
             add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
@@ -471,11 +724,28 @@ class Statistics : SearchListener {
                 add(Pair("sqlZ3Unknown", "$sqlZ3UnknownCount"))
                 add(Pair("sqlZ3Errors", "$sqlZ3ErrorCount"))
                 add(Pair("sqlZ3ParseFailures", "$sqlZ3ParseFailureCount"))
+                add(Pair("sqlZ3SqlParseFailures", "$sqlZ3SqlParseFailureCount"))
+                add(Pair("sqlZ3SmtlibGenFailures", "$sqlZ3SmtlibGenFailureCount"))
                 add(Pair("sqlZ3PartialTranslations", "$sqlZ3PartialTranslationCount"))
                 add(Pair("sqlZ3TotalMs", "$sqlZ3TimeMs"))
                 add(Pair("sqlZ3SmtlibGenTotalMs", "$sqlZ3SmtlibGenTimeMs"))
                 add(Pair("sqlZ3AvgSmtlibSizeBytes", "%.1f".format(sqlZ3SmtlibSizeBytes.mean)))
+                add(Pair("sqlZ3SolveTotalMs", "$sqlZ3SolveTimeMs"))
+                add(Pair("sqlInsertionExecutionTotalMs", "$sqlInsertionExecutionTimeMs"))
+                add(Pair("sqlInsertionExecutions", "$sqlInsertionExecutionCount"))
             }
+
+            // statistics info for Neo4j Heuristics
+            add(Pair("averageNumberOfEvaluatedNodesForNeo4jHeuristics","${averageNumberOfEvaluatedNodesForNeo4jHeuristics()}"))
+            add(Pair("neo4jHeuristicsEvaluationCount","${getNeo4jHeuristicsEvaluationCount()}"))
+
+            // statistics info for Cassandra Heuristics
+            add(Pair("averageNumberOfEvaluatedRowsForCassandraHeuristics","${averageNumberOfEvaluatedRowsForCassandraHeuristics()}"))
+            add(Pair("cassandraHeuristicsEvaluationCount","${getCassandraHeuristicsEvaluationCount()}"))
+
+            add(Pair("timeSpentChoosingTestNamesMs", "$timeSpentChoosingTestNamesMs"))
+
+            add(Pair("oracleApplicability", oracleApplicability.exportStatsAsSingleString()))
 
             for(phase in ExecutionPhaseController.Phase.entries){
                 add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))
@@ -717,7 +987,7 @@ class Statistics : SearchListener {
 
 
         // append boot-time targets
-        if(!config.blackBox || config.bbExperiments) {
+        if(config.usesDriver()) {
             remoteController?.getSutInfo()?.bootTimeInfoDto?.targets?.map { it.descriptiveId }?.sorted()?.apply {
                 if (isNotEmpty()){
                     content.add(System.lineSeparator())

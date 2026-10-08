@@ -42,20 +42,20 @@ class XSSStoredEMTest : SpringTestBase() {
 
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
 
-            Assertions.assertTrue({ DefinedFaultCategory.XSS in faultCategories })
+            Assertions.assertTrue({ DefinedFaultCategory.SECURITY_XSS_INJECTION in faultCategories })
 
             Assertions.assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS_INJECTION
                         && it.operationId == "GET:/api/stored/comments"
             })
 
             Assertions.assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS_INJECTION
                         && it.operationId == "GET:/api/stored/guestbook"
             })
 
             Assertions.assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS_INJECTION
                         && it.operationId == "GET:/api/stored/user/{username}"
             })
         }

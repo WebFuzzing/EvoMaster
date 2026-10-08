@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoQueryException;
 import com.mongodb.client.*;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentWriter;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -141,8 +143,8 @@ public class MongoCollectionClassReplacementTest {
         assertEquals(COLLECTION_NAME, mongoFindCommand.getCollectionName());
         assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
         assertNotNull(mongoFindCommand.getQuery());
-        Document retrievedQuery = (Document) mongoFindCommand.getQuery();
-        assertEquals(30, retrievedQuery.getInteger("age"));
+        BsonDocument retrievedQuery = (BsonDocument) mongoFindCommand.getQuery();
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
 
         String documentType = mongoFindCommand.getDocumentsType();
         List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
@@ -152,7 +154,7 @@ public class MongoCollectionClassReplacementTest {
 
 
     @Test
-    public void testFindWithResultClass()  {
+    public void testFindWithResultClass() {
         final MongoCollection<Document> collection = getMongoCollection();
         MongoCollectionTestDto dto = new MongoCollectionTestDto();
         dto.age = 27;
@@ -209,7 +211,7 @@ public class MongoCollectionClassReplacementTest {
     }
 
     @Test
-    public void testFindWithFilterAndResultClass()  {
+    public void testFindWithFilterAndResultClass() {
         final MongoCollection<Document> collection = getMongoCollection();
 
         Document filter = new Document("age", 17);
@@ -230,8 +232,8 @@ public class MongoCollectionClassReplacementTest {
         assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
         assertNotNull(mongoFindCommand.getQuery());
 
-        Document retrievedQuery = (Document) mongoFindCommand.getQuery();
-        assertEquals(17, retrievedQuery.getInteger("age"));
+        BsonDocument retrievedQuery = (BsonDocument) mongoFindCommand.getQuery();
+        assertEquals(17, retrievedQuery.getInt32("age").getValue());
 
         String documentType = mongoFindCommand.getDocumentsType();
         List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
@@ -263,8 +265,8 @@ public class MongoCollectionClassReplacementTest {
             assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
             assertNotNull(mongoFindCommand.getQuery());
 
-            Document retrievedQuery = (Document) mongoFindCommand.getQuery();
-            assertEquals(23, retrievedQuery.getInteger("age"));
+            BsonDocument retrievedQuery = (BsonDocument) mongoFindCommand.getQuery();
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
 
 
             String documentType = mongoFindCommand.getDocumentsType();
@@ -298,8 +300,8 @@ public class MongoCollectionClassReplacementTest {
             assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
             assertNotNull(mongoFindCommand.getQuery());
 
-            Document retrievedQuery = (Document) mongoFindCommand.getQuery();
-            assertEquals(23, retrievedQuery.getInteger("age"));
+            BsonDocument retrievedQuery = (BsonDocument) mongoFindCommand.getQuery();
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
 
 
             String documentType = mongoFindCommand.getDocumentsType();
@@ -309,4 +311,43 @@ public class MongoCollectionClassReplacementTest {
 
         }
     }
+
+
+    @Test
+    public void testFindWithInvalidFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+
+        Document tags = new Document("tags", Collections.emptyList());
+        collection.insertOne(tags);
+
+        Document tagsFilter = new Document("tags", new Document("$size", -1));
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        FindIterable<?> findIterable = (FindIterable<?>) MongoCollectionClassReplacement.find(collection, tagsFilter);
+
+        try {
+            findIterable.iterator();
+            fail("Expected an exception to be thrown due to invalid filter");
+        } catch (MongoQueryException ex) {
+            // expected exception due to invalid filter
+        }
+
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+        Set<MongoFindCommand> mongoFindCommands = additionalInfoList.get(0).getMongoInfoData();
+        assertEquals(1, mongoFindCommands.size());
+
+        MongoFindCommand mongoFindCommand = mongoFindCommands.iterator().next();
+        assertEquals(COLLECTION_NAME, mongoFindCommand.getCollectionName());
+        assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
+        assertNotNull(mongoFindCommand.getQuery());
+        BsonDocument retrievedQuery = (BsonDocument) mongoFindCommand.getQuery();
+        assertTrue(retrievedQuery.get("tags") instanceof BsonDocument);
+        assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
+
+        assertEquals(false, mongoFindCommand.isSuccessfullyExecuted());
+
+    }
+
+
 }

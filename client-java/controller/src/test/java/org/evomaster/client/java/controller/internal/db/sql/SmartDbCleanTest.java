@@ -40,7 +40,9 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
             assertEquals(1, res.seeRows().size());
 
             RestAssured.given().accept(ContentType.JSON)
-                    .get(url + ControllerConstants.TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + ControllerConstants.TEST_RESULTS)
                     .then()
                     .statusCode(200);
 
@@ -55,7 +57,9 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
             assertEquals(1, res.seeRows().size());
 
             RestAssured.given().accept(ContentType.JSON)
-                    .get(url + ControllerConstants.TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + ControllerConstants.TEST_RESULTS)
                     .then()
                     .statusCode(200);
 
@@ -107,7 +111,9 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
             assertEquals(1, res.seeRows().size());
 
             RestAssured.given().accept(ContentType.JSON)
-                    .get(url + ControllerConstants.TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + ControllerConstants.TEST_RESULTS)
                     .then()
                     .statusCode(200);
 
@@ -128,7 +134,9 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
             assertEquals(1, res.seeRows().size());
 
             RestAssured.given().accept(ContentType.JSON)
-                    .get(url + ControllerConstants.TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + ControllerConstants.TEST_RESULTS)
                     .then()
                     .statusCode(200);
 
@@ -181,7 +189,9 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
             assertEquals(1, res.seeRows().size());
 
             RestAssured.given().accept(ContentType.JSON)
-                    .get(url + ControllerConstants.TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + ControllerConstants.TEST_RESULTS)
                     .then()
                     .statusCode(200);
 
@@ -200,7 +210,9 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
             assertEquals(1, res.seeRows().size());
 
             RestAssured.given().accept(ContentType.JSON)
-                    .get(url + ControllerConstants.TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + ControllerConstants.TEST_RESULTS)
                     .then()
                     .statusCode(200);
 

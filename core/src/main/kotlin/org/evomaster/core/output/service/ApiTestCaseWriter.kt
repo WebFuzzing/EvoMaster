@@ -3,19 +3,23 @@ package org.evomaster.core.output.service
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.mongo.MongoDbActionResult
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraDbActionResult
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbActionResult
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbActionResult
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoDbActionResult
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.redis.RedisDbActionResult
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.redis.RedisDbAction
-import org.evomaster.core.redis.RedisDbActionResult
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.action.EvaluatedDbAction
-import org.evomaster.core.search.action.EvaluatedMongoDbAction
-import org.evomaster.core.search.action.EvaluatedRedisDbAction
+import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.utils.StringUtils
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -47,7 +51,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>,
+        sqlInsertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
+        redisInsertionVars: MutableList<Pair<String, String>>,
+        dynamoDbInsertionVars: MutableList<Pair<String, String>>,
+        neo4jInsertionVars: MutableList<Pair<String, String>>,
         testName: String
     ) {
 
@@ -67,6 +75,22 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (initializingRedisResults.any { (it as? RedisDbActionResult) == null })
             throw IllegalStateException("the type of results are expected as RedisDbActionResults")
 
+        val initializingDynamoDbActions = ind.individual.seeInitializingActions().filterIsInstance<DynamoDbAction>()
+        val initializingDynamoDbResults = ind.seeResults(initializingDynamoDbActions)
+        if (initializingDynamoDbResults.any { it !is DynamoDbActionResult })
+            throw IllegalStateException("the type of results are expected as DynamoDbActionResults")
+
+        val initializingCassandraActions = ind.individual.seeInitializingActions().filterIsInstance<CassandraDbAction>()
+        val initializingCassandraResults = (ind.seeResults(initializingCassandraActions))
+        if (initializingCassandraResults.any { (it as? CassandraDbActionResult) == null })
+            throw IllegalStateException("the type of results are expected as CassandraDbActionResults")
+
+        val initializingNeo4jActions = ind.individual.seeInitializingActions().filterIsInstance<Neo4jDbAction>()
+        val initializingNeo4jResults = ind.seeResults(initializingNeo4jActions)
+        initializingNeo4jResults.firstOrNull { it !is Neo4jDbActionResult }?.let {
+            throw IllegalStateException("the type of results are expected as Neo4jDbActionResults, but got ${it::class.java.name}")
+        }
+
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()
             .filterIsInstance<HostnameResolutionAction>()
@@ -77,7 +101,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 initializingSqlActions.indices.map {
                         EvaluatedDbAction(initializingSqlActions[it], initializingSqlActionResults[it] as SqlActionResult)
                     },
-                    lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+                    lines, sqlInsertionVars = sqlInsertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
 
         if (initializingMongoActions.isNotEmpty()) {
@@ -86,7 +110,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 initializingMongoActions.indices.map {
                     EvaluatedMongoDbAction(initializingMongoActions[it], initializingMongoResults[it] as MongoDbActionResult)
                 },
-                lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+                lines, mongoInsertionVars = mongoInsertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
 
         if (initializingRedisActions.isNotEmpty()) {
@@ -100,9 +124,46 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     EvaluatedRedisDbAction(initializingRedisActions[it], result)
                 },
                 lines,
-                insertionVars = insertionVars,
+                redisInsertionVars = redisInsertionVars,
                 skipFailure = config.skipFailureSQLInTestFile)
             // Same flag skipFailureSQLInTestFile as in mongo and sql.
+        }
+
+        if (initializingDynamoDbActions.isNotEmpty()) {
+            DynamoDbWriter.handleDynamoDbInitialization(
+                format,
+                initializingDynamoDbActions.indices.map {
+                    EvaluatedDynamoDbAction(initializingDynamoDbActions[it], initializingDynamoDbResults[it] as DynamoDbActionResult)
+                },
+                lines,
+                dynamoDbInsertionVars = dynamoDbInsertionVars,
+                skipFailure = config.skipFailureSQLInTestFile
+            )
+        }
+
+        if (initializingCassandraActions.isNotEmpty()) {
+            CassandraWriter.handleCassandraDbInitialization(
+                format,
+                initializingCassandraActions.indices.map {
+                    EvaluatedCassandraDbAction(
+                        initializingCassandraActions[it],
+                        initializingCassandraResults[it] as CassandraDbActionResult
+                    )
+                },
+                lines,
+                skipFailure = config.skipFailureSQLInTestFile)
+            // Same flag skipFailureSQLInTestFile as in mongo and sql.
+        }
+
+        if (initializingNeo4jActions.isNotEmpty()) {
+            Neo4jWriter.handleNeo4jDbInitialization(
+                format,
+                initializingNeo4jActions.indices.map {
+                    EvaluatedNeo4jDbAction(initializingNeo4jActions[it], initializingNeo4jResults[it] as Neo4jDbActionResult)
+                },
+                lines,
+                neo4jInsertionVars = neo4jInsertionVars,
+                skipFailure = config.skipFailureSQLInTestFile)
         }
 
         if (initializingHostnameResolutionActions.isNotEmpty()) {
@@ -306,22 +367,23 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
                     var needsDot = true
 
-                    val fieldName = if (format.isJava()) {
-                        "'${it.key}'"
-                    } else if (format.isKotlin()){
-                        "'${handleDollarSign(it.key)}'"
+                    val fieldName = if (format.isJavaOrKotlin()) {
+                        "'${escapeJvmGPathFieldName(it.key)}'"
                     } else if (format.isJavaScript()) {
                         //field name could have any character... need to use [] notation then
                         if (it.key.matches(Regex("^[a-zA-Z][a-zA-Z0-9]*$"))) {
                             it.key
                         } else {
                             needsDot = false
-                            "[\"${it.key}\"]"
+                            "[\"${escapeFieldNameForStringLiteral(it.key)}\"]"
                         }
                     } else if (format.isPython()) {
                         needsDot = false
-                        "[\"${it.key}\"]"
-                    //TODO need to deal with '' C#? see EscapeRest
+                        "[\"${escapeFieldNameForStringLiteral(it.key)}\"]"
+                    // C# is no longer a supported output format, but keep the legacy branch safe.
+                    } else if (format.isCsharp()) {
+                        needsDot = false
+                        "[\"${escapeFieldNameForStringLiteral(it.key)}\"]"
                     } else {
                         it.key
                     }
@@ -342,20 +404,81 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     }
                 }
     }
+
     /*
-        a quick fix on handling dollar sign in assertion
-        TODO, might move to other places to systematically handle the assertions with special symbols
+        RestAssured evaluates a field path as Groovy source after Java/Kotlin has evaluated the
+        generated string literal. Escape for both layers so that, for example, a JSON key named
+        \g is emitted as '\\\\g' in the GPath expression inside the generated JVM source.
      */
-    private fun handleDollarSign(text: String): String{
-        return text.replace("\$", "\\\$")
+    private fun escapeJvmGPathFieldName(text: String): String {
+        val escapedForGroovySingleQuotedString = text
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\b", "\\b")
+            .replace("\t", "\\t")
+
+        return GeneUtils.applyEscapes(
+            escapedForGroovySingleQuotedString,
+            mode = GeneUtils.EscapeMode.ASSERTION,
+            format = format
+        )
+    }
+
+    private fun escapeFieldNameForStringLiteral(text: String): String {
+        return GeneUtils.applyEscapes(
+            text,
+            mode = GeneUtils.EscapeMode.ASSERTION,
+            format = format
+        )
+    }
+    /**
+     * Formats a field path according to the active output format.
+     *
+     * Rules:
+     *  - Empty input returns an empty string.
+     *  - Java/Kotlin: wrap the path in single quotes and append a dot,
+     *    unless it already starts with a quote.
+     *  - Other formats: return unchanged if starting with '[' or '.';
+     *    otherwise prefix with a dot.
+     *
+     * @param fieldPath raw field path
+     * @return formatted field path for the target generator
+     */
+    private fun formatFieldPath(fieldPath: String): String {
+        if (fieldPath.isEmpty()) {
+            return ""
+        }
+        if (format.isJavaOrKotlin()) {
+            return if (fieldPath.startsWith("'")) "$fieldPath." else "'$fieldPath'."
+        }
+        return if (fieldPath.startsWith("[") || fieldPath.startsWith(".")) {
+            fieldPath
+        } else {
+            ".$fieldPath"
+        }
     }
 
     private fun handleAssertionsOnField(value: Any?, flakyValue: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
 
         if (value == null) {
+            val field = when {
+                format.isJavaScript() -> {
+                    if (format.isPlaywright()) {
+                        "(await $responseVariableName.json())"
+                    } else {
+                        "$responseVariableName.body"
+                    }
+                }
+                    else -> ""
+                }
+            val fieldWithDot = if (fieldPath.isEmpty() || fieldPath.startsWith("[")) fieldPath else if (fieldPath.startsWith(".")) fieldPath else ".$fieldPath"
             val instruction = when {
                 format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
-                format.isJavaScript() -> "expect($responseVariableName.body$fieldPath).toBe(null);"
+                format.isJavaScript() ->
+                    if (format.isPlaywright()) "expect(($field)$fieldWithDot).toBe(null);"
+                    else "expect($field$fieldPath).toBe(null);"
                 format.isCsharp() -> "Assert.True($responseVariableName$fieldPath == null);"
                 format.isPython() -> "assert $responseVariableName.json()$fieldPath is None"
                 else -> throw IllegalStateException("Format not supported yet: $format")
@@ -409,10 +532,24 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
             if (isSuitableToPrint(toPrint)) {
                 if (format.isJavaScript() || format.isPython()) {
+                    val field = when {
+                        format.isJavaScript() -> {
+                        if (format.isPlaywright()) {
+                            "(await $responseVariableName.json())"
+                        } else {
+                            "$responseVariableName.body"
+                        }
+                    }
+                        else -> ""
+                    }
+
+                    val fieldWithDot = if (fieldPath.isEmpty() || fieldPath.startsWith("[")) fieldPath else if (fieldPath.startsWith(".")) fieldPath else ".$fieldPath"
                     val assertionContent = if (format.isPython()) {
                         "assert $responseVariableName.json()$fieldPath == $toPrint"
+                    }else if (format.isPlaywright()){ // playwright
+                        "expect($field$fieldWithDot).toBe($toPrint);"
                     }else { // javascript
-                        "expect($responseVariableName.body$fieldPath).toBe($toPrint);"
+                        "expect($field$fieldPath).toBe($toPrint);" // ($field$)fieldPath
                     }
 
                     if (flakyValue == null || flakyValue == value){
@@ -560,6 +697,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         }
 
         if (format.isJavaScript()) {
+            if (format.isPlaywright()) {
+                return "expect(await $responseVariableName.text()).toBe(\"\");"
+            }
             /*
                 This is super ugly... but there is no clean solution for this
                 in Jest nor SuperAgent... :(
@@ -595,8 +735,15 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 val path = if (fieldPath.isEmpty()) "" else "$fieldPath."
                 ".body(\"${path}size()\", equalTo($expectedSize))"
             }
-            format.isJavaScript() ->
-                "expect($responseVariableName.body$fieldPath.length).toBe($expectedSize);"
+            format.isJavaScript() -> {
+                if (format.isPlaywright()) {
+                    val field = formatFieldPath(fieldPath)
+                    "expect((await $responseVariableName.json())$field).toHaveLength($expectedSize);"
+                } else {
+                    val field = "$responseVariableName.body"
+                    "expect($field$fieldPath.length).toBe($expectedSize);" // ($field$)fieldPath
+                }
+            }
             format.isCsharp() ->
                 "Assert.True($responseVariableName$fieldPath.Count == $expectedSize);"
             format.isPython() ->
@@ -616,10 +763,12 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             return ".body(containsString(\"$content\"))"
         }
 
-        if (format.isJavaScript()) {
-            return "expect($responseVariableName.text).toContain(\"$content\");"
-
+        if (format.isPlaywright()) {
+            return "expect(await $responseVariableName.text()).toContain(\"$content\");"
         }
+
+        if (format.isJavaScript()) {
+            return "expect($responseVariableName.text).toContain(\"$content\");"        }
 
         if (format.isCsharp()) {
             val k = when {

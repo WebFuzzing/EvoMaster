@@ -24,6 +24,14 @@ internal class EMConfigTest{
 
 
     @Test
+    fun testNoExperimentalInDefaultConfigs(){
+
+        val config = EMConfig()
+        val activeExperimentals = config.activatedExperimentalFeatures()
+        assertEquals(0, activeExperimentals.size, "Activated: ${activeExperimentals.joinToString(", ")}")
+    }
+
+    @Test
     fun testChangeSetEnum(){
 
         val parser = EMConfig.getOptionParser()
@@ -761,5 +769,84 @@ internal class EMConfigTest{
         val optionAllSpecifiedNotRest = parser.parse("--useEnvVarsForPathInTests", "true", "--jdkEnvVarName", "JDK_HOME", "--sutDistEnvVarName", "WFC_HOME", "--sutJarEnvVarName", "sut-jar.jar", "--problemType", "RPC")
         assertThrows (Exception::class.java,{config.updateProperties(optionAllSpecifiedNotRest)})
 
+    }
+
+    @Test
+    fun testAsyncApiNeedsTheDriverEvenAsABlackBox(){
+
+        val parser = EMConfig.getOptionParser()
+
+        val rest = EMConfig()
+        rest.updateProperties(parser.parse("--$blackBox", "true", "--problemType", "REST"))
+        assertFalse(rest.usesDriver())
+
+        /*
+            There is no universal wire to a message-driven service, so the driver holds the
+            connection to the broker even when the service itself is a black box.
+         */
+        val asyncApi = EMConfig()
+        asyncApi.updateProperties(parser.parse("--$blackBox", "true", "--problemType", "ASYNCAPI", "--createTests", "false"))
+        assertTrue(asyncApi.usesDriver())
+
+        val whiteBox = EMConfig()
+        whiteBox.updateProperties(parser.parse("--$blackBox", "false"))
+        assertTrue(whiteBox.usesDriver())
+    }
+
+    @Test
+    fun testAsyncApiCannotWriteTestsYet(){
+
+        val parser = EMConfig.getOptionParser()
+
+        //createTests is on by default, and there is no test writer for AsyncAPI yet
+        val e = assertThrows<ConfigProblemException> {
+            EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI"))
+        }
+        assertTrue(e.message!!.contains("createTests"), e.message)
+
+        //so a run has to say it only wants the search
+        EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI", "--createTests", "false"))
+    }
+
+    @Test
+    fun testAsyncApiCannotSeedTestsYet(){
+
+        val parser = EMConfig.getOptionParser()
+
+        assertThrows<ConfigProblemException> {
+            EMConfig().updateProperties(parser.parse(
+                "--problemType", "ASYNCAPI", "--createTests", "false", "--seedTestCases", "true", "--seedTestCasesPath", "seeds.json"))
+        }
+    }
+
+
+    @Test
+    fun testSetFalseOnDependsOn(){
+
+        val parser = EMConfig.getOptionParser()
+
+        val cfg = EMConfig()
+        cfg.blackBox = false
+        //generateNeo4jData depends on true for extractNeo4jExecutionInfo
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "true", "--extractNeo4jExecutionInfo", "true"))
+        assertEquals(true, cfg.generateNeo4jData)
+        assertEquals(true, cfg.extractNeo4jExecutionInfo)
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "false", "--extractNeo4jExecutionInfo", "true"))
+        assertEquals(false, cfg.generateNeo4jData)
+        assertEquals(true, cfg.extractNeo4jExecutionInfo)
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "false", "--extractNeo4jExecutionInfo", "false"))
+        assertEquals(false, cfg.generateNeo4jData)
+        assertEquals(false, cfg.extractNeo4jExecutionInfo)
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "true", "--extractNeo4jExecutionInfo", "true"))
+        assertEquals(true, cfg.generateNeo4jData)
+        assertEquals(true, cfg.extractNeo4jExecutionInfo)
+
+        assertThrows<ConfigProblemException> {
+            cfg.updateProperties(parser.parse("--generateNeo4jData", "true", "--extractNeo4jExecutionInfo", "false"))
+        }
     }
 }

@@ -69,7 +69,7 @@ object LlmSupport {
         url: String? = null,
         modelName: String? = null,
         timeoutSeconds: Long = 60,
-        temperature: Double = 0.3,
+        temperature: Double = 0.6,
     ): ChatModel {
 
         if(timeoutSeconds < 0){

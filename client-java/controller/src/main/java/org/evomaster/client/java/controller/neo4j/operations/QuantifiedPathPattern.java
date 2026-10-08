@@ -20,6 +20,13 @@ import java.util.Objects;
  * sub-pattern are kept in {@link #getConditions()}, scoped to this QPP rather than mixed into
  * the outer operation's list — so when the calculator expands the repetition it can clone the
  * sub-pattern's conditions per hop.
+ * <br>
+ * {@link #getEntryVariable()} and {@link #getExitVariable()} are the outer pattern variables this
+ * QPP splices between (e.g. {@code a} and {@code b} in {@code (a) ((x)-[]->(y)){1,3} (b)}), so the
+ * calculator can bind the first/last repetition's boundary node to the surrounding pattern. Either
+ * is {@code null} when there is no outer node on that side (the QPP opens or closes the pattern).
+ * When two QPPs are directly adjacent with no node between them, the parser binds them to the same
+ * synthesized variable, so this is never {@code null} because two QPPs happen to touch.
  */
 public class QuantifiedPathPattern {
 
@@ -27,17 +34,26 @@ public class QuantifiedPathPattern {
     private final List<CypherCondition> conditions;
     private final int min;
     private final Integer max;
+    private final String entryVariable;
+    private final String exitVariable;
 
     public QuantifiedPathPattern(MatchPattern subPattern, int min, Integer max) {
-        this(subPattern, Collections.<CypherCondition>emptyList(), min, max);
+        this(subPattern, Collections.<CypherCondition>emptyList(), min, max, null, null);
     }
 
     public QuantifiedPathPattern(MatchPattern subPattern, List<CypherCondition> conditions, int min, Integer max) {
+        this(subPattern, conditions, min, max, null, null);
+    }
+
+    public QuantifiedPathPattern(MatchPattern subPattern, List<CypherCondition> conditions, int min, Integer max,
+                                 String entryVariable, String exitVariable) {
         this.subPattern = Objects.requireNonNull(subPattern, "subPattern must not be null");
         this.conditions = Collections.unmodifiableList(
                 conditions != null ? new ArrayList<>(conditions) : new ArrayList<>());
         this.min = min;
         this.max = max;
+        this.entryVariable = entryVariable;
+        this.exitVariable = exitVariable;
     }
 
     public MatchPattern getSubPattern() {
@@ -64,13 +80,36 @@ public class QuantifiedPathPattern {
         return max == null;
     }
 
+    /** The outer variable immediately before this QPP, or {@code null} if it opens the pattern. */
+    public String getEntryVariable() {
+        return entryVariable;
+    }
+
+    /** The outer variable immediately after this QPP, or {@code null} if it closes the pattern. */
+    public String getExitVariable() {
+        return exitVariable;
+    }
+
+    /** Returns a copy of this QPP with its entry/exit variables replaced. */
+    public QuantifiedPathPattern withBoundary(String newEntryVariable, String newExitVariable) {
+        return new QuantifiedPathPattern(subPattern, conditions, min, max, newEntryVariable, newExitVariable);
+    }
+
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("QuantifiedPathPattern{").append(subPattern);
+        StringBuilder sb = new StringBuilder("QuantifiedPathPattern{");
+        if (entryVariable != null) {
+            sb.append("entry=").append(entryVariable).append(", ");
+        }
+        sb.append(subPattern);
         if (!conditions.isEmpty()) {
             sb.append(", conditions=").append(conditions);
         }
-        sb.append(" {").append(min).append(",").append(max != null ? max : "").append("}}");
+        sb.append(" {").append(min).append(",").append(max != null ? max : "").append("}");
+        if (exitVariable != null) {
+            sb.append(", exit=").append(exitVariable);
+        }
+        sb.append("}");
         return sb.toString();
     }
 }

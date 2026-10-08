@@ -531,6 +531,30 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingInitDynamoDb(boolean executingInitDynamoDb) {
+        checkInstrumentation();
+        serverController.setExecutingInitDynamoDb(executingInitDynamoDb);
+        // sync executingInitDynamoDb on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitDynamoDB(executingInitDynamoDb);
+    }
+
+    @Override
+    public final void setExecutingInitCassandra(boolean executingInitCassandra) {
+        checkInstrumentation();
+        serverController.setExecutingInitCassandra(executingInitCassandra);
+        // sync executingInitCassandra on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitCassandra(executingInitCassandra);
+    }
+
+    @Override
+    public final void setExecutingInitNeo4j(boolean executingInitNeo4j) {
+        checkInstrumentation();
+        serverController.setExecutingInitNeo4j(executingInitNeo4j);
+        // sync executingInitNeo4j on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitNeo4J(executingInitNeo4j);
+    }
+
+    @Override
     public final void setExecutingAction(boolean executingAction){
         checkInstrumentation();
         serverController.setExecutingAction(executingAction);

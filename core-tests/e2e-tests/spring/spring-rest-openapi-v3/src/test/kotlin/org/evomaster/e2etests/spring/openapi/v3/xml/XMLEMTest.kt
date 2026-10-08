@@ -33,6 +33,8 @@ class XMLEMTest : SpringTestBase() {
             true,
             { args: MutableList<String> ->
 
+                setOption(args, "enableXmlWithAttributesSupport", "true")
+
                 val solution = initAndRun(args)
                 assertTrue(solution.individuals.size >= 1)
 

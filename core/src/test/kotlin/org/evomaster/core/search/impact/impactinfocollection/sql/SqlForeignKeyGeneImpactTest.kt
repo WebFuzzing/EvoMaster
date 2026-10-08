@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact

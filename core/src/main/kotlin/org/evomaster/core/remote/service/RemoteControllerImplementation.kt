@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
@@ -35,6 +36,12 @@ import javax.ws.rs.core.Response
 class RemoteControllerImplementation() : RemoteController{
 
     companion object {
+
+        /**
+         * Query parameter telling the driver whether SQL heuristics are computed from what it
+         * reads back, rather than from what was inserted.
+         */
+        private const val QUERY_FROM_DATABASE = "queryFromDatabase"
         val log: Logger = LoggerFactory.getLogger(RemoteControllerImplementation::class.java)
     }
 
@@ -328,20 +335,23 @@ class RemoteControllerImplementation() : RemoteController{
         descriptiveIds: Boolean
     ): TestResultsDto? {
 
-        val queryParam = ids.joinToString(",")
-
         if(epc?.isInSearch() == true) stc?.averageOverheadMsTestResultsSubset?.doStartTimer()
 
+        /*
+            The ids go in the body payload, and not as a query parameter, because there can be
+            thousands of them. Sent in the URI they would not fit in the request line, and the
+            driver would answer 414 before even receiving the request.
+            Note: an empty list means "all targets", and the driver treats it as such.
+         */
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
-                    .queryParam("ids", queryParam)
                     .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
                     .queryParam("fullyCovered", fullyCovered)
                     .queryParam("descriptiveIds", descriptiveIds)
-                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                    .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
                     .request(MediaType.APPLICATION_JSON_TYPE)
-                    .get()
+                    .post(Entity.entity(ids, MediaType.APPLICATION_JSON_TYPE))
         }
         if(epc?.isInSearch() == true) stc?.averageOverheadMsTestResultsSubset?.addElapsedTime()
 
@@ -360,7 +370,7 @@ class RemoteControllerImplementation() : RemoteController{
 
         val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
 
-        if(!checkResponse(response, dto, "Failed to retrieve target coverage for $queryParam")){
+        if(!checkResponse(response, dto, "Failed to retrieve target coverage for ${ids.size} ids")){
             return null
         }
 
@@ -394,7 +404,7 @@ class RemoteControllerImplementation() : RemoteController{
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.NEW_ACTION)
-                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                    .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
                     .request()
                     .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
         }
@@ -402,6 +412,40 @@ class RemoteControllerImplementation() : RemoteController{
         val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<ActionResponseDto>>() {})
 
         if (!checkResponse(response, dto, "Failed to execute RPC call")) {
+            return null
+        }
+
+        return dto?.data
+    }
+
+    override fun executeNewAsyncApiActionAndGetReply(actionDto: ActionDto): AsyncApiReplyDto? {
+        return executeNewAction(
+            actionDto,
+            object : GenericType<WrappedResponseDto<AsyncApiReplyDto>>() {},
+            "Failed to publish an AsyncAPI message")
+    }
+
+    /**
+     * Hand one action to the driver to execute, and read back what it reports. Null when the
+     * driver could not be reached, or answered with an error.
+     */
+    private fun <T> executeNewAction(
+        actionDto: ActionDto,
+        type: GenericType<WrappedResponseDto<T>>,
+        errorMessage: String
+    ): T? {
+
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.NEW_ACTION)
+                    .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
+                    .request()
+                    .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response, type)
+
+        if (!checkResponse(response, dto, errorMessage)) {
             return null
         }
 
@@ -468,7 +512,7 @@ class RemoteControllerImplementation() : RemoteController{
             getWebTarget()
                 .path(ControllerConstants.SCHEDULE_TASKS_COMMAND)
                 // shall we set `killSwitch` as true?
-                .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)
                 .request()
                 .post(Entity.entity(invocationDto, MediaType.APPLICATION_JSON_TYPE))
         }
@@ -529,6 +573,36 @@ class RemoteControllerImplementation() : RemoteController{
         return executeRedisDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<RedisInsertionResultsDto>>() {})
     }
 
+    override fun executeCassandraDatabaseInsertions(dto: CassandraDatabaseCommandDto): CassandraInsertionResultsDto? {
+        return executeCassandraDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<CassandraInsertionResultsDto>>() {})
+    }
+
+    override fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto? {
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.NEO4J_INSERTION)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
+        return getDtoFromResponse(
+            response,
+            object : GenericType<WrappedResponseDto<Neo4jInsertionResultsDto>>() {}
+        )?.data
+    }
+
+    override fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto? {
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.DYNAMODB_INSERTION)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
+        return getDtoFromResponse(
+            response,
+            object : GenericType<WrappedResponseDto<DynamoDbInsertionResultsDto>>() {}
+        )?.data
+    }
+
     private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
 
         val response = makeHttpCall {
@@ -571,6 +645,25 @@ class RemoteControllerImplementation() : RemoteController{
         val response = makeHttpCall {
             getWebTarget()
                 .path(ControllerConstants.REDIS_INSERTION)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response, type)
+
+        return dto?.data
+    }
+
+    /**
+     * execute [dto] through [ControllerConstants.CASSANDRA_INSERTION] endpoints of EMController,
+     * @return execution response
+     */
+    private fun <T> executeCassandraDatabaseCommandAndGetResults(dto: CassandraDatabaseCommandDto,
+                                                                 type: GenericType<WrappedResponseDto<T>>): T? {
+
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.CASSANDRA_INSERTION)
                 .request()
                 .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
         }

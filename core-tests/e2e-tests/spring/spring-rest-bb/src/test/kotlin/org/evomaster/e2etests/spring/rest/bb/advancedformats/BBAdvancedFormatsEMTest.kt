@@ -30,12 +30,25 @@ class BBAdvancedFormatsEMTest : SpringTestBase() {
     @EnumSource
     fun testBlackBoxOutput(outputFormat: OutputFormat) {
 
+        val targets = listOf(
+            "uuid", "uri", "email",
+            "int8", "int16", "uint8", "uint16", "uint32", "uint64",
+            "hostname", "idn-hostname", "base64url", "json-pointer", "media-range",
+            "uri-reference", "iri-reference", "regex", "sf-boolean",
+            "iri", "idn-email", "relative-json-pointer", "sf-string", "sf-token", "sf-binary",
+            "uri-template",
+            "decimal", "decimal128", "sf-decimal",
+            "time", "time-local", "date-time-local", "duration", "http-date",
+            "ipv4", "ipv6",
+            "unixtime", "double-int", "sf-integer", "commonmark", "html"
+        )
+
         executeAndEvaluateBBTest(
             outputFormat,
             "advancedformats",
-            100,
+            1000,
             3,
-            listOf("uuid","uri","email")
+            targets
         ){ args: MutableList<String> ->
 
             setOption(args, "schema", "$baseUrlOfSut/openapi-bbadvancedformats.json")
@@ -45,9 +58,9 @@ class BBAdvancedFormatsEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/advancedformats/uuid", "OK")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/advancedformats/uri", "OK")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/advancedformats/email", "OK")
+            targets.forEach {
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/advancedformats/$it", "OK")
+            }
         }
     }
 }

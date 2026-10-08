@@ -1,7 +1,7 @@
 package org.evomaster.core.output.naming
 
 import com.webfuzzing.commons.faults.FaultCategory
-import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -10,7 +10,7 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.action.EvaluatedAction
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 
 abstract class ActionTestCaseNamingStrategy(
     solution: Solution<*>,

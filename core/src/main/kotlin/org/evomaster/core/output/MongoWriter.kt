@@ -17,7 +17,7 @@ object MongoWriter {
      * @param mongoDbInitialization contains the db actions to be generated
      * @param lines is used to save generated textual lines with respects to [mongoDbInitialization]
      * @param groupIndex specifies an index of a group of this [mongoDbInitialization]
-     * @param insertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second)
+     * @param mongoInsertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second)
      * @param skipFailure specifies whether to skip failure tests
      */
     fun handleMongoDbInitialization(
@@ -25,7 +25,7 @@ object MongoWriter {
         mongoDbInitialization: List<EvaluatedMongoDbAction>,
         lines: Lines,
         groupIndex: String = "",
-        insertionVars: MutableList<Pair<String, String>>,
+        mongoInsertionVars: MutableList<Pair<String, String>>,
         skipFailure: Boolean
     ) {
 
@@ -33,9 +33,9 @@ object MongoWriter {
             return
         }
 
-        val insertionVar = "insertions${groupIndex}"
+        val insertionVar = "mongoInsertions${groupIndex}"
         val insertionVarResult = "${insertionVar}result"
-        val previousVar = insertionVars.joinToString(", ") { it.first }
+        val previousVar = mongoInsertionVars.joinToString(", ") { it.first }
         mongoDbInitialization
             .filter { !skipFailure || it.mongoResult.getInsertExecutionResult() }
             .forEachIndexed { index, evaluatedMongoDbAction ->
@@ -58,8 +58,9 @@ object MongoWriter {
                         .forEach { g ->
                             when (g) {
                                 is ObjectGene -> {
-                                    val printableValue =
-                                        StringEscapeUtils.escapeJava(g.getValueAsPrintableString(mode = GeneUtils.EscapeMode.EJSON))
+                                    val ejson = g.getValueAsPrintableString(mode = GeneUtils.EscapeMode.EJSON)
+                                    val printableValue = if (format.isJava()) escapeEjsonForJavaLiteral(ejson)
+                                    else StringEscapeUtils.escapeJava(ejson)
                                     val adaptedPrintableValue = if (format.isKotlin())
                                         printableValue.replace(
                                             "$",
@@ -91,8 +92,26 @@ object MongoWriter {
         )
         lines.appendSemicolon()
 
-        insertionVars.add(insertionVar to insertionVarResult)
+        mongoInsertionVars.add(insertionVar to insertionVarResult)
 
     }
+
+    /**
+     * Escapes literal backslash-u sequences in EJSON for a Java string literal.
+     * Java translates eligible Unicode escapes before parsing string literals,
+     * so those sequences can make otherwise valid generated tests fail to compile.
+     * Octal escapes preserve the runtime backslashes without changing genuine
+     * Unicode escapes emitted by [StringEscapeUtils.escapeJava].
+     */
+    internal fun escapeEjsonForJavaLiteral(value: String): String {
+        return StringEscapeUtils.escapeJava(value).replace(ESCAPED_BACKSLASH_U) { match ->
+            val slashCount = match.value.length - 1
+            "\\134".repeat(slashCount / 2) + "u"
+        }
+    }
+
+    // Literal backslashes produce complete even-length runs before 'u'. A genuine
+    // Unicode escape, including one after literal backslashes, has an odd-length run.
+    private val ESCAPED_BACKSLASH_U = Regex("""(?<!\\)(\\\\)+u""")
 
 }

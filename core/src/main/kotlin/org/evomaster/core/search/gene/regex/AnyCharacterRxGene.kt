@@ -26,17 +26,6 @@ private const val ANY_CHARACTER_RX_GENE_DEFAULT_NAME = "."
 private const val firstSurrogateChar = '\uD800'
 private const val lastSurrogateChar = '\uDFFF'
 
-/**
- * These are the characters that are considered line terminators by default (i.e.: no flags used). These are used here
- * as the `.` regex matches all characters but line terminators, unless `DOT_ALL` flag is enabled.
- */
-private val defaultLineTerminators = listOf('\n', '\r', '\u0085', '\u2028', '\u2029').map{ CharacterRange(it) }
-/**
- * When the `UNIX_LINES` flag is on, only `\n` is considered a line terminator. These are used here as the `.` regex matches
- * all characters but line terminators, unless `DOT_ALL` flag is enabled.
- */
-private val unixLinesModeLineTerminators = listOf('\n').map{ CharacterRange(it) }
-
 class AnyCharacterRxGene(
     val flags: RegexFlags = RegexFlags()
 ) : RxAtom, SimpleGene(ANY_CHARACTER_RX_GENE_DEFAULT_NAME) {
@@ -52,8 +41,8 @@ class AnyCharacterRxGene(
             so for now we avoid surrogates altogether
          */
         val dotAllValidRanges = MultiCharacterRange(true,listOf(CharacterRange(firstSurrogateChar,lastSurrogateChar))) // all characters accepted
-        val defaultValidRanges = MultiCharacterRange(true,defaultLineTerminators).intersect(dotAllValidRanges)
-        val unixLinesValidRanges = MultiCharacterRange(true, unixLinesModeLineTerminators).intersect(dotAllValidRanges)
+        val defaultValidRanges = MultiCharacterRange(true,RegexFlags.defaultLineTerminators).intersect(dotAllValidRanges)
+        val unixLinesValidRanges = MultiCharacterRange(true, RegexFlags.unixLinesModeLineTerminators).intersect(dotAllValidRanges)
     }
 
     var value: Char = DEFAULT_VALUE // this default value is throwaway as randomize should be called before first usage
@@ -131,4 +120,38 @@ class AnyCharacterRxGene(
         return true
     }
 
+    /**
+     * 1 if [value]'s first character is within [validRanges] (i.e. one `.` itself could
+     * render, given the current flags), else 0.
+     * @see [RxAbsorbable.absorbableCount]
+     */
+    override fun absorbableCount(value: String): Int {
+        if (value.isEmpty()) {
+            return 0
+        }
+        return if (validRanges.contains(value[0])) {
+            1
+        } else {
+            0
+        }
+    }
+
+    /** Always false: `.` always renders exactly one character.
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
+    override val canBeZeroWidth: Boolean = false
+
+    /**
+     * Forces [value]'s first character onto this gene if `.` could render it; mirrors
+     * [absorbableCount], so it never mutates when [absorbableCount] would return 0.
+     * @see [RxAbsorbable.tryForce]
+     */
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        val n = absorbableCount(value)
+        if (n == 1) {
+            this.value = value[0]
+        }
+        return n
+    }
 }

@@ -1,23 +1,48 @@
 package org.evomaster.client.java.controller.mongo;
 
+import org.evomaster.client.java.controller.internal.db.mongo.MongoDistanceWithMetrics;
 import org.evomaster.client.java.controller.mongo.operations.*;
-import org.evomaster.client.java.controller.mongo.operations.synthetic.*;
-import org.evomaster.client.java.distance.heuristics.DistanceHelper;
-import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
+import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
+import static org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculatorHelper.*;
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
-import static java.lang.Math.abs;
+import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.*;
+import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.GeoSpatialModel.SPHERICAL;
+import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
+import static org.evomaster.client.java.sql.heuristic.SqlExpressionEvaluator.ComparisonOperatorType.*;
 
 import java.util.*;
-import java.util.function.DoubleUnaryOperator;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
+/**
+ * The MongoHeuristicsCalculator class provides methods to compute heuristic scores for MongoDB-like
+ * query operations against a set of documents. These heuristics aim to measure how closely a
+ * document satisfies the given query conditions. The class supports a variety of query operators,
+ * including equality, inequality, comparison, and logical operations.
+ *
+ */
 public class MongoHeuristicsCalculator {
 
-    public static final double MIN_DISTANCE_TO_TRUE_VALUE = 1.0;
+    private static final String JAVA_UTIL_LIST = "java.util.List";
+    private static final String NULL = "null";
 
+    /**
+     * A handler responsible for managing taint propagation and tracking
+     * during the execution of heuristic calculations. This object is used
+     * to process and handle specific taint-related operations, such as
+     * string equality comparisons and regular expression evaluations.
+     */
     private final TaintHandler taintHandler;
+
+    /**
+     * A helper component for handling the internal heuristic computation logic
+     * within the context of Mongo operations. It provides utilities and lower-level
+     * methods that are invoked by the main computation flow in
+     * {@code MongoHeuristicsCalculator}.
+     */
+    private final MongoHeuristicsCalculatorHelper helper;
 
     public MongoHeuristicsCalculator() {
         this(null);
@@ -25,498 +50,575 @@ public class MongoHeuristicsCalculator {
 
     public MongoHeuristicsCalculator(TaintHandler taintHandler) {
         this.taintHandler = taintHandler;
+        this.helper = new MongoHeuristicsCalculatorHelper(taintHandler);
+    }
+
+
+    public MongoDistanceWithMetrics computeDistanceDocuments(Object query, Iterable<?> documents) {
+        QueryOperation queryOperation = parseQuery(query);
+
+        double maxOfTrue = 0d;
+        boolean isFirstDocument = true;
+        int documentCount = 0;
+        for (Object doc : documents) {
+            double ofTrue = computeHeuristicQueryOperation(queryOperation, doc).getOfTrue();
+            if (isFirstDocument || ofTrue > maxOfTrue) {
+                maxOfTrue = ofTrue;
+            }
+            isFirstDocument = false;
+            documentCount++;
+        }
+
+        Truthness heuristicScoreCollection = documentCount>0 ? TRUE_C : C_FALSE;
+        Truthness hCondition = buildSafeScaledTruthness(maxOfTrue);
+
+        Truthness hQuery = buildAndAggregationTruthness(
+                heuristicScoreCollection,
+                hCondition);
+
+        // Map truthness to distance where 0 is true.
+        // If it's true, distance 0.
+        // If it's false, distance is 1.0 - ofTrue.
+        double distance = hQuery.isTrue() ? 0.0 : 1.0 - hQuery.getOfTrue();
+        return new MongoDistanceWithMetrics(distance, documentCount);
     }
 
     /**
      * Compute a "branch" distance heuristics.
      *
-     * @param query the QUERY clause which we want to resolve as true
-     * @param doc   a document in the database for which we want to calculate the distance
+     * @param query    the QUERY clause that we want to resolve as true
+     * @param document a document in the database for which we want to calculate the distance
      * @return a branch distance, where 0 means that the document would make the QUERY resolve as true
      */
-    public double computeExpression(Object query, Object doc) {
-
-        QueryOperation operation = getOperation(query);
-        return computeHeuristic(operation, doc);
+    Truthness computeHeuristicDocument(Object query, Object document) {
+        QueryOperation operation = parseQuery(query);
+        return computeHeuristicQueryOperation(operation, document);
     }
 
-    private QueryOperation getOperation(Object query) {
+    private QueryOperation parseQuery(Object query) {
         return new QueryParser().parse(query);
     }
 
-    private double computeHeuristic(QueryOperation operation, Object doc) {
-        if (operation instanceof EqualsOperation<?>) {
-            return calculateDistanceForEquals((EqualsOperation<?>) operation, doc);
-        } else if (operation instanceof NotEqualsOperation<?>) {
-            return calculateDistanceForNotEquals((NotEqualsOperation<?>) operation, doc);
-        } else if (operation instanceof GreaterThanOperation<?>) {
-            return calculateDistanceForGreaterThan((GreaterThanOperation<?>) operation, doc);
-        } else if (operation instanceof GreaterThanEqualsOperation<?>) {
-            return calculateDistanceForGreaterEqualsThan((GreaterThanEqualsOperation<?>) operation, doc);
-        } else if (operation instanceof LessThanOperation<?>) {
-            return calculateDistanceForLessThan((LessThanOperation<?>) operation, doc);
-        } else if (operation instanceof LessThanEqualsOperation<?>) {
-            return calculateDistanceForLessEqualsThan((LessThanEqualsOperation<?>) operation, doc);
-        } else if (operation instanceof AndOperation) {
-            return calculateDistanceForAnd((AndOperation) operation, doc);
+    private Truthness computeHeuristicQueryOperation(QueryOperation operation, Object value) {
+        Objects.requireNonNull(operation);
+
+        if (operation instanceof AndOperation) {
+            return computeHeuristic((AndOperation) operation, value);
         } else if (operation instanceof OrOperation) {
-            return calculateDistanceForOr((OrOperation) operation, doc);
+            return computeHeuristic((OrOperation) operation, value);
         } else if (operation instanceof NorOperation) {
-            return calculateDistanceForNor((NorOperation) operation, doc);
-        } else if (operation instanceof InOperation<?>) {
-            return calculateDistanceForIn((InOperation<?>) operation, doc);
-        } else if (operation instanceof NotInOperation<?>) {
-            return calculateDistanceForNotIn((NotInOperation<?>) operation, doc);
-        } else if (operation instanceof AllOperation<?>) {
-            return calculateDistanceForAll((AllOperation<?>) operation, doc);
-        } else if (operation instanceof InvertedAllOperation<?>) {
-            return calculateDistanceForInvertedAll((InvertedAllOperation<?>) operation, doc);
-        } else if (operation instanceof SizeOperation) {
-            return calculateDistanceForSize((SizeOperation) operation, doc);
-        } else if (operation instanceof InvertedSizeOperation) {
-            return calculateDistanceForInvertedSize((InvertedSizeOperation) operation, doc);
-        } else if (operation instanceof ElemMatchOperation) {
-            return calculateDistanceForElemMatch((ElemMatchOperation) operation, doc);
-        } else if (operation instanceof ExistsOperation) {
-            return calculateDistanceForExists((ExistsOperation) operation, doc);
-        } else if (operation instanceof ModOperation) {
-            return calculateDistanceForMod((ModOperation) operation, doc);
-        } else if (operation instanceof InvertedModOperation) {
-            return calculateDistanceForInvertedMod((InvertedModOperation) operation, doc);
-        } else if (operation instanceof NotOperation) {
-            return calculateDistanceForNot((NotOperation) operation, doc);
+            return computeHeuristic((NorOperation) operation, value);
+        } else if (operation instanceof EmptyOperation) {
+            return computeHeuristic((EmptyOperation) operation, value);
+        } else if (operation instanceof QueryOperationWithFieldPath) {
+            return computeHeuristic((QueryOperationWithFieldPath) operation, value);
+        } else {
+            throw new IllegalArgumentException("Unsupported QueryOperation type: " + operation.getClass().getName());
+        }
+    }
+
+    private Truthness computeHeuristic(QueryOperationWithFieldPath operation, Object document) {
+        Objects.requireNonNull(operation);
+
+        if (operation instanceof ExistsOperation) {
+            return computeHeuristic((ExistsOperation) operation, document);
         } else if (operation instanceof TypeOperation) {
-            return calculateDistanceForType((TypeOperation) operation, doc);
-        } else if (operation instanceof InvertedTypeOperation) {
-            return calculateDistanceForInvertedType((InvertedTypeOperation) operation, doc);
+            return computeHeuristic((TypeOperation) operation, document);
+        } else if (operation instanceof NotOperation) {
+            return computeHeuristicQueryOperation(((NotOperation) operation).getCondition(), document).invert();
+        } else {
+            final String fieldPath = operation.getFieldPath();
+            if (fieldPath.equalsIgnoreCase("$")) {
+                return evaluate(operation, document);
+            }
+            if (!isDocument(document)) {
+                return C_FALSE; // cannot extract the field from a non-document value
+            }
+            final List<Object> actualValues = FieldPathResolver.getActualValues(document, fieldPath);
+            if (actualValues.size() == 1) {
+                final Object actualValue = actualValues.get(0);
+                return evaluate(operation, actualValue);
+            }
+            Truthness[] truthnesses = actualValues.stream()
+                    .map(actualValue -> evaluate(operation, actualValue))
+                    .toArray(Truthness[]::new);
+            if (isNegatedOperation(operation)) {
+                // a negated operation ($ne, $nin) holds only if it holds for every value the path reaches
+                return buildAndAggregationTruthness(truthnesses);
+            } else {
+                // any other operation holds if it holds for at least one value the path reaches
+                return buildSafeScaledTruthness(buildOrAggregationTruthness(truthnesses));
+            }
+        }
+    }
+
+    private static boolean isNegatedOperation(QueryOperation operation) {
+        return operation instanceof NotEqualsOperation<?> || operation instanceof NotInOperation<?>;
+    }
+
+    private Truthness evaluate(QueryOperation operation, Object actualValue) {
+        if (operation instanceof EqualsOperation<?>) {
+            return evaluate((EqualsOperation<?>) operation, actualValue);
+        } else if (operation instanceof NotEqualsOperation<?>) {
+            return evaluate((NotEqualsOperation<?>) operation, actualValue);
+        } else if (operation instanceof GreaterThanOperation<?>) {
+            return evaluate((GreaterThanOperation<?>) operation, actualValue);
+        } else if (operation instanceof GreaterThanEqualsOperation<?>) {
+            return evaluate((GreaterThanEqualsOperation<?>) operation, actualValue);
+        } else if (operation instanceof LessThanOperation<?>) {
+            return evaluate((LessThanOperation<?>) operation, actualValue);
+        } else if (operation instanceof LessThanEqualsOperation<?>) {
+            return evaluate((LessThanEqualsOperation<?>) operation, actualValue);
+        } else if (operation instanceof InOperation<?>) {
+            return evaluate((InOperation<?>) operation, actualValue);
+        } else if (operation instanceof NotInOperation<?>) {
+            return evaluate((NotInOperation<?>) operation, actualValue);
+        } else if (operation instanceof AllOperation<?>) {
+            return evaluate((AllOperation<?>) operation, actualValue);
+        } else if (operation instanceof SizeOperation) {
+            return evaluate((SizeOperation) operation, actualValue);
+        } else if (operation instanceof ModOperation) {
+            return evaluate((ModOperation) operation, actualValue);
+        } else if (operation instanceof BitsAllClearOperation) {
+            return evaluate((BitsAllClearOperation) operation, actualValue);
+        } else if (operation instanceof BitsAllSetOperation) {
+            return evaluate((BitsAllSetOperation) operation, actualValue);
+        } else if (operation instanceof BitsAnyClearOperation) {
+            return evaluate((BitsAnyClearOperation) operation, actualValue);
+        } else if (operation instanceof BitsAnySetOperation) {
+            return evaluate((BitsAnySetOperation) operation, actualValue);
+        } else if (operation instanceof NotOperation) {
+            return evaluate((NotOperation) operation, actualValue);
+        } else if (operation instanceof RegexOperation) {
+            return evaluate((RegexOperation) operation, actualValue);
         } else if (operation instanceof NearSphereOperation) {
-            return calculateDistanceForNearSphere((NearSphereOperation) operation, doc);
+            return evaluate((NearSphereOperation) operation, actualValue);
+        } else if (operation instanceof NearOperation) {
+            return evaluate((NearOperation) operation, actualValue);
+        } else if (operation instanceof ElemMatchOperation) {
+            return evaluate((ElemMatchOperation) operation, actualValue);
+        } else if (operation instanceof GeoIntersectsOperation) {
+            return evaluate((GeoIntersectsOperation) operation, actualValue);
+        } else if (operation instanceof GeoWithinOperation) {
+            return evaluate((GeoWithinOperation) operation, actualValue);
         } else {
-            return Double.MAX_VALUE;
+            throw new IllegalArgumentException("Unsupported QueryOperation type: " + operation.getClass().getName());
+        }
+
+    }
+
+    private Truthness evaluate(RegexOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+
+        final Pattern pattern = operation.getPattern();
+        if (actualValue == null) {
+            return C_FALSE;
+        } else if (actualValue instanceof String) {
+            final String actualValueAsString = (String) actualValue;
+            return evaluateRegularExpression(actualValueAsString, pattern, taintHandler);
+        } else if (actualValue instanceof List<?>) {
+            List<?> actualValueList = (List<?>) actualValue;
+            if (actualValueList.isEmpty()) {
+                return C_FALSE;
+            } else {
+                if (actualValueList.stream().anyMatch(element -> !(element instanceof String))) {
+                    return C_FALSE;
+                } else {
+                    Truthness[] results = actualValueList.stream()
+                            .filter(element -> element instanceof String)
+                            .map(element -> (String) element)
+                            .map(element -> evaluateRegularExpression(element, pattern, taintHandler))
+                            .toArray(Truthness[]::new);
+                    return buildOrAggregationTruthness(results);
+                }
+            }
+        } else {
+            return C_FALSE;
         }
     }
 
-    private double calculateDistanceForEquals(EqualsOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, (Math::abs));
+    private Truthness evaluate(NearOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+
+        final double longitude = operation.getLongitude();
+        final double latitude = operation.getLatitude();
+
+        GeoSpatialModel model = operation.hasLegacyCoordinates()
+                ? GeoSpatialModel.PLANAR
+                : SPHERICAL;
+
+        final double minDistance = operation.hasMinDistance() ? operation.getMinDistance() : 0.0;
+        final double maxDistance = operation.hasMaxDistance() ? operation.getMaxDistance() : Double.MAX_VALUE;
+
+        return helper.evaluateDistanceBetweenPoints(
+                actualValue, minDistance, maxDistance,
+                longitude, latitude,
+                model);
     }
 
-    private double calculateDistanceForNotEquals(NotEqualsOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif != 0.0 ? 0.0 : MIN_DISTANCE_TO_TRUE_VALUE));
+    /**
+     * This one-line implementation is kept for consistency with the other computeHeuristic methods,
+     * even though it always returns TRUE_C.
+     *
+     * @param operation
+     * @param document
+     * @return
+     */
+    private Truthness computeHeuristic(EmptyOperation operation, Object document) {
+        requireNonNullQueryAndDocument(operation, document);
+        return TRUE_C;
     }
 
-    private double calculateDistanceForGreaterThan(GreaterThanOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif > 0 ? 0.0 : 1.0 - dif));
+
+    /**
+     * Computes the heuristic score for a {"f",{"$eq": value }} query.
+     * If the field "f" is not present, and the expected value is null, the condition is satisfied.
+     * If the field "f" is not present, but the expected value is not null, the condition is not satisfied.
+     * If the field "f" is present, null values are considered equal, and non-null values are compared
+     * using the corresponding heuristic score for non-null values.
+     *
+     * @param operation   the  {"f",{"$eq": value }} query
+     * @param actualValue the value to evaluate the heuristic score against
+     * @return
+     */
+    private Truthness evaluate(EqualsOperation<?> operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        final Object expectedValue = operation.getValue();
+        return helper.evaluateEquality(actualValue, expectedValue);
     }
 
-    private double calculateDistanceForGreaterEqualsThan(GreaterThanEqualsOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif >= 0 ? 0.0 : -dif));
-    }
 
-    private double calculateDistanceForLessThan(LessThanOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif < 0 ? 0.0 : 1.0 + dif));
-    }
+    /**
+     * Computes the heuristic score for a {"f",{"$ne": value}} query.
+     * Evaluates whether the value of the specified field in a document is not equal
+     * to the expected value. If the condition is satisfied, the score is inverted to
+     * reflect the distance from the condition being false.
+     *
+     * @param operation   the {"f",{"$ne": value}} query encapsulated as a NotEqualsOperation.
+     *                    This operation specifies the field name and the expected value
+     *                    for the inequality check.
+     * @param actualValue the actual value in the document being evaluated. This value is
+     *                    obtained from the document and is compared against the expected value
+     *                    specified in the operation.
+     * @return a Truthness object representing the distance of the document from meeting
+     * the inequality condition, where one of the values (true or false) is 1,
+     * and the other represents the distance to the alternate condition.
+     */
+    private Truthness evaluate(NotEqualsOperation<?> operation, Object actualValue) {
+        Objects.requireNonNull(operation);
 
-    private double calculateDistanceForLessEqualsThan(LessThanEqualsOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif <= 0 ? 0.0 : dif));
-    }
-
-    private double calculateDistanceForComparisonOperation(ComparisonOperation<?> operation, Object doc, DoubleUnaryOperator calculateDistance) {
         Object expectedValue = operation.getValue();
-        String field = operation.getFieldName();
-
-        if (!documentContainsField(doc, field)) {
-            return operation instanceof NotEqualsOperation ? 0.0 : Double.MAX_VALUE;
-        }
-
-        Object actualValue = getValue(doc, field);
-        double dif = compareValues(actualValue, expectedValue);
-
-        return calculateDistance.applyAsDouble(dif);
-    }
-
-    private double calculateDistanceForOr(OrOperation operation, Object doc) {
-        return operation.getConditions().stream()
-                .mapToDouble(condition -> computeHeuristic(condition, doc))
-                .min()
-                .getAsDouble();
-    }
-
-    private double calculateDistanceForAnd(AndOperation operation, Object doc) {
-        return operation.getConditions()
-                .stream()
-                .mapToDouble(condition ->
-                        TruthnessUtils.normalizeValue(computeHeuristic(condition, doc)))
-                .sum();
-    }
-
-    private double calculateDistanceForIn(InOperation<?> operation, Object doc) {
-        List<?> expectedValues = operation.getValues();
-        Object actualValue = getValue(doc, operation.getFieldName());
-
-        if (actualValue instanceof List<?>) {
-            return expectedValues.stream()
-                    .mapToDouble(value -> distanceToClosestElem((List<?>) actualValue, value))
-                    .min()
-                    .getAsDouble();
+        if ((actualValue instanceof List<?>) && !(expectedValue instanceof List<?>)) {
+            return helper.computeHeuristicContainsElement(expectedValue, (List<?>) actualValue).invert();
         } else {
-            return distanceToClosestElem(expectedValues, actualValue);
+            return helper.compareNullableValues(
+                    actualValue, NOT_EQUALS_TO, expectedValue
+            );
         }
     }
 
-    private double calculateDistanceForNotIn(NotInOperation<?> operation, Object doc) {
-        List<?> unexpectedValues = operation.getValues();
 
-        if (!documentContainsField(doc, operation.getFieldName())) return 0.0;
+    private Truthness evaluate(GreaterThanOperation<?> operation, Object actualValue) {
+        Objects.requireNonNull(operation);
 
-        Object actualValue = getValue(doc, operation.getFieldName());
-        boolean hasUnexpectedElement =
-                unexpectedValues.stream().anyMatch(value -> compareValues(actualValue, value) == 0.0);
+        Object expectedValue = operation.getValue();
+        return helper.evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.compareNullableValues(
+                        value, GREATER_THAN, expectedValue
+                ));
 
-        return hasUnexpectedElement ? MIN_DISTANCE_TO_TRUE_VALUE : 0.0;
     }
 
-    private double calculateDistanceForAll(AllOperation<?> operation, Object doc) {
-        List<?> expectedValues = operation.getValues();
-        Object actualValues = getValue(doc, operation.getFieldName());
+    private Truthness evaluate(GreaterThanEqualsOperation<?> operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        final Object expectedValue = operation.getValue();
 
-        if (actualValues instanceof Iterable<?>) {
-            return expectedValues
-                    .stream()
-                    .mapToDouble(value ->
-                            TruthnessUtils.normalizeValue(distanceToClosestElem((List<?>) actualValues, value)))
-                    .sum();
+        return helper.evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.compareNullableValues(value, GREATER_THAN_EQUALS, expectedValue));
+    }
+
+    private Truthness evaluate(LessThanOperation<?> operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        final Object expectedValue = operation.getValue();
+
+        return helper.evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.compareNullableValues(value, MINOR_THAN, expectedValue));
+    }
+
+    private Truthness evaluate(LessThanEqualsOperation<?> operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+
+        final Object expectedValue = operation.getValue();
+        return helper.evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.compareNullableValues(value, MINOR_THAN_EQUALS, expectedValue
+                ));
+    }
+
+
+    private Truthness computeHeuristic(OrOperation operation, Object document) {
+        Objects.requireNonNull(operation);
+
+        Truthness[] results = operation.getConditions().stream()
+                .map(condition -> computeHeuristicQueryOperation(condition, document))
+                .toArray(Truthness[]::new);
+        return buildOrAggregationTruthness(results);
+    }
+
+    private Truthness computeHeuristic(AndOperation operation, Object document) {
+        requireNonNullQueryAndDocument(operation, document);
+
+        Truthness[] results = operation.getConditions().stream()
+                .map(condition -> computeHeuristicQueryOperation(condition, document))
+                .toArray(Truthness[]::new);
+        return buildAndAggregationTruthness(results);
+    }
+
+
+    private Truthness evaluate(InOperation<?> operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+
+        List<?> expectedValueList = operation.getValues();
+        final Truthness res = helper.computeHeuristicInOperation(actualValue, expectedValueList);
+        return res;
+    }
+
+    private Truthness evaluate(NotInOperation<?> operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+
+        List<?> expectedValueList = operation.getValues();
+        final Truthness res = helper.computeHeuristicInOperation(actualValue, expectedValueList);
+        return res.invert();
+    }
+
+    private Truthness evaluate(AllOperation<?> operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+
+        final List<?> expectedValues = operation.getValues();
+
+        if (expectedValues.isEmpty()) {
+            return C_FALSE;
+        }
+
+        Truthness truthness = buildAndAggregationTruthness(
+                expectedValues.stream()
+                        .map(expectedElementValue -> expectedElementValue instanceof ElemMatchOperation
+                                ? evaluate((ElemMatchOperation) expectedElementValue, actualValue)
+                                : helper.evaluateEquality(actualValue, expectedElementValue))
+                        .toArray(Truthness[]::new));
+
+        return truthness;
+
+    }
+
+    private Truthness evaluate(SizeOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+
+        if (actualValue == null || !(actualValue instanceof List<?>)) {
+            return C_FALSE;
         } else {
-            return Double.MAX_VALUE;
+            int actualSize = ((List<?>) actualValue).size();
+            int expectedSize = operation.getValue().intValue();
+            Truthness res = getEqualityTruthness(actualSize, expectedSize);
+            return buildSafeScaledTruthness(res);
         }
     }
 
-    private double calculateDistanceForInvertedAll(InvertedAllOperation<?> operation, Object doc) {
-        List<?> expectedValues = operation.getValues();
-        Object actualValues = getValue(doc, operation.getFieldName());
 
-        if (actualValues instanceof List<?>) {
-            boolean containsAll = ((List<?>) actualValues).containsAll(expectedValues);
-            return containsAll ? MIN_DISTANCE_TO_TRUE_VALUE : 0.0;
+    private Truthness evaluate(ElemMatchOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+
+        if (actualValue == null || !(actualValue instanceof List<?>)) {
+            return C_FALSE;
         } else {
-            return 0.0;
+            List<?> actualList = (List<?>) actualValue;
+            if (actualList.isEmpty()) {
+                return C_FALSE;
+            } else {
+                Truthness orAggregation = buildOrAggregationTruthness(actualList.stream()
+                        .map(listElement -> evaluateOnArrayElement(
+                                operation.getCondition(), listElement))
+                        .toArray(Truthness[]::new));
+                return buildSafeScaledTruthness(orAggregation);
+            }
         }
     }
 
-    private double calculateDistanceForSize(SizeOperation operation, Object doc) {
-        Integer expectedSize = operation.getValue();
-        Object actualValue = getValue(doc, operation.getFieldName());
+    private Truthness evaluateOnArrayElement(QueryOperation condition, Object element) {
+        if (condition instanceof AndOperation) {
+            return buildAndAggregationTruthness(((AndOperation) condition).getConditions().stream()
+                    .map(child -> evaluateOnArrayElement(child, element))
+                    .toArray(Truthness[]::new));
+        } else if (condition instanceof OrOperation) {
+            return buildOrAggregationTruthness(((OrOperation) condition).getConditions().stream()
+                    .map(child -> evaluateOnArrayElement(child, element))
+                    .toArray(Truthness[]::new));
+        } else if (condition instanceof QueryOperationWithFieldPath
+                && "$".equals(((QueryOperationWithFieldPath) condition).getFieldPath())) {
+            // The parser uses a synthetic field for operators applied to the element itself.
+            return evaluate(condition, element);
+        }
 
-        if (actualValue instanceof List<?>) {
-            Integer actualSize = ((List<?>) actualValue).size();
-            return abs(actualSize - expectedSize);
+        if (isDocument(element)) {
+            return computeHeuristicQueryOperation(condition, element);
+        }
+
+        return C_FALSE;
+    }
+
+    private Truthness computeHeuristic(ExistsOperation operation, Object input) {
+        Objects.requireNonNull(operation);
+
+        if (!isDocument(input)) {
+            // If the input is not a BSON document, the existence of a field is always false.
+            return C_FALSE;
+        }
+
+        final Truthness res = helper.evaluateExists(input, FieldPathResolver.splitFieldPath(operation.getFieldPath()), 0);
+
+        if (operation.getBoolean() == true) {
+            // "true" case of exists operation
+            return res;
         } else {
-            return Double.MAX_VALUE;
+            // "false" case of exists operation
+            return res.invert();
         }
     }
 
-    private double calculateDistanceForInvertedSize(InvertedSizeOperation operation, Object doc) {
-        Integer expectedSize = operation.getValue();
-        Object actualValue = getValue(doc, operation.getFieldName());
-
-        if (actualValue instanceof List<?>) {
-            Integer actualSize = ((List<?>) actualValue).size();
-            return actualSize.equals(expectedSize) ? MIN_DISTANCE_TO_TRUE_VALUE : 0.0;
-        } else {
-            return 0.0;
+    private static void requireNonNullQueryAndDocument(QueryOperation operation, Object document) {
+        Objects.requireNonNull(operation);
+        Objects.requireNonNull(document);
+        if (!isDocument(document)) {
+            throw new IllegalArgumentException("The provided document is not a valid BSON document: " + document);
         }
     }
 
-    private double calculateDistanceForElemMatch(ElemMatchOperation operation, Object doc) {
-        Object actualValue = getValue(doc, operation.getFieldName());
+    private Truthness evaluate(ModOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
 
-        if (actualValue instanceof List<?>) {
-            List<?> val = (List<?>) actualValue;
-            return val.stream()
-                    .mapToDouble(elem -> {
-                        Object newDoc = newDocument(doc);
-                        appendToDocument(newDoc, operation.getFieldName(), elem);
-                        return computeHeuristic(operation.getCondition(), newDoc);
-                    })
-                    .min()
-                    .getAsDouble();
-        } else {
-            return Double.MAX_VALUE;
-        }
+        long divisor = operation.getDivisor().longValue();
+        long expectedRemainder = operation.getRemainder().longValue();
+        return helper.evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.evaluateMod(value, divisor, expectedRemainder));
     }
 
-    private double calculateDistanceForExists(ExistsOperation operation, Object doc) {
-        String expectedField = operation.getFieldName();
-        Set<String> actualFields = documentKeys(doc);
-
-        if (operation.getBoolean()) {
-            return actualFields.stream()
-                    .mapToDouble(field -> DistanceHelper.getLeftAlignmentDistance(field, expectedField))
-                    .min()
-                    .getAsDouble();
-        } else {
-            return !documentContainsField(doc, expectedField) ? 0.0 : MIN_DISTANCE_TO_TRUE_VALUE;
-        }
+    private Truthness evaluate(BitsAllClearOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        return helper.evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.evaluateBitsAllClearOperation(value, operation.getBitmask()));
     }
 
-    private double calculateDistanceForMod(ModOperation operation, Object doc) {
-        Long expectedRemainder = operation.getRemainder();
-        Object actualValue = getValue(doc, operation.getFieldName());
-
-        // Change to number?
-        if (actualValue instanceof Integer) {
-            long actualRemainder = ((Integer) actualValue) % operation.getDivisor();
-            return (double) abs(actualRemainder - expectedRemainder);
-        } else {
-            return Double.MAX_VALUE;
-        }
+    private Truthness evaluate(BitsAnyClearOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        return helper.evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.evaluateBitsAnyClearOperation(value, operation.getBitmask()));
     }
 
-    private double calculateDistanceForInvertedMod(InvertedModOperation operation, Object doc) {
-        Long expectedRemainder = operation.getRemainder();
-        Object actualValue = getValue(doc, operation.getFieldName());
-
-        // Change to number?
-        if (actualValue instanceof Integer) {
-            long actualRemainder = ((Integer) actualValue) % operation.getDivisor();
-            return actualRemainder == expectedRemainder ? MIN_DISTANCE_TO_TRUE_VALUE : 0.0;
-        } else {
-            return 0.0;
-        }
+    private Truthness evaluate(BitsAllSetOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        return helper.evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.evaluateBitsAllSetOperation(value, operation.getBitmask()));
     }
 
-    private double calculateDistanceForNot(NotOperation operation, Object doc) {
-        String fieldName = operation.getFieldName();
-        if (getValue(doc, fieldName) == null) return 0.0;
+    private Truthness evaluate(BitsAnySetOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        return helper.evaluateWithArrayUnwrapping(actualValue,
+                value -> helper.evaluateBitsAnySetOperation(value, operation.getBitmask()));
+
+    }
+
+    private Truthness evaluate(NotOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
 
         QueryOperation condition = operation.getCondition();
-        QueryOperation invertedOperation = invertOperation(condition);
-
-        return computeHeuristic(invertedOperation, doc);
+        Truthness conditionTruthness = evaluateOnArrayElement(condition, actualValue);
+        return conditionTruthness.invert();
     }
 
-    private double calculateDistanceForNor(NorOperation operation, Object doc) {
-        return operation.getConditions()
+    private Truthness computeHeuristic(NorOperation operation, Object document) {
+        Objects.requireNonNull(operation);
+
+        Truthness orRes = buildOrAggregationTruthness(operation.getConditions()
                 .stream()
-                .mapToDouble(condition ->
-                        TruthnessUtils.normalizeValue(computeHeuristic(invertOperation(condition), doc)))
-                .sum();
+                .map(condition -> computeHeuristicQueryOperation(condition, document))
+                .toArray(Truthness[]::new));
+        return orRes.invert();
     }
 
-    private double calculateDistanceForType(TypeOperation operation, Object doc) {
-        String field = operation.getFieldName();
-        String expectedType = getType(operation.getType());
-        Object value = getValue(doc, field);
-        String actualType = value == null ? "null" : value.getClass().getTypeName();
+    private Truthness computeHeuristic(TypeOperation operation, Object document) {
+        Objects.requireNonNull(operation);
 
-        return (double) DistanceHelper.getLeftAlignmentDistance(actualType, expectedType);
-    }
+        if (!isDocument(document)) {
+            return C_FALSE;
+        }
 
-    private double calculateDistanceForInvertedType(InvertedTypeOperation operation, Object doc) {
-        String field = operation.getFieldName();
-        String expectedType = getType(operation.getType());
-        Object value = getValue(doc, field);
-        String actualType = value == null ? null : value.getClass().getTypeName();
-
-        return !Objects.equals(actualType, expectedType) ? 0.0 : MIN_DISTANCE_TO_TRUE_VALUE;
-    }
-
-    private double calculateDistanceForNearSphere(NearSphereOperation operation, Object doc) {
-        String field = operation.getFieldName();
-        Object actualPoint = getValue(doc, field);
-
-        double x1 = Math.toRadians(operation.getLongitude());
-        double y1 = Math.toRadians(operation.getLatitude());
-        double x2;
-        double y2;
-
-        /*
-          GeoJSON Point in document.
-          type key is case-sensitive.
-          (https://datatracker.ietf.org/doc/html/rfc7946#section-1.4) for more details.
-         */
-        if (isBsonDocument(actualPoint) && getValue(actualPoint, "type").equals("Point") && getValue(actualPoint, "coordinates") instanceof List<?>) {
-
-            List<?> coordinates = (List<?>) getValue(actualPoint, "coordinates");
-            x2 = Math.toRadians((Double) coordinates.get(0));
-            y2 = Math.toRadians((Double) coordinates.get(1));
+        if (!FieldPathResolver.isFieldPathPresent(document, operation.getFieldPath())) {
+            /**
+             * If the document does not contain the specified field, the $type operation cannot be satisfied.
+             * Even if the expected BSON type is "null", the absence of the field does not satisfy the condition,
+             * as the $type operator checks for the type of an existing field, not its absence. Therefore,
+             * the heuristic score is set to C_FALSE, indicating that the document does not meet the condition.
+             */
+            return C_FALSE;
         } else {
-            return Double.MAX_VALUE;
+            final List<Object> actualValues = new ArrayList<>(FieldPathResolver.getActualValues(document, operation.getFieldPath()));
+            if (actualValues.size() == 1) {
+                return evaluateType(operation, actualValues.get(0));
+            } else {
+                return buildSafeScaledTruthness(buildOrAggregationTruthness(actualValues.stream()
+                        .map(actualValue -> evaluateType(operation, actualValue))
+                        .toArray(Truthness[]::new)));
+            }
         }
+    }
 
-        double distanceBetweenPoints = haversineDistance(x1, y1, x2, y2);
-
-        double max = operation.getMaxDistance() == null ? Double.MAX_VALUE : operation.getMaxDistance();
-        double min = operation.getMinDistance() == null ? 0.0 : operation.getMinDistance();
-
-        if (min <= distanceBetweenPoints && distanceBetweenPoints <= max) {
-            return 0.0;
+    private Truthness evaluateType(TypeOperation operation, Object actualValue) {
+        final String actualTypeAsString;
+        if (actualValue != null && actualValue instanceof List<?>) {
+            /**
+             * If the actual value is a List, we consider its type as "java.util.List" for the purpose of type comparison.
+             */
+            actualTypeAsString = JAVA_UTIL_LIST;
         } else {
-            return distanceBetweenPoints > max ? Math.abs(distanceBetweenPoints - max) : Math.abs(distanceBetweenPoints - min);
+            actualTypeAsString  = actualValue == null ? NULL : actualValue.getClass().getTypeName();
         }
+
+        final List<Object> expectedBsonTypes = operation.getBsonTypes();
+        final List<Truthness> truthnesses = new LinkedList<>();
+        for (Object expectedBsonType : expectedBsonTypes) {
+            String expectedTypeAsString = getType(expectedBsonType);
+            final Truthness equalityTruthness = SqlExpressionEvaluator.getEqualityTruthness(
+                    actualTypeAsString,
+                    expectedTypeAsString);
+            truthnesses.add(equalityTruthness);
+        }
+
+        Truthness equalityTruthness = buildOrAggregationTruthness(truthnesses.toArray(new Truthness[0]));
+        return buildSafeScaledTruthness(equalityTruthness);
     }
 
-    private static double haversineDistance(double x1, double y1, double x2, double y2) {
-        // Earth's radius in meters
-        double radius = 6371000.0;
+    private Truthness evaluate(NearSphereOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
 
-        double dLat = y2 - y1;
-        double dLon = x2 - x1;
+        final double longitude = operation.getLongitude();
+        final double latitude = operation.getLatitude();
 
-        double a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(y1) * Math.cos(y2) * Math.pow(Math.sin(dLon / 2), 2);
+        final double maxDistance = operation.hasMaxDistance() ? operation.getMaxDistance() : Double.MAX_VALUE;
+        final double minDistance = operation.hasMinDistance() ? operation.getMinDistance() : 0.0;
 
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return radius * c;
+        return helper.evaluateDistanceBetweenPoints(
+                actualValue, minDistance, maxDistance,
+                longitude, latitude,
+                SPHERICAL);
     }
 
-    private QueryOperation invertOperation(QueryOperation operation) {
-        if (operation instanceof EqualsOperation<?>) {
-            EqualsOperation<?> op = (EqualsOperation<?>) operation;
-            return new NotEqualsOperation<>(op.getFieldName(), op.getValue());
-        }
-        if (operation instanceof NotEqualsOperation<?>) {
-            NotEqualsOperation<?> op = (NotEqualsOperation<?>) operation;
-            return new EqualsOperation<>(op.getFieldName(), op.getValue());
-        }
-        if (operation instanceof GreaterThanOperation<?>) {
-            GreaterThanOperation<?> op = (GreaterThanOperation<?>) operation;
-            return new LessThanEqualsOperation<>(op.getFieldName(), op.getValue());
-        }
-        if (operation instanceof GreaterThanEqualsOperation<?>) {
-            GreaterThanEqualsOperation<?> op = (GreaterThanEqualsOperation<?>) operation;
-            return new LessThanOperation<>(op.getFieldName(), op.getValue());
-        }
-        if (operation instanceof LessThanOperation<?>) {
-            LessThanOperation<?> op = (LessThanOperation<?>) operation;
-            return new GreaterThanEqualsOperation<>(op.getFieldName(), op.getValue());
-        }
-        if (operation instanceof LessThanEqualsOperation<?>) {
-            LessThanEqualsOperation<?> op = (LessThanEqualsOperation<?>) operation;
-            return new GreaterThanOperation<>(op.getFieldName(), op.getValue());
-        }
-        if (operation instanceof NotOperation) {
-            NotOperation op = (NotOperation) operation;
-            return op.getCondition();
-        }
-        if (operation instanceof AllOperation<?>) {
-            AllOperation<?> op = (AllOperation<?>) operation;
-            return new InvertedAllOperation<>(op.getFieldName(), op.getValues());
-        }
-        if (operation instanceof InvertedAllOperation<?>) {
-            InvertedAllOperation<?> op = (InvertedAllOperation<?>) operation;
-            return new AllOperation<>(op.getFieldName(), op.getValues());
-        }
-        if (operation instanceof AndOperation) {
-            AndOperation op = (AndOperation) operation;
-            List<QueryOperation> invertedConditions = op.getConditions().stream().map(this::invertOperation).collect(Collectors.toList());
-            return new OrOperation(invertedConditions);
-        }
-        if (operation instanceof OrOperation) {
-            OrOperation op = (OrOperation) operation;
-            return new NorOperation(op.getConditions());
-        }
-        if (operation instanceof ExistsOperation) {
-            ExistsOperation op = (ExistsOperation) operation;
-            return new ExistsOperation(op.getFieldName(), !op.getBoolean());
-        }
-        if (operation instanceof InOperation<?>) {
-            InOperation<?> op = (InOperation<?>) operation;
-            return new NotInOperation<>(op.getFieldName(), op.getValues());
-        }
-        if (operation instanceof NotInOperation<?>) {
-            NotInOperation<?> op = (NotInOperation<?>) operation;
-            return new InOperation<>(op.getFieldName(), op.getValues());
-        }
-        if (operation instanceof ModOperation) {
-            ModOperation op = (ModOperation) operation;
-            return new InvertedModOperation(op.getFieldName(), op.getDivisor(), op.getRemainder());
-        }
-        if (operation instanceof InvertedModOperation) {
-            InvertedModOperation op = (InvertedModOperation) operation;
-            return new ModOperation(op.getFieldName(), op.getDivisor(), op.getRemainder());
-        }
-        if (operation instanceof NorOperation) {
-            NorOperation op = (NorOperation) operation;
-            return new OrOperation(op.getConditions());
-        }
-        if (operation instanceof SizeOperation) {
-            SizeOperation op = (SizeOperation) operation;
-            return new InvertedSizeOperation(op.getFieldName(), op.getValue());
-        }
-        if (operation instanceof InvertedSizeOperation) {
-            InvertedSizeOperation op = (InvertedSizeOperation) operation;
-            return new SizeOperation(op.getFieldName(), op.getValue());
-        }
-        if (operation instanceof TypeOperation) {
-            TypeOperation op = (TypeOperation) operation;
-            return new InvertedTypeOperation(op.getFieldName(), op.getType());
-        }
-        if (operation instanceof InvertedTypeOperation) {
-            InvertedTypeOperation op = (InvertedTypeOperation) operation;
-            return new TypeOperation(op.getFieldName(), op.getType());
-        }
-        return operation;
+    private Truthness evaluate(GeoIntersectsOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        return helper.evaluateGeoIntersects(operation.getGeometry(), actualValue);
     }
 
-    private double compareValues(Object val1, Object val2) {
-
-        if (val1 instanceof Number && val2 instanceof Number) {
-            double x = ((Number) val1).doubleValue();
-            double y = ((Number) val2).doubleValue();
-            return x - y;
-        }
-
-        if (val1 instanceof String && val2 instanceof String) {
-
-            if (taintHandler != null) {
-                taintHandler.handleTaintForStringEquals((String) val1, (String) val2, false);
-            }
-
-            return (double) DistanceHelper.getLeftAlignmentDistance((String) val1, (String) val2);
-        }
-
-        if (val1 instanceof Boolean && val2 instanceof Boolean) {
-            return val1 == val2 ? 0d : 1d;
-        }
-
-        if (val1 instanceof String && isObjectId(val2)) {
-            if (taintHandler != null) {
-                taintHandler.handleTaintForStringEquals((String) val1, val2.toString(), false);
-            }
-            return (double) DistanceHelper.getLeftAlignmentDistance((String) val1, val2.toString());
-        }
-
-        if (val2 instanceof String && isObjectId(val1)) {
-            if (taintHandler != null) {
-                taintHandler.handleTaintForStringEquals(val1.toString(), val2.toString(), false);
-            }
-            return (double) DistanceHelper.getLeftAlignmentDistance(val1.toString(), (String) val2);
-        }
-
-        if (isObjectId(val2) && isObjectId(val1)) {
-            return (double) DistanceHelper.getLeftAlignmentDistance(val1.toString(), val2.toString());
-        }
-
-
-        if (val1 instanceof List<?> && val2 instanceof List<?>) {
-            // Modify
-            return Double.MAX_VALUE;
-        }
-
-        return Double.MAX_VALUE;
+    private Truthness evaluate(GeoWithinOperation operation, Object actualValue) {
+        Objects.requireNonNull(operation);
+        return helper.evaluateGeoWithin(operation.getGeometry(), actualValue);
     }
 
-    private static boolean isObjectId(Object obj) {
-        return obj.getClass().getName().equals("org.bson.types.ObjectId");
-    }
-
-    private double distanceToClosestElem(List<?> list, Object value) {
-        double minDist = Double.MAX_VALUE;
-
-        for (Object o : list) {
-            double dif = compareValues(o, value);
-            double absDif = abs(dif);
-            if (absDif < minDist) minDist = absDif;
-        }
-        return minDist;
-    }
 }

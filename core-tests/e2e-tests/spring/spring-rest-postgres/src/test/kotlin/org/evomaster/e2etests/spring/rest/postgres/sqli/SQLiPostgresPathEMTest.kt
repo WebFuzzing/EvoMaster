@@ -38,15 +38,15 @@ class SQLiPostgresPathEMTest : SpringRestPostgresTestBase() {
 
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
 
-            assertTrue({ DefinedFaultCategory.SQL_INJECTION in faultCategories })
+            assertTrue({ DefinedFaultCategory.SECURITY_SQL_INJECTION in faultCategories })
 
             assertTrue(faults.any {
-                it.category == DefinedFaultCategory.SQL_INJECTION
+                it.category == DefinedFaultCategory.SECURITY_SQL_INJECTION
                         && it.operationId == "GET:/api/sqli/path/vulnerable/{id}"
             })
 
             assertFalse(faults.any {
-                it.category == DefinedFaultCategory.SQL_INJECTION
+                it.category == DefinedFaultCategory.SECURITY_SQL_INJECTION
                         && it.operationId == "GET:/api/sqli/path/safe"
             })
 

@@ -45,7 +45,7 @@ class OptionalGene(name: String,
 
 
     init {
-        if(searchPercentageActive < 0 || searchPercentageActive > 1){
+        if(searchPercentageActive !in 0.0..1.0){
             throw IllegalArgumentException("Invalid searchPercentageActive value: $searchPercentageActive")
         }
     }
@@ -93,7 +93,8 @@ class OptionalGene(name: String,
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is OptionalGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false //TODO this needs refactoring
+            //throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.isActive == other.isActive
                 && this.gene.containsSameValueAs(other.gene)
@@ -116,7 +117,7 @@ class OptionalGene(name: String,
             return randomness.nextBoolean(INACTIVE)
         }
 
-        if (additionalGeneMutationInfo?.impact is OptionalGeneImpact){
+        if (additionalGeneMutationInfo.impact is OptionalGeneImpact){
             //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
             val inactive = additionalGeneMutationInfo.impact.activeImpact.determinateSelect(
                 minManipulatedTimes = 5,

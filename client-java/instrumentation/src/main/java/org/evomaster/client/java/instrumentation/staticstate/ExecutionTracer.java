@@ -1,8 +1,9 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
-import org.evomaster.client.java.instrumentation.*;
-import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.instrumentation.*;
+import org.evomaster.client.java.instrumentation.cassandra.CassandraTableMetadata;
+import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.shared.*;
 
 import java.util.*;
@@ -478,6 +479,11 @@ public class ExecutionTracer {
         }
     }
 
+    public static void addCassandraTableMetadata(CassandraTableMetadata cassandraTableMetadata){
+        if (!executingInitCassandra) {
+            getCurrentAdditionalInfo().addCassandraTableMetadata(cassandraTableMetadata);
+        }
+    }
 
     public static void markLastExecutedStatement(String lastLine, String lastMethod) {
         getCurrentAdditionalInfo().pushLastExecutedStatement(lastLine, lastMethod);

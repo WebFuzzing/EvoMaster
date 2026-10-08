@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.cassandra.CassandraSchemaTracer;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
@@ -16,6 +17,10 @@ public class InstrumentationController {
     public static void resetForNewSearch(){
         ExecutionTracer.reset();
         ObjectiveRecorder.reset(false);
+
+        // static cache of table shapes read off the live driver metadata;
+        // reset only across distinct SUTs/searches, not per test
+        CassandraSchemaTracer.reset();
     }
 
     /*
@@ -57,6 +62,14 @@ public class InstrumentationController {
 
     public static void setExecutingInitRedis(boolean executingInitRedis){
         ExecutionTracer.setExecutingInitRedis(executingInitRedis);
+    }
+
+    public static void setExecutingInitNeo4j(boolean executingInitNeo4j){
+        ExecutionTracer.setExecutingInitNeo4J(executingInitNeo4j);
+    }
+
+    public static void setExecutingInitDynamoDb(boolean executingInitDynamoDb){
+        ExecutionTracer.setExecutingInitDynamoDB(executingInitDynamoDb);
     }
 
     public static void setExecutingAction(boolean executingAction){

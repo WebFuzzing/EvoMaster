@@ -1,5 +1,6 @@
 package org.evomaster.core.mongo
 
+import org.evomaster.core.database.mongo.MongoInsertBuilder
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 class MongoInsertBuilderTest {

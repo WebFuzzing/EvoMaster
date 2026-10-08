@@ -1,5 +1,6 @@
 package org.evomaster.core.sql.schema.h2
 
+import org.evomaster.core.database.sql.schema.h2.H2GeometryTypeParser
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

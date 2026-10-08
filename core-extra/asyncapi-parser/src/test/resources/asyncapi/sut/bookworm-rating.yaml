@@ -1,0 +1,222 @@
+# Source: https://github.com/foxminchan/BookWorm (MIT), unmodified.
+---
+asyncapi: 3.0.0
+info:
+  title: Rating Service API
+  version: 1.0.0
+  description: Handles the collection, storage, and aggregation of user feedback and
+    ratings for books on the BookWorm platform
+  contact:
+    name: Nhan Nguyen
+    url: "https://github.com/foxminchan"
+  license:
+    name: MIT
+    url: "https://opensource.org/licenses/MIT"
+defaultContentType: application/vnd.masstransit+json
+servers:
+  development:
+    host: dev.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for development environment
+    description: RabbitMQ server for development environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:development
+        description: >-
+          Development environment configuration for local testing and debugging
+  staging:
+    host: stg.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for staging environment
+    description: RabbitMQ server for staging environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:staging
+        description: >-
+          Staging environment configuration for testing and debugging
+  qa:
+    host: qa.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for QA environment
+    description: RabbitMQ server for QA environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:qa
+        description: >-
+          QA environment configuration for testing and debugging
+  production:
+    host: prod.eventbus:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    summary: RabbitMQ server for production environment
+    description: RabbitMQ server for production environment
+    security:
+      - type: userPassword
+        description: An authentication method for the server
+    tags:
+      - name: env:production
+        description: >-
+          Production environment configuration for production
+channels:
+  rating-book-updated-rating-failed:
+    address: rating-book-updated-rating-failed
+    description: Emit message when book rating update failed
+    messages:
+      BookUpdatedRatingFailedIntegrationEvent.message:
+        $ref: "#/components/messages/bookUpdatedRatingFailedIntegrationEvent"
+  catalog-feedback-created:
+    address: catalog-feedback-created
+    description: Emit message when feedback is created
+    messages:
+      FeedbackCreatedEvent.message:
+        $ref: "#/components/messages/feedbackCreatedEvent"
+  catalog-feedback-deleted:
+    address: catalog-feedback-deleted
+    description: Emit message when feedback is deleted
+    messages:
+      FeedbackDeletedEvent.message:
+        $ref: "#/components/messages/feedbackDeletedEvent"
+operations:
+  BookUpdatedRatingFailedIntegrationEvent:
+    title: Book updated rating failed
+    summary: Book updated rating failed
+    description: Represents a successful integration event when a book rating update fails
+    action: receive
+    channel:
+      $ref: "#/channels/rating-book-updated-rating-failed"
+    messages:
+      - $ref: >-
+          #/channels/rating-book-updated-rating-failed/messages/BookUpdatedRatingFailedIntegrationEvent.message
+  FeedbackCreatedEvent:
+    title: Feedback created
+    summary: Feedback created
+    description: Represents a successful integration event when a feedback is created
+    action: send
+    channel:
+      $ref: "#/channels/catalog-feedback-created"
+    messages:
+      - $ref: >-
+          #/channels/catalog-feedback-created/messages/FeedbackCreatedEvent.message
+  FeedbackDeletedEvent:
+    title: Feedback deleted
+    summary: Feedback deleted
+    description: Represents a successful integration event when a feedback is deleted
+    action: send
+    channel:
+      $ref: "#/channels/catalog-feedback-deleted"
+    messages:
+      - $ref: >-
+          #/channels/catalog-feedback-deleted/messages/FeedbackDeletedEvent.message
+components:
+  schemas:
+    bookUpdatedRatingFailedIntegrationEvent:
+      id: bookUpdatedRatingFailedIntegrationEvent
+      description: Represents a successful integration event when a book rating update fails
+      allOf:
+        - $ref: "#/components/schemas/integrationEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            feedbackId:
+              type: string
+              format: guid
+              description: The unique identifier of the feedback
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+    integrationEvent:
+      id: integrationEvent
+      type: object
+      description: Base event structure containing common metadata for all integration events in the system
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: guid
+          description: The unique identifier of the integration event
+          example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+        creationDate:
+          type: string
+          format: date-time
+          description: The creation date of the integration event
+          example: "2021-01-01T00:00:00Z"
+    feedbackCreatedEvent:
+      id: feedbackCreatedEvent
+      description: Represents a successful integration event when a feedback is created
+      allOf:
+        - $ref: "#/components/schemas/domainEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            bookId:
+              type: string
+              format: guid
+              description: The unique identifier of the book
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+            rating:
+              type: integer
+              format: int32
+              description: The rating of the feedback
+              example: 5
+              minimum: 1
+              maximum: 5
+            feedbackId:
+              type: string
+              format: guid
+              description: The unique identifier of the feedback
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+    domainEvent:
+      id: domainEvent
+      description: Base event structure containing common metadata for all domain events in the system
+      type: object
+      x-abstract: true
+      additionalProperties: false
+      properties:
+        dateOccurred:
+          type: string
+          format: date-time
+    feedbackDeletedEvent:
+      id: feedbackDeletedEvent
+      description: Represents a successful integration event when a feedback is deleted
+      allOf:
+        - $ref: "#/components/schemas/domainEvent"
+        - type: object
+          additionalProperties: false
+          properties:
+            bookId:
+              type: string
+              format: guid
+              description: The unique identifier of the book
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+            rating:
+              type: integer
+              format: int32
+              description: The rating of the feedback
+              example: 5
+              minimum: 1
+              maximum: 5
+            feedbackId:
+              type: string
+              format: guid
+              description: The unique identifier of the feedback
+              example: "01961eb4-668d-7e7e-ae25-0fab379614f7"
+  messages:
+    bookUpdatedRatingFailedIntegrationEvent:
+      payload:
+        $ref: "#/components/schemas/bookUpdatedRatingFailedIntegrationEvent"
+      name: bookUpdatedRatingFailedIntegrationEvent
+    feedbackCreatedEvent:
+      payload:
+        $ref: "#/components/schemas/feedbackCreatedEvent"
+      name: feedbackCreatedEvent
+    feedbackDeletedEvent:
+      payload:
+        $ref: "#/components/schemas/feedbackDeletedEvent"
+      name: feedbackDeletedEvent

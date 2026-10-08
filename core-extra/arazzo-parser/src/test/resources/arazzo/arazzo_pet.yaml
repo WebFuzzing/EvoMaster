@@ -1,0 +1,160 @@
+arazzo: 1.0.0
+info:
+  title: Petstore - Apply Coupons
+  version: 1.0.0
+  description: >-
+    Illustrates a workflow whereby a client a) finds a pet in the petstore, 
+    b) finds coupons for that pet, and finally
+    c) orders the pet while applying the coupons from step b.
+sourceDescriptions:
+  - name: pet-coupons
+    url: ./pet-coupons.openapi.yaml
+    type: openapi
+workflows:
+  - workflowId: apply-coupon
+    summary: Apply a coupon to a pet order.
+    description: >-
+      This is how you can find a pet, find an applicable coupon, and apply that coupon in your order.
+      The workflow concludes by outputting the ID of the placed order.
+    inputs:
+      $ref: "#/components/inputs/apply_coupon_input"
+    steps:
+      - stepId: find-pet
+        description: Find a pet based on the provided tags.
+        operationId: findPetsByTags
+        parameters:
+          - name: pet_tags
+            in: query
+            value: $inputs.my_pet_tags
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_pet_id: $response.body#/0/id
+          # there is some implied selection here - findPetsByTags responds with a list of pets,
+          # but the client only wants to choose one, and that's what will be provided to the next step.
+          # not totally sure how to indicate that.
+      - stepId: find-coupons
+        description: Find a coupon available for the selected pet.
+        operationId: getPetCoupons
+        parameters:
+          - name: pet_id
+            in: path
+            value: $steps.find-pet.outputs.my_pet_id
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_coupon_code: $response.body#/couponCode
+      - stepId: place-order
+        description: Place an order for the pet, applying the coupon.
+        workflowId: place-order
+        parameters:
+          - name: pet_id
+            value: $steps.find-pet.outputs.my_pet_id
+          - name: coupon_code
+            value: $steps.find-coupons.outputs.my_coupon_code
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_order_id: $outputs.workflow_order_id
+    outputs:
+      apply_coupon_pet_order_id: $steps.place-order.outputs.my_order_id
+  - workflowId: buy-available-pet
+    summary: Buy an available pet if one is available.
+    description:
+      This workflow demonstrates a workflow very similar to `apply-coupon`, by intention.
+      It's meant to indicate how to reuse a step (`place-order`) as well as a parameter (`page`, `pageSize`).
+    inputs:
+      $ref: "#/components/inputs/buy_available_pet_input"
+    steps:
+      - stepId: find-pet
+        description: Find a pet that is available for purchase.
+        operationId: findPetsByStatus
+        parameters:
+          - name: status
+            in: query
+            value: "available"
+          - reference: $components.parameters.page
+            value: 1
+          - reference: $components.parameters.pageSize
+            value: 10
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_pet_id: $response.body#/0/id
+      - stepId: place-order
+        description: Place an order for the pet.
+        workflowId: place-order
+        parameters:
+          - name: pet_id
+            value: $steps.find-pet.outputs.my_pet_id
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_order_id: $outputs.workflow_order_id
+    outputs:
+      buy_pet_order_id: $steps.place-order.outputs.my_order_id
+  - workflowId: place-order
+    summary: Place an order for a pet.
+    description:
+      This workflow places an order for a pet. It may be reused by other workflows as the "final step" in a purchase.
+    inputs:
+      type: object
+      properties:
+        pet_id:
+          type: integer
+          format: int64
+          description: The ID of the pet to place in the order.
+        quantity:
+          type: integer
+          format: int32
+          description: The number of pets to place in the order.
+        coupon_code:
+          type: string
+          description: The coupon code to apply to the order.
+    steps:
+      - stepId: place-order
+        description: Place an order for the pet.
+        operationId: placeOrder
+        requestBody:
+          contentType: application/json
+          payload:
+            petId: $inputs.pet_id
+            quantity: $inputs.quantity
+            couponCode: $inputs.coupon_code
+            status: placed
+            complete: false
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          step_order_id: $response.body#/id
+    outputs:
+      workflow_order_id: $steps.place-order.outputs.step_order_id
+components:
+  inputs:
+    apply_coupon_input:
+      type: object
+      properties:
+        my_pet_tags:
+          type: array
+          items:
+            type: string
+          description: Desired tags to use when searching for a pet, in CSV format (e.g. "puppy, dalmatian")
+        store_id:
+          $ref: "#/components/inputs/store_id"
+    buy_available_pet_input:
+      type: object
+      properties:
+        store_id:
+          $ref: "#/components/inputs/store_id"
+    store_id:
+      type: string
+      description: Indicates the domain name of the store where the customer is browsing or buying pets, e.g. "pets.example.com" or "pets.example.co.uk".
+  parameters:
+    page:
+      name: page
+      in: query
+      value: 1
+    pageSize:
+      name: pageSize
+      in: query
+      value: 100

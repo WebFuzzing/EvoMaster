@@ -71,6 +71,24 @@ class CallGraphService {
     }
 
     /**
+     * Resolve a raw path or URL (e.g. a Location header value, absolute or relative)
+     * against the RestPath templates declared in the schema.
+     * Returns the most specific matching template (fewest path parameters), or null if none match.
+     */
+    fun resolveDeclaredPath(rawPathOrUrl: String): RestPath? {
+        val path = try {
+            java.net.URI(rawPathOrUrl).rawPath?.takeIf { it.isNotBlank() } ?: rawPathOrUrl
+        } catch (e: Exception) {
+            rawPathOrUrl
+        }
+        return endpointsInUse.asSequence()
+            .map { it.path }
+            .distinct()
+            .filter { it.matches(path) }
+            .minByOrNull { it.getParameterTokens().size }
+    }
+
+    /**
      * Check if the given endpoint(verb,path) is declared in the schema.
      * This is regardless of whether some endpoints were marked as ignored/to-skip
      * during the fuzzing

@@ -82,8 +82,13 @@ public class Z3DockerExecutor implements AutoCloseable {
                     : z3Prover.execInContainer(Z3_COMMAND, containerPath + fileName);
 
             if (result.getExitCode() != 0) {
-                return Z3Result.error("Z3 exited with code " + result.getExitCode()
-                        + ": " + result.getStdout() + result.getStderr());
+                String message = "Z3 exited with code " + result.getExitCode()
+                        + ": " + result.getStdout() + result.getStderr();
+                // Z3 reports a malformed formula as "(error ...)" on stdout and exits with code 1:
+                // the same file will be rejected every time. Any other failure may be transient.
+                return result.getStdout() != null && result.getStdout().trim().startsWith("(error")
+                        ? Z3Result.deterministicError(message)
+                        : Z3Result.error(message);
             }
 
             String stdout = result.getStdout();
@@ -106,12 +111,17 @@ public class Z3DockerExecutor implements AutoCloseable {
                 return Z3Result.error("Unexpected Z3 output for file " + fileName + ": " + stdout);
             }
 
-            return Z3Result.sat(SMTResultParser.parseZ3Response(stdout));
+            try {
+                return Z3Result.sat(SMTResultParser.parseZ3Response(stdout));
+            } catch (RuntimeException e) {
+                // The same output fails to parse every time
+                return Z3Result.deterministicError("Unexpected error parsing Z3 output for " + fileName + ": " + e.getMessage());
+            }
 
         } catch (IOException | InterruptedException e) {
             return Z3Result.error("I/O or interruption error running Z3 on " + fileName + ": " + e.getMessage());
         } catch (RuntimeException e) {
-            return Z3Result.error("Unexpected error parsing Z3 output for " + fileName + ": " + e.getMessage());
+            return Z3Result.error("Unexpected error running Z3 on " + fileName + ": " + e.getMessage());
         }
     }
 

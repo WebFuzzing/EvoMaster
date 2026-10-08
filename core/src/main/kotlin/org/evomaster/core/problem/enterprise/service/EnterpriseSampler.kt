@@ -4,8 +4,11 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto
-import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.mongo.MongoInsertBuilder
+import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraTableSchemaDto
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraInsertBuilder
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.enterprise.param.DerivedParamHandler
 import org.evomaster.core.remote.SutProblemException
@@ -13,9 +16,9 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.WarningsAggregator
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlInsertBuilder
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -129,6 +132,12 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
 
     fun sampleMongoInsertion(database: String, collection: String, documentsType: String): MongoDbAction {
         val action = MongoInsertBuilder().createMongoInsertionAction(database, collection, documentsType)
+        action.seeTopGenes().forEach{it.doInitialize(randomness)}
+        return action
+    }
+
+    fun sampleCassandraInsertion(tableSchema: CassandraTableSchemaDto): CassandraDbAction {
+        val action = CassandraInsertBuilder().createCassandraInsertionAction(tableSchema)
         action.seeTopGenes().forEach{it.doInitialize(randomness)}
         return action
     }

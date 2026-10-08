@@ -5,6 +5,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestPath
+import org.evomaster.core.problem.rest.link.RestLinkParameter
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.collection.ArrayGene
@@ -619,5 +620,45 @@ internal class RestPathTest{
             "Resolved path must not contain a raw non-ASCII character, got: $resolved")
         assertTrue(resolved.contains("%E8%81%9A"),
             "Resolved path must percent-encode non-ASCII characters, got: $resolved")
+    }
+
+    @Test
+    fun testPathParamWithSupplementaryUnicodeCharacter() {
+        val resolved = resolvePathParam("key-\uD83D\uDE00")
+
+        assertEquals("/api/key-%F0%9F%98%80", resolved)
+    }
+
+    @Test
+    fun testPathParamWithIsolatedSurrogates() {
+        listOf(0xD800, 0xDC00).forEach { surrogate ->
+            val resolved = resolvePathParam("key-${surrogate.toChar()}")
+
+            assertEquals("/api/key-%3F", resolved)
+        }
+    }
+
+    @Test
+    fun testDynamicPathDataEncodesUnicodeInEveryStaticSegment() {
+        val replacement = RestLinkParameter("path.key", "\$response.body#/id")
+
+        val tokens = RestPath("/api/\uD83D\uDE00/{key}/é").dynamicResolutionOnlyPathData(
+            listOf(),
+            mapOf("resolvedId" to replacement)
+        )
+
+        assertEquals(
+            listOf(
+                "/api/%F0%9F%98%80/" to false,
+                "resolvedId" to true,
+                "/%C3%A9" to false
+            ),
+            tokens
+        )
+    }
+
+    private fun resolvePathParam(value: String): String {
+        val key = PathParam("key", CustomMutationRateGene("d_", StringGene("key", value), 1.0))
+        return RestPath("/api/{key}").resolve(listOf(key))
     }
 }

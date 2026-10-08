@@ -346,8 +346,8 @@ class EMConfig {
 
         val modifiedOptions = modifiedOptions(options, cff)
 
-        checkForExperimentalSettings(modifiedOptions)
-        checkForInternalSettings(modifiedOptions)
+        checkForExperimentalSettings(modifiedOptions.keys)
+        checkForInternalSettings(modifiedOptions.keys)
 
         checkDependsOn(modifiedOptions)
     }
@@ -356,7 +356,16 @@ class EMConfig {
      * Can only be called on BOOLEAN options.
      * Calling on something else would be a bug in EM.
      */
-    private fun isOptionTrue(fieldName: String) : Boolean{
+    private fun isOptionTrue(fieldName: String, modifiedOptions: Map<String,String>) : Boolean{
+
+        if(modifiedOptions.containsKey(fieldName)) {
+            //the option is going to be modified. so ignore current state, and look at modification
+            return try{
+                parseBooleanStrict(modifiedOptions[fieldName])
+            }catch (e: Exception){
+                throw IllegalArgumentException("The modification for property '$fieldName' does not contain a boolean value.", e)
+            }
+        }
 
         val field = getConfigurationProperties().find { it.name == fieldName }
             ?: throw IllegalArgumentException("The property called '$fieldName' does not exist")
@@ -369,7 +378,15 @@ class EMConfig {
         }
     }
 
-    private fun checkDependsOn(modifiedOptions: Set<String>) {
+    private fun checkDependsOn(modifiedOptions: Map<String,String>) {
+
+        /*
+            If we have "A depends -> B", deactivating "B" would not trigger a configuration error.
+            However, explicitly setting A on, while B is off or going to be put off, that would trigger an error.
+
+            The idea is that we can deactivate features like B without having to worry about others that depend on them.
+            However, if we explicitly ask for any of those latter, then B must be on.
+         */
 
         val properties = getConfigurationProperties()
         val allNames = properties.map { it.name }
@@ -381,12 +398,29 @@ class EMConfig {
                     throw IllegalStateException("Invalid @DependsOnTrueFor definition for ${p.name}." +
                             " The target '$target' does not exist.")
                 }
-                //has this option been modified manually by the user? if not, there is nothing to check
-                if(modifiedOptions.contains(p.name) && !isOptionTrue(target)){
-                    throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
+                //has this option been modified manually by the user? if not, there is nothing to check.
+                if(modifiedOptions.contains(p.name)){
+                    //however, if boolean, putting it explicitly to false should not trigger any check
+                    val type = p.returnType.javaType
+                    if(type is Class<*> && java.lang.Boolean.TYPE.isAssignableFrom(type)){
+                        val on = try{
+                            parseBooleanStrict(modifiedOptions[p.name])
+                        }catch (e: Exception){
+                            throw IllegalArgumentException("The boolean property called '$p.name' is set with non-boolean value: ${modifiedOptions[p.name]}")
+                        }
+                        if(!on){
+                            //boolean and off, so no dependencies to check
+                            return@forEach
+                        }
+                    }
+
+                    if(!isOptionTrue(target, modifiedOptions)){
+                        throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
                             " which depends on '$target' being 'true', which is not currently.")
+                    }
                 }
             }
+
             p.annotations.filterIsInstance<DependsOnFalseFor>().forEach { a ->
                 val target = a.otherFieldName
                 if(!allNames.contains(target)){
@@ -394,9 +428,23 @@ class EMConfig {
                             " The target '$target' does not exist.")
                 }
                 //has this option been modified manually by the user? if not, there is nothing to check
-                if(modifiedOptions.contains(p.name) && isOptionTrue(target)){
-                    throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
-                            " which depends on '$target' being 'false', which is not currently.")
+                if(modifiedOptions.contains(p.name)){
+                    val type = p.returnType.javaType
+                    if(type is Class<*> && java.lang.Boolean.TYPE.isAssignableFrom(type)){
+                        val on = try{
+                            parseBooleanStrict(modifiedOptions[p.name])
+                        }catch (e: Exception){
+                            throw IllegalArgumentException("The boolean property called '$p.name' is set with non-boolean value: ${modifiedOptions[p.name]}")
+                        }
+                        if(!on){
+                            //boolean and off, so no dependencies to check
+                            return@forEach
+                        }
+                    }
+                    if( isOptionTrue(target, modifiedOptions)) {
+                        throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
+                                    " which depends on '$target' being 'false', which is not currently.")
+                    }
                 }
             }
         }
@@ -448,18 +496,19 @@ class EMConfig {
         }
     }
 
-    private fun modifiedOptions(options: OptionSet, cff: ConfigsFromFile?) : Set<String>{
+    private fun modifiedOptions(options: OptionSet, cff: ConfigsFromFile?) : Map<String,String>{
 
         val detected  = OptionSet::class.java.getDeclaredField("detectedOptions")
             .apply { setAccessible(true) }
             .get(options) as Map<String,AbstractOptionSpec<*>>
 
-        val names = detected.filter { it.value !is NonOptionArgumentSpec }.keys
+        val modified = detected.filter { it.value !is NonOptionArgumentSpec }
+            .mapValues { (key, value) -> value.value(options).toString()}
 
         return if(cff == null) {
-            names.toSet()
+            modified
         } else {
-            names.toMutableSet().plus(cff.configs.keys)
+            modified.toMutableMap().plus(cff.configs)
         }
     }
 
@@ -780,6 +829,26 @@ class EMConfig {
                     "extracting Mongo execution info with 'extractMongoExecutionInfo'")
         }
 
+        if (shouldGenerateDynamoDbData() && !heuristicsForDynamoDb) {
+            throw ConfigProblemException("Cannot generate DynamoDB data without enabling " +
+                    "'heuristicsForDynamoDb'")
+        }
+
+        if (shouldGenerateDynamoDbData() && !extractDynamoDbExecutionInfo) {
+            throw ConfigProblemException("Cannot generate DynamoDB data without enabling " +
+                    "'extractDynamoDbExecutionInfo'")
+        }
+
+        if (shouldGenerateCassandraData() && !heuristicsForCassandra) {
+            throw ConfigProblemException("Cannot generate Cassandra data if you did not enable " +
+                    "collecting heuristics with 'heuristicsForCassandra'")
+        }
+
+        if (shouldGenerateCassandraData() && !extractCassandraExecutionInfo) {
+            throw ConfigProblemException("Cannot generate Cassandra data if you did not enable " +
+                    "extracting Cassandra execution info with 'extractCassandraExecutionInfo'")
+        }
+
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw ConfigProblemException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
@@ -804,6 +873,15 @@ class EMConfig {
 
         if (seedTestCases && seedTestCasesPath.isBlank()) {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
+        }
+
+        if (problemType == ProblemType.ASYNCAPI && createTests) {
+            throw ConfigProblemException("Test generation for AsyncAPI services is not available yet." +
+                    " For the time being, run with '--createTests false' to only search for faults.")
+        }
+
+        if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
+            throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
         }
 
         if (problemType == ProblemType.RPC
@@ -975,7 +1053,7 @@ class EMConfig {
                     throw ConfigProblemException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
                 }
 
-                if (Files.exists(path) && !Files.isWritable(path)) {
+                if (Files.exists(path) && fp.shouldBeWritable && !Files.isWritable(path)) {
                     throw ConfigProblemException("Parameter '${m.name}' refers to a file that already" +
                             " exists, but that cannot be written/replaced to: $path")
                 }
@@ -1012,13 +1090,28 @@ class EMConfig {
 
     fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithZ3 || generateSqlDataWithSearch)
 
-    fun shouldGenerateMongoData() = generateMongoData
+    fun shouldGenerateMongoData() =  isUsingAdvancedTechniques() && generateMongoData
 
-    fun shouldGenerateRedisData() = generateRedisData
+    fun shouldGenerateRedisData() = isUsingAdvancedTechniques() && generateRedisData
+
+    fun shouldGenerateDynamoDbData() = isUsingAdvancedTechniques() && generateDynamoDbData
+
+    fun shouldGenerateNeo4jData() = isUsingAdvancedTechniques() && generateNeo4jData
+
+    fun shouldGenerateCassandraData() = isUsingAdvancedTechniques() && generateCassandraData
 
     fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
     fun couldSupportDtoForPayload() = problemType == ProblemType.REST && outputFormat.isJavaOrKotlin()
+
+    /**
+     * Whether an EvoMaster Driver takes part in this run.
+     *
+     * Always in white-box mode, and in black-box mode only for experiments. AsyncAPI is the
+     * exception: there is no universal wire to speak to a message-driven service, so the driver
+     * holds the connection to the broker even when the SUT itself is treated as a black box.
+     */
+    fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
 
     fun activatedExperimentalFeatures(): List<String> {
 
@@ -1162,14 +1255,14 @@ class EMConfig {
 
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
-    annotation class FilePath(val canBeBlank: Boolean = false)
+    annotation class FilePath(val canBeBlank: Boolean, val shouldBeWritable: Boolean)
 
     /**
      *  Either a file or a folder, that MUST already exist and can be read.
      */
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
-    annotation class ExistingPath(val canBeBlank: Boolean = false, val shouldBeWritable: Boolean = false)
+    annotation class ExistingPath(val canBeBlank: Boolean, val shouldBeWritable: Boolean)
 
 
 //------------------------------------------------------------------------
@@ -1282,7 +1375,7 @@ class EMConfig {
     @Cfg("File path for file with configuration settings. Supported formats are YAML and TOML." +
             " When EvoMaster starts, it will read such file and import all configurations from it.")
     @Regex(".*\\.(yml|yaml|toml)")
-    @FilePath
+    @FilePath(false,false)
     var configPath: String = defaultConfigPath
 
 
@@ -1444,6 +1537,22 @@ class EMConfig {
 
     //-------- other options -------------
 
+    @Experimental
+    @Cfg("Enable JSON Patch (RFC 6902) gene support when the request Content-Type is 'application/json-patch+json'." +
+            " When false, such endpoints are treated as regular JSON bodies, reproducing the behavior before this feature was introduced.")
+    var enableJsonPatchSupport = false
+
+    @Experimental
+    @Cfg("Enable XML-aware field naming, including support for XML attributes, for body genes when the request" +
+            " Content-Type is XML. When false, XML attributes are treated as regular child elements, and body gene" +
+            " names fall back to the pre-feature behavior (schema ref name or 'body').")
+    var enableXmlWithAttributesSupport = false
+
+    @Experimental
+    @Cfg("Enable multipart/form-data support when building REST actions.")
+    var enableMultipartFormDataSupport = false
+
+
     @Cfg("Inform EvoMaster process that it is running inside Docker." +
             " Users should not modify this parameter, as it is set automatically in the Docker image of EvoMaster.")
     var runningInDocker = false
@@ -1459,7 +1568,7 @@ class EMConfig {
     var dockerLocalhost = false
 
 
-    @FilePath
+    @FilePath(false,false)
     @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
             " the generated tests")
     var jsControllerPath = "./app-driver.js"
@@ -1491,7 +1600,8 @@ class EMConfig {
         GRAPHQL(experimental = false),
         RPC(experimental = true),
         WEBFRONTEND(experimental = true),
-        MCP(experimental = true);
+        MCP(experimental = true),
+        ASYNCAPI(experimental = true);
 
         override fun isExperimental() = experimental
     }
@@ -1599,8 +1709,24 @@ class EMConfig {
     var writeStatistics = false
 
     @Cfg("Where the statistics file (if any) is going to be written (in CSV format)")
-    @FilePath
+    @FilePath(false,true)
     var statisticsFile = "statistics.csv"
+
+    @Cfg("Whether to write per-endpoint AI model statistics to CSV.")
+    var writeAIEndpointStatistics = false
+
+    @Cfg("Whether to write per-endpoint AI model snapshot statistics to CSV.")
+    var writeAIEndpointSnapshotStatistics = false
+
+    @Cfg("Where per-endpoint AI model metrics are written in CSV format when " +
+            "writeAIEndpointStatistics and AI response classification are enabled.")
+    @FilePath(false,true)
+    var aiEndpointStatisticsFile = "ai-endpoint-statistics.csv"
+
+    @Cfg("Where per-endpoint AI metric snapshots are written in CSV format when " +
+            "writeAIEndpointSnapshotStatistics and AI response classification are enabled and snapshotInterval is positive.")
+    @FilePath(false,true)
+    var aiEndpointSnapshotStatisticsFile = "ai-endpoint-snapshots.csv"
 
 
     enum class AIResponseClassifierModel {
@@ -1700,7 +1826,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
-    var aiEncoderType = EncoderType.NORMAL
+    var aiEncoderType = EncoderType.RAW
 
 
     @Experimental
@@ -1751,15 +1877,39 @@ class EMConfig {
             "indicates a server-side error with status code 5xx.")
     var skipAIModelUpdateWhenResponseIs5xx = false
 
-    @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates " +
             "when the response is not 2xx or 400.")
-    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = false
+    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = true
 
     @Experimental
     @Cfg("Minimum confidence threshold required for the AI response classifier to decide" +
             "whether to send a request as-is or attempt a repair.")
     var aIResponseClassifierWeaknessThreshold = 0.8
+
+    enum class AIEnsembleBestModelSelectionStrategy {
+
+        /** Selects the model with the highest average across the considered performance metrics. */
+        MAX_OF_AVERAGE,
+
+        /**
+         * Selects the model with the highest harmonic mean across the considered performance metrics.
+         * The harmonic mean penalizes weaker metrics,
+         * favoring models with balanced performance across all considered metrics.
+         *
+         * For example, consider the metrics of models A as [0.95, 0.9, 0.9, 0.3] and B as [0.6, 0.7, 0.65, 0.75].
+         * Their harmonic means are 0.60 and 0.66, so B is selected even though A is very strong in some metrics.
+         */
+        MAX_OF_HARMONIC_MEAN,
+
+        /** Strictly selects the model with the highest minimum value across the considered performance metrics. */
+        MAX_OF_MIN,
+
+    }
+
+    @Experimental
+    @Cfg("Strategy used to select the best-performing model when a combination of AI models " +
+            "are used as an ensemble model for response classification.")
+    var aIEnsembleBestModelSelectionStrategy = AIEnsembleBestModelSelectionStrategy.MAX_OF_MIN
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
@@ -1779,7 +1929,7 @@ class EMConfig {
     var snapshotInterval = -1.0
 
     @Cfg("Where the snapshot file (if any) is going to be written (in CSV format)")
-    @FilePath
+    @FilePath(false,true)
     var snapshotStatisticsFile = "snapshot.csv"
 
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
@@ -1796,7 +1946,7 @@ class EMConfig {
     var writeExtraHeuristicsFile = false
 
     @Cfg("Where the extra heuristics file (if any) is going to be written (in CSV format)")
-    @FilePath
+    @FilePath(false,true)
     var extraHeuristicsFile = "extra_heuristics.csv"
 
     @Experimental
@@ -1947,6 +2097,22 @@ class EMConfig {
     @DependsOnFalseFor("blackBox")
     var heuristicsForRedis = false
 
+    @Experimental
+    @Cfg("Tracking of DynamoDB commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    var heuristicsForDynamoDb = false
+
+    @Experimental
+    @Cfg("Tracking of Neo4j commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    var heuristicsForNeo4j = false
+
+    @Experimental
+    @Cfg("Tracking of Cassandra commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractCassandraExecutionInfo")
+    var heuristicsForCassandra = false
+
     @Cfg("Enable extracting SQL execution info")
     @DependsOnFalseFor("blackBox")
     var extractSqlExecutionInfo = true
@@ -1959,6 +2125,21 @@ class EMConfig {
     @Cfg("Enable extracting Redis execution info")
     @DependsOnFalseFor("blackBox")
     var extractRedisExecutionInfo = false
+
+    @Experimental
+    @Cfg("Enable extracting DynamoDB execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractDynamoDbExecutionInfo = false
+
+    @Experimental
+    @Cfg("Enable extracting Neo4j execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractNeo4jExecutionInfo = false
+
+    @Experimental
+    @Cfg("Enable extracting Cassandra execution info")
+    @DependsOnFalseFor("blackBox")
+    var extractCassandraExecutionInfo = false
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use the Z3 SMT solver")
@@ -1990,6 +2171,23 @@ class EMConfig {
     @Min(1.0)
     var sqlZ3NumberOfRows = 1
 
+    /*
+        The default is chosen from measurements: one system under test issued 2,153 distinct queries in
+        a one-hour search. Entries are small,
+        a query string and a solver result, so a higher bound costs little memory and removes that whole
+        class of wasted work.
+     */
+    @Experimental
+    @Cfg("Maximum number of entries kept in each of the two bounded Z3 solver caches: the one " +
+            "holding solver results, and the one remembering queries that could not be translated. " +
+            "When the bound is reached, the least recently used entry is evicted and would have to be " +
+            "solved again if seen later. Sizing it below the number of distinct queries a search " +
+            "issues turns a large share of cache misses into re-solves of already-known queries. " +
+            "Only meaningful when generateSqlDataWithZ3=true.")
+    @DependsOnTrueFor("generateSqlDataWithZ3")
+    @Min(1.0)
+    var sqlZ3CacheSize = 5000
+
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     @DependsOnFalseFor("blackBox")
     var generateSqlDataWithSearch = true
@@ -2002,6 +2200,23 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate Redis data with direct accesses to the database")
     @DependsOnFalseFor("blackBox")
     var generateRedisData = false
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate DynamoDB data with direct database access")
+    @DependsOnFalseFor("blackBox")
+    var generateDynamoDbData = false
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Neo4j data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractNeo4jExecutionInfo")
+    var generateNeo4jData = false
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate Cassandra data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
+    @DependsOnTrueFor("extractCassandraExecutionInfo")
+    var generateCassandraData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
@@ -2054,7 +2269,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC.")
-    @FilePath
+    @FilePath(false,true)
     var targetHeuristicsFile = "targets.csv"
 
     @Experimental
@@ -2157,6 +2372,12 @@ class EMConfig {
     @Experimental
     var instrumentMR_NET = false
 
+    @Cfg("Execute instrumentation for method replace with category NEO4J." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_NEO4J = false
+
     @Cfg("Execute instrumentation for method replace with category OPENSEARCH." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
@@ -2226,6 +2447,21 @@ class EMConfig {
             "Note that resource-based sampling is only applicable for REST problem with MIO algorithm.")
     var resourceSampleStrategy = ResourceSamplingStrategy.ConArchive
 
+
+    /**
+     * Boolean that enables and disables the generation of individuals based on Arazzo Workflows.
+     */
+    @Experimental
+    @Cfg("Enable workflow-based sampling from an Arazzo document.")
+    var enableArazzoWorkflowSampling = false
+
+    fun isEnabledArazzoSampling() = enableArazzoWorkflowSampling
+
+    @Experimental
+    @Cfg("Probability of controlling the creation of Arazzo individuals.")
+    @Probability(activating = false)
+    var probOfArazzoSampling = 0.5
+
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
             "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
             "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
@@ -2238,7 +2474,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a file that saves derived dependencies")
-    @FilePath
+    @FilePath(false,true)
     var dependencyFile = "dependencies.csv"
 
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
@@ -2377,7 +2613,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save mutation details which is useful for debugging mutation")
-    @FilePath
+    @FilePath(false,true)
     var mutatedGeneFile = "mutatedGeneInfo.csv"
 
     @Experimental
@@ -2419,7 +2655,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save all not covered targets when the number is more than 100")
-    @FilePath
+    @FilePath(false,true)
     var exceedTargetsFile = "exceedTargets.txt"
 
 
@@ -2504,7 +2740,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save archive after each mutation during search, only useful for debugging")
-    @FilePath
+    @FilePath(false,true)
     var archiveAfterMutationFile = "archive.csv"
 
     @Debug
@@ -2513,7 +2749,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save collected impact info after each mutation during search, only useful for debugging")
-    @FilePath
+    @FilePath(false,true)
     var impactAfterMutationFile = "impactSnapshot.csv"
 
     @Cfg("Whether to enable archive-based gene mutation")
@@ -2573,7 +2809,7 @@ class EMConfig {
 
     @Debug
     @Cfg("Specify a path to save derived genes")
-    @FilePath
+    @FilePath(false,true)
     var impactFile = "impact.csv"
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
@@ -2633,7 +2869,7 @@ class EMConfig {
     var exportCoveredTarget = false
 
     @Cfg("Specify a file which saves covered targets info regarding generated test suite")
-    @FilePath
+    @FilePath(false,true)
     var coveredTargetFile = "coveredTargets.txt"
 
     @Cfg("Specify a format to organize the covered targets by the search")
@@ -2676,7 +2912,7 @@ class EMConfig {
     var seedTestCasesFormat = SeedTestCasesFormat.POSTMAN
 
     @Experimental
-    @FilePath
+    @FilePath(false,false)
     @Cfg("File path where the seeded test cases are located")
     var seedTestCasesPath: String = "postman.postman_collection.json"
 
@@ -2743,6 +2979,12 @@ class EMConfig {
     @Cfg("Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null")
     var enableRPCExtraResponseTargets = true
 
+    @Experimental
+    @Cfg("When testing an AsyncAPI service, how long to wait for the reply to a published message before" +
+            " treating it as unanswered, in milliseconds.")
+    @Min(1.0)
+    var asyncApiReplyTimeoutMs = 5000
+
     @Cfg("Whether to enable customized responses indicating business logic")
     var enableRPCCustomizedResponseTargets = true
 
@@ -2802,7 +3044,7 @@ class EMConfig {
             " but problematic if too much")
     var minimizeThresholdForLoss = 0.2
 
-    @FilePath(true)
+    @FilePath(true,false)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
     @Cfg("Path on filesystem of where JaCoCo Agent jar file is located." +
             " Option meaningful only for External Drivers for JVM." +
@@ -2810,7 +3052,7 @@ class EMConfig {
             " Note that this only impact the generated output test cases.")
     var jaCoCoAgentLocation = ""
 
-    @FilePath(true)
+    @FilePath(true, false)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
     @Cfg("Path on filesystem of where JaCoCo CLI jar file is located." +
             " Option meaningful only for External Drivers for JVM." +
@@ -2818,7 +3060,7 @@ class EMConfig {
             " Note that this only impact the generated output test cases.")
     var jaCoCoCliLocation = ""
 
-    @FilePath(true)
+    @FilePath(true, true)
     @Cfg(" Destination file for JaCoCo." +
             " Option meaningful only for External Drivers for JVM." +
             " If left empty, it is not used." +
@@ -2830,7 +3072,7 @@ class EMConfig {
     @Cfg("Port used by JaCoCo to export coverage reports")
     var jaCoCoPort = 8899
 
-    @FilePath
+    @FilePath(false,false)
     @Cfg("Command for 'java' used in the External Drivers." +
             " Useful for when there are different JDK installed on same machine without the need" +
             " to update JAVA_HOME." +
@@ -2867,7 +3109,7 @@ class EMConfig {
     @Experimental
     @DependsOnTrueFor("handleFlakiness")
     @Cfg("Specify whether to infer potential flakiness statically from response values, such as timestamps, UUIDs, hashes and runtime-specific messages.")
-    var enableStaticFlakyInference = true
+    var enableStaticFlakyInference = false
 
     @Experimental
     @Min(0.0)
@@ -3122,7 +3364,7 @@ class EMConfig {
     @Min(0.0) @Max(2.0)
     @DependsOnTrueFor("llm")
     @Cfg("Temperature parameter for LLM")
-    var llmTemperature = 0.3
+    var llmTemperature = 0.6
 
     @Experimental
     @DependsOnTrueFor("llm")
@@ -3140,13 +3382,11 @@ class EMConfig {
             " created.")
     var createConfigPathIfMissing: Boolean = true
 
-    @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
-    var httpOracles = false
+    var httpOracles = true
 
-    @Experimental
     @Cfg("Lightweight checks on HTTP status codes, e.g., a GET should not return a 201 Created.")
-    var statusOracles = false
+    var statusOracles = true
 
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
@@ -3221,6 +3461,10 @@ class EMConfig {
     @Cfg("Specify if should use the pre-existing dictionary of values when sampling random string." +
             " If so, those will be added to the data pool.")
     var useDictionaryDataPool = false
+
+    @Experimental
+    @Cfg("Specify if inputs from successful calls should be re-used in the data pool.")
+    var useSuccessDataPool = false
 
     @Cfg("Feed the individual entries of object examples to the data pool.")
     var useObjectExampleDataPool = true
@@ -3327,6 +3571,11 @@ class EMConfig {
     var inferFormatFromNames = false
 
 
+    @Experimental
+    @ExistingPath(true,false)
+    @Cfg("arazzo location on disk")
+    var arazzoLocation = ""
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
@@ -3383,6 +3632,7 @@ class EMConfig {
         if (instrumentMR_CASSANDRA) categories.add(ReplacementCategory.CASSANDRA.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
+        if (instrumentMR_NEO4J) categories.add(ReplacementCategory.NEO4J.toString())
         if (instrumentMR_DYNAMODB) categories.add(ReplacementCategory.DYNAMODB.toString())
         return categories.joinToString(",")
     }
@@ -3453,15 +3703,15 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
-        if(category == DefinedFaultCategory.XSS && (!xss || !security)){
+        if(category == DefinedFaultCategory.SECURITY_XSS_INJECTION && (!xss || !security)){
             return false
         }
 
-        if(category == DefinedFaultCategory.SQL_INJECTION && (!sqli || !security)){
+        if(category == DefinedFaultCategory.SECURITY_SQL_INJECTION && (!sqli || !security)){
             return false
         }
 
-        if(category == DefinedFaultCategory.SSRF && (!ssrf || !security)){
+        if(category == DefinedFaultCategory.SECURITY_SSRF && (!ssrf || !security)){
             return false
         }
 

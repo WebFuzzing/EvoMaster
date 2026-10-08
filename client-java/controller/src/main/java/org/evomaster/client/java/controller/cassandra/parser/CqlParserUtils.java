@@ -2,22 +2,48 @@ package org.evomaster.client.java.controller.cassandra.parser;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.evomaster.client.java.controller.cassandra.model.CqlTableReference;
 import org.evomaster.client.java.controller.cassandra.operations.*;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Utility methods to parse CQL (Cassandra Query Language) commands with the ANTLR-generated
+ * {@link CqlParser}, and to extract the information needed for heuristics computation (e.g.
+ * the WHERE-clause condition tree) from the resulting parse tree.
+ */
 public class CqlParserUtils {
 
     private CqlParserUtils() {}
 
+    private static final String KEYWORD_SELECT = "SELECT";
+    private static final String KEYWORD_UPDATE = "UPDATE";
+    private static final String KEYWORD_DELETE = "DELETE";
+
+    /**
+     * Parses a CQL command string into its ANTLR parse tree, with no validity checks
+     * performed on the result (assumes {@link #canParseCqlCommand} was used first).
+     *
+     * @param cqlCommand the CQL command to parse
+     * @return the root of the resulting ANTLR parse tree
+     */
     public static CqlParser.RootContext parseCqlCommand(String cqlCommand) {
         CqlLexer lexer   = new CqlLexer(CharStreams.fromString(cqlCommand));
         CqlParser parser = new CqlParser(new CommonTokenStream(lexer));
         return parser.root();
     }
 
+    /**
+     * Checks whether {@code cqlCommand} can be parsed into a single, well-formed CQL statement.
+     *
+     * @param cqlCommand the CQL command to validate
+     * @return {@code true} if the command parses cleanly (no parser exception, and exactly one
+     *         statement is present); {@code false} otherwise
+     */
     public static boolean canParseCqlCommand(String cqlCommand) {
         try {
             CqlParser.RootContext root = parseCqlCommand(cqlCommand);
@@ -27,25 +53,51 @@ public class CqlParserUtils {
         }
     }
 
+    /**
+     * @param cqlCommand the CQL command to inspect
+     * @return {@code true} if {@code cqlCommand} is a SELECT statement
+     */
     public static boolean isSelect(String cqlCommand) {
-        return cqlCommand.trim().toUpperCase().startsWith("SELECT");
+        return cqlCommand.trim().toUpperCase().startsWith(KEYWORD_SELECT);
     }
 
+    /**
+     * @param cqlCommand the CQL command to inspect
+     * @return {@code true} if {@code cqlCommand} is an UPDATE statement
+     */
     public static boolean isUpdate(String cqlCommand) {
-        return cqlCommand.trim().toUpperCase().startsWith("UPDATE");
+        return cqlCommand.trim().toUpperCase().startsWith(KEYWORD_UPDATE);
     }
 
+    /**
+     * @param cqlCommand the CQL command to inspect
+     * @return {@code true} if {@code cqlCommand} is a DELETE statement
+     */
     public static boolean isDelete(String cqlCommand) {
-        return cqlCommand.trim().toUpperCase().startsWith("DELETE");
+        return cqlCommand.trim().toUpperCase().startsWith(KEYWORD_DELETE);
     }
 
+    /**
+     * Extracts the WHERE-clause parse-tree node from a parsed CQL SELECT, UPDATE, or DELETE
+     * statement.
+     *
+     * @param root the root of a parsed CQL command, as returned by {@link #parseCqlCommand}
+     * @return the WHERE clause's parse-tree node, or {@code null} if the statement has none
+     *         (or isn't a SELECT/UPDATE/DELETE)
+     */
     public static CqlParser.WhereSpecContext getWhereSpec(CqlParser.RootContext root) {
         CqlParser.CqlContext cql = root.cqls() != null ? root.cqls().cql(0) : null;
-        if (cql == null)          return null;
-        if (cql.select_() != null) return cql.select_().whereSpec();
-        if (cql.update()  != null) return cql.update().whereSpec();
-        if (cql.delete_() != null) return cql.delete_().whereSpec();
-        return null;
+        if (cql == null) {
+            return null;
+        } else if (cql.select_() != null) {
+            return cql.select_().whereSpec();
+        } else if (cql.update()  != null) {
+            return cql.update().whereSpec();
+        } else if (cql.delete_() != null) {
+            return cql.delete_().whereSpec();
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -56,70 +108,125 @@ public class CqlParserUtils {
      */
     public static CqlQueryOperation getWhereOperation(CqlParser.RootContext root) {
         CqlParser.WhereSpecContext whereSpec = getWhereSpec(root);
-        if (whereSpec == null) return null;
-
-        List<CqlParser.RelationElementContext> elements = whereSpec.relationElements().relationElement();
-        if (elements.isEmpty()) return null;
-        if (elements.size() == 1) return parseRelationElement(elements.get(0));
-
-        List<CqlQueryOperation> ops = new ArrayList<>();
-        for (CqlParser.RelationElementContext el : elements) {
-            CqlQueryOperation op = parseRelationElement(el);
-            if (op != null) ops.add(op);
+        if (whereSpec != null) {
+            List<CqlParser.RelationElementContext> elements = whereSpec.relationElements().relationElement();
+            if (elements.isEmpty()) {
+                return null;
+            } else if (elements.size() == 1) {
+                return parseRelationElement(elements.get(0));
+            } else {
+                List<CqlQueryOperation> ops = new ArrayList<>();
+                for (CqlParser.RelationElementContext el : elements) {
+                    CqlQueryOperation op = parseRelationElement(el);
+                    if (op != null) {
+                        ops.add(op);
+                    }
+                }
+                return new AndOperation(ops);
+            }
+        } else {
+            return null;
         }
-        return new AndOperation(ops);
+    }
+
+    /**
+     * Extracts the keyspace/table a CQL SELECT, UPDATE, or DELETE statement targets, straight
+     * from the parse tree. Unlike a regex over the raw CQL text, this preserves whether an
+     * identifier was quoted (and therefore case-sensitive) or not, since the grammar's
+     * {@code table}/{@code keyspace}/{@code fromSpecElement} rules match the quote characters
+     * as part of the token text.
+     *
+     * @param root the root of a parsed CQL command, as returned by {@link #parseCqlCommand}
+     * @return the referenced keyspace/table;
+     * @throws IllegalArgumentException if the statement isn't a SELECT/UPDATE/DELETE
+     */
+    public static CqlTableReference getTableReference(CqlParser.RootContext root) {
+        CqlParser.CqlContext cql = root.cqls() != null ? root.cqls().cql(0) : null;
+        if (cql == null) {
+            throw new IllegalStateException("CQL query cannot be null");
+        } else if (cql.select_() != null) {
+            return parseFromSpec(cql.select_().fromSpec());
+        } else if (cql.delete_() != null) {
+            return parseFromSpec(cql.delete_().fromSpec());
+        } else if (cql.update() != null) {
+            CqlParser.UpdateContext update = cql.update();
+            String keyspaceName = update.keyspace() != null ? update.keyspace().getText() : null;
+            return new CqlTableReference(keyspaceName, update.table().getText());
+        } else {
+            throw new IllegalArgumentException("Cannot extract a table reference from a non SELECT/UPDATE/DELETE CQL command: " + cql.getText());
+        }
+    }
+
+    private static CqlTableReference parseFromSpec(CqlParser.FromSpecContext fromSpec) {
+        List<TerminalNode> names = fromSpec.fromSpecElement().OBJECT_NAME();
+        if (names.size() == 1) {
+            return new CqlTableReference(null, names.get(0).getText());
+        } else if (names.size() == 2) {
+            return new CqlTableReference(names.get(0).getText(), names.get(1).getText());
+        } else {
+            SimpleLogger.error("Malformed fromSpecElement while extracting a CQL table reference: expected 1 or 2 OBJECT_NAME tokens but got " + names.size() + ". fromSpec text: " + fromSpec.getText());
+            throw new IllegalStateException("Malformed fromSpecElement: expected 1 or 2 OBJECT_NAME tokens but got " + names.size());
+        }
     }
 
     private static CqlQueryOperation parseRelationElement(CqlParser.RelationElementContext rel) {
-        // CONTAINS KEY: col CONTAINS KEY value
-        if (rel.relalationContainsKey() != null) {
+        if (rel.relalationContainsKey() != null) { // CONTAINS KEY
             CqlParser.RelalationContainsKeyContext ck = rel.relalationContainsKey();
             return new ContainsKeyOperation<>(ck.OBJECT_NAME().getText(), parseConstant(ck.constant()));
-        }
-
-        // CONTAINS: col CONTAINS value
-        if (rel.relalationContains() != null) {
+        } else if (rel.relalationContains() != null) { // CONTAINS
             CqlParser.RelalationContainsContext c = rel.relalationContains();
             return new ContainsOperation<>(c.OBJECT_NAME().getText(), parseConstant(c.constant()));
-        }
-
-        // IN: col IN (v1, v2, ...)
-        if (rel.kwIn() != null) {
+        } else if (rel.kwIn() != null) { // IN
             String col = rel.OBJECT_NAME(0).getText();
             List<Object> values = new ArrayList<>();
+
             if (rel.functionArgs() != null) {
                 for (CqlParser.ConstantContext cc : rel.functionArgs().constant()) {
                     values.add(parseConstant(cc));
                 }
             }
             return new InOperation(col, values);
+        } else {
+            // Comparison: col OP constant
+            CqlParser.ConstantContext constant = rel.constant();
+            if (constant != null && rel.OBJECT_NAME(0) != null) {
+                String col   = rel.OBJECT_NAME(0).getText();
+                Object value = parseConstant(constant);
+                if (rel.OPERATOR_EQ()  != null) {
+                    return new EqualsOperation<>(col, value);
+                } else if (rel.OPERATOR_GT()  != null) {
+                    return new GreaterThanOperation<>(col, value);
+                } else if (rel.OPERATOR_GTE() != null) {
+                    return new GreaterThanEqualsOperation<>(col, value);
+                } else if (rel.OPERATOR_LT()  != null) {
+                    return new LessThanOperation<>(col, value);
+                } else if (rel.OPERATOR_LTE() != null) {
+                    return new LessThanEqualsOperation<>(col, value);
+                } else {
+                    return null;
+                }
+            } else {
+                return null;
+            }
         }
-
-        // Comparison: col OP constant
-        CqlParser.ConstantContext constant = rel.constant();
-        if (constant != null && rel.OBJECT_NAME(0) != null) {
-            String col   = rel.OBJECT_NAME(0).getText();
-            Object value = parseConstant(constant);
-            if (rel.OPERATOR_EQ()  != null) return new EqualsOperation<>(col, value);
-            if (rel.OPERATOR_GT()  != null) return new GreaterThanOperation<>(col, value);
-            if (rel.OPERATOR_GTE() != null) return new GreaterThanEqualsOperation<>(col, value);
-            if (rel.OPERATOR_LT()  != null) return new LessThanOperation<>(col, value);
-            if (rel.OPERATOR_LTE() != null) return new LessThanEqualsOperation<>(col, value);
-        }
-
-        return null;
     }
 
     private static Object parseConstant(CqlParser.ConstantContext ctx) {
-        if (ctx.UUID()            != null) return UUID.fromString(ctx.UUID().getText());
-        if (ctx.stringLiteral()   != null) {
+        if (ctx.UUID() != null) {
+            return UUID.fromString(ctx.UUID().getText());
+        } else if (ctx.stringLiteral() != null) {
             String raw = ctx.stringLiteral().getText();
             return raw.substring(1, raw.length() - 1); // strip surrounding single quotes
+        } else if (ctx.decimalLiteral() != null) {
+            return Long.parseLong(ctx.decimalLiteral().getText());
+        } else if (ctx.floatLiteral() != null) {
+            return Double.parseDouble(ctx.floatLiteral().getText());
+        } else if (ctx.booleanLiteral() != null) {
+            return ctx.booleanLiteral().getText().equalsIgnoreCase("true");
+        } else if (ctx.durationLiteral() != null) {
+            return ctx.durationLiteral().getText();
+        } else {
+            return null; // kwNull, codeBlock, hexadecimal
         }
-        if (ctx.decimalLiteral()  != null) return Long.parseLong(ctx.decimalLiteral().getText());
-        if (ctx.floatLiteral()    != null) return Double.parseDouble(ctx.floatLiteral().getText());
-        if (ctx.booleanLiteral()  != null) return ctx.booleanLiteral().getText().equalsIgnoreCase("true");
-        if (ctx.durationLiteral() != null) return ctx.durationLiteral().getText();
-        return null; // kwNull, codeBlock, hexadecimal
     }
 }

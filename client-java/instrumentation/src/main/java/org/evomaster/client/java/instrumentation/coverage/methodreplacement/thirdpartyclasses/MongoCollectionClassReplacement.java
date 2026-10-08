@@ -56,8 +56,19 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         try {
             Method findMethod = retrieveFindMethod(id, mongoCollection);
             Object result = findMethod.invoke(mongoCollection, args.toArray());
+            // As the result is usually a lazy cursor, we need to explicitly call hasNext()
+            // to ensure that the query is valid.
+            Iterable<?> iterableResult = (Iterable<?>) result;
+            boolean successfullyExecuted;
+            try {
+                iterableResult.iterator().hasNext();
+                successfullyExecuted = true;
+            } catch (RuntimeException e) {
+                // If the hasNext() method throws an exception, it means the query was not valid.
+                successfullyExecuted = false;
+            }
             long end = System.currentTimeMillis();
-            handleMongo(mongoCollection, query, true, end - start);
+            handleMongo(mongoCollection, query, successfullyExecuted, end - start);
             return result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);

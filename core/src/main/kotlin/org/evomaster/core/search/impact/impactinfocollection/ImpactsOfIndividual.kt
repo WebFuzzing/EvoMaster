@@ -1,14 +1,17 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.redis.RedisDbAction
-import org.evomaster.core.search.action.EnvironmentAction
-import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.EnvironmentAction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
@@ -84,6 +87,12 @@ open class ImpactsOfIndividual(
         val MONGODB_ACTION_KEY = MongoDbAction::class.java.name
 
         val REDISDB_ACTION_KEY = RedisDbAction::class.java.name
+
+        val DYNAMODB_ACTION_KEY = DynamoDbAction::class.java.name
+
+        val CASSANDRADB_ACTION_KEY = CassandraDbAction::class.java.name
+
+        val NEO4JDB_ACTION_KEY = Neo4jDbAction::class.java.name
 
         val HOSTNAME_RESOLUTION_KEY = HostnameResolutionAction::class.java.name
     }
@@ -178,7 +187,7 @@ open class ImpactsOfIndividual(
 
     /**
      * @param actionIndex is null when there is no action in the individual, then return the first GeneImpact.
-     * Note that the index refers the relative index at actions grouped by the type
+     * The initialization index is relative to its action type unless [absoluteInitializationIndex] is true.
      */
     fun getGene(
         actionName: String?,
@@ -187,7 +196,8 @@ open class ImpactsOfIndividual(
         actionIndex: Int?,
         localId: String?,
         fixedIndexedAction: Boolean,
-        fromInitialization: Boolean
+        fromInitialization: Boolean,
+        absoluteInitializationIndex: Boolean = false
     ): GeneImpact? {
         // all individual should have at leadt one action, then remove this condition
         //if (actionIndex == null || (actionIndex == -1 && noneActionIndividual())) return fixedMainActionImpacts.first().geneImpacts[geneId]
@@ -200,11 +210,12 @@ open class ImpactsOfIndividual(
 
         val impactsOfAction =
                 if (fromInitialization) {
-                    if (initActionClassName != null) initActionImpacts[initActionClassName]?.getImpactOfAction(actionName, actionIndex!!)
+                    if (initActionClassName != null) initActionImpacts[initActionClassName]?.getImpactOfAction(actionName, actionIndex!!, absoluteInitializationIndex)
                     else initActionImpacts.values.firstNotNullOfOrNull {
                         it.getImpactOfAction(
                             actionName,
-                            actionIndex!!
+                            actionIndex!!,
+                            absoluteInitializationIndex
                         )
                     }
                 }
@@ -296,6 +307,11 @@ open class ImpactsOfIndividual(
         if (impactsForInitActionType.getOriginalSize() != initActions.size){
             throw IllegalStateException("inconsistent impact for SQL genes")
         }
+        impactsForInitActionType.syncAbsolutePositions(
+            individual.seeInitializingActions().withIndex()
+                .filter { it.value.getActionGroupKey() == initActionClassName }
+                .map { it.index }
+        )
 
     }
 

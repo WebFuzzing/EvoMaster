@@ -17,6 +17,7 @@ import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -100,7 +101,9 @@ class PostmanParserTest {
 
         val optTimeQueryParam = request.parameters.find { it.name == "optTimeQueryParam" }?.gene as OptionalGene
         assertTrue(optTimeQueryParam.isActive)
-        assertEquals("13:45:08", (optTimeQueryParam.gene as StringGene).value)
+        assertEquals(13, (optTimeQueryParam.gene as TimeGene).hour.value)
+        assertEquals(45, (optTimeQueryParam.gene as TimeGene).minute.value)
+        assertEquals(8, (optTimeQueryParam.gene as TimeGene).second.value)
 
         val optDateTimeQueryParam = request.parameters.find { it.name == "optDateTimeQueryParam" }?.gene as OptionalGene
         assertTrue(optDateTimeQueryParam.isActive)
@@ -265,7 +268,9 @@ class PostmanParserTest {
 
         val optTimeQueryParam = request.parameters.find { it.name == "optTimeQueryParam" }?.gene as OptionalGene
         assertTrue(optTimeQueryParam.isActive)
-        assertEquals("13:45:08", (optTimeQueryParam.gene as StringGene).value)
+        assertEquals(13, (optTimeQueryParam.gene as TimeGene).hour.value)
+        assertEquals(45, (optTimeQueryParam.gene as TimeGene).minute.value)
+        assertEquals(8, (optTimeQueryParam.gene as TimeGene).second.value)
 
         val optDateTimeQueryParam = request.parameters.find { it.name == "optDateTimeQueryParam" }?.gene as OptionalGene
         val originalOptDateTimeQueryParam = originalRequest.parameters.find { it.name == "optDateTimeQueryParam" }?.gene as OptionalGene

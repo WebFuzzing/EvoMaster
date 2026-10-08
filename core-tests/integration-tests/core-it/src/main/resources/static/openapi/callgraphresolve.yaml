@@ -1,0 +1,33 @@
+openapi: 3.0.0
+info:
+  version: "1.0"
+  title: open-api
+paths:
+  "/items":
+    "get":
+      responses:
+        "200":
+          description: "ok"
+  "/items/{id}":
+    "get":
+      responses:
+        "200":
+          description: "ok"
+    "put":
+      responses:
+        "200":
+          description: "ok"
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/items/special":
+    "get":
+      responses:
+        "200":
+          description: "ok"
+  "/items/{id}/constraints/{constraintId}":
+    "delete":
+      responses:
+        "200":
+          description: "ok"

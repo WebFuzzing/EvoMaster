@@ -14,14 +14,21 @@ import redis.clients.jedis.Jedis;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class RedisController extends EmbeddedSutController {
 
     private static final int REDIS_DB_PORT = 6379;
     private Jedis redisClient;
 
-    private final GenericContainer<?> redisContainer = new GenericContainer<>("redis:7.0")
-            .withExposedPorts(REDIS_DB_PORT);
+    protected static final String DEFAULT_REDIS_IMAGE = "redis:7.0";
+
+    /**
+     * Plain Redis has no RediSearch module, so SUTs using FT.* commands need Redis Stack.
+     */
+    protected static final String REDIS_STACK_IMAGE = "redis/redis-stack-server:7.4.0-v7";
+
+    private final GenericContainer<?> redisContainer;
     private ConfigurableApplicationContext ctx;
 
     private final String databaseName;
@@ -34,6 +41,11 @@ public abstract class RedisController extends EmbeddedSutController {
     private ReflectionBasedRedisClient reflectionRedisClient;
 
     protected RedisController(String databaseName, Class<?> redisAppClass) {
+        this(databaseName, redisAppClass, DEFAULT_REDIS_IMAGE);
+    }
+
+    protected RedisController(String databaseName, Class<?> redisAppClass, String redisImage) {
+        this.redisContainer = new GenericContainer<>(redisImage).withExposedPorts(REDIS_DB_PORT);
         this.databaseName  = databaseName;
         this.redisAppClass = redisAppClass;
         super.setControllerPort(0);
@@ -75,7 +87,12 @@ public abstract class RedisController extends EmbeddedSutController {
 
     @Override
     public void resetStateOfSUT() {
-        redisClient.flushDB();
+        // Unlike FLUSHDB, deleting keys one by one does not drop RediSearch index definitions,
+        // which SUTs using FT.SEARCH/FT.AGGREGATE only create once (e.g. on @PostConstruct).
+        Set<String> keys = redisClient.keys("*");
+        if (!keys.isEmpty()) {
+            redisClient.del(keys.toArray(new String[0]));
+        }
     }
 
     @Override

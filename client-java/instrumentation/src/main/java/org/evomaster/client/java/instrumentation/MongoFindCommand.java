@@ -1,11 +1,20 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.mongo.BsonDocumentConverter;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+
+import static org.evomaster.client.java.instrumentation.mongo.BsonDocumentConverter.isBsonDocument;
 
 /**
  * Info related to MONGO command execution.
  */
 public class MongoFindCommand implements Serializable {
+
+
     /**
      * Name of the collection that the operation was applied to
      */
@@ -21,10 +30,8 @@ public class MongoFindCommand implements Serializable {
      */
     private final String documentsType;
 
-    /**
-     * Executed FIND query
-     */
-    private final Object bson;
+
+    private final /*org.bson.BsonDocument*/ Object bsonDocument;
 
     /**
      * If the operation was successfully executed
@@ -36,26 +43,57 @@ public class MongoFindCommand implements Serializable {
      */
     private final long executionTime;
 
-    public MongoFindCommand(String databaseName, String collectionName, String documentsType, Object bson, boolean successfullyExecuted, long executionTime) {
+    /**
+     * Constructor for MongoFindCommand.
+     *
+     * @param databaseName
+     * @param collectionName
+     * @param documentsType
+     * @param bsonDocument an instance of org.bson.BsonDocument
+     * @param successfullyExecuted
+     * @param executionTime
+     */
+    public MongoFindCommand(String databaseName, String collectionName, String documentsType, /*org.bson.BsonDocument*/ Object bsonDocument, boolean successfullyExecuted, long executionTime) {
+        if (bsonDocument!=null && !isBsonDocument(bsonDocument)) {
+            throw new IllegalArgumentException("bsonDocument must be an instance of org.bson.BsonDocument but it is of class " + bsonDocument.getClass().getName());
+        }
         this.collectionName = collectionName;
         this.databaseName = databaseName;
         this.documentsType = documentsType;
-        this.bson = bson;
+        this.bsonDocument = bsonDocument;
         this.successfullyExecuted = successfullyExecuted;
         this.executionTime = executionTime;
     }
 
     public Object getQuery() {
-        return bson;
+        return bsonDocument;
     }
 
     public String getCollectionName() {
         return collectionName;
     }
 
-    public String getDocumentsType() {return documentsType;}
+    public String getDocumentsType() {
+        return documentsType;
+    }
 
     public String getDatabaseName() {
         return databaseName;
     }
+
+    /**
+     * Indicates whether the find command
+     * was successfully executed or it
+     * threw a RuntimeException due to
+     * an invalid query.
+     *
+     * @return if the lazy command was successfully executed
+     */
+    public boolean isSuccessfullyExecuted() {
+        return successfullyExecuted;
+    }
+
+
+
+
 }

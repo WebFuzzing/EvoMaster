@@ -7,16 +7,14 @@ import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
-import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.Companion.SQLI_PAYLOADS
@@ -297,14 +295,14 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
     private fun addForInjections() {
 
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_XSS_INJECTION)) {
             log.debug("Skipping security test for XSS as disabled in configuration")
         } else {
             if(hasPhaseTimedOut()) return
             handleXSSCheck()
         }
 
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_SQL_INJECTION)) {
             log.debug("Skipping experimental security test for sql injection as disabled in configuration")
         } else {
             if(config.blackBox || sampler.isSUTUsingASQLDatabase()) {
@@ -315,7 +313,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
             }
         }
 
-        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_SSRF)) {
             if(hasPhaseTimedOut()) return
             ssrfAnalyser.apply()
         }
@@ -348,7 +346,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
     private fun accessControlBasedOnRESTGuidelines() {
 
-        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION)){
             log.debug("Skipping security test for forbidden but ok others as disabled in configuration")
         } else {
             // quite a few rules here that can be defined
@@ -489,7 +487,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
                 val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-                if(DefinedFaultCategory.SQL_INJECTION in faultsCategories){
+                if(DefinedFaultCategory.SECURITY_SQL_INJECTION in faultsCategories){
                     val added = archive.addIfNeeded(evaluatedIndividual)
                     assert(added)
                     continue@mainloop
@@ -899,7 +897,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
                 parentGetAction.auth = lastAuth
                 // Bind to the same path params from the 404 action to ensure same IDs
                 //FIXME this would currently not work for dynamic parameters
-                parentGetAction.bindToSamePathResolution(action404)
+                DynamicPathUtils.bindToSamePathResolution(parentGetAction,action404)
 
                 final.addResourceCall(
                     restCalls = RestResourceCalls(
@@ -1324,7 +1322,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
                     val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-                    if(DefinedFaultCategory.XSS in faultsCategories){
+                    if(DefinedFaultCategory.SECURITY_XSS_INJECTION in faultsCategories){
                         archive.addIfNeeded(evaluatedIndividual)
                         continue@mainloop
                     }
@@ -1517,7 +1515,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
         creationAction: RestCallAction,
         targetAction: RestCallAction
     ) {
-        CreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
+        DynamicPathUtils.linkDynamicCreateResource(creationAction, targetAction)
         if (creationAction.path.isEquivalent(targetAction.path)) {
             targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
         }

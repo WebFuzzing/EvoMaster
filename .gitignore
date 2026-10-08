@@ -111,6 +111,8 @@ Migrations/
 /core-tests/e2e-tests/spring/spring-rest-mongo/target/
 /core-tests/e2e-tests/spring/spring-rest-opensearch/target/
 /core-tests/e2e-tests/spring/spring-rest-redis/target/
+/core-tests/e2e-tests/spring/spring-rest-neo4j/target/
+/core-tests/e2e-tests/spring/spring-rest-cassandra/target/
 /core-tests/client-java/target/
 /core-tests/client-java/dependencies/target/
 /core-tests/client-java/sql-dto/target/
@@ -118,6 +120,8 @@ Migrations/
 /core-tests/client-java/distance-heuristics/target/
 /em.toml
 
+/core-extra/arazzo-parser/target/
+/core-extra/asyncapi-parser/target/
 /core-extra/solver/target/
 /em.yaml
 /core-tests/e2e-tests/spring/spring-rest-openapi-v2/em.yaml
@@ -164,8 +168,10 @@ Migrations/
 /core-tests/e2e-tests/spring/emb-json/target/
 /process_data/
 /core-tests/e2e-tests/spring/spring-rest-multidb/target/
+/core-tests/e2e-tests/spring/spring-rest-polyglot-persistence/target/
 /core-tests/e2e-tests/spring/spring-rest-h2-v2/target/
 /core-tests/e2e-tests/spring/spring-rest-rsa/target/
+/core-tests/e2e-tests/spring/spring-rest-dynamodb/target/
 /core-tests/e2e-tests/spring/spring-rest-h2-v1/em.yaml
 /core-tests/integration-tests/core-it/target/
 /core-tests/integration-tests/core-it/em.yaml
@@ -174,6 +180,7 @@ client-java/sql/target
 client-java/sql-dto/target
 client-java/distance-heuristics/target
 client-java/test-old-libraries/target
+/client-java/postgres-test-utils/target/
 core-tests/e2e-tests/spring/spring-rest-mysql/target
 /core-tests/jdk-8/spring-rest-openapi-v2/target/
 /core-tests/jdk-8/spring-rest-openapi-v2-driver/target/
@@ -186,3 +193,4 @@ core-tests/e2e-tests/spring/spring-rest-mysql/target
 /pypi-distribution/src/evomaster/dmg/
 /pypi-distribution/src/evomaster/release/
 /pypi-distribution/em.yaml
+/core-extra/shared/target/

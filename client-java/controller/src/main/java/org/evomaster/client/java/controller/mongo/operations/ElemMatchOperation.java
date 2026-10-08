@@ -1,21 +1,19 @@
 package org.evomaster.client.java.controller.mongo.operations;
 
+import java.util.Objects;
+
 /**
  * Represent $elemMatch operation.
  * Selects documents if element in the array field matches all the specified $elemMatch conditions.
  * Here it only has one condition to match implementation in "com.mongodb.client.model.Filters"
  */
-public class ElemMatchOperation extends QueryOperation{
-    private final String fieldName;
+public class ElemMatchOperation extends QueryOperationWithFieldPath {
     private final QueryOperation condition;
 
     public ElemMatchOperation(String fieldName, QueryOperation condition) {
-        this.fieldName = fieldName;
+        super(fieldName);
+        Objects.requireNonNull(condition);
         this.condition = condition;
-    }
-
-    public String getFieldName() {
-        return fieldName;
     }
 
     public QueryOperation getCondition() {

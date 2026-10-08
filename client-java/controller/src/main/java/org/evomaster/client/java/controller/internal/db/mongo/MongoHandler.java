@@ -7,7 +7,7 @@ import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.controller.mongo.MongoOperation;
 import org.evomaster.client.java.instrumentation.MongoCollectionSchema;
 import org.evomaster.client.java.instrumentation.MongoFindCommand;
-import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.instrumentation.mongo.BsonDocumentConverter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -105,9 +105,13 @@ public class MongoHandler {
 
     public List<MongoCommandWithDistance> getEvaluatedMongoCommands() {
 
-        operations.stream().filter(info -> info.getQuery() != null).forEach(mongoInfo -> {
-            MongoDistanceWithMetrics distanceWithMetrics = computeFindDistance(mongoInfo);
-            mongoCommandWithDistances.add(new MongoCommandWithDistance(mongoInfo.getQuery(), distanceWithMetrics));
+        operations.stream()
+                // Filter out operations that have a null query or were not successfully executed
+                .filter(info -> info.getQuery() != null && info.isSuccessfullyExecuted())
+                // Compute the distance for each operation and create a MongoCommandWithDistance object
+                .forEach(mongoInfo -> {
+                    MongoDistanceWithMetrics distanceWithMetrics = computeFindDistance(mongoInfo);
+                    mongoCommandWithDistances.add(new MongoCommandWithDistance(mongoInfo.getQuery(), distanceWithMetrics));
         });
         operations.clear();
 
@@ -144,32 +148,24 @@ public class MongoHandler {
         String databaseName = info.getDatabaseName();
         String collectionName = info.getCollectionName();
 
-        Object collection = getCollection(databaseName,collectionName);
+        Object collection = getCollection(databaseName, collectionName);
         Iterable<?> documents = getDocuments(collection);
         boolean collectionIsEmpty = !documents.iterator().hasNext();
 
+        final Object queryAsBsonDocument = info.getQuery();
+        final Object queryAsDocument = toDocument(queryAsBsonDocument);
+
         if (collectionIsEmpty) {
-            emptyCollections.add(new MongoOperation(info.getCollectionName(), info.getQuery(), info.getDatabaseName(), info.getDocumentsType()));
+            emptyCollections.add(new MongoOperation(info.getCollectionName(), queryAsDocument, info.getDatabaseName(), info.getDocumentsType()));
         }
 
-        double min = Double.MAX_VALUE;
-        int numberOfEvaluatedDocuments = 0;
-        for (Object doc : documents) {
-            numberOfEvaluatedDocuments += 1;
-            double findDistance;
-            try {
-                findDistance = calculator.computeExpression(info.getQuery(), doc);
-            } catch (Exception ex) {
-                SimpleLogger.uniqueWarn("Failed to compute find: " + info.getQuery() + " with data " + doc);
-                findDistance = Double.MAX_VALUE;
-            }
-            if (findDistance == 0) {
-                return new MongoDistanceWithMetrics(0, numberOfEvaluatedDocuments);
-            } else if (findDistance < min) {
-                min = findDistance;
-            }
-        }
-        return new MongoDistanceWithMetrics(min, numberOfEvaluatedDocuments);
+        MongoDistanceWithMetrics mongoDistanceWithMetrics = calculator.computeDistanceDocuments(queryAsDocument, documents); // to update the metrics
+        return mongoDistanceWithMetrics;
+    }
+
+    private /*org.bson.Document*/ Object toDocument(Object /*org.bson.BsonDocument*/ queryAsBsonDocument) {
+        // Implementation to convert BSON document to a regular document
+        return BsonDocumentConverter.toDocument(queryAsBsonDocument);
     }
 
     private Object getCollection(String databaseName, String collectionName) {

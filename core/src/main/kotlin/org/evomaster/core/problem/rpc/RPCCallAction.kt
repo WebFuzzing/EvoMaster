@@ -36,7 +36,7 @@ open class RPCCallAction(
      */
     var response : RPCParam?,
 
-    override var auth: RPCAuthenticationInfo = RPCNoAuth()
+     var auth: RPCAuthenticationInfo = RPCNoAuth()
 
 ) : ApiWsAction(auth, false, inputParameters)  {
 

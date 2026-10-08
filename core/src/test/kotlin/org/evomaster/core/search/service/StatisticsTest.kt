@@ -37,6 +37,52 @@ class StatisticsTest {
     }
 
     @Test
+    fun testDynamoDbHeuristicsAverage() {
+        val statistics = Statistics()
+        statistics.reportNumberOfEvaluatedItemsForDynamoDbHeuristic(10)
+        statistics.reportNumberOfEvaluatedItemsForDynamoDbHeuristic(20)
+        statistics.reportNumberOfEvaluatedItemsForDynamoDbHeuristic(30)
+
+        repeat(2) {
+            statistics.reportDynamoDbHeuristicEvaluationSuccess()
+        }
+        statistics.reportDynamoDbHeuristicEvaluationFailure()
+
+        assertEquals(3, statistics.getDynamoDbHeuristicsEvaluationCount())
+        assertEquals(20.0, statistics.averageNumberOfEvaluatedItemsForDynamoDbHeuristics())
+    }
+
+    @Test
+    fun testNeo4jHeuristicsAverage() {
+        val statistics = Statistics()
+        statistics.reportNumberOfEvaluatedNodesForNeo4jHeuristic(10)
+        statistics.reportNumberOfEvaluatedNodesForNeo4jHeuristic(20)
+        statistics.reportNumberOfEvaluatedNodesForNeo4jHeuristic(30)
+
+        repeat(2) {
+            statistics.reportNeo4jHeuristicEvaluationSuccess()
+        }
+        statistics.reportNeo4jHeuristicEvaluationFailure()
+
+        assertEquals(3, statistics.getNeo4jHeuristicsEvaluationCount())
+        assertEquals(20.0, statistics.averageNumberOfEvaluatedNodesForNeo4jHeuristics())
+    }
+
+    @Test
+    fun testCassandraHeuristicsAverage() {
+        val statistics = Statistics()
+        statistics.reportNumberOfEvaluatedRowsForCassandraHeuristic(2)
+        statistics.reportNumberOfEvaluatedRowsForCassandraHeuristic(4)
+
+        statistics.reportCassandraHeuristicEvaluationSuccess()
+        statistics.reportCassandraHeuristicEvaluationSuccess()
+        statistics.reportCassandraHeuristicEvaluationFailure()
+
+        assertEquals(3, statistics.getCassandraHeuristicsEvaluationCount())
+        assertEquals((2 + 4).toDouble() / 2, statistics.averageNumberOfEvaluatedRowsForCassandraHeuristics())
+    }
+
+    @Test
     fun testSqlZ3CacheAccountingInvariant() {
         val statistics = Statistics()
 

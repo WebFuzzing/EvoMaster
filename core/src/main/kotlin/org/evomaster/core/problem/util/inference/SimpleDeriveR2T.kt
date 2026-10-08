@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.util.inference
 
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -16,8 +16,8 @@ import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.problem.util.StringSimilarityComparator.stringSimilarityScore
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.sql.SqlActionUtils.SCHEMA_TABLE_SEPARATOR
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.SqlActionUtils.SCHEMA_TABLE_SEPARATOR
+import org.evomaster.core.database.sql.schema.TableId
 import kotlin.math.max
 
 /**

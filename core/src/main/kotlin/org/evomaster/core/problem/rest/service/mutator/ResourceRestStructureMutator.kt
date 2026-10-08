@@ -2,8 +2,8 @@ package org.evomaster.core.problem.rest.service.mutator
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -20,8 +20,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.Integ
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
-import org.evomaster.core.sql.SqlActionUtils
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.SqlActionUtils
 import kotlin.math.max
 import kotlin.math.min
 import org.slf4j.Logger

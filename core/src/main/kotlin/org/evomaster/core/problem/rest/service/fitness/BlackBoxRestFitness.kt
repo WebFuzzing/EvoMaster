@@ -4,21 +4,18 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.rest.StatusGroup
-import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.utils.CollectionUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.inject.Inject
 import javax.ws.rs.core.NewCookie
 
 
@@ -117,7 +114,7 @@ class BlackBoxRestFitness : RestFitness() {
         val toHandle = createWithPost.plus(
             CollectionUtils.deDuplicate(createWithPut){x,y ->
                 //if more than 1 PUT resolve to same location, just need to handle it once
-                CreateResourceUtils.doesResolveToSamePath(x.action as RestCallAction, y.action as RestCallAction)
+                DynamicPathUtils.doesResolveToSamePath(x.action as RestCallAction, y.action as RestCallAction)
             }
         )
 
@@ -141,7 +138,7 @@ class BlackBoxRestFitness : RestFitness() {
             val existing = mainActions.filterIndexed { i, a ->
                 i > index && a.verb == HttpVerb.DELETE
                         && a.path.isEquivalent(delete.path)
-                        && CreateResourceUtils.doesResolveToSamePath(a,delete)
+                        && DynamicPathUtils.doesResolveToSamePath(a,delete)
             }
             if(existing.isNotEmpty()){
                 continue

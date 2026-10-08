@@ -2,8 +2,8 @@ package org.evomaster.core.output.naming
 
 import org.evomaster.core.TestUtils
 import org.evomaster.core.TestUtils.generateFakeDbAction
-import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.mongo.MongoDbActionResult
+import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.mongo.MongoDbActionResult
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
@@ -34,8 +34,8 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.Traceable
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionResult
 import java.util.*
 import java.util.Collections.singletonList
 import javax.ws.rs.core.MediaType

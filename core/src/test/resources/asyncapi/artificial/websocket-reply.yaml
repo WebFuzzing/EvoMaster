@@ -1,0 +1,124 @@
+asyncapi: 3.0.0
+info:
+  title: A duplex socket carrying many messages
+  version: 1.0.0
+defaultContentType: application/json
+
+servers:
+  socket:
+    host: localhost:8088
+    protocol: ws
+    pathname: /v1/vsi
+
+channels:
+  vsi:
+    address: /v1/vsi
+    messages:
+      list_legs:
+        $ref: '#/components/messages/listLegs'
+      list_legs.result:
+        $ref: '#/components/messages/listLegsResult'
+      get_leg:
+        $ref: '#/components/messages/getLeg'
+      get_leg.result:
+        $ref: '#/components/messages/getLegResult'
+      error:
+        $ref: '#/components/messages/error'
+    bindings:
+      ws:
+        method: GET
+
+operations:
+  recv_list_legs:
+    action: receive
+    summary: List all active legs
+    channel:
+      $ref: '#/channels/vsi'
+    messages:
+      - $ref: '#/channels/vsi/messages/list_legs'
+    reply:
+      channel:
+        $ref: '#/channels/vsi'
+      messages:
+        - $ref: '#/channels/vsi/messages/list_legs.result'
+        - $ref: '#/channels/vsi/messages/error'
+
+  recv_get_leg:
+    action: receive
+    summary: Get a single leg
+    channel:
+      $ref: '#/channels/vsi'
+    messages:
+      - $ref: '#/channels/vsi/messages/get_leg'
+    reply:
+      channel:
+        $ref: '#/channels/vsi'
+      messages:
+        - $ref: '#/channels/vsi/messages/get_leg.result'
+        - $ref: '#/channels/vsi/messages/error'
+
+components:
+  messages:
+    listLegs:
+      name: ListLegs
+      correlationId:
+        location: '$message.payload#/request_id'
+      payload:
+        type: object
+        required: [request, request_id]
+        properties:
+          request:
+            const: list_legs
+          request_id:
+            type: string
+    listLegsResult:
+      name: ListLegsResult
+      correlationId:
+        location: '$message.payload#/request_id'
+      payload:
+        type: object
+        properties:
+          request_id:
+            type: string
+          legs:
+            type: array
+            items:
+              type: string
+    getLeg:
+      name: GetLeg
+      correlationId:
+        location: '$message.payload#/request_id'
+      payload:
+        type: object
+        required: [request, request_id, leg_id]
+        properties:
+          request:
+            const: get_leg
+          request_id:
+            type: string
+          leg_id:
+            type: string
+    getLegResult:
+      name: GetLegResult
+      payload:
+        type: object
+        properties:
+          request_id:
+            type: string
+          leg:
+            type: [object, "null"]
+    error:
+      name: Error
+      payload:
+        type: object
+        required: [error]
+        properties:
+          request_id:
+            type: string
+          error:
+            type: object
+            properties:
+              code:
+                type: integer
+              message:
+                type: string

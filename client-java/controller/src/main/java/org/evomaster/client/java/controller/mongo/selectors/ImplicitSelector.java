@@ -18,11 +18,17 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 public class ImplicitSelector extends QuerySelector {
 
     private static final String PREFIX_OPERATOR = "$";
+    private static final String COMMENT_OPERATOR = "$comment";
 
     @Override
     public QueryOperation getOperation(Object query) {
         if (!isImplicitQuery(query)) {
             return null;
+        }
+
+        Set<String> keys = documentKeys(query);
+        if (keys.isEmpty()) {
+            return new EmptyOperation(); // Represents the "{}" MongoDB query, which matches all documents
         }
 
         if (!isUniqueEntry((Map<?, ?>) query)) {
@@ -38,12 +44,16 @@ public class ImplicitSelector extends QuerySelector {
         }
 
         Set<String> keys = documentKeys(query);
-        if (keys == null || keys.isEmpty()) {
+        if (keys == null) {
             return false;
         }
 
-        // If any key starts with $, this is not an implicit query
-        return keys.stream().noneMatch(k -> k.startsWith(PREFIX_OPERATOR));
+        if (keys.isEmpty()) {
+            return true;
+        }
+
+        // "$" is the synthetic field used for operators that target a scalar array element.
+        return keys.stream().noneMatch(k -> k.startsWith(PREFIX_OPERATOR) && !k.equals(PREFIX_OPERATOR));
     }
 
     private QueryOperation handleMultipleFields(Object query) {
@@ -53,13 +63,19 @@ public class ImplicitSelector extends QuerySelector {
 
     private QueryOperation handleSingleField(Object query) {
         String fieldName = extractFieldName(query);
-        Object value = getValue(query, fieldName);
+        Object value = documentGetValue(query, fieldName);
 
         // If the value is a document, it might contain multiple operators (e.g. {age: {$gte: 18, $lt: 65}})
         // or it might be a literal document to match (e.g. {metadata: {foo: "bar"}})
-        if (isBsonDocument(value)) {
+        if (isDocument(value)) {
             if (isEmptyDocument(value)) {
                 return null;
+            }
+            // "$comment" is not a recognized field-level operator: a value that is solely
+            // { $comment: ... } is treated as a literal document to match, not as an operator.
+            Set<String> innerKeys = documentKeys(value);
+            if (innerKeys != null && innerKeys.size() == 1 && innerKeys.contains(COMMENT_OPERATOR)) {
+                return new EqualsOperation<>(fieldName, value);
             }
             QueryOperation multiOperatorOp = handlePotentialMultiOperatorValue(query, fieldName, value);
             if (multiOperatorOp != null || isBsonDocumentWithOperators(value)) {
@@ -98,7 +114,7 @@ public class ImplicitSelector extends QuerySelector {
     }
 
     private boolean isBsonDocumentWithOperators(Object value) {
-        if (!isBsonDocument(value)) {
+        if (!isDocument(value)) {
             return false;
         }
         Set<String> keys = documentKeys(value);
@@ -110,9 +126,9 @@ public class ImplicitSelector extends QuerySelector {
         // Split into multiple conditions: { age: { $gte: 18 } } and { age: { $lt: 65 } }
         List<QueryOperation> conditions = new ArrayList<>();
         for (String operator : operators) {
-            Object operatorValue = getValue(value, operator);
-            Object newQuery = newDocument(query);
-            Object newInnerDoc = newDocument(value);
+            Object operatorValue = documentGetValue(value, operator);
+            Object newQuery = documentNewDocument(query);
+            Object newInnerDoc = documentNewDocument(value);
             appendToDocument(newInnerDoc, operator, operatorValue);
             appendToDocument(newQuery, fieldName, newInnerDoc);
             QueryOperation operation = new QueryParser().parse(newQuery);
@@ -129,8 +145,8 @@ public class ImplicitSelector extends QuerySelector {
         ArrayList<QueryOperation> conditions = new ArrayList<>();
         if (fields == null) return conditions;
         for (String fieldName : fields) {
-            Object newQuery = newDocument(query);
-            appendToDocument(newQuery, fieldName, getValue(query, fieldName));
+            Object newQuery = documentNewDocument(query);
+            appendToDocument(newQuery, fieldName, documentGetValue(query, fieldName));
             QueryOperation operation = new QueryParser().parse(newQuery);
             if (operation == null) {
                 return null; // All parts of an implicit AND must be valid

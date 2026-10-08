@@ -44,7 +44,7 @@ object RegexHandler {
 
         val pattern = parser.pattern()
 
-        val res = GeneRegexJavaVisitor(externalRegexFlags).visit(pattern)
+        val res = GeneRegexJavaVisitor(regex, externalRegexFlags).visit(pattern)
 
         val gene= res.genes.first() as RegexGene
         cacheJVM[key] = gene.copy() as RegexGene
@@ -264,7 +264,11 @@ object RegexHandler {
      */
     private class ThrowingErrorListener : BaseErrorListener() {
 
-        override fun syntaxError(recognizer: Recognizer<*, *>, offendingSymbol: Any, line: Int, charPositionInLine: Int, msg: String, e: RecognitionException) {
+        // offendingSymbol is nullable as otherwise lexer errors throw NPE instead of ParseCancellationException
+        // for example, on our Java grammar [\1] is a lexer error since \1 has no token within that context
+        // org.antlr.v4.runtime.BaseErrorListener.syntaxError declares this parameter as Object, which is nullable
+        // org.antlr.v4.runtime.Lexer.notifyListeners calls this method with offendingSymbol as null
+        override fun syntaxError(recognizer: Recognizer<*, *>, offendingSymbol: Any?, line: Int, charPositionInLine: Int, msg: String, e: RecognitionException) {
             throw ParseCancellationException("line $line:$charPositionInLine $msg")
         }
     }

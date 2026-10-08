@@ -2,11 +2,11 @@ package org.evomaster.core.sql.extract.mysql
 
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
-import org.evomaster.core.sql.SqlActionTransformer
-import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.SqlActionTransformer
+import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

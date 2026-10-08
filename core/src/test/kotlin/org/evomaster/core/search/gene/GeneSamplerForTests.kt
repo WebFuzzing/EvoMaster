@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.parser.RegexType
+import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
@@ -14,7 +15,7 @@ import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathOnlyGene
 import org.evomaster.core.search.gene.jsonpatch.JsonPatchPathValueGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.sql.*
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.search.gene.sql.geometric.*
 import org.evomaster.core.search.gene.network.CidrGene
 import org.evomaster.core.search.gene.network.InetGene
@@ -143,6 +144,7 @@ object GeneSamplerForTests {
             QuantifierRxGene::class -> sampleQuantifierRxGene(rand) as T
             RegexGene::class -> sampleRegexGene(rand) as T
             BackReferenceRxGene::class -> sampleBackReferenceRxGene(rand) as T
+            AssertionRxGene::class -> sampleAssertionRxGene(rand) as T
             ObjectWithAttributesGene::class -> sampleObjectGeneWithAttributes(rand) as T
 
             //SQL genes
@@ -184,6 +186,9 @@ object GeneSamplerForTests {
 
             // Mongo genes
             ObjectIdGene::class -> sampleMongoObjectIdGene(rand) as T
+
+            // Cassandra genes
+            CqlDurationGene::class -> sampleCqlDurationGene(rand) as T
 
             // JSON Patch genes
             JsonPatchDocumentGene::class  -> sampleJsonPatchDocumentGene(rand) as T
@@ -418,6 +423,10 @@ object GeneSamplerForTests {
         return ObjectIdGene("rand ObjectIdGene ${rand.nextInt()}")
     }
 
+    private fun sampleCqlDurationGene(rand: Randomness): CqlDurationGene {
+        return CqlDurationGene("rand CqlDurationGene ${rand.nextInt()}")
+    }
+
     fun sampleBackReferenceRxGene(rand: Randomness): BackReferenceRxGene {
         val captureGroup = sampleDisjunctionListRxGene(rand)
         // as we do not allow to mutate the inner captureGroup gene using the backref gene we must first initialize it
@@ -428,12 +437,21 @@ object GeneSamplerForTests {
         )
     }
 
+    fun sampleAssertionRxGene(rand: Randomness): AssertionRxGene {
+        // since we do not want assertion repairs to fail for sampleRegexGene
+        // we make trivial assertions "(?=)", which always succeed repairs
+        val innerDisj = DisjunctionRxGene("emptyDisj", emptyList(), true, true)
+        val innerGene = DisjunctionListRxGene(listOf(innerDisj))
+        return AssertionRxGene(innerGene=innerGene, AssertionType.LOOKAHEAD)
+    }
+
     fun sampleRegexGene(rand: Randomness): RegexGene {
         return RegexGene(
             name = "rand RegexGene",
             disjunctions = sampleDisjunctionListRxGene(rand),
-            ".*", //TODO tricky, we want to sample different structures,
+            "(?s).*", //TODO tricky, we want to sample different structures,
                                 // but still validation should not fail
+                            // (?s) makes "." match all chars instead of excluding line terminators
             RegexType.JVM
         )
     }
@@ -473,8 +491,8 @@ object GeneSamplerForTests {
                 //let's avoid huge trees...
                 .filter {
                     (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java
-                    && it.java != BackReferenceRxGene::class.java) // as this also contains a DisjunctionListRxGene within
-                            || rand.nextBoolean()
+                    && it.java != BackReferenceRxGene::class.java && it.java != AssertionRxGene::class.java) // as this also contains a DisjunctionListRxGene within
+                            || rand.nextBoolean(0.2) // reduced chance for larger trees
                 }
 
         val numberOfTerms = rand.nextInt(1, 3)

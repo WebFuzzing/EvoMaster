@@ -90,7 +90,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     protected lateinit var ssrfAnalyser: SSRFAnalyser
 
     @Inject
-    protected lateinit var responsePool: DataPool
+    protected lateinit var dataPool: DataPool
 
     @Inject
     protected lateinit var builder: RestIndividualBuilder
@@ -811,6 +811,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 }
             }.toLong()
 
+            // release the connection before waiting, as the 429 body is never read
+            response.close()
+
             LoggingUtil.getInfoLogger().warn("Going to wait $delay seconds before trying again")
             val hasWaited = searchTimeController.waitUpToSeconds(delay)
 
@@ -826,7 +829,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         rcr.setStatusCode(statusCode)
         rcr.setLocation(response.location?.toString())
-        rcr.setAllow(response.allowedMethods.joinToString(","))
+        if(response.getHeaderString("allow") != null) {
+            rcr.setAllow(response.allowedMethods.joinToString(","))
+        }
         rcr.setAppliedLink(appliedLink)
         rcr.setHeaders(response.stringHeaders)
 
@@ -878,6 +883,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             } else {
                 log.warn("Failed to parse HTTP response: ${e.message}")
             }
+        } finally {
+            // a body that decodes to nothing (eg an empty gzip stream) is never read, and would keep its pooled connection
+            response.close()
         }
 
         if(config.isEnabledFaultCategory(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE)){
@@ -892,13 +900,27 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_SSRF)) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
         }
 
+        if(config.useSuccessDataPool && StatusGroup.G_2xx.isInGroup(statusCode)){
+            handleSuccessDataPool(a)
+        }
+
         return handledSavedLocation
+    }
+
+    private fun handleSuccessDataPool(a: RestCallAction) {
+
+        a.seeAllGenes()
+            .filterIsInstance<StringGene>()
+            .filter{it.staticCheckIfImpactPhenotype()}
+            .forEach {
+                dataPool.addValueFromSuccesses(it.getVariableName(), it.value)
+            }
     }
 
     private fun handleSchemaOracles(
@@ -1345,39 +1367,39 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_NONWORKING_DELETE)) {
             handleDeleteShouldDelete(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
             handleRepeatedCreatePut(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
             handleFailedModification(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_PARTIAL_UPDATE_PUT)) {
             handlePartialUpdatePut(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT)) {
             handleMisleadingCreatePut(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT)) {
             handleNonIdempotentPut(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_LOCATION)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_INVALID_LOCATION)) {
             handleInvalidLocation(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_ALLOW)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.SCHEMA_INVALID_ALLOW)) {
             handleInvalidAllow(individual, actionResults, fv)
         }
 
-        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH)) {
             handleInvalidMergePatch(individual, actionResults, fv)
         }
     }
@@ -1419,7 +1441,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
             if (extra.isEmpty() && missing.isEmpty()) continue
 
-            val category = ExperimentalFaultCategory.HTTP_INVALID_ALLOW
+            val category = DefinedFaultCategory.SCHEMA_INVALID_ALLOW
             val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, a.getName()))
             fv.updateTarget(scenarioId, 1.0, index)
             val localMessage = listOfNotNull(
@@ -1448,7 +1470,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH
         }.last()
 
-        val category = ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION
+        val category = DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, putOrPatch.getName()))
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
@@ -1470,7 +1492,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val put = individual.seeMainExecutableActions().last()
 
-        val category = ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT
+        val category = DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName())
         )
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
@@ -1494,7 +1516,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         if(res.nonWorking) {
-            val category = ExperimentalFaultCategory.HTTP_NONWORKING_DELETE
+            val category = DefinedFaultCategory.HTTP_NONWORKING_DELETE
             val scenarioId = idMapper.handleLocalTarget(
                 idMapper.getFaultDescriptiveId(category, res.name)
             )
@@ -1513,16 +1535,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv: FitnessValue
     ) {
         val schemaHolder = (sampler as AbstractRestSampler).schemaHolder
-        if (!HttpSemanticsOracle.hasMismatchedPutResponse(individual, actionResults, schemaHolder)) return
+        val mismatch = HttpSemanticsOracle.mismatchedPutResponse(individual, actionResults, schemaHolder)
+        if (mismatch == null) return
 
         val put = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT }.last()
 
-        val category = ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT
+        val category = DefinedFaultCategory.HTTP_PARTIAL_UPDATE_PUT
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName()))
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
         val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult? ?: return
-        ar.addFault(DetectedFault(category, put.getName(), null))
+        ar.addFault(DetectedFault(category, put.getName(), null, "Issue: $mismatch"))
     }
 
     private fun handleInvalidMergePatch(
@@ -1534,7 +1557,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val patch = individual.seeMainExecutableActions().filter { it.verb == HttpVerb.PATCH }.last()
 
-        val category = ExperimentalFaultCategory.HTTP_INVALID_MERGE_PATCH
+        val category = DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, patch.getName()))
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
@@ -1551,7 +1574,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val put = individual.seeMainExecutableActions().last()
 
-        val category = ExperimentalFaultCategory.HTTP_MISLEADING_CREATE_PUT
+        val category = DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName()))
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
@@ -1570,7 +1593,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         // sequence ends with: PUT, GET, PUT, GET — flag the 2nd PUT as the offending action
         val secondPut = actions[actions.size - 2]
 
-        val category = ExperimentalFaultCategory.HTTP_NON_IDEMPOTENT_PUT
+        val category = DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, secondPut.getName()))
         fv.updateTarget(scenarioId, 1.0, actions.size - 2)
 
@@ -1588,7 +1611,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val actions = individual.seeMainExecutableActions()
         val creator = actions[actions.size - 2]
 
-        val category = ExperimentalFaultCategory.HTTP_INVALID_LOCATION
+        val category = DefinedFaultCategory.HTTP_INVALID_LOCATION
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, creator.getName()))
         fv.updateTarget(scenarioId, 1.0, actions.size - 2)
 
@@ -1606,7 +1629,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 assert(false)//only break in tests
                 continue
             }
-            RestResponseFeeder.handleResponse(source, res, responsePool)
+            RestResponseFeeder.handleResponse(source, res, dataPool)
         }
     }
 

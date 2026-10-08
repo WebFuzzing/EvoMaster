@@ -2,8 +2,8 @@ package org.evomaster.core.problem.httpws.service
 
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionTransformer
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsFitness
 import org.evomaster.core.problem.api.ApiWsIndividual

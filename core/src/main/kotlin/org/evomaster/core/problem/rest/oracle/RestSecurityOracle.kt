@@ -5,12 +5,10 @@ import com.webfuzzing.commons.faults.FaultCategory
 import org.apache.http.HttpStatus
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.DetectedFault
-import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.DynamicPathUtils
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.problem.rest.service.RestSecurityBuilder
@@ -101,9 +99,9 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ){
-        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
         handleForgottenAuthentication(individual, actionResults, fv)
@@ -120,7 +118,7 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_SSRF)) {
             return
         }
 
@@ -129,12 +127,12 @@ class RestSecurityOracle {
             if (ar != null) {
                 if (ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF).toBoolean()) {
                     val scenarioId = idMapper.handleLocalTarget(
-                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_SSRF, it.getName())
                     )
                     fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
 
                     val paramName = ssrfAnalyser.getVulnerableParameterName(it)
-                    ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
+                    ar.addFault(DetectedFault(DefinedFaultCategory.SECURITY_SSRF, it.getName(), paramName))
                 }
             }
         }
@@ -221,7 +219,7 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_SQL_INJECTION)) {
             return
         }
 
@@ -275,10 +273,10 @@ class RestSecurityOracle {
         }
 
         val scenarioId = idMapper.handleLocalTarget(
-            idMapper.getFaultDescriptiveId(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName())
+            idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_SQL_INJECTION, actionWithPayload.getName())
         )
         fv.updateTarget(scenarioId, 1.0, index)
-        injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
+        injectedResult.addFault(DetectedFault(DefinedFaultCategory.SECURITY_SQL_INJECTION, actionWithPayload.getName(), null))
         injectedResult.setVulnerableForSQLI(true)
     }
 
@@ -399,7 +397,7 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if(!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_XSS_INJECTION)){
             return
         }
 
@@ -424,10 +422,10 @@ class RestSecurityOracle {
             for(payload in XSS_PAYLOADS){
                 if(responseBody.contains(payload, ignoreCase = false)){
                     val scenarioId = idMapper.handleLocalTarget(
-                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.XSS, a.getName())
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_XSS_INJECTION, a.getName())
                     )
                     fv.updateTarget(scenarioId, 1.0, index)
-                    r.addFault(DetectedFault(DefinedFaultCategory.XSS, a.getName(), null))
+                    r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_XSS_INJECTION, a.getName(), null))
                     break // Only add one fault per action
                 }
             }
@@ -528,7 +526,7 @@ class RestSecurityOracle {
         fv: FitnessValue
     ) {
 
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION)) {
             return
         }
 
@@ -771,7 +769,7 @@ class RestSecurityOracle {
             //FIXME i don't think it is correct, as ignoring dynamic info?
             //TODO need tests for it
             val matching = verifiers.filter {
-                it.isResolvedParentPath(notfound)
+                DynamicPathUtils.isResolvedParentPath(it,notfound)
                         && ! notfound.auth.isDifferentFrom(it.auth)
             }
 
@@ -845,7 +843,7 @@ class RestSecurityOracle {
 
         // first check that they all refer to the same endpoint
         val conditionForEndpointEquivalence =
-            CreateResourceUtils.doesResolveToSamePath(lastAction, secondLastAction)
+            DynamicPathUtils.doesResolveToSamePath(lastAction, secondLastAction)
 
         if (!conditionForEndpointEquivalence) {
             return false

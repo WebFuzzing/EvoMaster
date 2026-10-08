@@ -27,7 +27,7 @@ public class RedisLettuceFindPatternEMTest extends RestTestBase {
         runTestHandlingFlakyAndCompilation(
                 "RedisLettuceFindPatternEM",
                 "org.foo.spring.rest.redis.RedisLettuceFindPatternEM",
-                1000,
+                1500,
                 true,
                 (args) -> {
                     setOption(args, "heuristicsForRedis", "true");

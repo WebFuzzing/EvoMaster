@@ -1,6 +1,9 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.ExecutedCqlCommand;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -13,8 +16,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,7 +33,8 @@ public class CqlSessionClassReplacementTest {
                     .withStartupTimeout(Duration.ofMinutes(2)));
 
     private static final String KEYSPACE = "testks";
-    private static final String TABLE = KEYSPACE + ".users";
+    private static final String TABLE_NAME = "users";
+    private static final String TABLE = KEYSPACE + "." + TABLE_NAME;
 
     @BeforeAll
     static void startCassandra() {
@@ -80,6 +83,8 @@ public class CqlSessionClassReplacementTest {
 
         ExecutedCqlCommand cmd = commands.iterator().next();
         assertEquals(query, cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());
         assertTrue(cmd.getExecutionTime() >= 0);
     }
@@ -98,6 +103,8 @@ public class CqlSessionClassReplacementTest {
 
         ExecutedCqlCommand cmd = commands.iterator().next();
         assertEquals(query, cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());
         assertTrue(cmd.getExecutionTime() >= 0);
     }
@@ -139,5 +146,194 @@ public class CqlSessionClassReplacementTest {
         List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
         assertEquals(1, additionalInfoList.size());
         assertTrue(additionalInfoList.get(0).getCqlInfoData().isEmpty());
+    }
+
+    /**
+     * The bound values must reach the tracked command, not the {@code ?} placeholders: the CQL
+     * heuristics have no value to measure a row against otherwise. See
+     * {@link org.evomaster.client.java.instrumentation.cassandra.CqlBindMarkerInterpolator}.
+     */
+    @Test
+    void testExecuteWithPositionalValuesIsTracked() {
+        String query = "INSERT INTO " + TABLE + " (id, name, age) VALUES (?, ?, ?)";
+        UUID id = UUID.randomUUID();
+
+        CqlSessionClassReplacement.execute(cqlSession, query, id, "Dave", 40);
+
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+
+        Set<ExecutedCqlCommand> commands = additionalInfoList.get(0).getCqlInfoData();
+        assertEquals(1, commands.size());
+
+        ExecutedCqlCommand cmd = commands.iterator().next();
+        assertEquals("INSERT INTO " + TABLE + " (id, name, age) VALUES (" + id + ", 'Dave', 40)",
+                cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
+        assertFalse(cmd.hasThrownCqlException());
+        assertTrue(cmd.getExecutionTime() >= 0);
+    }
+
+    @Test
+    void testExecuteWithNamedValuesIsTracked() {
+        String query = "INSERT INTO " + TABLE + " (id, name, age) VALUES (:id, :name, :age)";
+        UUID id = UUID.randomUUID();
+        Map<String, Object> values = new HashMap<>();
+        values.put("id", id);
+        values.put("name", "Erin");
+        values.put("age", 22);
+
+        CqlSessionClassReplacement.execute(cqlSession, query, values);
+
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+
+        Set<ExecutedCqlCommand> commands = additionalInfoList.get(0).getCqlInfoData();
+        assertEquals(1, commands.size());
+
+        ExecutedCqlCommand cmd = commands.iterator().next();
+        assertEquals("INSERT INTO " + TABLE + " (id, name, age) VALUES (" + id + ", 'Erin', 22)",
+                cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
+        assertFalse(cmd.hasThrownCqlException());
+        assertTrue(cmd.getExecutionTime() >= 0);
+    }
+
+    @Test
+    void testExecuteWithSimpleStatementIsTracked() {
+        String query = "SELECT * FROM " + TABLE;
+        SimpleStatement statement = SimpleStatement.newInstance(query);
+
+        CqlSessionClassReplacement.execute(cqlSession, statement);
+
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+
+        Set<ExecutedCqlCommand> commands = additionalInfoList.get(0).getCqlInfoData();
+        assertEquals(1, commands.size());
+
+        ExecutedCqlCommand cmd = commands.iterator().next();
+        assertEquals(query, cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
+        assertFalse(cmd.hasThrownCqlException());
+        assertTrue(cmd.getExecutionTime() >= 0);
+    }
+
+    /**
+     * A SimpleStatement can carry positional values of its own, without a PreparedStatement being
+     * involved, and those must be interpolated too.
+     */
+    @Test
+    void testExecuteWithSimpleStatementCarryingValuesIsTracked() {
+        String query = "INSERT INTO " + TABLE + " (id, name, age) VALUES (?, ?, ?)";
+        UUID id = UUID.randomUUID();
+        SimpleStatement statement = SimpleStatement.newInstance(query, id, "Gwen", 51);
+
+        CqlSessionClassReplacement.execute(cqlSession, statement);
+
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+
+        Set<ExecutedCqlCommand> commands = additionalInfoList.get(0).getCqlInfoData();
+        assertEquals(1, commands.size());
+
+        ExecutedCqlCommand cmd = commands.iterator().next();
+        assertEquals("INSERT INTO " + TABLE + " (id, name, age) VALUES (" + id + ", 'Gwen', 51)",
+                cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
+        assertFalse(cmd.hasThrownCqlException());
+    }
+
+    @Test
+    void testExecuteWithBoundStatementIsTracked() {
+        String query = "INSERT INTO " + TABLE + " (id, name, age) VALUES (?, ?, ?)";
+        UUID id = UUID.randomUUID();
+        // Preparing directly on the session so it is NOT intercepted by the replacement
+        PreparedStatement prepared = cqlSession.prepare(query);
+        BoundStatement bound = prepared.bind(id, "Frank", 33);
+
+        CqlSessionClassReplacement.execute(cqlSession, bound);
+
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+
+        Set<ExecutedCqlCommand> commands = additionalInfoList.get(0).getCqlInfoData();
+        assertEquals(1, commands.size());
+
+        ExecutedCqlCommand cmd = commands.iterator().next();
+        assertEquals("INSERT INTO " + TABLE + " (id, name, age) VALUES (" + id + ", 'Frank', 33)",
+                cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
+        assertFalse(cmd.hasThrownCqlException());
+        assertTrue(cmd.getExecutionTime() >= 0);
+    }
+
+    /**
+     * An unqualified query relies on the session's own default keyspace, which
+     * the query text never mentions. The tracked {@link ExecutedCqlCommand} must still carry that
+     * resolved keyspace name (not null), so it matches the keyspace CassandraSchemaTracer resolves
+     * the table's schema under.
+     */
+    @Test
+    void testExecuteUnqualifiedSelect_resolvesKeyspaceFromSessionDefault() {
+        try (CqlSession sessionWithDefaultKeyspace = CqlSession.builder()
+                .addContactPoint(new InetSocketAddress("localhost", cassandra.getMappedPort(CASSANDRA_PORT)))
+                .withLocalDatacenter("datacenter1")
+                .withKeyspace(KEYSPACE)
+                .build()) {
+
+            String query = "SELECT * FROM " + TABLE_NAME; // unqualified: no "testks." prefix
+
+            CqlSessionClassReplacement.execute(sessionWithDefaultKeyspace, query);
+
+            List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+            assertEquals(1, additionalInfoList.size());
+
+            Set<ExecutedCqlCommand> commands = additionalInfoList.get(0).getCqlInfoData();
+            assertEquals(1, commands.size());
+
+            ExecutedCqlCommand cmd = commands.iterator().next();
+            assertEquals(query, cmd.getCqlCommand());
+            assertEquals(KEYSPACE, cmd.getKeyspaceName());
+            assertEquals(TABLE_NAME, cmd.getTableName());
+            assertFalse(cmd.hasThrownCqlException());
+        }
+    }
+
+    /**
+     * A "USE keyspace" statement switches the session's own current keyspace (tracked by the
+     * driver itself), which a later unqualified query then implicitly relies on. Since keyspace
+     * resolution reads the session's live state at tracking time (not a cached value), it must
+     * pick up the switch.
+     */
+    @Test
+    void testExecuteUnqualifiedSelect_afterUseStatement_resolvesSwitchedKeyspace() {
+        try (CqlSession sessionWithoutDefaultKeyspace = CqlSession.builder()
+                .addContactPoint(new InetSocketAddress("localhost", cassandra.getMappedPort(CASSANDRA_PORT)))
+                .withLocalDatacenter("datacenter1")
+                .build()) {
+
+            CqlSessionClassReplacement.execute(sessionWithoutDefaultKeyspace, "USE " + KEYSPACE);
+
+            String query = "SELECT * FROM " + TABLE_NAME; // unqualified
+            CqlSessionClassReplacement.execute(sessionWithoutDefaultKeyspace, query);
+
+            List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+            assertEquals(1, additionalInfoList.size());
+
+            Set<ExecutedCqlCommand> commands = additionalInfoList.get(0).getCqlInfoData();
+            ExecutedCqlCommand selectCmd = commands.stream()
+                    .filter(cmd -> cmd.getCqlCommand().equals(query))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("SELECT command not tracked"));
+
+            assertEquals(KEYSPACE, selectCmd.getKeyspaceName());
+            assertEquals(TABLE_NAME, selectCmd.getTableName());
+        }
     }
 }

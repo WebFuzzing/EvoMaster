@@ -1,9 +1,9 @@
 package org.evomaster.core.search.gene.regex
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.utils.AssertionRepairWalk
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -239,5 +239,103 @@ class QuantifierRxGene(
             }
             true
         }
+    }
+
+    /**
+     * Delegates to a forward walk over [atoms], this gene has no absorption logic beyond
+     * what its repeated atoms can each individually take.
+     * @see [RxAbsorbable.absorbableCount]
+     * @see [AssertionRepairWalk.absorbableCount]
+     */
+    override fun absorbableCount(value: String): Int =
+        AssertionRepairWalk.absorbableCount(atoms, value).consumed
+
+    /**
+     * Delegates to a backward walk over [atoms], mirroring [absorbableCount] in the
+     * opposite direction.
+     * @see [RxAbsorbable.absorbableSuffixCount]
+     */
+    override fun absorbableSuffixCount(value: String): Int =
+        AssertionRepairWalk.absorbableSuffixCount(atoms, value).consumed
+
+    /**
+     * True if zero repetitions are allowed ([min] == 0), or if [template] can itself render "".
+     * @see [RxAbsorbable.canBeZeroWidth]
+     */
+    override val canBeZeroWidth: Boolean =
+        min == 0 || (template as? RxAbsorbable)?.canBeZeroWidth == true
+
+    /**
+     * Delegates to a forward walk over [atoms], mirroring [absorbableCount].
+     * @see [RxAbsorbable.tryForce]
+     * @see [AssertionRepairWalk.tryForce]
+     */
+    override fun tryForce(value: String): Int {
+        require(value.isNotEmpty())
+        return AssertionRepairWalk.tryForce(atoms, value).consumed
+    }
+
+    /**
+     * Delegates to a backward walk over [atoms], mirroring [tryForce].
+     * @see [RxAbsorbable.tryForceSuffix]
+     */
+    override fun tryForceSuffix(value: String): Int {
+        require(value.isNotEmpty())
+        return AssertionRepairWalk.tryForceSuffix(atoms, value).consumed
+    }
+
+    /**
+     * Collapses to zero repetitions if [min] == 0 (removing every atom), otherwise forces
+     * each existing atom to zero width individually.
+     * @see [RxAbsorbable.forceZeroWidth]
+     */
+    override fun forceZeroWidth() {
+        require(canBeZeroWidth)
+        if (min == 0) {
+            killAllChildren()
+        } else {
+            atoms.forEach { (it as RxAbsorbable).forceZeroWidth() }
+        }
+    }
+
+    /**
+     * Attempts to trim [atoms] so that this gene's value becomes exactly [value] (no trailing characters).
+     * Used during repairs for `\Z` assertions.
+     * @see DisjunctionRxGene.repairZAssertion
+     * @see DisjunctionRxGene.forceExactMatch
+     */
+    fun trimToExactValue(value: String): Boolean {
+        var consumed = 0
+        var neededAtoms = 0
+        for (atom in atoms) {
+            if (consumed >= value.length) break
+            consumed += atom.getValueAsRawString().length
+            neededAtoms++
+        }
+        if (consumed != value.length) return false
+        if (getValueAsRawString() == value) return true
+
+        val minimumAtomsToKeep = maxOf(neededAtoms, min)
+
+        // Remove or zero-width trailing atoms so the gene matches the target value exactly.
+        for (i in atoms.size - 1 downTo minimumAtomsToKeep) {
+            val atom = atoms[i]
+            if (atom is RxAbsorbable && atom.canBeZeroWidth) {
+                atom.forceZeroWidth()
+            } else {
+                killChildByIndex(i)
+            }
+        }
+
+        // Zero-width (if possible) atoms required by min but not needed to produce the target value.
+        for (i in neededAtoms until min) {
+            val atom = atoms[i]
+            if (atom !is RxAbsorbable || !atom.canBeZeroWidth) {
+                return false
+            }
+            atom.forceZeroWidth()
+        }
+
+        return getValueAsRawString() == value
     }
 }

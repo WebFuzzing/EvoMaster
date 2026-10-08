@@ -1,0 +1,14 @@
+asyncapi: 3.0.0
+info:
+  title: A document one directory down
+  version: 1.0.0
+
+components:
+  schemas:
+    Thing:
+      title: the-one-in-sub
+      type: object
+      properties:
+        # for this document, 'shared.yaml' means sub/shared.yaml, which does not exist
+        borrowed:
+          $ref: 'shared.yaml#/components/schemas/Thing'

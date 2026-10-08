@@ -1,5 +1,6 @@
 package org.evomaster.core.mongo
 
+import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
 import org.evomaster.core.search.gene.numeric.IntegerGene

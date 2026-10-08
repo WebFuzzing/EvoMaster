@@ -1,0 +1,252 @@
+package org.evomaster.client.java.controller.mongo.utils;
+
+import org.bson.BsonTimestamp;
+import org.bson.BsonType;
+import org.bson.BsonRegularExpression;
+import org.bson.Document;
+import org.junit.jupiter.api.Test;
+import org.bson.types.Binary;
+import org.bson.types.Code;
+import org.bson.types.CodeWithScope;
+import org.bson.types.Decimal128;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
+import org.bson.types.ObjectId;
+import org.bson.types.Symbol;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class BsonHelperTest {
+
+    @Test
+    void testNewDocument() {
+        Document original = new Document("name", "John");
+
+        Object created = BsonHelper.documentNewDocument(original);
+
+        assertTrue(created instanceof Document);
+        assertNotSame(original, created);
+        assertTrue(((Document) created).isEmpty());
+    }
+
+    @Test
+    void testNewDocumentRejectsInvalidType() {
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.documentNewDocument(new Object()));
+    }
+
+    @Test
+    void testAppendAndGetValue() {
+        Document doc = new Document();
+
+        BsonHelper.appendToDocument(doc, "age", 42);
+
+        assertEquals(42, BsonHelper.documentGetValue(doc, "age"));
+    }
+
+    @Test
+    void testAppendRejectsInvalidType() {
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.appendToDocument(new Object(), "age", 42));
+    }
+
+    @Test
+    void testDocumentContainsField() {
+        Document doc = new Document("name", "Alice");
+
+        assertTrue(BsonHelper.documentContainsField(doc, "name"));
+        assertFalse(BsonHelper.documentContainsField(doc, "age"));
+    }
+
+    @Test
+    void testDocumentKeys() {
+        Document doc = new Document("name", "Alice").append("age", 30);
+
+        Set<String> keys = BsonHelper.documentKeys(doc);
+
+        assertNotNull(keys);
+        assertEquals(new HashSet<>(Arrays.asList("name", "age")), keys);
+    }
+
+    @Test
+    void testIsBsonDocument() {
+        assertTrue(BsonHelper.isDocument(new Document()));
+        assertFalse(BsonHelper.isDocument(null));
+        assertFalse(BsonHelper.isDocument(new Object()));
+    }
+
+
+
+    @Test
+    void testGetTypeMappedTypes() {
+        assertEquals(Boolean.class.getTypeName(), BsonHelper.getType(BsonType.BOOLEAN));
+        assertEquals(Date.class.getTypeName(), BsonHelper.getType(BsonType.DATE_TIME));
+        assertEquals(Double.class.getTypeName(), BsonHelper.getType(BsonType.DOUBLE));
+        assertEquals(Integer.class.getTypeName(), BsonHelper.getType(BsonType.INT32));
+        assertEquals(Long.class.getTypeName(), BsonHelper.getType(BsonType.INT64));
+        assertEquals(Decimal128.class.getTypeName(), BsonHelper.getType(BsonType.DECIMAL128));
+        assertEquals(ObjectId.class.getTypeName(), BsonHelper.getType(BsonType.OBJECT_ID));
+        assertEquals(String.class.getTypeName(), BsonHelper.getType(BsonType.STRING));
+        assertEquals(org.bson.BsonTimestamp.class.getTypeName(), BsonHelper.getType(BsonType.TIMESTAMP));
+
+        assertEquals(BsonHelper.NULL_TYPE, BsonHelper.getType(BsonType.NULL));
+        assertEquals(List.class.getTypeName(), BsonHelper.getType(BsonType.ARRAY));
+        assertEquals(Binary.class.getTypeName(), BsonHelper.getType(BsonType.BINARY));
+        assertEquals(org.bson.BsonDbPointer.class.getTypeName(), BsonHelper.getType(BsonType.DB_POINTER));
+        assertEquals(Document.class.getTypeName(), BsonHelper.getType(BsonType.DOCUMENT));
+        assertEquals(MaxKey.class.getTypeName(), BsonHelper.getType(BsonType.MAX_KEY));
+        assertEquals(MinKey.class.getTypeName(), BsonHelper.getType(BsonType.MIN_KEY));
+        assertEquals(Code.class.getTypeName(), BsonHelper.getType(BsonType.JAVASCRIPT));
+        assertEquals(CodeWithScope.class.getTypeName(), BsonHelper.getType(BsonType.JAVASCRIPT_WITH_SCOPE));
+        assertEquals(org.bson.BsonRegularExpression.class.getTypeName(), BsonHelper.getType(BsonType.REGULAR_EXPRESSION));
+        assertEquals(Symbol.class.getTypeName(), BsonHelper.getType(BsonType.SYMBOL));
+        assertEquals(org.bson.BsonUndefined.class.getTypeName(), BsonHelper.getType(BsonType.UNDEFINED));
+    }
+
+
+    @Test
+    void testGetTypeFromNumber() {
+        Object bsonType = BsonHelper.getTypeFromNumber(16);
+
+        assertEquals(BsonType.INT32, bsonType);
+    }
+
+    @Test
+    void testGetTypeFromNumberReturnsNullWhenNotFound() {
+        assertNull(BsonHelper.getTypeFromNumber(999));
+    }
+
+    @Test
+    void testGetTypeFromAlias() {
+        // aliases are case-insensitive
+        Object bsonType = BsonHelper.bsonTypeValueOf("STRING");
+        assertEquals(BsonType.STRING, bsonType);
+    }
+
+    @Test
+    void testGetTypeFromAliasReturnsNullWhenNotFound() {
+        try {
+            BsonHelper.bsonTypeValueOf("UNKNOWN");
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
+    @Test
+    void testNullArguments() {
+        Document doc = new Document();
+
+        assertThrows(NullPointerException.class, () -> BsonHelper.documentNewDocument(null));
+        assertThrows(NullPointerException.class, () -> BsonHelper.appendToDocument(null, "a", 1));
+        assertThrows(NullPointerException.class, () -> BsonHelper.appendToDocument(doc, null, 1));
+        assertThrows(NullPointerException.class, () -> BsonHelper.documentGetValue(null, "a"));
+        assertThrows(NullPointerException.class, () -> BsonHelper.documentGetValue(doc, null));
+        assertThrows(NullPointerException.class, () -> BsonHelper.documentContainsField(null, "a"));
+        assertThrows(NullPointerException.class, () -> BsonHelper.documentContainsField(doc, null));
+        assertThrows(NullPointerException.class, () -> BsonHelper.documentKeys(null));
+    }
+
+    @Test
+    void testIsObjectId() {
+        ObjectId objectId = new ObjectId();
+        assertTrue(BsonHelper.isObjectId(objectId));
+
+        String notObjectId = "not an ObjectId";
+        assertFalse(BsonHelper.isObjectId(notObjectId));
+    }
+
+    @Test
+    void testIsBsonTimestamp() {
+        assertTrue(BsonHelper.isBsonTimestamp(new BsonTimestamp(1, 2)));
+        assertFalse(BsonHelper.isBsonTimestamp("not a BsonTimestamp"));
+        assertFalse(BsonHelper.isBsonTimestamp(null));
+    }
+
+    @Test
+    void testGetBsonTimestampValue() {
+        BsonTimestamp timestamp = new BsonTimestamp(1, 2);
+
+        assertEquals(timestamp.getValue(), BsonHelper.timestampGetValue(timestamp));
+    }
+
+    @Test
+    void testGetBsonTimestampValueRejectsInvalidType() {
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.timestampGetValue(new Object()));
+        assertThrows(NullPointerException.class, () -> BsonHelper.timestampGetValue(null));
+    }
+
+    @Test
+    void testIsBsonRegularExpression() {
+        assertTrue(BsonHelper.isBsonRegularExpression(new BsonRegularExpression("^hospital", "im")));
+        assertFalse(BsonHelper.isBsonRegularExpression("^hospital"));
+        assertFalse(BsonHelper.isBsonRegularExpression(new Object()));
+        assertFalse(BsonHelper.isBsonRegularExpression(null));
+    }
+
+    @Test
+    void testBsonRegexGetPattern() {
+        BsonRegularExpression regex = new BsonRegularExpression("^hospital.*near$");
+
+        assertEquals("^hospital.*near$", BsonHelper.regexGetPattern(regex));
+    }
+
+    @Test
+    void testBsonRegexGetOptions() {
+        BsonRegularExpression regexWithOptions = new BsonRegularExpression("hospital", "ims");
+        BsonRegularExpression regexWithoutOptions = new BsonRegularExpression("hospital");
+
+        assertEquals("ims", BsonHelper.regexGetOptions(regexWithOptions));
+        assertEquals("", BsonHelper.regexGetOptions(regexWithoutOptions));
+    }
+
+    @Test
+    void testBsonRegexGettersRejectInvalidValues() {
+        assertThrows(NullPointerException.class, () -> BsonHelper.regexGetPattern(null));
+        assertThrows(NullPointerException.class, () -> BsonHelper.regexGetOptions(null));
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.regexGetPattern("hospital"));
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.regexGetOptions("hospital"));
+    }
+
+    @Test
+    void testIsBsonBinary() {
+        assertTrue(BsonHelper.isBsonBinary(new Binary((byte) 0x01, new byte[]{0x01, 0x02})));
+        assertFalse(BsonHelper.isBsonBinary(new byte[]{0x01, 0x02}));
+        assertFalse(BsonHelper.isBsonBinary("not a Binary"));
+        assertFalse(BsonHelper.isBsonBinary(null));
+    }
+
+    @Test
+    void testGetBinaryData() {
+        byte[] data = new byte[]{0x01, 0x02, 0x03};
+        Binary binary = new Binary((byte) 0x01, data);
+
+        assertArrayEquals(data, BsonHelper.binaryGetBinaryData(binary));
+    }
+
+    @Test
+    void testIsBsonType() {
+        assertTrue(BsonHelper.isBsonType(BsonType.INT32));
+        assertFalse(BsonHelper.isBsonType("not a BsonType"));
+        assertFalse(BsonHelper.isBsonType(null));
+    }
+
+    @Test
+    void testIsDecimal128() {
+        assertTrue(BsonHelper.isDecimal128(new Decimal128(1234567890123456789L)));
+        assertFalse(BsonHelper.isDecimal128(123.45));
+        assertFalse(BsonHelper.isDecimal128(null));
+    }
+
+    @Test
+    void testGetBigDecimalValue() {
+        Decimal128 decimal128 = new Decimal128(1234567890123456789L);
+        final BigDecimal expectedBigDecimalValue = decimal128.bigDecimalValue();
+        assertEquals(expectedBigDecimalValue, BsonHelper.decimal128GetBigDecimalValue(decimal128));
+    }
+}

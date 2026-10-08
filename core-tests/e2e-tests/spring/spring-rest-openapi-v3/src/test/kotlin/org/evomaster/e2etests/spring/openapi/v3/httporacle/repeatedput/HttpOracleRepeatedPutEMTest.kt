@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.repeatedput
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.repeatedput.HttpOracleRepeatedPutController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
@@ -43,7 +44,7 @@ class HttpOracleRepeatedPutEMTest : SpringTestBase(){
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
-            assertEquals(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT, faults.first())
+            assertEquals(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT, faults.first())
         }
     }
 }

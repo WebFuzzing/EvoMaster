@@ -42,20 +42,20 @@ class XSSStoredJSONEMTest : SpringTestBase() {
 
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
 
-            Assertions.assertTrue({ DefinedFaultCategory.XSS in faultCategories })
+            Assertions.assertTrue({ DefinedFaultCategory.SECURITY_XSS_INJECTION in faultCategories })
 
             Assertions.assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS_INJECTION
                         && it.operationId == "GET:/api/stored/json/comments"
             })
 
             Assertions.assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS_INJECTION
                         && it.operationId == "GET:/api/stored/json/guestbook"
             })
 
             Assertions.assertTrue(faults.any {
-                it.category == DefinedFaultCategory.XSS
+                it.category == DefinedFaultCategory.SECURITY_XSS_INJECTION
                         && it.operationId == "GET:/api/stored/json/user/{username}"
             })
         }

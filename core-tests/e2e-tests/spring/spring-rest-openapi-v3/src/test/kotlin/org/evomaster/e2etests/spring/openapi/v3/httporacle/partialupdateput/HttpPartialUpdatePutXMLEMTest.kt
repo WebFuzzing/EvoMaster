@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.partialupdateput
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.partialupdateput.HttpPartialUpdatePutXMLController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -29,6 +30,7 @@ class HttpPartialUpdatePutXMLEMTest : SpringTestBase(){
                 1000
         ) { args: MutableList<String> ->
 
+            setOption(args, "enableXmlWithAttributesSupport", "true")
             setOption(args, "security", "false")
             setOption(args, "schemaOracles", "false")
             setOption(args, "httpOracles", "true")
@@ -42,7 +44,7 @@ class HttpPartialUpdatePutXMLEMTest : SpringTestBase(){
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
-            assertEquals(ExperimentalFaultCategory.HTTP_PARTIAL_UPDATE_PUT, faults.first())
+            assertEquals(DefinedFaultCategory.HTTP_PARTIAL_UPDATE_PUT, faults.first())
         }
     }
 }

@@ -35,7 +35,9 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
             EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (10)", false);
 
             given().accept(ContentType.JSON)
-                    .get(url + TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + TEST_RESULTS)
                     .then()
                     .statusCode(200)
                     .body("data.extraHeuristics.size()", is(1))
@@ -49,7 +51,9 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
             EMSqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 10", true);
 
             RestAssured.given().accept(ContentType.JSON)
-                    .get(url + ControllerConstants.TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + ControllerConstants.TEST_RESULTS)
                     .then()
                     .statusCode(200)
                     .body("data.extraHeuristics.size()", Matchers.is(1))
@@ -62,7 +66,9 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
             EMSqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 13", true);
 
             RestAssured.given().accept(ContentType.JSON)
-                    .get(url + ControllerConstants.TEST_RESULTS)
+                    .contentType(ContentType.JSON)
+                    .body("[]")
+                    .post(url + ControllerConstants.TEST_RESULTS)
                     .then()
                     .statusCode(200)
                     .body("data.extraHeuristics.size()", Matchers.is(2))
@@ -212,7 +218,9 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     default Double getFirstAndStartNew(String url) {
 
         double value = Double.parseDouble(RestAssured.given().accept(ContentType.JSON)
-                .get(url + ControllerConstants.TEST_RESULTS)
+                .contentType(ContentType.JSON)
+                .body("[]")
+                .post(url + ControllerConstants.TEST_RESULTS)
                 .then()
                 .statusCode(200)
                 .extract().body().path("data.extraHeuristics[0].heuristics[0].value").toString());

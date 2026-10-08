@@ -4,7 +4,7 @@ import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
 
-interface RxTerm {
+interface RxTerm: RxAbsorbable {
     /**
      * Returns true if this gene can never produce a valid value,
      * for example an empty character class intersection like [a&&b].

@@ -1,9 +1,9 @@
 package org.evomaster.core.sql.extract.mysql
 
 import org.evomaster.client.java.sql.DbInfoExtractor
-import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

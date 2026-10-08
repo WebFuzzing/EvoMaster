@@ -1,0 +1,436 @@
+{
+ "name": "PUBLIC",
+ "databaseType": "H2",
+ "tables": [
+  {
+   "id": {
+    "schema": "PUBLIC",
+    "catalog": "TESTDB",
+    "name": "ACCOUNT"
+   },
+   "columns": [
+    {
+     "table": "ACCOUNT",
+     "name": "ID",
+     "type": "BIGINT",
+     "size": 19,
+     "primaryKey": true,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": true,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "ACCOUNT",
+     "name": "NAME",
+     "type": "VARCHAR",
+     "size": 255,
+     "primaryKey": false,
+     "nullable": false,
+     "unique": true,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "ACCOUNT",
+     "name": "ACTIVE",
+     "type": "BOOLEAN",
+     "size": 1,
+     "primaryKey": false,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "ACCOUNT",
+     "name": "SCORE",
+     "type": "DOUBLE",
+     "size": 17,
+     "primaryKey": false,
+     "nullable": true,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "ACCOUNT",
+     "name": "LEVEL",
+     "type": "INTEGER",
+     "size": 10,
+     "primaryKey": false,
+     "nullable": true,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "ACCOUNT",
+     "name": "CREATED_AT",
+     "type": "TIMESTAMP",
+     "size": 26,
+     "primaryKey": false,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    }
+   ],
+   "foreignKeys": [],
+   "primaryKeySequence": [
+    "ID"
+   ],
+   "tableCheckExpressions": [
+    {
+     "sqlCheckExpression": "(LEVEL <= 100)"
+    }
+   ]
+  },
+  {
+   "id": {
+    "schema": "PUBLIC",
+    "catalog": "TESTDB",
+    "name": "PROJECT"
+   },
+   "columns": [
+    {
+     "table": "PROJECT",
+     "name": "ID",
+     "type": "BIGINT",
+     "size": 19,
+     "primaryKey": true,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": true,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "PROJECT",
+     "name": "ACCOUNT_ID",
+     "type": "BIGINT",
+     "size": 19,
+     "primaryKey": false,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": true,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "PROJECT",
+     "name": "TITLE",
+     "type": "VARCHAR",
+     "size": 255,
+     "primaryKey": false,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "PROJECT",
+     "name": "RANK",
+     "type": "INTEGER",
+     "size": 10,
+     "primaryKey": false,
+     "nullable": true,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "PROJECT",
+     "name": "ARCHIVED_AT",
+     "type": "TIMESTAMP",
+     "size": 26,
+     "primaryKey": false,
+     "nullable": true,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    }
+   ],
+   "foreignKeys": [
+    {
+     "sourceColumns": [
+      "ACCOUNT_ID"
+     ],
+     "targetTable": "ACCOUNT"
+    }
+   ],
+   "primaryKeySequence": [
+    "ID"
+   ],
+   "tableCheckExpressions": [
+    {
+     "sqlCheckExpression": "(RANK <= 100)"
+    }
+   ]
+  },
+  {
+   "id": {
+    "schema": "PUBLIC",
+    "catalog": "TESTDB",
+    "name": "LABEL"
+   },
+   "columns": [
+    {
+     "table": "LABEL",
+     "name": "ID",
+     "type": "BIGINT",
+     "size": 19,
+     "primaryKey": true,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": true,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "LABEL",
+     "name": "NAME",
+     "type": "VARCHAR",
+     "size": 255,
+     "primaryKey": false,
+     "nullable": false,
+     "unique": true,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    }
+   ],
+   "foreignKeys": [],
+   "primaryKeySequence": [
+    "ID"
+   ],
+   "tableCheckExpressions": []
+  },
+  {
+   "id": {
+    "schema": "PUBLIC",
+    "catalog": "TESTDB",
+    "name": "PROJECT_LABEL"
+   },
+   "columns": [
+    {
+     "table": "PROJECT_LABEL",
+     "name": "PROJECT_ID",
+     "type": "BIGINT",
+     "size": 19,
+     "primaryKey": true,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": true,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "PROJECT_LABEL",
+     "name": "LABEL_ID",
+     "type": "BIGINT",
+     "size": 19,
+     "primaryKey": true,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": true,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    }
+   ],
+   "foreignKeys": [
+    {
+     "sourceColumns": [
+      "PROJECT_ID"
+     ],
+     "targetTable": "PROJECT"
+    },
+    {
+     "sourceColumns": [
+      "LABEL_ID"
+     ],
+     "targetTable": "LABEL"
+    }
+   ],
+   "primaryKeySequence": [
+    "PROJECT_ID",
+    "LABEL_ID"
+   ],
+   "tableCheckExpressions": []
+  },
+  {
+   "id": {
+    "schema": "PUBLIC",
+    "catalog": "TESTDB",
+    "name": "NOTE"
+   },
+   "columns": [
+    {
+     "table": "NOTE",
+     "name": "ID",
+     "type": "BIGINT",
+     "size": 19,
+     "primaryKey": true,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": true,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "NOTE",
+     "name": "PROJECT_ID",
+     "type": "BIGINT",
+     "size": 19,
+     "primaryKey": false,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": true,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "NOTE",
+     "name": "BODY",
+     "type": "VARCHAR",
+     "size": 255,
+     "primaryKey": false,
+     "nullable": true,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "NOTE",
+     "name": "VALID_FROM",
+     "type": "TIMESTAMP",
+     "size": 26,
+     "primaryKey": false,
+     "nullable": false,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    },
+    {
+     "table": "NOTE",
+     "name": "VALID_TO",
+     "type": "TIMESTAMP",
+     "size": 26,
+     "primaryKey": false,
+     "nullable": true,
+     "unique": false,
+     "autoIncrement": false,
+     "foreignKeyToAutoIncrement": false,
+     "isUnsigned": false,
+     "isEnumeratedType": false,
+     "isCompositeType": false,
+     "scale": null,
+     "numberOfDimensions": 0
+    }
+   ],
+   "foreignKeys": [
+    {
+     "sourceColumns": [
+      "PROJECT_ID"
+     ],
+     "targetTable": "PROJECT"
+    }
+   ],
+   "primaryKeySequence": [
+    "ID"
+   ],
+   "tableCheckExpressions": []
+  }
+ ],
+ "compositeTypes": [],
+ "enumeraredTypes": [],
+ "extraConstraintDtos": [],
+ "employSmartDbClean": true
+}
