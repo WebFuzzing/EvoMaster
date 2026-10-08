@@ -234,4 +234,22 @@ public class SMTResultParserTest {
         StructValue t2 = (StructValue) result.get("t__2");
         assertEquals("z", ((StringValue) t2.getField("TXT")).getValue());
     }
+
+    /**
+     * Two tables with the same columns share a constructor name, and Z3 then qualifies it with its sort.
+     * This is the exact output of the Z3 image for two such tables.
+     */
+    @Test
+    public void testParseComposedTypeWithQualifiedConstructor() {
+        String response = "sat\n((doc__1 ((as id-body DocRow) (- 2) \"\")))\n((note__1 ((as id-body NoteRow) 1 \"a b\")))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue doc1 = (StructValue) result.get("doc__1");
+        assertEquals(2, doc1.getFields().size());
+        assertEquals(-2, ((LongValue) doc1.getField("ID")).getValue());
+        assertEquals("", ((StringValue) doc1.getField("BODY")).getValue());
+        StructValue note1 = (StructValue) result.get("note__1");
+        assertEquals(1, ((LongValue) note1.getField("ID")).getValue());
+        assertEquals("a b", ((StringValue) note1.getField("BODY")).getValue());
+    }
 }
