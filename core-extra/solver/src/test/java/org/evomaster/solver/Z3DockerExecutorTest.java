@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -128,6 +129,32 @@ public class Z3DockerExecutorTest {
         Z3Result result = executor.solveFromFile("invalid.smt");
         assertEquals(Z3Result.Status.ERROR, result.getStatus());
         assertNotNull(result.getErrorMessage());
+        // Z3 rejects the formula itself, so solving it again would fail the same way
+        assertTrue(result.isDeterministicError());
+    }
+
+    /**
+     * A formula Z3 rejects partway through, as happens when a generated literal is malformed: Z3
+     * prints the error, carries on with the rest of the file and exits with code 1.
+     */
+    @Test
+    public void whenFormulaIsRejectedTheErrorIsDeterministic() throws IOException {
+        String resourcesFolder = System.getProperty("user.dir") + "/src/test/resources/";
+        Path file = Paths.get(resourcesFolder + "rejected_literal.smt");
+        Files.write(file, ("(declare-const s String)\n"
+                + "(assert (= s \"say \"hi\"\"))\n"
+                + "(check-sat)\n"
+                + "(get-value (s))\n").getBytes(StandardCharsets.UTF_8));
+
+        Z3Result result;
+        try {
+            result = executor.solveFromFile("rejected_literal.smt");
+        } finally {
+            Files.deleteIfExists(file);
+        }
+
+        assertEquals(Z3Result.Status.ERROR, result.getStatus());
+        assertTrue(result.isDeterministicError());
     }
 
     /**
@@ -137,7 +164,8 @@ public class Z3DockerExecutorTest {
     public void whenSolvingEmptyFileItReturnsError() {
         Z3Result result = executor.solveFromFile("empty.smt");
         assertEquals(Z3Result.Status.ERROR, result.getStatus());
-        assertNotNull(result.getErrorMessage());
+        assertNotNull(result.getErrorMessage());        // No output is not told apart from a container failure, so it is not assumed to be permanent
+        assertFalse(result.isDeterministicError());
     }
 
     /**
