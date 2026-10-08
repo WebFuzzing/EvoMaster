@@ -49,7 +49,7 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
     }
 
     override fun hasPhaseTimedOut(): Boolean {
-        return epc.hasPhaseTimedOut(ExecutionPhaseController.Phase.SECURITY)
+        return epc.hasPhaseTimedOut(ExecutionPhaseController.Phase.FLAKINESS)
     }
 
     /**
