@@ -51,6 +51,53 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleFind("findClientSessionBsonResultClass", mongoCollection, Arrays.asList(clientSession, filter, resultClass), filter);
     }
 
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countDocumentsBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static long countDocuments(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
+        return handleCount("countDocumentsBson", mongoCollection, Arrays.asList(filter), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countDocumentsBsonCountOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static long countDocuments(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.CountOptions") Object options) {
+        return handleCount("countDocumentsBsonCountOptions", mongoCollection, Arrays.asList(filter, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countDocumentsClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static long countDocuments_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
+        return handleCount("countDocumentsClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countDocumentsClientSessionBsonCountOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static long countDocuments(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.CountOptions") Object options) {
+        return handleCount("countDocumentsClientSessionBsonCountOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
+    }
+
+    /**
+     * Unlike find, count is executed eagerly, so we know right away whether the filter was valid
+     */
+    private static long handleCount(String id, Object mongoCollection, List<Object> args, Object filter) {
+        long start = System.currentTimeMillis();
+        Method countMethod = retrieveFindMethod(id, mongoCollection);
+        try {
+            long result = (long) countMethod.invoke(mongoCollection, args.toArray());
+            long end = System.currentTimeMillis();
+            handleMongo(mongoCollection, filter, true, end  - start);
+            return result;
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            long end = System.currentTimeMillis();
+            handleMongo(mongoCollection, filter, false, end - start);
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+            if (cause instanceof Error) {
+                throw (Error) cause;
+            }
+            throw new RuntimeException(cause);
+        }
+    }
+
     private static Object handleFind(String id, Object mongoCollection, List<Object> args, Object query) {
         long start = System.currentTimeMillis();
         try {
