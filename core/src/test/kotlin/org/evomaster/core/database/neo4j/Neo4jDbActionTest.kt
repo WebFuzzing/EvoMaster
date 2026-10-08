@@ -69,4 +69,23 @@ class Neo4jDbActionTest {
         assertEquals(1, Neo4jExecution.fromDto(dto).failedQueries.size)
         assertTrue(Neo4jExecution.fromDto(null).failedQueries.isEmpty())
     }
+
+    @Test
+    fun insertionKeyIgnoresSchemaPropertiesButTheInsertionCarriesThem() {
+        val action = Neo4jDbAction(
+            listOf(Neo4jNodeTemplate(listOf("Person"), listOf(
+                Neo4jPropertyGene("name", Neo4jPropertyTypeDto.STRING, StringGene("name", "Ana")),
+                Neo4jPropertyGene("age", Neo4jPropertyTypeDto.INTEGER, LongGene("age", 30L), fromQuery = false)))),
+            emptyList(), "MATCH (a:Person {name: 'Ana'}) RETURN a")
+        val onlyQuery = Neo4jDbAction(
+            listOf(Neo4jNodeTemplate(listOf("Person"), listOf(
+                Neo4jPropertyGene("name", Neo4jPropertyTypeDto.STRING, StringGene("name", "Ana"))))),
+            emptyList(), "q")
+
+        assertEquals(onlyQuery.insertionKey(), action.insertionKey())
+        assertEquals(listOf("name", "age"), action.toNodeDto(0, action.nodes[0]).properties.map { it.propertyKey })
+        assertEquals(1, action.seeSchemaGenes().size)
+        assertSame(action.nodes[0].properties[1].gene, action.seeSchemaGenes().single())
+        assertFalse((action.copy() as Neo4jDbAction).nodes[0].properties[1].fromQuery)
+    }
 }

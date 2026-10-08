@@ -1,8 +1,10 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityDto;
 
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,5 +81,10 @@ public class UnitsInfoDto {
     /**
      * Extra information extracted for example from JPA entities
      */
-    public List<ExtraConstraintsDto> extraDatabaseConstraintsDtos;
+    public List<ExtraConstraintsDto> extraDatabaseConstraintsDtos = new ArrayList<>();
+
+    /**
+     * Neo4j entities found in the SUT, one per class mapped to nodes. Empty if the SUT has none.
+     */
+    public List<Neo4jEntityDto> neo4jEntities = new ArrayList<>();
 }
