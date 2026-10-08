@@ -487,7 +487,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.BOOLEAN_TYPE)) {
                     BooleanGene(dbColumnName, toBoolean(columnValue.value))
                 } else {
-                    StringGene(dbColumnName, columnValue.value)
+                    StringGene(dbColumnName, binaryValue(schemaDto, table, dbColumnName, columnValue.value))
                 }
             }
             is LongValue -> {
@@ -588,6 +588,23 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         } ?: return false
 
         return typeMatches(col.type, expectedType)
+    }
+
+    /**
+     * Writes the value Z3 assigned to a BLOB column in a form H2 accepts.
+     *
+     * H2 1.4 reads a string literal given for a binary column as hexadecimal, so a value such as "abc"
+     * made it reject the INSERT of the whole row. The value is written as the hex of its UTF-8 bytes,
+     * which H2 2.x accepts too. The mapping is injective, so the equalities and distinctions the
+     * formula imposes (unique and primary keys) still hold. MySQL takes any string as is.
+     */
+    private fun binaryValue(schemaDto: DbInfoDto, table: Table, columnName: String, value: String): String {
+        if (schemaDto.databaseType != DatabaseType.H2) return value
+        val type = schemaDto.tables.firstOrNull { it.id.name.equals(table.id.name, ignoreCase = true) }
+            ?.columns?.firstOrNull { it.name.equals(columnName, ignoreCase = true) }
+            ?.type?.uppercase()
+        if (type !in SmtLibGenerator.BLOB_TYPES) return value
+        return value.toByteArray(StandardCharsets.UTF_8).joinToString("") { "%02x".format(it) }
     }
 
     /**

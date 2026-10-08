@@ -90,6 +90,13 @@ class SmtLibGenerator(
         val BOOLEAN_TYPES = setOf(BOOLEAN_TYPE, "BOOL")
 
         /**
+         * Spellings of a binary large object: H2 2.x reports BINARY LARGE OBJECT, H2 1.4 BLOB, and
+         * MySQL BLOB and its size variants. Encoded as SMT Strings; SMTLibZ3DbConstraintSolver writes
+         * the value in a form the database accepts.
+         */
+        val BLOB_TYPES = setOf("BLOB", "BINARY LARGE OBJECT", "TINYBLOB", "MEDIUMBLOB", "LONGBLOB")
+
+        /**
          * The canonical string values a BOOLEAN column may take (BOOLEAN is encoded as an SMT String).
          * These are generation constraints, so Z3 is forced to pick one of them; only the two canonical
          * lowercase spellings are needed, and toBoolean() reads them back case-insensitively.
@@ -153,7 +160,7 @@ class SmtLibGenerator(
             "UUID" to SMT_STRING,
             "JSONB" to SMT_STRING,
             "BYTEA" to SMT_STRING,
-        )
+        ) + BLOB_TYPES.associateWith { SMT_STRING }
     }
 
     /**
