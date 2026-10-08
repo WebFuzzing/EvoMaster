@@ -313,6 +313,7 @@ There are 3 types of options:
 |`externalRequestResponseSelectionStrategy`| __Enum__. Harvested external request response selection strategy. *Valid values*: `EXACT, CLOSEST_SAME_DOMAIN, CLOSEST_SAME_PATH, RANDOM`. *Default value*: `EXACT`.|
 |`externalServiceIP`| __String__. User provided external service IP. When EvoMaster mocks external services, mock server instances will run on local addresses starting from this provided address. Min value is 127.0.0.4. Lower values like 127.0.0.2 and 127.0.0.3 are reserved. *Constraints*: `regex (?!^0*127(\.0*0){2}\.0*[0123]$)^0*127(\.0*(25[0-5]\|2[0-4][0-9]\|1?[0-9]?[0-9])){3}$`. *Default value*: `127.0.0.4`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
+|`extraBudgetPercentageForDetectFlakiness`| __Double__. Specify extra budget percentage of the search budget for flakiness detection phase.A negative value indicates an unlimited time budget. *Constraints*: `min=-1.0`. *Default value*: `-1.0`.|
 |`extractCassandraExecutionInfo`| __Boolean__. Enable extracting Cassandra execution info. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`extractDynamoDbExecutionInfo`| __Boolean__. Enable extracting DynamoDB execution info. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`extractNeo4jExecutionInfo`| __Boolean__. Enable extracting Neo4j execution info. *Depends on*: `blackBox=false`. *Default value*: `false`.|
