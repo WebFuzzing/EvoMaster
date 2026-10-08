@@ -148,6 +148,8 @@ class SmtLibGenerator(
             "VARCHAR" to SMT_STRING,
             "TEXT" to SMT_STRING,
             "CHARACTER LARGE OBJECT" to SMT_STRING,
+            // the same type, as H2 1.4 reports it
+            "CLOB" to SMT_STRING,
             BOOLEAN_TYPE to SMT_STRING,
             "BOOL" to SMT_STRING,
             "UUID" to SMT_STRING,
