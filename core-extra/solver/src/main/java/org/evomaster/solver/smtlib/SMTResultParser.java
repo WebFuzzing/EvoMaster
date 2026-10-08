@@ -171,12 +171,70 @@ public class SMTResultParser {
     }
 
     /**
+     * Evaluates a numeric term as Z3 prints it in a model: a literal ({@code 6}, {@code 20.0}), a
+     * negation ({@code (- 6)}, {@code (-6)}, {@code (- 20.0)}) or, for a Real that is not an integer,
+     * a division of two literals ({@code (/ 1999.0 100.0)}, {@code (- (/ 7.0 2.0))}).
+     *
+     * @param term the trimmed value token
+     * @return the value, or null when the term is not numeric
+     */
+    private static SMTLibValue parseNumericTerm(String term) {
+        if (term.startsWith("(") && term.endsWith(")")) {
+            String inner = term.substring(1, term.length() - 1).trim();
+            if (inner.startsWith("-")) {
+                SMTLibValue operand = parseNumericTerm(inner.substring(1).trim());
+                if (operand instanceof LongValue) {
+                    return new LongValue(-((LongValue) operand).getValue());
+                }
+                if (operand instanceof RealValue) {
+                    return new RealValue(-((RealValue) operand).getValue());
+                }
+                return null;
+            }
+            if (inner.startsWith("/")) {
+                String[] operands = inner.substring(1).trim().split("\\s+");
+                if (operands.length != 2) {
+                    return null;
+                }
+                SMTLibValue numerator = parseNumericTerm(operands[0]);
+                SMTLibValue denominator = parseNumericTerm(operands[1]);
+                if (numerator == null || denominator == null) {
+                    return null;
+                }
+                return new RealValue(toDouble(numerator) / toDouble(denominator));
+            }
+            return null;
+        }
+        if (term.matches("\\d+")) {
+            try {
+                return new LongValue(Long.parseLong(term));
+            } catch (NumberFormatException e) {
+                return new RealValue(Double.parseDouble(term)); // too large for a Long
+            }
+        }
+        if (term.matches("\\d+\\.\\d+")) {
+            return new RealValue(Double.parseDouble(term));
+        }
+        return null;
+    }
+
+    private static double toDouble(SMTLibValue number) {
+        return number instanceof LongValue
+                ? ((LongValue) number).getValue()
+                : ((RealValue) number).getValue();
+    }
+
+    /**
      * Parses a value string into an appropriate SMTLibValue object.
      *
      * @param value the string value to be parsed
      * @return an SMTLibValue representing the parsed value
      */
     private static SMTLibValue parseValue(String value) {
+        SMTLibValue number = parseNumericTerm(value.trim());
+        if (number != null) {
+            return number;
+        }
         if (value.startsWith("(")) {
             // If it is a negative number in parentheses
             value = value.substring(1).trim(); // Remove parentheses

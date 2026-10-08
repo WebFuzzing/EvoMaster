@@ -234,4 +234,25 @@ public class SMTResultParserTest {
         StructValue t2 = (StructValue) result.get("t__2");
         assertEquals("z", ((StringValue) t2.getField("TXT")).getValue());
     }
+
+    @Test
+    public void testParseComposedTypeWithRationalValue() {
+        // Z3 prints a Real that is not an integer as a division, e.g. for PRICE = 19.99
+        String response = "sat\n((p__1 (id-price 0 (/ 1999.0 100.0))))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue p1 = (StructValue) result.get("p__1");
+        assertEquals(0, ((LongValue) p1.getField("ID")).getValue());
+        assertEquals(19.99, ((RealValue) p1.getField("PRICE")).getValue(), 1e-9);
+    }
+
+    @Test
+    public void testParseComposedTypeWithNegativeRealValues() {
+        String response = "sat\n((t__1 (id-price-total 0 (- (/ 7.0 2.0)) (- 20.0))))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue t1 = (StructValue) result.get("t__1");
+        assertEquals(-3.5, ((RealValue) t1.getField("PRICE")).getValue(), 1e-9);
+        assertEquals(-20.0, ((RealValue) t1.getField("TOTAL")).getValue(), 1e-9);
+    }
 }
