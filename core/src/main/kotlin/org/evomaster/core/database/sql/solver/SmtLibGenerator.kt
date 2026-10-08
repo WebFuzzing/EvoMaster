@@ -83,6 +83,14 @@ class SmtLibGenerator(
         const val TIMESTAMP_TYPE = "TIMESTAMP"
 
         /**
+         * Encoded as SMT Strings with no constraint on their form, so the value Z3 assigns need not be
+         * a valid UUID or JSON document; SMTLibZ3DbConstraintSolver turns it into one.
+         */
+        const val UUID_TYPE = "UUID"
+        const val JSON_TYPE = "JSON"
+        const val JSONB_TYPE = "JSONB"
+
+        /**
          * Spellings of [BOOLEAN_TYPE] that [TYPE_MAP] treats as the same type (PostgreSQL reports a
          * boolean column as "bool"). Every check for a boolean column must use this set: a column
          * that is encoded as an SMT String but misses the boolean handling gets an arbitrary string.
@@ -150,8 +158,9 @@ class SmtLibGenerator(
             "CHARACTER LARGE OBJECT" to SMT_STRING,
             BOOLEAN_TYPE to SMT_STRING,
             "BOOL" to SMT_STRING,
-            "UUID" to SMT_STRING,
-            "JSONB" to SMT_STRING,
+            UUID_TYPE to SMT_STRING,
+            JSON_TYPE to SMT_STRING,
+            JSONB_TYPE to SMT_STRING,
             "BYTEA" to SMT_STRING,
         )
     }
