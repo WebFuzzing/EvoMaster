@@ -69,7 +69,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
-    // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
+    // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT, UNSAT, or an ERROR that is deterministic)
     // Schema is assumed stable within a single run, so only query + row count form the key.
     // Null until Z3 SQL generation is enabled in postConstruct — avoids allocating the map in runs where Z3 SQL generation is off.
     //
@@ -322,7 +322,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             Z3Result.Status.ERROR -> {
                 LoggingUtil.uniqueWarn(LoggingUtil.getInfoLogger(), "SQL-Z3: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
                 stats?.reportSqlZ3Error(z3TimeMs)
-                // Errors are not cached — they may be transient Docker failures
+                // Only an error the same formula always reproduces (Z3 rejected it, or its output could
+                // not be parsed) is cached; any other one may be a transient Docker failure
+                if (z3Result.isDeterministicError) {
+                    z3ResultCache?.set(cacheKey, z3Result)
+                }
                 emptyList()
             }
         }
