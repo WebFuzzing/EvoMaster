@@ -60,6 +60,13 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     private val namedCaptureGroups = mutableMapOf<String, Int>()
 
     /**
+     * Tracks the flags active in the current lexical scope.
+     * Updated when entering a flag group, restored on exit.
+     * Initialized from [externalRegexFlags].
+     */
+    private var currentFlags = externalRegexFlags
+
+    /**
      * [captureGroupUnsatisfiable] and [namedCaptureGroups] are two structures that must stay aligned: the values of
      * the latter are group numbers (1-based), which are positions (plus one) in the former. This lazily checks the
      * invariants between them.
@@ -77,13 +84,6 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
         // group numbers start at 1, so the group number n is at index n-1 of captureGroupUnsatisfiable
         Lazy.assert { namedGroupNumbers.all { it in 1..numberOfCaptureGroups } }
     }
-
-    /**
-     * Tracks the flags active in the current lexical scope.
-     * Updated when entering a flag group, restored on exit.
-     * Initialized from [externalRegexFlags].
-     */
-    private var currentFlags = externalRegexFlags
 
     /**
      * Builds DisjunctionListRxGenes from a disjunction context, returns null if disjunction is unsatisfiable.
