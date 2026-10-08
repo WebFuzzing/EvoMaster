@@ -52,7 +52,20 @@ class SmtLibGenerator(
     var skippedQueryConstraints = 0
         private set
 
-    private val smtTables: List<SmtTable> = schema.tables.map { SmtTable(it) }
+    /**
+     * Tables left out of the formula, by lowercase name: those with a column whose type has no entry in
+     * [TYPE_MAP], and, transitively, those with a foreign key to one of them, since a row referencing
+     * a table that is not declared could never be inserted.
+     *
+     * Every table of the schema is declared for every query, so a single column of an unmapped type
+     * used to make generation fail for all queries against the schema, including those that never
+     * touch that table. Now only the queries that read from one of these tables are rejected.
+     */
+    private val undeclaredTables: Set<String> = undeclaredTables(schema.tables)
+
+    private val smtTables: List<SmtTable> = schema.tables
+        .filter { it.id.name.lowercase() !in undeclaredTables }
+        .map { SmtTable(it) }
     private val smtTableByOriginalName: Map<String, SmtTable> = smtTables.associateBy { it.originalName }
 
     companion object {
@@ -163,6 +176,7 @@ class SmtLibGenerator(
      * @return An SMTLib object containing the generated SMT-LIB constraints.
      */
     fun generateSMT(sqlQuery: Statement): SMTLib {
+        rejectUndeclaredTables(sqlQuery)
         val smt = SMTLib()
 
         appendTableDefinitions(smt)
@@ -174,6 +188,42 @@ class SmtLibGenerator(
         appendGetValuesFromQuery(smt, sqlQuery)
 
         return smt
+    }
+
+    private fun undeclaredTables(tables: List<TableDto>): Set<String> {
+        val undeclared = tables
+            .filter { table -> table.columns.any { TYPE_MAP[it.type.uppercase()] == null } }
+            .map { it.id.name.lowercase() }
+            .toMutableSet()
+        do {
+            val referencing = tables
+                .filter { table ->
+                    table.id.name.lowercase() !in undeclared &&
+                        table.foreignKeys.any { it.targetTable.lowercase() in undeclared }
+                }
+                .map { it.id.name.lowercase() }
+        } while (undeclared.addAll(referencing))
+        return undeclared
+    }
+
+    /**
+     * Fails for a query that reads from a table left out of the formula, see [undeclaredTables].
+     */
+    private fun rejectUndeclaredTables(sqlQuery: Statement) {
+        if (undeclaredTables.isEmpty()) return
+        val queryTables = try {
+            TablesNamesFinder().getTables(sqlQuery)
+        } catch (e: Exception) {
+            emptySet<String>() // same fallback as appendGetValuesFromQuery
+        }
+        val undeclared = queryTables.firstOrNull { it.lowercase() in undeclaredTables } ?: return
+        val unmapped = schema.tables
+            .firstOrNull { it.id.name.equals(undeclared, ignoreCase = true) }
+            ?.columns?.firstOrNull { TYPE_MAP[it.type.uppercase()] == null }
+        throw RuntimeException(
+            if (unmapped != null) "Unsupported column type: ${unmapped.type} (column ${unmapped.name} of table $undeclared)"
+            else "Table $undeclared references, through foreign keys, a table with an unsupported column type"
+        )
     }
 
     /**
