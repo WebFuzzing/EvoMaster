@@ -6,6 +6,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.time.ExecutionPhaseController
@@ -134,8 +135,24 @@ abstract class FitnessFunction<T>  where T : Individual {
      * Note that during the search we use heuristics to minimize the number of data to retrieve,
      * so there the fitness value is just partial
      */
-    fun computeWholeAchievedCoverageForPostProcessing(individual: T) : EvaluatedIndividual<T>?{
-        return doCalculateCoverage(individual, setOf(), allTargets = true, fullyCovered = true, descriptiveIds = false)
+    private var postProcessingObserver: ((List<ActionResult>) -> Unit)? = null
+
+    /** Preserve responses even when coverage collection subsequently fails. No retry is performed. */
+    protected fun observePostProcessingResults(results: List<ActionResult>) {
+        postProcessingObserver?.invoke(results.map { it.copy() })
+    }
+
+    fun computeWholeAchievedCoverageForPostProcessing(
+        individual: T,
+        observer: ((List<ActionResult>) -> Unit)? = null
+    ) : EvaluatedIndividual<T>?{
+        val previous = postProcessingObserver
+        postProcessingObserver = observer
+        try {
+            return doCalculateCoverage(individual, setOf(), allTargets = true, fullyCovered = true, descriptiveIds = false)
+        } finally {
+            postProcessingObserver = previous
+        }
     }
 
     private fun calculateIndividualCoverageWithStats(

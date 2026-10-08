@@ -53,6 +53,9 @@ open class ActionResult(
 
     fun isEmpty() = results.isEmpty()
 
+    /** A detached snapshot for execution auditing, including absent-response failure flags. */
+    fun resultValues(): Map<String, String> = results.toMap()
+
 
     fun setErrorMessage(msg: String) = addResultValue(ERROR_MESSAGE, msg)
     fun getErrorMessage(): String? = getResultValue(ERROR_MESSAGE)

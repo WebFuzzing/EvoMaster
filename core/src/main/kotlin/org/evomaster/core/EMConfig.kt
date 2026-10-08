@@ -3117,6 +3117,12 @@ class EMConfig {
     @Cfg("Specify the number of re-executions for detecting flakiness in tests. Set to 0 to disable re-execution based flakiness detection.")
     var execNumForDetectFlakiness = 1
 
+    @DependsOnTrueFor("handleFlakiness")
+    @Cfg("Apply the extraPhaseBudgetPercentage time limit to flakiness detection. " +
+            "Set to false to process all individuals for the requested repetitions without a phase-wide time limit. " +
+            "This does not change the search budget, other post-processing phases or individual request timeouts.")
+    var useTimeLimitForFlakiness = true
+
     @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +
             "This is necessary when the generated tests are executed on the different machine. " +

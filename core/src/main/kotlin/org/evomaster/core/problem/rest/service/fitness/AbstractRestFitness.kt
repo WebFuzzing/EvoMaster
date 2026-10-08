@@ -1240,6 +1240,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv: FitnessValue
     ): TestResultsDto? {
 
+        observePostProcessingResults(actionResults)
+
         if (actionResults.any { it is RestCallResult && it.getTcpProblem() }) {
             /*
                 If there are socket issues, we avoid trying to compute any coverage.
