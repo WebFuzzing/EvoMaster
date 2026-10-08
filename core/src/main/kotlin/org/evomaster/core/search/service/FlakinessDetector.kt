@@ -67,6 +67,9 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
 
             if(hasPhaseTimedOut()) break
 
+            // skip test which contains timeout action
+            if (ci.hasActionTimeout()) continue
+
             for (execIndex in 1..execNum){
                 val ei = fitness.computeWholeAchievedCoverageForPostProcessing(ci.individual)
                 if(ei == null){
