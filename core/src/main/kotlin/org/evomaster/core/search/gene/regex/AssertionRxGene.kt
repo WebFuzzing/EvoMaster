@@ -104,7 +104,33 @@ class AssertionRxGene(
         mode: GeneUtils.EscapeMode?,
         targetFormat: OutputFormat?,
         extraCheck: Boolean
-    ): String = ""
+    ): String {
+        if (hasCaptureGroups) {
+            // we call getValueAsPrintableString for the innerGene in this case so that the capture group(s) of the
+            // inner value are rendered and saved on RegexGene for back reference usage. we do not use this value here.
+            innerGene?.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+        }
+        return ""
+    }
+
+    /**
+     * True if there is a capture group somewhere inside [innerGene].
+     */
+    private val hasCaptureGroups: Boolean by lazy {
+        innerGene?.let { containsCaptureGroup(it) } ?: false
+    }
+
+    /**
+     * Looks for a capture group (i.e., a [DisjunctionListRxGene] with non-null captureGroupIndex) in the tree.
+     * The templates of quantifier genes have to be looked into separately, as they are not among the children
+     * of the quantifier so [flatView] would miss capture groups there.
+     */
+    private fun containsCaptureGroup(gene: Gene): Boolean {
+        return gene.flatView().any {
+            (it is DisjunctionListRxGene && it.captureGroupIndex != null)
+                    || (it is QuantifierRxGene && containsCaptureGroup(it.template))
+        }
+    }
 
     /**
      * Returns the value currently sampled from [innerGene], or null if there is no
