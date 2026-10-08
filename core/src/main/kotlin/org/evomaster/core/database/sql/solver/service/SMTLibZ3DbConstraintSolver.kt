@@ -18,6 +18,7 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Statistics
@@ -54,6 +55,13 @@ import kotlin.collections.iterator
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.text.equals
+
+/**
+ * A row already turned into an action, kept so that later rows can bind their foreign keys to it.
+ *
+ * @param values the value Z3 assigned to each column, keyed by the uppercase column name.
+ */
+private class InsertedRow(val tableId: TableId, val actionId: Long, val values: Map<String, String?>)
 
 /**
  * An SMT solver implementation using Z3 in a Docker container.
@@ -365,6 +373,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     private fun toSqlActionList(schemaDto: DbInfoDto, solution: Z3Solution): List<SqlAction> {
         val actions = mutableListOf<SqlAction>()
+        val insertedRows = mutableListOf<InsertedRow>()
 
         for (row in inInsertionOrder(schemaDto, solution.assignments)) {
             val tableName = getTableName(row.key)
@@ -375,58 +384,129 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             val actionId = idCounter
             idCounter++
 
-            val genes = mutableListOf<Gene>()
+            val valueGenes = mutableListOf<Gene>()
+            val rawValues = mutableMapOf<String, String?>()
             for (smtColumn in columns.fields) {
                 val dbColumn = table.columns.firstOrNull {
                     convertToAscii(it.name).equals(smtColumn, ignoreCase = true)
                 }
                 val dbColumnName = dbColumn?.name ?: smtColumn
+                val columnValue = columns.getField(smtColumn)
 
-                var gene: Gene = IntegerGene(dbColumnName, 0)
-                when (val columnValue = columns.getField(smtColumn)) {
-                    is StringValue -> {
-                        gene = if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.BOOLEAN_TYPE)) {
-                            BooleanGene(dbColumnName, toBoolean(columnValue.value))
-                        } else {
-                            StringGene(dbColumnName, columnValue.value)
-                        }
-                    }
-                    is LongValue -> {
-                        gene = if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.TIMESTAMP_TYPE)) {
-                            val epochSeconds = columnValue.value.toLong()
-                            val localDateTime = LocalDateTime.ofInstant(
-                                Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
-                            )
-                            val formatted = localDateTime.format(
-                                DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT)
-                            )
-                            ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
-                        } else {
-                            LongGene(dbColumnName, columnValue.value.toLong())
-                        }
-                    }
-                    is RealValue -> {
-                        gene = DoubleGene(dbColumnName, columnValue.value)
-                    }
-                }
-                if (dbColumn != null && dbColumn.primaryKey) {
-                    gene = SqlPrimaryKeyGene(dbColumnName, table.id, gene, actionId)
-                }
-                /*
-                    TODO: a foreign key column is returned as a plain value gene, not as a
-                    SqlForeignKeyGene bound to the action of the referenced row. Z3 makes the value
-                    match that row's primary key, but once the search mutates either gene the
-                    reference can break, and FK repair does not see this column as a foreign key.
-                 */
-                gene.markAllAsInitialized()
-                genes.add(gene)
+                rawValues[dbColumnName.uppercase()] = rawValue(columnValue)
+                valueGenes.add(toValueGene(schemaDto, table, dbColumnName, columnValue))
             }
 
-            val sqlAction = SqlAction(table, table.columns, actionId, genes.toList())
-            actions.add(sqlAction)
+            val foreignKeyGenes = bindForeignKeys(table, actionId, rawValues, insertedRows)
+
+            val genes = valueGenes.map { valueGene ->
+                var gene: Gene = foreignKeyGenes[valueGene.name.uppercase()] ?: valueGene
+                val dbColumn = table.columns.firstOrNull { it.name.equals(valueGene.name, ignoreCase = true) }
+                if (dbColumn != null && dbColumn.primaryKey) {
+                    gene = SqlPrimaryKeyGene(valueGene.name, table.id, gene, actionId)
+                }
+                gene.markAllAsInitialized()
+                gene
+            }
+
+            actions.add(SqlAction(table, table.columns, actionId, genes))
+            insertedRows.add(InsertedRow(table.id, actionId, rawValues))
         }
 
         return actions
+    }
+
+    /**
+     * Builds a [SqlForeignKeyGene] for each foreign key column of a row, bound to the action of the row
+     * it references.
+     *
+     * Z3 makes the value of a foreign key equal to the primary key of some row of the referenced
+     * table, but a plain value gene would only copy that value: once the search mutates either side,
+     * the reference breaks, and the FK repair of EvoMaster does not recognise the column as a foreign
+     * key. Binding the gene to the referenced action keeps the two linked, as for any other insertion.
+     *
+     * The referenced row is the one, among the rows inserted before this one, whose target columns hold
+     * the values Z3 assigned to the source columns. A foreign key is left as plain values when no such
+     * row exists: when its target columns are not the primary key, which a [SqlForeignKeyGene] cannot
+     * refer to, or when a row references itself, since no action precedes it.
+     *
+     * @return the foreign key genes, keyed by the uppercase name of their source column.
+     */
+    private fun bindForeignKeys(
+        table: Table,
+        actionId: Long,
+        rawValues: Map<String, String?>,
+        insertedRows: List<InsertedRow>
+    ): Map<String, SqlForeignKeyGene> {
+        val genes = mutableMapOf<String, SqlForeignKeyGene>()
+
+        for (foreignKey in table.foreignKeys) {
+            if (foreignKey.targetColumns.any { !it.primaryKey }) continue
+
+            val referenced = insertedRows.lastOrNull { row ->
+                row.tableId == foreignKey.targetTableId &&
+                    foreignKey.sourceColumns.indices.all { i ->
+                        val value = rawValues[foreignKey.sourceColumns[i].name.uppercase()]
+                        value != null && value == row.values[foreignKey.targetColumns[i].name.uppercase()]
+                    }
+            } ?: continue
+
+            foreignKey.sourceColumns.forEachIndexed { i, sourceColumn ->
+                genes[sourceColumn.name.uppercase()] = SqlForeignKeyGene(
+                    sourceColumn = sourceColumn.name,
+                    uniqueId = actionId,
+                    targetTable = foreignKey.targetTableId,
+                    targetColumn = foreignKey.targetColumns[i].name,
+                    nullable = sourceColumn.nullable,
+                    uniqueIdOfPrimaryKey = referenced.actionId,
+                    otherSourceColumnsInCompositeFK = foreignKey.sourceColumns
+                        .filter { it != sourceColumn }.map { it.name }.toSet()
+                )
+            }
+        }
+
+        return genes
+    }
+
+    /**
+     * The value Z3 assigned to a column, as a string that can be compared across rows.
+     */
+    private fun rawValue(value: SMTLibValue?): String? = when (value) {
+        is LongValue -> value.value.toString()
+        is RealValue -> value.value.toString()
+        is StringValue -> value.value
+        else -> null
+    }
+
+    /**
+     * Builds the gene holding the value Z3 assigned to a column, according to the column's SQL type.
+     */
+    private fun toValueGene(schemaDto: DbInfoDto, table: Table, dbColumnName: String, columnValue: SMTLibValue?): Gene {
+        return when (columnValue) {
+            is StringValue -> {
+                if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.BOOLEAN_TYPE)) {
+                    BooleanGene(dbColumnName, toBoolean(columnValue.value))
+                } else {
+                    StringGene(dbColumnName, columnValue.value)
+                }
+            }
+            is LongValue -> {
+                if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.TIMESTAMP_TYPE)) {
+                    val epochSeconds = columnValue.value.toLong()
+                    val localDateTime = LocalDateTime.ofInstant(
+                        Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
+                    )
+                    val formatted = localDateTime.format(
+                        DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT)
+                    )
+                    ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
+                } else {
+                    LongGene(dbColumnName, columnValue.value.toLong())
+                }
+            }
+            is RealValue -> DoubleGene(dbColumnName, columnValue.value)
+            else -> IntegerGene(dbColumnName, 0)
+        }
     }
 
     /**
@@ -559,7 +639,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         return Table(
             TableId.fromDto(schema.databaseType, tableDto.id),
             findColumns(schema, tableDto),
-            findForeignKeys(tableDto) // TODO: Implement this method
+            findForeignKeys(schema, tableDto)
         )
     }
 
@@ -662,9 +742,34 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         }
     }
 
-    // TODO: Implement this method
-    private fun findForeignKeys(tableDto: TableDto): Set<ForeignKey> {
-        return emptySet()
+    /**
+     * Rebuilds the foreign keys of a table from the schema, in the same way as
+     * [org.evomaster.core.database.sql.SqlInsertBuilder]: when the schema does not name the target
+     * columns, the foreign key references the primary key of the target table. A foreign key whose
+     * table or columns cannot be resolved is skipped.
+     */
+    private fun findForeignKeys(schema: DbInfoDto, tableDto: TableDto): Set<ForeignKey> {
+        val sourceColumns = findColumns(schema, tableDto)
+
+        return tableDto.foreignKeys.mapNotNull { foreignKey ->
+            val targetDto = schema.tables.find { it.id.name.equals(foreignKey.targetTable, ignoreCase = true) }
+                ?: return@mapNotNull null
+            val targetColumns = findColumns(schema, targetDto)
+
+            val source = foreignKey.sourceColumns.map { name ->
+                sourceColumns.find { it.name.equals(name, ignoreCase = true) } ?: return@mapNotNull null
+            }
+            val target = if (foreignKey.targetColumns.isEmpty()) {
+                targetColumns.filter { it.primaryKey }
+            } else {
+                foreignKey.targetColumns.map { name ->
+                    targetColumns.find { it.name.equals(name, ignoreCase = true) } ?: return@mapNotNull null
+                }
+            }
+            if (source.isEmpty() || source.size != target.size) return@mapNotNull null
+
+            ForeignKey(source, TableId.fromDto(schema.databaseType, targetDto.id), target)
+        }.toSet()
     }
 
     /**
