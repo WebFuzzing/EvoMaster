@@ -33,6 +33,7 @@ import org.evomaster.client.java.controller.cassandra.insertions.CassandraScript
 import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
 import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
+import org.evomaster.client.java.controller.problem.rpc.CustomizedAnnotationForScheduleTaskMethod;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
@@ -2003,6 +2004,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     @Override
     public List<CustomizedNotNullAnnotationForRPCDto> specifyCustomizedNotNullAnnotation() {
+        return null;
+    }
+
+    @Override
+    public List<CustomizedAnnotationForScheduleTaskMethod> specifyCustomizedScheduleTaskAnnotations(){
         return null;
     }
 
