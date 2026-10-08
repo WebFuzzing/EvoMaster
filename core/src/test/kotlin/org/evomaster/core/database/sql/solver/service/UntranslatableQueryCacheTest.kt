@@ -55,7 +55,7 @@ class UntranslatableQueryCacheTest {
         private const val CACHE_BOUND = 128
 
         /** Valid SQL, run against [schemaWithUnsupportedType] so it fails while generating SMT-LIB. */
-        private const val UNSUPPORTED_TYPE = "SELECT * FROM blobs WHERE id = 1"
+        private const val UNSUPPORTED_TYPE = "SELECT * FROM periods WHERE id = 1"
 
         @JvmStatic
         @BeforeAll
@@ -71,7 +71,7 @@ class UntranslatableQueryCacheTest {
                 DriverManager.getConnection("jdbc:h2:mem:untranslatable_unsupported", "sa", "")
             SqlScriptRunner.execCommand(
                 unsupportedConnection,
-                "CREATE TABLE blobs(id bigint primary key, payload blob);\n"
+                "CREATE TABLE periods(id bigint primary key, length interval year);\n"
             )
             schemaWithUnsupportedType = DbInfoExtractor.extract(unsupportedConnection)
             // No injector here, so the caches have to be allocated explicitly. The Z3 executor is
