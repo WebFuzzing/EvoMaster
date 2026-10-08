@@ -5,7 +5,12 @@ import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.database.sql.SqlActionTransformer
 import org.junit.jupiter.api.AfterAll
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -72,6 +77,32 @@ class ForeignKeyReferencedRowsTest {
     @Test
     fun rowsReferencedTransitivelyAreInsertedInDependencyOrder() {
         insertSolutionAndQuery("SELECT * FROM chapter WHERE number > 3", 2)
+    }
+
+    /**
+     * The foreign key column is bound to the action of the referenced row, not copied as a plain value,
+     * so the reference survives when the search later mutates the referenced primary key.
+     */
+    @Test
+    fun foreignKeyStaysBoundWhenTheReferencedPrimaryKeyChanges() {
+        val actions = solver.solve(schemaDto, "SELECT * FROM book WHERE pages > 10", 1)
+
+        val author = actions.single { it.table.id.name.equals("AUTHOR", ignoreCase = true) }
+        val book = actions.single { it.table.id.name.equals("BOOK", ignoreCase = true) }
+
+        val fk = book.seeTopGenes().single { it.name.equals("AUTHOR", ignoreCase = true) }
+        assertTrue(fk is SqlForeignKeyGene) { "expected a foreign key gene, got ${fk::class.simpleName}" }
+        assertEquals(author.insertionId, (fk as SqlForeignKeyGene).uniqueIdOfPrimaryKey)
+
+        // Change the author's id, as a mutation would
+        val pk = author.seeTopGenes().single { it.name.equals("ID", ignoreCase = true) } as SqlPrimaryKeyGene
+        (pk.gene as LongGene).value = 4242
+
+        val dto = SqlActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dto.insertions)
+
+        val result = SqlScriptRunner.execCommand(connection, "SELECT * FROM book WHERE author = 4242")
+        assertFalse(result.isEmpty(), "The book should reference the author through its new id")
     }
 
     private fun insertSolutionAndQuery(selectQuery: String, numberOfRows: Int) {
