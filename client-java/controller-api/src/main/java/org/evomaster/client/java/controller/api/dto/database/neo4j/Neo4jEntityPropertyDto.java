@@ -2,6 +2,9 @@ package org.evomaster.client.java.controller.api.dto.database.neo4j;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A property of the nodes of a Neo4j entity, as declared in the SUT's mapping of that entity.
  */
@@ -42,7 +45,7 @@ public class Neo4jEntityPropertyDto {
     /**
      * The only values the property accepts, when it is backed by an enum; empty otherwise.
      */
-    public java.util.List<String> enumValues = new java.util.ArrayList<>();
+    public List<String> enumValues = new ArrayList<>();
 
     /**
      * Default constructor

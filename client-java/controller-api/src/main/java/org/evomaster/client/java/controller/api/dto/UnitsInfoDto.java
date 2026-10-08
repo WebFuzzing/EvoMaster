@@ -81,7 +81,7 @@ public class UnitsInfoDto {
     /**
      * Extra information extracted for example from JPA entities
      */
-    public List<ExtraConstraintsDto> extraDatabaseConstraintsDtos;
+    public List<ExtraConstraintsDto> extraDatabaseConstraintsDtos = new ArrayList<>();
 
     /**
      * Neo4j entities found in the SUT, one per class mapped to nodes. Empty if the SUT has none.
