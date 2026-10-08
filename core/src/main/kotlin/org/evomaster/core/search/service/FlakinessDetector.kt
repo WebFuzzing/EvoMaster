@@ -10,6 +10,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.time.TimeBoxedPhase
+import org.evomaster.core.utils.TimeUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -34,6 +35,9 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
 
     @Inject
     private lateinit var epc: ExecutionPhaseController
+
+    @Inject
+    private lateinit var statistics: Statistics
 
     override fun applyPhase() {
         if (!config.handleFlakiness) {
@@ -63,21 +67,29 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
 
         LoggingUtil.getInfoLogger().info("Reexecuting all individual ${currentIndividuals.size} for identifying flakiness.")
 
-        for(ci in currentIndividuals){
+        for (execIndex in 1..execNum) {
 
             if(hasPhaseTimedOut()) break
 
-            // skip test which contains timeout action
-            if (ci.hasActionTimeout()) continue
+            TimeUtils.measureTimeMillis(
+                { ms, _ -> statistics.reportReExecutionTime(ms) },
+                {
+                    for (ci in currentIndividuals) {
 
-            for (execIndex in 1..execNum){
-                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(ci.individual)
-                if(ei == null){
-                    log.warn("Failed to re-evaluate individual at index ($execIndex) during flakiness analysis.")
-                }else{
-                    checkAndMarkConsistency(ei, ci, execIndex)
+                        if(hasPhaseTimedOut()) break
+
+                        // skip test which contains timeout action
+                        if (ci.hasActionTimeout()) continue
+
+                        val ei = fitness.computeWholeAchievedCoverageForPostProcessing(ci.individual)
+                        if(ei == null){
+                            log.warn("Failed to re-evaluate individual at index ($execIndex) during flakiness analysis.")
+                        }else{
+                            checkAndMarkConsistency(ei, ci, execIndex)
+                        }
+                    }
                 }
-            }
+            )
         }
 
         return archive.extractSolution()
