@@ -599,9 +599,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     /**
-     * Makes the value Z3 assigned to a UUID or JSONB column one the database accepts.
+     * Makes the value Z3 assigned to a UUID, JSON or JSONB column one the database accepts.
      *
-     * Both are encoded as SMT Strings with no constraint on their form, so unless the query pins the
+     * They are encoded as SMT Strings with no constraint on their form, so unless the query pins the
      * value, Z3 picks something like "" and the INSERT of the whole row is rejected. A value that is
      * already valid -- e.g. one copied from the query -- is kept. Any other is mapped
      * deterministically: equal strings give equal values and different strings different ones, so
@@ -613,7 +613,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         when {
             hasColumnType(schemaDto, table, columnName, SmtLibGenerator.UUID_TYPE) && !UUID_PATTERN.matches(value) ->
                 UUID.nameUUIDFromBytes(value.toByteArray(StandardCharsets.UTF_8)).toString()
-            hasColumnType(schemaDto, table, columnName, SmtLibGenerator.JSONB_TYPE) && !isJson(value) ->
+            (hasColumnType(schemaDto, table, columnName, SmtLibGenerator.JSON_TYPE) ||
+                hasColumnType(schemaDto, table, columnName, SmtLibGenerator.JSONB_TYPE)) && !isJson(value) ->
                 JSON_MAPPER.writeValueAsString(value) // the value as a JSON string
             else -> value
         }

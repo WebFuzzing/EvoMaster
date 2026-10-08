@@ -19,7 +19,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 
 /**
- * UUID and JSONB columns are encoded as SMT Strings with no constraint on their form. Unless the query
+ * UUID, JSON and JSONB columns are encoded as SMT Strings with no constraint on their form. Unless the query
  * pins the value, Z3 picks something like "", and the INSERT of the whole row used to be rejected.
  * The failure was silent: SqlScriptRunner.execInsert logs a failed insertion and carries on.
  */
@@ -45,7 +45,8 @@ class UuidJsonColumnSolvingTest {
                 "CREATE TABLE ev(id bigint primary key, u uuid);\n" +
                     "CREATE TABLE parent(id uuid primary key);\n" +
                     "CREATE TABLE child(id bigint primary key, parent_id uuid REFERENCES parent(id));\n" +
-                    "CREATE TABLE doc(id bigint primary key, body varchar(255));\n"
+                    "CREATE TABLE doc(id bigint primary key, body varchar(255));\n" +
+                    "CREATE TABLE jdoc(id bigint primary key, content json);\n"
             )
             schemaDto = DbInfoExtractor.extract(connection)
             jsonbSchemaDto = DbInfoExtractor.extract(connection)
@@ -68,7 +69,7 @@ class UuidJsonColumnSolvingTest {
 
     @BeforeEach
     fun clean() {
-        SqlScriptRunner.execCommand(connection, "DELETE FROM child; DELETE FROM parent; DELETE FROM ev;\n")
+        SqlScriptRunner.execCommand(connection, "DELETE FROM child; DELETE FROM parent; DELETE FROM ev; DELETE FROM jdoc;\n")
     }
 
     @ParameterizedTest
@@ -78,7 +79,9 @@ class UuidJsonColumnSolvingTest {
         // the value is pinned by the query, and must be kept
         "SELECT * FROM ev WHERE u = '123e4567-e89b-12d3-a456-426614174000'",
         // a foreign key between UUID columns: the mapped values must still be equal
-        "SELECT * FROM child WHERE id = 1"
+        "SELECT * FROM child WHERE id = 1",
+        // a JSON column, which H2 has as well: the value is free
+        "SELECT * FROM jdoc WHERE id = 1"
     ])
     fun generatedRowsAreInsertedAndSatisfyTheQuery(query: String) {
         val actions = solver.solve(schemaDto, query, 1)

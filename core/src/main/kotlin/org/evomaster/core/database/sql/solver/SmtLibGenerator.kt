@@ -87,6 +87,7 @@ class SmtLibGenerator(
          * a valid UUID or JSON document; SMTLibZ3DbConstraintSolver turns it into one.
          */
         const val UUID_TYPE = "UUID"
+        const val JSON_TYPE = "JSON"
         const val JSONB_TYPE = "JSONB"
 
         /**
@@ -158,6 +159,7 @@ class SmtLibGenerator(
             BOOLEAN_TYPE to SMT_STRING,
             "BOOL" to SMT_STRING,
             UUID_TYPE to SMT_STRING,
+            JSON_TYPE to SMT_STRING,
             JSONB_TYPE to SMT_STRING,
             "BYTEA" to SMT_STRING,
         )
