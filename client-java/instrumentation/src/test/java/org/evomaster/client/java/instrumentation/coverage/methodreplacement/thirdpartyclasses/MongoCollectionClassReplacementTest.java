@@ -5,6 +5,7 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoQueryException;
 import com.mongodb.client.*;
 import com.mongodb.client.model.DeleteOptions;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.FindOneAndDeleteOptions;
 import com.mongodb.client.model.UpdateOptions;
@@ -1183,6 +1184,112 @@ public class MongoCollectionClassReplacementTest {
 
         ExecutionTracer.setExecutingInitMongo(false);
         assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.findOneAndUpdate(collection, invalidFilter, setVerified()));
+
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
+        assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
+    }
+
+    private static Document replacement() {
+        return new Document("name", "Replaced").append("age", 30);
+    }
+
+    @Test
+    public void testFindOneAndReplaceWithFilterAndReplacement() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jim Roe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        Document found = (Document) MongoCollectionClassReplacement.findOneAndReplace(collection, new Document("age", 30), replacement());
+
+        // by default, the document before the replacement is returned
+        assertNotNull(found);
+        assertEquals("John Doe", found.getString("name"));
+        assertEquals(1, collection.countDocuments(new Document("name", "Replaced")));
+        assertEquals(0, collection.countDocuments(new Document("name", "John Doe")));
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testFindOneAndReplaceWithFilterReplacementAndOptions() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jim Roe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        Document found = (Document) MongoCollectionClassReplacement.findOneAndReplace_EM_0(collection, new Document("age", 30), replacement(), new FindOneAndReplaceOptions());
+
+        // by default, the document before the replacement is returned
+        assertNotNull(found);
+        assertEquals("John Doe", found.getString("name"));
+        assertEquals(1, collection.countDocuments(new Document("name", "Replaced")));
+        assertEquals(0, collection.countDocuments(new Document("name", "John Doe")));
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testFindOneAndReplaceWithClientSessionFilterAndReplacement() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 30);
+            insertPerson("Jim Roe", 25);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            Document found = (Document) MongoCollectionClassReplacement.findOneAndReplace(collection, clientSession, new Document("age", 30), replacement());
+
+            // by default, the document before the replacement is returned
+            assertNotNull(found);
+            assertEquals("John Doe", found.getString("name"));
+            assertEquals(1, collection.countDocuments(new Document("name", "Replaced")));
+            assertEquals(0, collection.countDocuments(new Document("name", "John Doe")));
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(30, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testFindOneAndReplaceWithClientSessionFilterReplacementAndOptions() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 30);
+            insertPerson("Jim Roe", 25);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            Document found = (Document) MongoCollectionClassReplacement.findOneAndReplace(collection, clientSession, new Document("age", 30), replacement(), new FindOneAndReplaceOptions());
+
+            // by default, the document before the replacement is returned
+            assertNotNull(found);
+            assertEquals("John Doe", found.getString("name"));
+            assertEquals(1, collection.countDocuments(new Document("name", "Replaced")));
+            assertEquals(0, collection.countDocuments(new Document("name", "John Doe")));
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(30, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testFindOneAndReplaceWithFilterNoMatch() {
+        final MongoCollection<Document> collection = getMongoCollection();
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        Document found = (Document) MongoCollectionClassReplacement.findOneAndReplace(collection, new Document("age", 99), replacement());
+
+        assertNull(found);
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(99, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testFindOneAndReplaceWithInvalidFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        Document invalidFilter = new Document("tags", new Document("$size", -1));
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.findOneAndReplace(collection, invalidFilter, replacement()));
 
         BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
         assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
