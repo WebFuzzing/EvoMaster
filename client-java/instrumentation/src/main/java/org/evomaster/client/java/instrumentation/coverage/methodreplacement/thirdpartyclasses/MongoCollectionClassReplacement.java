@@ -120,6 +120,86 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
      * @param filter The filter criteria applied during the handling process.
      * @return The calculated count as a long value.
      */
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
+        return handleUpdate("updateOneBson", mongoCollection, Arrays.asList(filter, update), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateOneBsonUpdateOptions", mongoCollection, Arrays.asList(filter, update, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
+        return handleUpdate("updateOneClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter, update), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneClientSessionBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateOneClientSessionBsonUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, update, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneBsonPipeline", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline) {
+        return handleUpdate("updateOneBsonPipeline", mongoCollection, Arrays.asList(filter, pipeline), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneBsonPipelineUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateOneBsonPipelineUpdateOptions", mongoCollection, Arrays.asList(filter, pipeline, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneClientSessionBsonPipeline", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline) {
+        return handleUpdate("updateOneClientSessionBsonPipeline", mongoCollection, Arrays.asList(clientSession, filter, pipeline), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneClientSessionBsonPipelineUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateOneClientSessionBsonPipelineUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, pipeline, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
+        return handleUpdate("updateManyBson", mongoCollection, Arrays.asList(filter, update), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateManyBsonUpdateOptions", mongoCollection, Arrays.asList(filter, update, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
+        return handleUpdate("updateManyClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter, update), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyClientSessionBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateManyClientSessionBsonUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, update, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyBsonPipeline", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline) {
+        return handleUpdate("updateManyBsonPipeline", mongoCollection, Arrays.asList(filter, pipeline), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyBsonPipelineUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateManyBsonPipelineUpdateOptions", mongoCollection, Arrays.asList(filter, pipeline, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyClientSessionBsonPipeline", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline) {
+        return handleUpdate("updateManyClientSessionBsonPipeline", mongoCollection, Arrays.asList(clientSession, filter, pipeline), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyClientSessionBsonPipelineUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateManyClientSessionBsonPipelineUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, pipeline, options), filter);
+    }
+
     private static long handleCount(String id, Object mongoCollection, List<Object> args, Object filter) {
         return (long) handleEagerQuery(id, mongoCollection, args, filter);
     }
@@ -138,7 +218,20 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
     }
 
     /**
-     * Unlike find, operations like count and delete are executed eagerly,
+     * Handles the update of documents (updateOne/updateMany) in the provided collection.
+     *
+     * @param id The identifier of the replacement, used to retrieve the original update method.
+     * @param mongoCollection The collection in which the documents will be updated.
+     * @param args The arguments of the original update call.
+     * @param filter The filter conditions to locate the documents to update.
+     * @return The result of the update operation (an UpdateResult).
+     */
+    private static Object handleUpdate(String id, Object mongoCollection, List<Object> args, Object filter) {
+        return handleEagerQuery(id, mongoCollection, args, filter);
+    }
+
+    /**
+     * Unlike find, operations like count, delete and update are executed eagerly,
      * so we know right away whether the filter was valid
      */
     private static Object handleEagerQuery(String id, Object mongoCollection, List<Object> args, Object filter) {
