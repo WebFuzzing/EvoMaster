@@ -111,6 +111,7 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleDelete("deleteManyClientSessionBsonDeleteOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
     }
 
+
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
     public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
         return handleUpdate("updateOneBson", mongoCollection, Arrays.asList(filter, update), filter);
