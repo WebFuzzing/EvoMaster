@@ -111,15 +111,6 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleDelete("deleteManyClientSessionBsonDeleteOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
     }
 
-    /**
-     * Processes the count handling based on the provided parameters.
-     *
-     * @param id The identifier used to locate the relevant resource.
-     * @param mongoCollection The collection object to interact with the database.
-     * @param args A list of additional arguments required for the operation.
-     * @param filter The filter criteria applied during the handling process.
-     * @return The calculated count as a long value.
-     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
     public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
         return handleUpdate("updateOneBson", mongoCollection, Arrays.asList(filter, update), filter);
@@ -200,6 +191,15 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleUpdate("updateManyClientSessionBsonPipelineUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, pipeline, options), filter);
     }
 
+    /**
+     * Processes the count handling based on the provided parameters.
+     *
+     * @param id The identifier used to locate the relevant resource.
+     * @param mongoCollection The collection object to interact with the database.
+     * @param args A list of additional arguments required for the operation.
+     * @param filter The filter criteria applied during the handling process.
+     * @return The calculated count as a long value.
+     */
     private static long handleCount(String id, Object mongoCollection, List<Object> args, Object filter) {
         return (long) handleEagerQuery(id, mongoCollection, args, filter);
     }
