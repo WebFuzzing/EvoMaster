@@ -9,6 +9,9 @@ import org.evomaster.client.java.controller.api.dto.problem.AsyncApiProblemDto
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
+import org.evomaster.core.problem.asyncapi.param.AsyncApiParam
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.problem.external.service.DummyController
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
@@ -234,5 +237,40 @@ class AsyncApiSamplerTest {
         assertTrue(sampler.hasSpecialInit())
         val again = (1..NCS_OPERATIONS.size).map { sampler.sample() }
         assertEquals(NCS_OPERATIONS, again.map { it.seeMainExecutableActions().single().getName() }.toSet())
+    }
+
+    @Test
+    fun testExamplesSeedTheSearchWhenAskedFor() {
+
+        val scalar = AsyncApiAccess.readFromResource("/asyncapi/sut/scalar.yaml")
+        val sampler = sampler(sutInfo { schemaText = scalar }, "--blackBox=false", "--probAsyncApiExamples=1.0")
+
+        //an action whose message declares an example
+        val action = sampler.seeAvailableActions()
+            .map { it as AsyncApiAction }
+            .first { sampler.document.messages.getValue(it.messageId).examples.isNotEmpty() }
+        val example = sampler.document.messages.getValue(action.messageId).examples.first().get("payload")
+        val anExampleValue = example.fields().asSequence().map { it.value }.first { it.isTextual }.asText()
+
+        //sampled the way the search does, the payload is the author's example
+        val sampled = (action.copy() as AsyncApiAction).apply { doInitialize(Randomness().apply { updateSeed(7) }) }
+        val payload = sampled.parameters.first { it.name == AsyncApiParam.PAYLOAD }.gene
+            .getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = null)
+
+        assertTrue(payload.contains(anExampleValue), "expected '$anExampleValue' in $payload")
+    }
+
+    @Test
+    fun testANamedExampleReachesTheAction() {
+
+        //what the sampler's named-example pass keys on, so a whole example can be kept together
+        val scalar = AsyncApiAccess.readFromResource("/asyncapi/sut/scalar.yaml")
+        val sampler = sampler(sutInfo { schemaText = scalar }, "--blackBox=false", "--probAsyncApiExamples=1.0")
+
+        val named = sampler.seeAvailableActions()
+            .map { it as AsyncApiAction }
+            .flatMap { it.getNamedExamples().keys }
+
+        assertTrue(named.contains("Mars Discovery"), named.toString())
     }
 }
