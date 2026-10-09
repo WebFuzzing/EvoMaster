@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses.MongoCollectionLegacyCountClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,14 @@ class ReplacementListTest {
     public void testReplacementMethods() {
 
         for (MethodReplacementClass mrc : ReplacementList.getList()) {
+
+            if (mrc instanceof MongoCollectionLegacyCountClassReplacement) {
+                /**
+                 * This is a special case, because the legacy count method is deprecated and removed in MongoDB 4.0,
+                 * so we cannot test it in all environments
+                 */
+                continue;
+            }
 
             //make sure that during testing all third-party libraries are available
             assertTrue(mrc.isAvailable(), "Not available: " + mrc.getClass().getName());
