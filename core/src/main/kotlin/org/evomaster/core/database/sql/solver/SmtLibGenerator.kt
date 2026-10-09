@@ -557,7 +557,7 @@ class SmtLibGenerator(
 
         val (where, defaultTable) = when (sqlQuery) {
             is Select -> {
-                val plainSelect = translatedSelect(sqlQuery)
+                val plainSelect = plainSelectOf(sqlQuery)
                 Pair(plainSelect.where, defaultTableOf(plainSelect))
             }
             is Delete -> Pair(sqlQuery.where, sqlQuery.table.getName())
@@ -657,7 +657,7 @@ class SmtLibGenerator(
         queryTables: Collection<String>
     ) {
         if (sqlQuery is Select) { // TODO: Handle other queries
-            val plainSelect = translatedSelect(sqlQuery)
+            val plainSelect = plainSelectOf(sqlQuery)
             val joins = plainSelect.joins
             if (joins != null) {
                 for (join in joins) {
@@ -770,19 +770,20 @@ class SmtLibGenerator(
     )
 
     /**
-     * The plain `SELECT` whose clauses are translated.
+     * The plain `SELECT` whose clauses are translated: the query itself when it is a [PlainSelect], or
+     * the first branch of a `UNION`. Always a [PlainSelect].
      *
      * A `UNION` returns rows as soon as any one of its branches does, so generating data for its first
      * branch is enough; the branch is translated as if it were the whole query. `INTERSECT` and
      * `EXCEPT` constrain every branch, which this translation cannot express, so they are rejected
      * and the query is recorded as untranslatable.
      */
-    private fun translatedSelect(select: Select): PlainSelect = when (select) {
+    private fun plainSelectOf(select: Select): PlainSelect = when (select) {
         is PlainSelect -> select
-        is ParenthesedSelect -> translatedSelect(select.select)
+        is ParenthesedSelect -> plainSelectOf(select.select)
         is SetOperationList ->
             if (select.operations.all { it is UnionOp }) {
-                translatedSelect(select.selects.first())
+                plainSelectOf(select.selects.first())
             } else {
                 throw RuntimeException("Unsupported set operation, only UNION can be translated: $select")
             }
@@ -802,7 +803,7 @@ class SmtLibGenerator(
 
         when (sqlQuery) {
             is Select -> {
-                val plainSelect = translatedSelect(sqlQuery)
+                val plainSelect = plainSelectOf(sqlQuery)
                 val fromItem = plainSelect.fromItem
                 if (fromItem != null) {
                     val tableName = getTableName(fromItem)
@@ -882,7 +883,7 @@ class SmtLibGenerator(
 
         // Add tables from JOINs and WHERE clause if they exist
         if (sqlQuery is Select) {
-            val plainSelect = translatedSelect(sqlQuery)
+            val plainSelect = plainSelectOf(sqlQuery)
 
             // Add tables from JOINs
             plainSelect.joins?.forEach { join ->
