@@ -20,7 +20,15 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
         val res = ctx.disjunction().accept(this)
         val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
-        val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+        val satisfiableDisjunctions = res.genes
+            .map { it as DisjunctionRxGene }
+            .filter { !it.isUnsatisfiable() }
+
+        if (satisfiableDisjunctions.isEmpty()) {
+            throw IllegalStateException("Regex is unsatisfiable.")
+        }
+
+        val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
 
         val gene = RegexGene(
             "regex",
@@ -34,11 +42,17 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
 
     override fun visitDisjunction(ctx: PostgresSimilarToParser.DisjunctionContext): VisitResult {
 
+        val res = VisitResult()
         val altRes = ctx.alternative().accept(this)
 
-        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as Gene }, true, true)
+        // if altRes genes are empty and there were terms on the alternative then it was unsatisfiable, skip
+        val isSatisfiable = altRes.genes.isNotEmpty() || ctx.alternative().term().isEmpty()
 
-        val res = VisitResult(disj)
+        if (isSatisfiable) {
+            val disj = DisjunctionRxGene("disj", altRes.genes.map { it as Gene }, true, true)
+            res.genes.add(disj)
+        }
+        // else: unsatisfiable, skip that alternative
 
         if(ctx.disjunction() != null){
             val disjRes = ctx.disjunction().accept(this)
@@ -57,10 +71,10 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
 
             val resTerm = ctx.term()[i].accept(this)
             val gene = resTerm.genes.firstOrNull()
+                    // no gene, term and alternative are unsatisfiable
+                    ?: return VisitResult()
 
-            if(gene != null) {
-                res.genes.add(gene)
-            }
+            res.genes.add(gene)
         }
 
         return res
@@ -73,18 +87,30 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
         val resAtom = ctx.atom().accept(this)
 
         val atom = resAtom.genes.firstOrNull()
-                ?: return res
 
         if(ctx.quantifier() != null){
 
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
+
+            // if quantified atom is unsatisfiable we must then check the limits
+            if(atom == null || (atom as? RxTerm)?.isUnsatisfiable() == true){
+                return if (limits.first == 0) {
+                    // if 0 appearances is allowed then the regex is satisfiable only with empty string
+                    VisitResult(PatternCharacterBlockGene("0_QuantifierOnEmptyRegex", ""))
+                } else {
+                    // if not then unsatisfiable, return with no genes
+                    res
+                }
+            }
+
             val q = QuantifierRxGene("q", atom, limits.first, limits.second)
 
             res.genes.add(q)
 
-        } else {
+        } else if (atom != null) {
             res.genes.add(atom)
         }
+        // else atom is unsatisfiable, return no genes
 
         return res
     }
@@ -149,7 +175,16 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
 
             val res = ctx.disjunction().accept(this)
 
-            val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+            val satisfiableDisjunctions = res.genes
+                .map { it as DisjunctionRxGene }
+                .filter { !it.isUnsatisfiable() }
+
+            if (satisfiableDisjunctions.isEmpty()) {
+                // the group, and so the term, cannot match: no genes
+                return VisitResult()
+            }
+
+            val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
 
             //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
             for(gene in disjList.disjunctions){

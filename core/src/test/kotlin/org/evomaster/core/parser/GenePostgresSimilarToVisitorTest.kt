@@ -5,6 +5,7 @@ import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.util.regex.Pattern
 
 /**
@@ -200,5 +201,27 @@ class GenePostgresSimilarToVisitorTest : RegexTestTemplate(){
     fun testClassRangeIndExample(){
         check("/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?",
                 "/foo/../bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?")
+    }
+
+    @Test
+    fun testUnsatisfiableClassWithQuantifierThatAllowsZero(){
+        checkSamplesExactly("a[]*b", "ab")
+        checkSamplesExactly("a[]?b", "ab")
+        checkSamplesExactly("([])*a", "a")
+    }
+
+    @Test
+    fun testUnsatisfiableAlternativeIsDropped(){
+        checkSamplesExactly("[]|a", "a")
+        checkSamplesExactly("a|[]", "a")
+        checkSamplesExactly("a|[]|b", "a", "b")
+        checkSamplesExactly("([]|a)?", "", "a")
+    }
+
+    @Test
+    fun testUnsatisfiableRegex(){
+        listOf("[]", "a[]b", "a[]+b", "([])", "([])+a", "a([])b", "[]|[]").forEach {
+            assertThrows<IllegalStateException> { createGene(it) }
+        }
     }
 }
