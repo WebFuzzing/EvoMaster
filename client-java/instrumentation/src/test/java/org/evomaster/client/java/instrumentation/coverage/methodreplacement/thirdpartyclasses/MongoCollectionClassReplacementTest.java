@@ -5,6 +5,8 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoQueryException;
 import com.mongodb.client.*;
 import com.mongodb.client.model.DeleteOptions;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.result.UpdateResult;
 import com.mongodb.client.result.DeleteResult;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentWriter;
@@ -616,6 +618,322 @@ public class MongoCollectionClassReplacementTest {
 
         ExecutionTracer.setExecutingInitMongo(false);
         assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.deleteMany(collection, invalidFilter));
+
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
+        assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
+    }
+
+    private static Document setVerified() {
+        return new Document("$set", new Document("verified", true));
+    }
+
+    private static List<Document> verifiedPipeline() {
+        return Collections.singletonList(setVerified());
+    }
+
+    @Test
+    public void testUpdateOneWithFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 30);
+        insertPerson("Jim Roe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, new Document("age", 30), setVerified());
+
+        assertEquals(1, result.getMatchedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testUpdateOneWithFilterAndOptions() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 30);
+        insertPerson("Jim Roe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, new Document("age", 30), setVerified(), new UpdateOptions());
+
+        assertEquals(1, result.getMatchedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testUpdateOneWithClientSessionAndFilter() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 30);
+            insertPerson("Jane Doe", 30);
+            insertPerson("Jim Roe", 25);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne_EM_0(collection, clientSession, new Document("age", 30), setVerified());
+
+            assertEquals(1, result.getMatchedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(30, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testUpdateOneWithClientSessionFilterAndOptions() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 30);
+            insertPerson("Jane Doe", 30);
+            insertPerson("Jim Roe", 25);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, clientSession, new Document("age", 30), setVerified(), new UpdateOptions());
+
+            assertEquals(1, result.getMatchedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(30, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testUpdateOneWithFilterAndPipeline() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 30);
+        insertPerson("Jim Roe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, new Document("age", 30), verifiedPipeline());
+
+        assertEquals(1, result.getMatchedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testUpdateOneWithFilterPipelineAndOptions() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 30);
+        insertPerson("Jim Roe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
+
+        assertEquals(1, result.getMatchedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testUpdateOneWithClientSessionFilterAndPipeline() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 30);
+            insertPerson("Jane Doe", 30);
+            insertPerson("Jim Roe", 25);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, clientSession, new Document("age", 30), verifiedPipeline());
+
+            assertEquals(1, result.getMatchedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(30, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testUpdateOneWithClientSessionFilterPipelineAndOptions() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 30);
+            insertPerson("Jane Doe", 30);
+            insertPerson("Jim Roe", 25);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, clientSession, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
+
+            assertEquals(1, result.getMatchedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(30, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testUpdateOneWithFilterNoMatch() {
+        final MongoCollection<Document> collection = getMongoCollection();
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, new Document("age", 99), setVerified());
+
+        assertEquals(0, result.getMatchedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(99, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testUpdateOneWithInvalidFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        Document invalidFilter = new Document("tags", new Document("$size", -1));
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.updateOne(collection, invalidFilter, setVerified()));
+
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
+        assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
+    }
+
+    @Test
+    public void testUpdateManyWithFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 30);
+        insertPerson("Jim Roe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, new Document("age", 30), setVerified());
+
+        assertEquals(2, result.getMatchedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testUpdateManyWithFilterAndOptions() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 30);
+        insertPerson("Jim Roe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, new Document("age", 30), setVerified(), new UpdateOptions());
+
+        assertEquals(2, result.getMatchedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testUpdateManyWithClientSessionAndFilter() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 30);
+            insertPerson("Jane Doe", 30);
+            insertPerson("Jim Roe", 25);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany_EM_0(collection, clientSession, new Document("age", 30), setVerified());
+
+            assertEquals(2, result.getMatchedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(30, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testUpdateManyWithClientSessionFilterAndOptions() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 30);
+            insertPerson("Jane Doe", 30);
+            insertPerson("Jim Roe", 25);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, clientSession, new Document("age", 30), setVerified(), new UpdateOptions());
+
+            assertEquals(2, result.getMatchedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(30, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testUpdateManyWithFilterAndPipeline() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 30);
+        insertPerson("Jim Roe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, new Document("age", 30), verifiedPipeline());
+
+        assertEquals(2, result.getMatchedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testUpdateManyWithFilterPipelineAndOptions() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 30);
+        insertPerson("Jim Roe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
+
+        assertEquals(2, result.getMatchedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testUpdateManyWithClientSessionFilterAndPipeline() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 30);
+            insertPerson("Jane Doe", 30);
+            insertPerson("Jim Roe", 25);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, clientSession, new Document("age", 30), verifiedPipeline());
+
+            assertEquals(2, result.getMatchedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(30, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testUpdateManyWithClientSessionFilterPipelineAndOptions() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 30);
+            insertPerson("Jane Doe", 30);
+            insertPerson("Jim Roe", 25);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, clientSession, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
+
+            assertEquals(2, result.getMatchedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(30, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testUpdateManyWithFilterNoMatch() {
+        final MongoCollection<Document> collection = getMongoCollection();
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, new Document("age", 99), setVerified());
+
+        assertEquals(0, result.getMatchedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(99, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testUpdateManyWithInvalidFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        Document invalidFilter = new Document("tags", new Document("$size", -1));
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.updateMany(collection, invalidFilter, setVerified()));
 
         BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
         assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
