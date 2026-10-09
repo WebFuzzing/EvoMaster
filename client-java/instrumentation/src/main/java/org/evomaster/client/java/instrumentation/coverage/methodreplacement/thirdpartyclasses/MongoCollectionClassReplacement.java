@@ -13,6 +13,17 @@ import java.util.Collections;
 import java.util.List;
 
 
+/**
+ * Replacements for the methods of {@code MongoCollection} that execute a query.
+ * <p>
+ * All the original methods of a replacement class are resolved together, and all must exist in the
+ * MongoDB Java driver in use, otherwise the replacements of the whole class fail when executed.
+ * The methods of this class exist from driver 3.8.0 (the first version with
+ * {@code com.mongodb.client.ClientSession} and {@code countDocuments}), so that is the first driver
+ * version supported. Methods that are only present in some driver versions are in separate classes:
+ * {@link MongoCollectionLegacyCountClassReplacement} (removed in 4.0.0) and
+ * {@link MongoCollectionPipelineUpdateClassReplacement} (added in 3.11.0).
+ */
 public class MongoCollectionClassReplacement extends MongoOperationClassReplacement {
     private static final MongoCollectionClassReplacement singleton = new MongoCollectionClassReplacement();
 
@@ -21,192 +32,382 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return "com.mongodb.client.MongoCollection";
     }
 
+    /**
+     * Replacement for {@code MongoCollection.find()}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "find", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
     public static Object find(Object mongoCollection) {
         return handleFind("find", mongoCollection, Collections.emptyList(), null);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.find(Class<TResult>)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findResultClass", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
     public static <TResult> Object find(Object mongoCollection, Class<TResult> resultClass) {
         return handleFind("findResultClass", mongoCollection, Arrays.asList(resultClass), null);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.find(Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
     public static Object find(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleFind("findBson", mongoCollection, Arrays.asList(filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.find(Bson, Class<TResult>)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findBsonResultClass", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
     public static <TResult> Object find(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Class<TResult> resultClass) {
         return handleFind("findBsonResultClass", mongoCollection, Arrays.asList(filter, resultClass), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.find(ClientSession, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
     public static Object find(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleFind("findClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.find(ClientSession, Bson, Class<TResult>)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findClientSessionBsonResultClass", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
     public static <TResult> Object find(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Class<TResult> resultClass) {
         return handleFind("findClientSessionBsonResultClass", mongoCollection, Arrays.asList(clientSession, filter, resultClass), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.countDocuments(Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countDocumentsBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static long countDocuments(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleCount("countDocumentsBson", mongoCollection, Arrays.asList(filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.countDocuments(Bson, CountOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countDocumentsBsonCountOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static long countDocuments(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.CountOptions") Object options) {
         return handleCount("countDocumentsBsonCountOptions", mongoCollection, Arrays.asList(filter, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.countDocuments(ClientSession, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countDocumentsClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static long countDocuments_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleCount("countDocumentsClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.countDocuments(ClientSession, Bson, CountOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countDocumentsClientSessionBsonCountOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static long countDocuments(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.CountOptions") Object options) {
         return handleCount("countDocumentsClientSessionBsonCountOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.deleteOne(Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "deleteOneBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.DeleteResult")
     public static Object deleteOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleDelete("deleteOneBson", mongoCollection, Arrays.asList(filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.deleteOne(Bson, DeleteOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.4.0 (not present in 3.2.2).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "deleteOneBsonDeleteOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.DeleteResult")
     public static Object deleteOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.DeleteOptions") Object options) {
         return handleDelete("deleteOneBsonDeleteOptions", mongoCollection, Arrays.asList(filter, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.deleteOne(ClientSession, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "deleteOneClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.DeleteResult")
     public static Object deleteOne_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleDelete("deleteOneClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.deleteOne(ClientSession, Bson, DeleteOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "deleteOneClientSessionBsonDeleteOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.DeleteResult")
     public static Object deleteOne(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.DeleteOptions") Object options) {
         return handleDelete("deleteOneClientSessionBsonDeleteOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.deleteMany(Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "deleteManyBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.DeleteResult")
     public static Object deleteMany(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleDelete("deleteManyBson", mongoCollection, Arrays.asList(filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.deleteMany(Bson, DeleteOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.4.0 (not present in 3.2.2).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "deleteManyBsonDeleteOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.DeleteResult")
     public static Object deleteMany(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.DeleteOptions") Object options) {
         return handleDelete("deleteManyBsonDeleteOptions", mongoCollection, Arrays.asList(filter, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.deleteMany(ClientSession, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "deleteManyClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.DeleteResult")
     public static Object deleteMany_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleDelete("deleteManyClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.deleteMany(ClientSession, Bson, DeleteOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "deleteManyClientSessionBsonDeleteOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.DeleteResult")
     public static Object deleteMany(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.DeleteOptions") Object options) {
         return handleDelete("deleteManyClientSessionBsonDeleteOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
     }
 
 
+    /**
+     * Replacement for {@code MongoCollection.updateOne(Bson, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
     public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
         return handleUpdate("updateOneBson", mongoCollection, Arrays.asList(filter, update), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.updateOne(Bson, Bson, UpdateOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
     public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
         return handleUpdate("updateOneBsonUpdateOptions", mongoCollection, Arrays.asList(filter, update, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.updateOne(ClientSession, Bson, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
     public static Object updateOne_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
         return handleUpdate("updateOneClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter, update), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.updateOne(ClientSession, Bson, Bson, UpdateOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneClientSessionBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
     public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
         return handleUpdate("updateOneClientSessionBsonUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, update, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.updateMany(Bson, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
     public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
         return handleUpdate("updateManyBson", mongoCollection, Arrays.asList(filter, update), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.updateMany(Bson, Bson, UpdateOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
     public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
         return handleUpdate("updateManyBsonUpdateOptions", mongoCollection, Arrays.asList(filter, update, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.updateMany(ClientSession, Bson, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
     public static Object updateMany_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
         return handleUpdate("updateManyClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter, update), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.updateMany(ClientSession, Bson, Bson, UpdateOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyClientSessionBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
     public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
         return handleUpdate("updateManyClientSessionBsonUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, update, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndDelete(Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndDeleteBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndDelete(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleDelete("findOneAndDeleteBson", mongoCollection, Arrays.asList(filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndDelete(Bson, FindOneAndDeleteOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndDeleteBsonFindOneAndDeleteOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndDelete(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndDeleteOptions") Object options) {
         return handleDelete("findOneAndDeleteBsonFindOneAndDeleteOptions", mongoCollection, Arrays.asList(filter, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndDelete(ClientSession, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndDeleteClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndDelete_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleDelete("findOneAndDeleteClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndDelete(ClientSession, Bson, FindOneAndDeleteOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndDeleteClientSessionBsonFindOneAndDeleteOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndDelete(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndDeleteOptions") Object options) {
         return handleDelete("findOneAndDeleteClientSessionBsonFindOneAndDeleteOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndUpdate(Bson, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
         return handleUpdate("findOneAndUpdateBson", mongoCollection, Arrays.asList(filter, update), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndUpdate(Bson, Bson, FindOneAndUpdateOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateBsonFindOneAndUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndUpdateOptions") Object options) {
         return handleUpdate("findOneAndUpdateBsonFindOneAndUpdateOptions", mongoCollection, Arrays.asList(filter, update, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndUpdate(ClientSession, Bson, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndUpdate_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
         return handleUpdate("findOneAndUpdateClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter, update), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndUpdate(ClientSession, Bson, Bson, FindOneAndUpdateOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateClientSessionBsonFindOneAndUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndUpdateOptions") Object options) {
         return handleUpdate("findOneAndUpdateClientSessionBsonFindOneAndUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, update, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndReplace(Bson, TDocument)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndReplaceBsonTDocument", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndReplace(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Object replacement) {
         return handleUpdate("findOneAndReplaceBsonTDocument", mongoCollection, Arrays.asList(filter, replacement), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndReplace(Bson, TDocument, FindOneAndReplaceOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndReplaceBsonTDocumentFindOneAndReplaceOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndReplace_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Object replacement, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndReplaceOptions") Object options) {
         return handleUpdate("findOneAndReplaceBsonTDocumentFindOneAndReplaceOptions", mongoCollection, Arrays.asList(filter, replacement, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndReplace(ClientSession, Bson, TDocument)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndReplaceClientSessionBsonTDocument", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndReplace(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Object replacement) {
         return handleUpdate("findOneAndReplaceClientSessionBsonTDocument", mongoCollection, Arrays.asList(clientSession, filter, replacement), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndReplace(ClientSession, Bson, TDocument, FindOneAndReplaceOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndReplaceClientSessionBsonTDocumentFindOneAndReplaceOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndReplace(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Object replacement, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndReplaceOptions") Object options) {
         return handleUpdate("findOneAndReplaceClientSessionBsonTDocumentFindOneAndReplaceOptions", mongoCollection, Arrays.asList(clientSession, filter, replacement, options), filter);

@@ -28,21 +28,41 @@ public class MongoCollectionLegacyCountClassReplacement extends MongoOperationCl
         return "com.mongodb.client.MongoCollection";
     }
 
+    /**
+     * Replacement for {@code MongoCollection.count(Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}) until 3.12.14 (the last 3.x version checked); removed in 4.0.0.
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static long count(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return (long) handleEagerQuery(singleton, "countBson", mongoCollection, Arrays.asList(filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.count(Bson, CountOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.0.0 (the first version with {@code MongoCollection}) until 3.12.14 (the last 3.x version checked); removed in 4.0.0.
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countBsonCountOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static long count(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.CountOptions") Object options) {
         return (long) handleEagerQuery(singleton, "countBsonCountOptions", mongoCollection, Arrays.asList(filter, options), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.count(ClientSession, Bson)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1) until 3.12.14 (the last 3.x version checked); removed in 4.0.0.
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static long count_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return (long) handleEagerQuery(singleton, "countClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.count(ClientSession, Bson, CountOptions)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.8.0 (not present in 3.7.1) until 3.12.14 (the last 3.x version checked); removed in 4.0.0.
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "countClientSessionBsonCountOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static long count(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.CountOptions") Object options) {
         return (long) handleEagerQuery(singleton, "countClientSessionBsonCountOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
