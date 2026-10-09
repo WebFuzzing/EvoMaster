@@ -269,4 +269,24 @@ internal class RestCallResultTest {
 
         assertEquals("first", original.getMergedFlakyBody())
     }
+
+    @Test
+    fun testMergedFlakyBodyPreservesArraySizeChangesAcrossObservations(){
+        for (changedArray in listOf("[]", "[1]", "[1,2,3]")) {
+            val original = createCallResult("""{"items":[1,2]}""")
+            original.recordFlakyObservation(createCallResult("""{"items":$changedArray}"""), 1)
+            original.recordFlakyObservation(createCallResult("""{"items":[1,3]}"""), 2)
+
+            assertEquals("""{"items":$changedArray}""", original.getMergedFlakyBody())
+        }
+    }
+
+    @Test
+    fun testMergedFlakyBodyPreservesNestedArraySizeChangeAndOtherDeltas(){
+        val original = createCallResult("""{"items":[{"values":[1,2]}],"first":"a","second":"b"}""")
+        original.recordFlakyObservation(createCallResult("""{"items":[{"values":[]}],"first":"x","second":"b"}"""), 1)
+        original.recordFlakyObservation(createCallResult("""{"items":[{"values":[1,3]}],"first":"a","second":"y"}"""), 2)
+
+        assertEquals("""{"items":[{"values":[]}],"first":"x","second":"y"}""", original.getMergedFlakyBody())
+    }
 }
