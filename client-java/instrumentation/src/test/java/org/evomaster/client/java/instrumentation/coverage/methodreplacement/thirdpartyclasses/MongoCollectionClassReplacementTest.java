@@ -5,6 +5,7 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoQueryException;
 import com.mongodb.client.*;
 import com.mongodb.client.model.DeleteOptions;
+import com.mongodb.client.model.FindOneAndDeleteOptions;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.client.result.DeleteResult;
@@ -934,6 +935,91 @@ public class MongoCollectionClassReplacementTest {
 
         ExecutionTracer.setExecutingInitMongo(false);
         assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.updateMany(collection, invalidFilter, setVerified()));
+
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
+        assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
+    }
+
+    @Test
+    public void testFindOneAndDeleteWithFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        Document deleted = (Document) MongoCollectionClassReplacement.findOneAndDelete(collection, new Document("age", 30));
+
+        assertNotNull(deleted);
+        assertEquals("John Doe", deleted.getString("name"));
+        assertEquals(1, collection.countDocuments());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testFindOneAndDeleteWithFilterNoMatch() {
+        final MongoCollection<Document> collection = getMongoCollection();
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        Document deleted = (Document) MongoCollectionClassReplacement.findOneAndDelete(collection, new Document("age", 99));
+
+        assertNull(deleted);
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(99, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testFindOneAndDeleteWithFilterAndOptions() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        Document deleted = (Document) MongoCollectionClassReplacement.findOneAndDelete(collection, new Document("age", 30), new FindOneAndDeleteOptions());
+
+        assertNotNull(deleted);
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testFindOneAndDeleteWithClientSessionAndFilter() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 23);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            Document deleted = (Document) MongoCollectionClassReplacement.findOneAndDelete_EM_0(collection, clientSession, new Document("age", 23));
+
+            assertNotNull(deleted);
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testFindOneAndDeleteWithClientSessionFilterAndOptions() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 23);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            Document deleted = (Document) MongoCollectionClassReplacement.findOneAndDelete(collection, clientSession, new Document("age", 23), new FindOneAndDeleteOptions());
+
+            assertNotNull(deleted);
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testFindOneAndDeleteWithInvalidFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        Document invalidFilter = new Document("tags", new Document("$size", -1));
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.findOneAndDelete(collection, invalidFilter));
 
         BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
         assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
