@@ -706,7 +706,7 @@ public class MongoCollectionClassReplacementTest {
         insertPerson("Jim Roe", 25);
 
         ExecutionTracer.setExecutingInitMongo(false);
-        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, new Document("age", 30), verifiedPipeline());
+        UpdateResult result = (UpdateResult) MongoCollectionPipelineUpdateClassReplacement.updateOne(collection, new Document("age", 30), verifiedPipeline());
 
         assertEquals(1, result.getMatchedCount());
         BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
@@ -721,7 +721,7 @@ public class MongoCollectionClassReplacementTest {
         insertPerson("Jim Roe", 25);
 
         ExecutionTracer.setExecutingInitMongo(false);
-        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
+        UpdateResult result = (UpdateResult) MongoCollectionPipelineUpdateClassReplacement.updateOne(collection, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
 
         assertEquals(1, result.getMatchedCount());
         BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
@@ -737,7 +737,7 @@ public class MongoCollectionClassReplacementTest {
             insertPerson("Jim Roe", 25);
 
             ExecutionTracer.setExecutingInitMongo(false);
-            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, clientSession, new Document("age", 30), verifiedPipeline());
+            UpdateResult result = (UpdateResult) MongoCollectionPipelineUpdateClassReplacement.updateOne(collection, clientSession, new Document("age", 30), verifiedPipeline());
 
             assertEquals(1, result.getMatchedCount());
             BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
@@ -754,7 +754,7 @@ public class MongoCollectionClassReplacementTest {
             insertPerson("Jim Roe", 25);
 
             ExecutionTracer.setExecutingInitMongo(false);
-            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateOne(collection, clientSession, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
+            UpdateResult result = (UpdateResult) MongoCollectionPipelineUpdateClassReplacement.updateOne(collection, clientSession, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
 
             assertEquals(1, result.getMatchedCount());
             BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
@@ -860,7 +860,7 @@ public class MongoCollectionClassReplacementTest {
         insertPerson("Jim Roe", 25);
 
         ExecutionTracer.setExecutingInitMongo(false);
-        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, new Document("age", 30), verifiedPipeline());
+        UpdateResult result = (UpdateResult) MongoCollectionPipelineUpdateClassReplacement.updateMany(collection, new Document("age", 30), verifiedPipeline());
 
         assertEquals(2, result.getMatchedCount());
         BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
@@ -875,7 +875,7 @@ public class MongoCollectionClassReplacementTest {
         insertPerson("Jim Roe", 25);
 
         ExecutionTracer.setExecutingInitMongo(false);
-        UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
+        UpdateResult result = (UpdateResult) MongoCollectionPipelineUpdateClassReplacement.updateMany(collection, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
 
         assertEquals(2, result.getMatchedCount());
         BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
@@ -891,7 +891,7 @@ public class MongoCollectionClassReplacementTest {
             insertPerson("Jim Roe", 25);
 
             ExecutionTracer.setExecutingInitMongo(false);
-            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, clientSession, new Document("age", 30), verifiedPipeline());
+            UpdateResult result = (UpdateResult) MongoCollectionPipelineUpdateClassReplacement.updateMany(collection, clientSession, new Document("age", 30), verifiedPipeline());
 
             assertEquals(2, result.getMatchedCount());
             BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
@@ -908,7 +908,7 @@ public class MongoCollectionClassReplacementTest {
             insertPerson("Jim Roe", 25);
 
             ExecutionTracer.setExecutingInitMongo(false);
-            UpdateResult result = (UpdateResult) MongoCollectionClassReplacement.updateMany(collection, clientSession, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
+            UpdateResult result = (UpdateResult) MongoCollectionPipelineUpdateClassReplacement.updateMany(collection, clientSession, new Document("age", 30), verifiedPipeline(), new UpdateOptions());
 
             assertEquals(2, result.getMatchedCount());
             BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
@@ -1102,7 +1102,7 @@ public class MongoCollectionClassReplacementTest {
         insertPerson("Jim Roe", 25);
 
         ExecutionTracer.setExecutingInitMongo(false);
-        Document found = (Document) MongoCollectionClassReplacement.findOneAndUpdate(collection, new Document("age", 30), verifiedPipeline());
+        Document found = (Document) MongoCollectionPipelineUpdateClassReplacement.findOneAndUpdate(collection, new Document("age", 30), verifiedPipeline());
 
         assertNotNull(found);
         assertEquals("John Doe", found.getString("name"));
@@ -1118,7 +1118,7 @@ public class MongoCollectionClassReplacementTest {
         insertPerson("Jim Roe", 25);
 
         ExecutionTracer.setExecutingInitMongo(false);
-        Document found = (Document) MongoCollectionClassReplacement.findOneAndUpdate(collection, new Document("age", 30), verifiedPipeline(), new FindOneAndUpdateOptions());
+        Document found = (Document) MongoCollectionPipelineUpdateClassReplacement.findOneAndUpdate(collection, new Document("age", 30), verifiedPipeline(), new FindOneAndUpdateOptions());
 
         assertNotNull(found);
         assertEquals("John Doe", found.getString("name"));
@@ -1135,7 +1135,7 @@ public class MongoCollectionClassReplacementTest {
             insertPerson("Jim Roe", 25);
 
             ExecutionTracer.setExecutingInitMongo(false);
-            Document found = (Document) MongoCollectionClassReplacement.findOneAndUpdate(collection, clientSession, new Document("age", 30), verifiedPipeline());
+            Document found = (Document) MongoCollectionPipelineUpdateClassReplacement.findOneAndUpdate(collection, clientSession, new Document("age", 30), verifiedPipeline());
 
             assertNotNull(found);
             assertEquals("John Doe", found.getString("name"));
@@ -1153,7 +1153,7 @@ public class MongoCollectionClassReplacementTest {
             insertPerson("Jim Roe", 25);
 
             ExecutionTracer.setExecutingInitMongo(false);
-            Document found = (Document) MongoCollectionClassReplacement.findOneAndUpdate(collection, clientSession, new Document("age", 30), verifiedPipeline(), new FindOneAndUpdateOptions());
+            Document found = (Document) MongoCollectionPipelineUpdateClassReplacement.findOneAndUpdate(collection, clientSession, new Document("age", 30), verifiedPipeline(), new FindOneAndUpdateOptions());
 
             assertNotNull(found);
             assertEquals("John Doe", found.getString("name"));
