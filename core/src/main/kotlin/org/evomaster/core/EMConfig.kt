@@ -3051,6 +3051,11 @@ class EMConfig {
             " but problematic if too much")
     var minimizeThresholdForLoss = 0.2
 
+    @Experimental
+    @DependsOnTrueFor("minimize")
+    @Cfg("Enable further minimization actions during minimization phase.")
+    var enableAdvancedMinimization = false
+
     @FilePath(true,false)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
     @Cfg("Path on filesystem of where JaCoCo Agent jar file is located." +

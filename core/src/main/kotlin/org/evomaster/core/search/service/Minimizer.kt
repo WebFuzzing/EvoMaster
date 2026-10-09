@@ -126,7 +126,8 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
                 remove from 0 to N, one at a time. If any of those is successful (ie addIfNeeded returns true), then
                 re-apply recursively to all the successful copies with length N-1.
              */
-            removeEachMainAction(it)
+            if (config.enableAdvancedMinimization)
+                removeEachMainAction(it)
 
             printProgress(k,n)
         }
