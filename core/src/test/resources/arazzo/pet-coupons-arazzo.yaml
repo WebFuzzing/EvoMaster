@@ -129,6 +129,216 @@ workflows:
           step_order_id: $response.body#/id
     outputs:
       workflow_order_id: $steps.place-order.outputs.step_order_id
+  - workflowId: early-exit-tags
+    description:
+      Workflow designed to end with an `onFailure` handler.
+    inputs:
+      $ref: "#/components/inputs/apply_coupon_input"
+    steps:
+      - stepId: find-pet
+        description: Find a pet based on the provided tags.
+        operationId: findPetsByTags
+        parameters:
+          - name: pet_tags
+            in: query
+            value: $inputs.my_pet_tags
+        successCriteria:
+          - condition: $statusCode == 200
+        onFailure:
+          - name: finish-workflow
+            type: end
+        outputs:
+          my_pet_id: $response.body#/0/id
+          # there is some implied selection here - findPetsByTags responds with a list of pets,
+          # but the client only wants to choose one, and that's what will be provided to the next step.
+          # not totally sure how to indicate that.
+      - stepId: place-order
+        description: Place an order for the pet.
+        workflowId: place-order
+        parameters:
+          - name: pet_id
+            value: $steps.find-pet.outputs.my_pet_id
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_order_id: $outputs.workflow_order_id
+    outputs:
+      buy_pet_order_id: $steps.place-order.outputs.my_order_id
+  - workflowId: skip-coupons-via-goto
+    description:
+      It’s a copy of the "apply-coupon" flow, but in the `onSuccess` handler, 
+      we’ll skip the `stepId` using `goto`.
+    inputs:
+      $ref: "#/components/inputs/apply_coupon_input"
+    steps:
+      - stepId: find-pet
+        description: Find a pet based on the provided tags.
+        operationId: findPetsByTags
+        parameters:
+          - name: pet_tags
+            in: query
+            value: $inputs.my_pet_tags
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: skip_find_coupons
+            type: goto
+            stepId: place-order
+        outputs:
+          my_pet_id: $response.body#/0/id
+          # there is some implied selection here - findPetsByTags responds with a list of pets,
+          # but the client only wants to choose one, and that's what will be provided to the next step.
+          # not totally sure how to indicate that.
+      - stepId: find-coupons
+        description: Find a coupon available for the selected pet.
+        operationId: getPetCoupons
+        parameters:
+          - name: pet_id
+            in: path
+            value: $steps.find-pet.outputs.my_pet_id
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_coupon_code: $response.body#/couponCode
+      - stepId: place-order
+        description: Place an order for the pet, applying the coupon.
+        workflowId: place-order
+        parameters:
+          - name: pet_id
+            value: $steps.find-pet.outputs.my_pet_id
+          - name: coupon_code
+            value: "SUMMERSALE"
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_order_id: $outputs.workflow_order_id
+    outputs:
+      apply_coupon_pet_order_id: $steps.place-order.outputs.my_order_id
+  - workflowId: jump-to-other-workflow
+    description:
+      Simulates a workflow that jumps to another workflow.
+    inputs:
+      $ref: "#/components/inputs/apply_coupon_input"
+    steps:
+      - stepId: find-pet
+        description: Find a pet based on the provided tags.
+        operationId: findPetsByTags
+        parameters:
+          - name: pet_tags
+            in: query
+            value: $inputs.my_pet_tags
+        successCriteria:
+          - condition: $statusCode == 200
+        # Arazzo 1.0: Success Action `goto` with `workflowId` cannot pass parameters to the child workflow
+        # inputs (only a step with `workflowId` + `parameters` can). Intentional here for workflow-to-workflow jumps.
+        onSuccess:
+          - name: jump-to-buy-available-pet
+            type: goto
+            workflowId: buy-available-pet
+        outputs:
+          my_pet_id: $response.body#/0/id
+          # there is some implied selection here - findPetsByTags responds with a list of pets,
+          # but the client only wants to choose one, and that's what will be provided to the next step.
+          # not totally sure how to indicate that.
+      - stepId: find-coupons
+        description: Find a coupon available for the selected pet.
+        operationId: getPetCoupons
+        parameters:
+          - name: pet_id
+            in: path
+            value: $steps.find-pet.outputs.my_pet_id
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_coupon_code: $response.body#/couponCode
+    outputs:
+      apply_coupon_pet_order: $steps.find-coupons.outputs.my_coupon_code
+  - workflowId: branch-success-and-failure
+    description:
+      Simulates a workflow that jumps to another workflow when the `onSuccess` condition is met, 
+      or terminates if `onFailure` is met.
+    inputs:
+      $ref: "#/components/inputs/apply_coupon_input"
+    steps:
+      - stepId: find-pet
+        description: Find a pet based on the provided tags.
+        operationId: findPetsByTags
+        parameters:
+          - name: pet_tags
+            in: query
+            value: $inputs.my_pet_tags
+        successCriteria:
+          - condition: $statusCode == 200
+        # Arazzo 1.0: Success Action `goto` with `workflowId` cannot pass parameters to the child workflow
+        # inputs (only a step with `workflowId` + `parameters` can). Intentional here for workflow-to-workflow jumps.
+        onSuccess:
+          - name: jump-to-place-order
+            type: goto
+            workflowId: place-order
+        onFailure:
+          - name: finish-workflow
+            type: end
+        outputs:
+          my_pet_id: $response.body#/0/id
+    outputs:
+      response_pet_id: $steps.find-pet.outputs.my_pet_id
+  - workflowId: branch-multiple-on-success
+    description:
+      Simulate a workflow that has multiple onSuccess.
+    inputs:
+      $ref: "#/components/inputs/apply_coupon_input"
+    steps:
+      - stepId: find-pet
+        description: Find a pet based on the provided tags.
+        operationId: findPetsByTags
+        parameters:
+          - name: pet_tags
+            in: query
+            value: $inputs.my_pet_tags
+        successCriteria:
+          - condition: $statusCode == 200
+        # Arazzo 1.0: Success Action `goto` with `workflowId` cannot pass parameters to the child workflow
+        # inputs (only a step with `workflowId` + `parameters` can). Intentional here for workflow-to-workflow jumps.
+        onSuccess:
+          - name: jump-to-place-order
+            type: goto
+            workflowId: place-order
+          - name: jump-to-buy-available-pet
+            type: goto
+            workflowId: buy-available-pet
+  - workflowId: workflow-success-inherit-and-override
+    description:
+      Workflow-level successActions apply to every step; step onSuccess overrides by name.
+    inputs:
+      $ref: "#/components/inputs/apply_coupon_input"
+    successActions:
+      - name: alt-checkout
+        type: goto
+        workflowId: place-order
+      - name: stop
+        type: end
+    failureActions:
+      - name: stop-on-fail
+        type: end
+    steps:
+      - stepId: find-pet
+        description: Find a pet based on the provided tags.
+        operationId: findPetsByTags
+        parameters:
+          - name: pet_tags
+            in: query
+            value: $inputs.my_pet_tags
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: alt-checkout
+            type: goto
+            workflowId: buy-available-pet
+        outputs:
+          my_pet_id: $response.body#/0/id
+    outputs:
+      response_pet_id: $steps.find-pet.outputs.my_pet_id
+
 components:
   inputs:
     apply_coupon_input:

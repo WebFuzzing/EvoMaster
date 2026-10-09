@@ -2,8 +2,9 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import com.webfuzzing.arazzo.access.ArazzoAccess
-import com.webfuzzing.arazzo.models.domain.Step
-import com.webfuzzing.arazzo.models.domain.Workflow
+import com.webfuzzing.arazzo.models.domain.ArazzoWorkflow
+import com.webfuzzing.arazzo.models.domain.FailureAction
+import com.webfuzzing.arazzo.models.domain.SuccessAction
 import com.webfuzzing.arazzo.parser.ArazzoParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.config.ConfigProblemException
@@ -21,6 +22,36 @@ import java.util.ArrayDeque
  */
 class ArazzoWorkflowsService {
 
+    /**
+     * [SuccessAction] and [FailureAction] possess the "type" attribute, which can have the value "END".
+     * A constant is used to avoid having the string directly in the method
+     */
+    private val END = "end"
+
+    /**
+     * The steps can follow different paths to the linear flow; therefore,
+     * this Enum is used to distinguish which path the workflow is traversing.
+     */
+    enum class PathWay {
+        SUCCESS,
+        FAILURE,
+        COTINUE
+    }
+
+    /**
+     * Traversal state for one Arazzo workflow while [crossWorkflow] walks steps and nested workflows.
+     */
+    data class Frame(
+        val workflow: ArazzoWorkflow,
+        var currenStepIndex: Int,
+        var pausedBranch: Boolean = false,
+    ) {
+        val stepIndexById: Map<String, Int> =
+            workflow.arazzoSteps.mapIndexedNotNull { index, step ->
+                step.stepId?.let { id -> id to index }
+            }.toMap()
+    }
+
     @Inject
     private lateinit var randomness: Randomness
 
@@ -30,14 +61,16 @@ class ArazzoWorkflowsService {
     /**
      * List of Arazzo workflows. Used to create individuals.
      */
-    var arazzoWorkflows = mutableListOf<Workflow>()
+    var arazzoArazzoWorkflows = mutableListOf<ArazzoWorkflow>()
         private set
 
     /**
      * Map containing each Arazzo workflow associated with its corresponding ID.
      * Used to resolve nested workflow references in steps.
+     * Key: workflow ID ([ArazzoWorkflow.workflowId]) from the Arazzo file.
+     * Value: the corresponding parsed [ArazzoWorkflow].
      */
-    lateinit var arazzoWorkflowsById: Map<String, Workflow>
+    lateinit var arazzoWorkflowsById: Map<String, ArazzoWorkflow>
         private set
 
     /**
@@ -53,12 +86,12 @@ class ArazzoWorkflowsService {
         if (workflows.isEmpty()) {
             throw ConfigProblemException("Arazzo document at '$location' must contain at least one workflow.")
         }
-        arazzoWorkflows.clear()
-        arazzoWorkflows.addAll(workflows)
+        arazzoArazzoWorkflows.clear()
+        arazzoArazzoWorkflows.addAll(workflows)
         arazzoWorkflowsById = workflows.associateBy { it.workflowId }
     }
 
-    private fun readArazzoWorkflows(openAPI: OpenAPI, location: String): List<Workflow> {
+    private fun readArazzoWorkflows(openAPI: OpenAPI, location: String): List<ArazzoWorkflow> {
         return try {
             val arazzoText = ArazzoAccess.readFromDisk(location)
             ArazzoParser.parse(arazzoText, openAPI).workflows
@@ -73,17 +106,23 @@ class ArazzoWorkflowsService {
      * Choose a random workflow
      */
     fun sampleAtRandom(): RestIndividual {
-        val workflow = randomness.choose(arazzoWorkflows)
+        val workflow = randomness.choose(arazzoArazzoWorkflows)
         return buildIndividualFromWorkflow(workflow)
     }
 
     /**
      * Create workflows individuals.
-     * For the moment, it only recognizes a single OpenAPI.
      * Cases involving multiple APIs are currently being ignored.
      */
-    fun buildIndividualFromWorkflow(workflow: Workflow): RestIndividual {
-        val actions = buildArazzoRestCallActions(workflow.steps)
+    fun buildIndividualFromWorkflow(arazzoWorkflow: ArazzoWorkflow): RestIndividual {
+
+        if (arazzoWorkflow.arazzoSteps.isEmpty()) {
+            throw IllegalArgumentException("Arazzo: The Workflow ${arazzoWorkflow.workflowId} has no steps")
+        }
+
+        val frame = Frame(arazzoWorkflow, 0)
+
+        val actions = crossWorkflow(frame)
             .onEach {
                 it.doInitialize(randomness)
                 it.forceNewTaints()
@@ -94,29 +133,154 @@ class ArazzoWorkflowsService {
     }
 
     /**
+     * The workflow is traversed to locate jumps referencing other workflow and steps,
+     * and to create the corresponding calls for the individual.
      * A RestCallAction must be created for each Step.
-     * Steps can be direct (operationId) or reference a sub-workflow
      */
-    private fun buildArazzoRestCallActions(steps: List<Step>): List<RestCallAction> {
+    fun crossWorkflow(frame: Frame): List<RestCallAction> {
         val actions = mutableListOf<RestCallAction>()
-        val pending = ArrayDeque<Step>()
-        pending.addAll(steps)
+        val stack = ArrayDeque<Frame>()
+        stack.addLast(frame)
 
-        while (pending.isNotEmpty()) {
-            val step = pending.removeFirst()
-            when {
-                !step.operationId.isNullOrBlank() ->
-                    actions.add(findActionForOperation(step.operationId))
+        outer@ while (stack.isNotEmpty()) {
+            val currentFrame = stack.removeLast()
 
-                !step.workflowId.isNullOrBlank() -> {
-                    val nested = arazzoWorkflowsById[step.workflowId] ?: throw IllegalArgumentException("Arazzo: Unknown workflowId: ${step.workflowId}")
-                    nested.steps.asReversed().forEach { pending.addFirst(it) }
+            while (currentFrame.currenStepIndex < currentFrame.workflow.arazzoSteps.size) {
+                val step = currentFrame.workflow.arazzoSteps[currentFrame.currenStepIndex]
+
+                if (!currentFrame.pausedBranch) {
+                    when {
+                        !step.operationId.isNullOrBlank() ->
+                            actions.add(findActionForOperation(step.operationId))
+
+                        !step.workflowId.isNullOrBlank() -> {
+                            val nested = arazzoWorkflowsById[step.workflowId]
+                                ?: throw IllegalArgumentException("Arazzo: Unknown workflowId: ${step.workflowId}")
+                            currentFrame.pausedBranch = true
+                            stack.addLast(currentFrame)
+                            stack.addLast(Frame(nested, 0))
+                            continue@outer
+                        }
+
+                        else -> throw IllegalArgumentException("Arazzo: Step has no operationId, operationPath, or workflowId: ${step.stepId}")
+                    }
+                } else {
+                    currentFrame.pausedBranch = false
                 }
 
-                else -> throw IllegalArgumentException("Arazzo: Step has no operationId, operationPath, or workflowId: ${step.stepId}")
-            }
+                val onSuccess = mergeSuccessActions(currentFrame.workflow.successActions, step.onSuccess)
+                val onFailure = mergeFailureActions(currentFrame.workflow.failureActions, step.onFailure)
+                val pathway = choosePathway(onSuccess, onFailure)
+
+                when (pathway) {
+                    PathWay.SUCCESS -> {
+                        val successAction = randomness.choose(onSuccess)
+                        if (applyPathwayAction(stack, currentFrame, successAction.type, successAction.stepId, successAction.workflowId))
+                            continue@outer
+                        else
+                            break
+
+                    }
+                    PathWay.FAILURE -> {
+                        val failureAction = randomness.choose(onFailure)
+                        if (applyPathwayAction(stack, currentFrame, failureAction.type, failureAction.stepId, failureAction.workflowId))
+                            continue@outer
+                        else
+                            break
+                    }
+                    else -> {
+                        currentFrame.currenStepIndex++
+                    }
+                }
+           }
+
+       }
+
+       return actions
+
+    }
+
+    /**
+     * Merges workflow-level [successActions] with step-level [onSuccess].
+     * Step actions with the same [SuccessAction.name] override workflow actions
+     */
+    private fun mergeSuccessActions(workflowActions: List<SuccessAction>?, stepActions: List<SuccessAction>?): List<SuccessAction> {
+        val byName = LinkedHashMap<String, SuccessAction>()
+        for (action in workflowActions.orEmpty()) {
+            val name = action.name ?: throw IllegalArgumentException("Arazzo: workflow successAction requires a name")
+            byName[name] = action
         }
-        return actions
+        for (action in stepActions.orEmpty()) {
+            val name = action.name ?: throw IllegalArgumentException("Arazzo: step onSuccess action requires a name")
+            byName[name] = action
+        }
+        return byName.values.toList()
+    }
+
+    /**
+     * Merges workflow-level [failureActions] with step-level [onFailure].
+     * Step actions with the same [FailureAction.name] override workflow actions
+     */
+    private fun mergeFailureActions(workflowActions: List<FailureAction>?, stepActions: List<FailureAction>?): List<FailureAction> {
+        val byName = LinkedHashMap<String, FailureAction>()
+        for (action in workflowActions.orEmpty()) {
+            val name = action.name ?: throw IllegalArgumentException("Arazzo: workflow failureAction requires a name")
+            byName[name] = action
+        }
+        for (action in stepActions.orEmpty()) {
+            val name = action.name ?: throw IllegalArgumentException("Arazzo: step onFailure action requires a name")
+            byName[name] = action
+        }
+        return byName.values.toList()
+    }
+
+    /**
+     * A path is randomly selected between `successActions` and `failureActions` if they exist;
+     * otherwise, the process continues to the next step.
+     */
+    private fun choosePathway(successActions: List<SuccessAction>, failureActions: List<FailureAction>) : PathWay {
+        return when {
+            successActions.isEmpty() && failureActions.isEmpty() -> PathWay.COTINUE
+
+            successActions.isEmpty() -> PathWay.FAILURE
+
+            failureActions.isEmpty() -> PathWay.SUCCESS
+
+            else -> if (randomness.nextBoolean())
+                PathWay.SUCCESS
+            else
+                PathWay.FAILURE
+        }
+    }
+
+    /**
+     * If the workflow needs to jump to a reference, a decision is made regarding which workflow or step to jump to.
+     * Steps can be direct (operationId) or reference a sub-workflow
+     */
+    private fun applyPathwayAction(stack : ArrayDeque<Frame>, frame: Frame, type : String, stepId : String?, workflowId: String?) : Boolean {
+        if (END == type) return false
+
+        when {
+            stepId != null && workflowId != null ->
+                throw IllegalArgumentException("Arazzo: stepId $stepId and $workflowId are mutually exclusive")
+
+            workflowId != null -> {
+                val newWorkflow = arazzoWorkflowsById[workflowId] ?: throw IllegalArgumentException("Arazzo: Unknown workflowId: $workflowId")
+                stack.addLast(Frame(newWorkflow, 0))
+                return true
+            }
+
+            stepId != null -> {
+                val indexStep = frame.stepIndexById[stepId] ?: throw IllegalArgumentException("Arazzo: Unknown stepId: $stepId")
+                frame.currenStepIndex = indexStep
+                stack.addLast(frame)
+                return true
+            }
+
+            else ->
+                throw IllegalArgumentException("Arazzo: Either stepId or workflowId must be provided")
+        }
+
     }
 
     /**

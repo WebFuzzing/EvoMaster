@@ -5,6 +5,7 @@ import com.google.inject.Injector
 import com.google.inject.Provides
 import com.google.inject.Singleton
 import com.netflix.governator.guice.LifecycleInjector
+import com.webfuzzing.arazzo.models.domain.ArazzoWorkflow
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
@@ -22,7 +23,6 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.sampler.RestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
-import com.webfuzzing.arazzo.models.domain.Workflow
 import org.evomaster.core.search.gene.Gene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -46,7 +46,7 @@ class SamplerWithArazzoVerifierTest {
     fun testSamplerWithArazzoProducesValidIndividuals() {
         val context = createTestContext()
 
-        assertTrue(context.arazzoService.arazzoWorkflows.isNotEmpty(), "Arazzo workflows should be loaded at init")
+        assertTrue(context.arazzoService.arazzoArazzoWorkflows.isNotEmpty(), "Arazzo workflows should be loaded at init")
         assertTrue(context.sampler.numberOfDistinctActions() > 0, "OpenAPI should yield REST actions")
 
         repeat(10) {
@@ -90,8 +90,106 @@ class SamplerWithArazzoVerifierTest {
         assertEquals(listOf("/store/order"), actions.map { it.path.toString() })
     }
 
-    private fun buildIndividualFromWorkflow(context: TestContext, workflow: Workflow): RestIndividual {
-        return context.arazzoService.buildIndividualFromWorkflow(workflow)
+    @Test
+    fun testSamplerWithArazzoWithOnFailureEndWorkflow() {
+        val context = createTestContext()
+
+        //early-exit-tags
+        val workflow = context.arazzoService.arazzoWorkflowsById["early-exit-tags"]!!
+        val ind = buildIndividualFromWorkflow(context, workflow)
+        val actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
+
+        //The workflow has two steps, but since the `onFailure` is of the `end` type, there must be only one action.
+        assertEquals(listOf("findPetsByTags"), actions.map { it.operationId })
+        assertEquals(listOf(HttpVerb.GET), actions.map { it.verb })
+        assertEquals(listOf("/pet/findByTags"), actions.map { it.path.toString() })
+    }
+
+    @Test
+    fun testSamplerWithArazzoWithOnSuccessGotoStepId() {
+        val context = createTestContext()
+
+        //skip-coupons-via-goto
+        val workflow = context.arazzoService.arazzoWorkflowsById["skip-coupons-via-goto"]!!
+        val ind = buildIndividualFromWorkflow(context, workflow)
+        val actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
+
+        //The workflow has only two steps because it skips `getPerCoupons` due to the `goto` in the `onSuccess` handler.
+        assertEquals(listOf("findPetsByTags", "placeOrder"), actions.map { it.operationId })
+        assertEquals(listOf(HttpVerb.GET, HttpVerb.POST), actions.map { it.verb })
+        assertEquals(listOf("/pet/findByTags", "/store/order"), actions.map { it.path.toString() })
+    }
+
+    @Test
+    fun testSamplerWithArazzoWithOnSuccessGotoOtherWorkkflow() {
+        val context = createTestContext()
+
+        //jump-to-other-workflow
+        val workflow = context.arazzoService.arazzoWorkflowsById["jump-to-other-workflow"]!!
+        val ind = buildIndividualFromWorkflow(context, workflow)
+        val actions = ind.seeAllActions().filterIsInstance<RestCallAction>()
+
+        //The workflow jumps to "buy-available-pet," so "getPetCoupons" is not executed.
+        assertEquals(listOf("findPetsByTags", "findPetsByStatus", "placeOrder"), actions.map { it.operationId })
+        assertEquals(listOf(HttpVerb.GET, HttpVerb.GET, HttpVerb.POST), actions.map { it.verb })
+        assertEquals(listOf("/pet/findByTags", "/pet/findByStatus", "/store/order"), actions.map { it.path.toString() })
+    }
+
+    @Test
+    fun testBranchingWorkflowCoversSuccessAndFailurePaths() {
+        val context = createTestContext()
+        val workflow = context.arazzoService.arazzoWorkflowsById["branch-success-and-failure"]!!
+
+        val instancesWorkflow = mutableSetOf<List<String>>()
+        repeat(200) {
+            val ops = context.arazzoService.buildIndividualFromWorkflow(workflow)
+                .seeAllActions().filterIsInstance<RestCallAction>().mapNotNull { it.operationId }
+            instancesWorkflow.add(ops)
+        }
+
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags", "placeOrder"))) // onSuccess goto
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags")))               // onFailure end
+        //There are only two possible branches
+        assertEquals(2, instancesWorkflow.size)
+    }
+
+    @Test
+    fun testBranchingWorkflowCoversMultipleOnSuccess() {
+        val context = createTestContext()
+        val workflow = context.arazzoService.arazzoWorkflowsById["branch-multiple-on-success"]!!
+
+        val instancesWorkflow = mutableSetOf<List<String>>()
+        repeat(200) {
+            val ops = context.arazzoService.buildIndividualFromWorkflow(workflow)
+                .seeAllActions().filterIsInstance<RestCallAction>().mapNotNull { it.operationId }
+            instancesWorkflow.add(ops)
+        }
+
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags", "placeOrder"))) // jump-to-place-order
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags", "findPetsByStatus", "placeOrder"))) //jump-to-buy-available-pet
+        //There are only two possible branches
+        assertEquals(2, instancesWorkflow.size)
+    }
+
+    @Test
+    fun testWorkflowLevelSuccessActionsMergedWithStepOnSuccess() {
+        val context = createTestContext()
+        val workflow = context.arazzoService.arazzoWorkflowsById["workflow-success-inherit-and-override"]!!
+
+        val instancesWorkflow = mutableSetOf<List<String>>()
+        repeat(200) {
+            val ops = context.arazzoService.buildIndividualFromWorkflow(workflow)
+                .seeAllActions().filterIsInstance<RestCallAction>().mapNotNull { it.operationId }
+            instancesWorkflow.add(ops)
+        }
+
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags", "findPetsByStatus", "placeOrder"))) // overridden alt-checkout
+        assertTrue(instancesWorkflow.contains(listOf("findPetsByTags"))) // workflow stop
+        //There are only two possible branches
+        assertEquals(2, instancesWorkflow.size)    }
+
+    private fun buildIndividualFromWorkflow(context: TestContext, arazzoWorkflow: ArazzoWorkflow): RestIndividual {
+        return context.arazzoService.buildIndividualFromWorkflow(arazzoWorkflow)
     }
 
     private fun createTestContext(): TestContext {

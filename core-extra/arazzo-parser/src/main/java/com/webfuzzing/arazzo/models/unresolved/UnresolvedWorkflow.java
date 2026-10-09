@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.webfuzzing.arazzo.deserializer.FailureReusableDeserializer;
 import com.webfuzzing.arazzo.deserializer.ParameterReusableDeserializer;
 import com.webfuzzing.arazzo.deserializer.SuccessReusableDeserializer;
+import com.webfuzzing.arazzo.models.domain.ArazzoWorkflow;
 import com.webfuzzing.arazzo.models.domain.FailureReusable;
 import com.webfuzzing.arazzo.models.domain.ParameterReusable;
 import com.webfuzzing.arazzo.models.domain.SuccessReusable;
@@ -15,7 +16,7 @@ import java.util.Map;
 /**
  * Jackson-deserializable representation of a Workflow Object
  * with unresolved references. Mutable intermediate model used during parsing;
- * mapped to the immutable domain {@link com.webfuzzing.arazzo.models.domain.Workflow}
+ * mapped to the immutable domain {@link ArazzoWorkflow}
  * by {@link com.webfuzzing.arazzo.mapper.ArazzoMapper}.
  * Uses {@link SuccessReusable}, {@link FailureReusable} and {@link ParameterReusable}
  * for representing (Object | Reusable Object).

@@ -26,7 +26,7 @@ public class ArazzoSpecifications {
     /**
      * A list of workflows.
      */
-    private List<Workflow> workflows;
+    private List<ArazzoWorkflow> arazzoWorkflows;
 
     /**
      * An element to hold various schemas for the Arazzo Description.
@@ -37,7 +37,7 @@ public class ArazzoSpecifications {
         this.arazzo = builder.arazzo;
         this.info = builder.info;
         this.sourceDescriptions = builder.sourceDescriptions;
-        this.workflows = builder.workflows;
+        this.arazzoWorkflows = builder.arazzoWorkflows;
         this.components = builder.components;
     }
 
@@ -53,8 +53,8 @@ public class ArazzoSpecifications {
         return sourceDescriptions;
     }
 
-    public List<Workflow> getWorkflows() {
-        return workflows;
+    public List<ArazzoWorkflow> getWorkflows() {
+        return arazzoWorkflows;
     }
 
     public Components getComponents() {
@@ -69,13 +69,13 @@ public class ArazzoSpecifications {
         private String arazzo;
         private InfoArazzo info;
         private List<SourceDescription> sourceDescriptions;
-        private List<Workflow> workflows;
+        private List<ArazzoWorkflow> arazzoWorkflows;
         private Components components;
 
         public Builder arazzo(String arazzo) { this.arazzo = arazzo; return this; }
         public Builder info(InfoArazzo info) { this.info = info; return this; }
         public Builder sourceDescriptions(List<SourceDescription> sourceDescriptions) { this.sourceDescriptions = sourceDescriptions; return this; }
-        public Builder workflows(List<Workflow> workflows) { this.workflows = workflows; return this; }
+        public Builder workflows(List<ArazzoWorkflow> arazzoWorkflows) { this.arazzoWorkflows = arazzoWorkflows; return this; }
         public Builder components(Components components) { this.components = components; return this; }
 
         public ArazzoSpecifications build() {

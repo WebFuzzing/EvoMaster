@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * Jackson-deserializable representation of a Step Object
  * with unresolved references. Mutable intermediate model used during parsing;
- * mapped to the immutable domain {@link com.webfuzzing.arazzo.models.domain.Step}
+ * mapped to the immutable domain {@link ArazzoStep}
  * by {@link com.webfuzzing.arazzo.mapper.ArazzoMapper}.
  * Uses {@link SuccessReusable}, {@link FailureReusable} and {@link ParameterReusable}
  * for representing (Object | Reusable Object).
