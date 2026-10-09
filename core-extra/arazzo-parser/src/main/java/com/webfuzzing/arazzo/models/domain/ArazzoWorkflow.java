@@ -99,7 +99,7 @@ public class ArazzoWorkflow {
         return dependsOn;
     }
 
-    public List<ArazzoStep> getSteps() {
+    public List<ArazzoStep> getArazzoSteps() {
         return arazzoSteps;
     }
 

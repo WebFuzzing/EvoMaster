@@ -22,21 +22,32 @@ import java.util.ArrayDeque
  */
 class ArazzoWorkflowsService {
 
+    /**
+     * [SuccessAction] and [FailureAction] possess the "type" attribute, which can have the value "END".
+     * A constant is used to avoid having the string directly in the method
+     */
     private val END = "end"
 
+    /**
+     * The steps can follow different paths to the linear flow; therefore,
+     * this Enum is used to distinguish which path the workflow is traversing.
+     */
     enum class PathWay {
         SUCCESS,
         FAILURE,
         COTINUE
     }
 
+    /**
+     * Traversal state for one Arazzo workflow while [crossWorkflow] walks steps and nested workflows.
+     */
     data class Frame(
         val workflow: ArazzoWorkflow,
         var currenStepIndex: Int,
         var pausedBranch: Boolean = false,
     ) {
         val stepIndexById: Map<String, Int> =
-            workflow.steps.mapIndexedNotNull { index, step ->
+            workflow.arazzoSteps.mapIndexedNotNull { index, step ->
                 step.stepId?.let { id -> id to index }
             }.toMap()
     }
@@ -56,6 +67,8 @@ class ArazzoWorkflowsService {
     /**
      * Map containing each Arazzo workflow associated with its corresponding ID.
      * Used to resolve nested workflow references in steps.
+     * Key: workflow ID ([ArazzoWorkflow.workflowId]) from the Arazzo file.
+     * Value: the corresponding parsed [ArazzoWorkflow].
      */
     lateinit var arazzoWorkflowsById: Map<String, ArazzoWorkflow>
         private set
@@ -103,7 +116,7 @@ class ArazzoWorkflowsService {
      */
     fun buildIndividualFromWorkflow(arazzoWorkflow: ArazzoWorkflow): RestIndividual {
 
-        if (arazzoWorkflow.steps.isEmpty()) {
+        if (arazzoWorkflow.arazzoSteps.isEmpty()) {
             throw IllegalArgumentException("Arazzo: The Workflow ${arazzoWorkflow.workflowId} has no steps")
         }
 
@@ -132,8 +145,8 @@ class ArazzoWorkflowsService {
         outer@ while (stack.isNotEmpty()) {
             val currentFrame = stack.removeLast()
 
-            while (currentFrame.currenStepIndex < currentFrame.workflow.steps.size) {
-                val step = currentFrame.workflow.steps[currentFrame.currenStepIndex]
+            while (currentFrame.currenStepIndex < currentFrame.workflow.arazzoSteps.size) {
+                val step = currentFrame.workflow.arazzoSteps[currentFrame.currenStepIndex]
 
                 if (!currentFrame.pausedBranch) {
                     when {
