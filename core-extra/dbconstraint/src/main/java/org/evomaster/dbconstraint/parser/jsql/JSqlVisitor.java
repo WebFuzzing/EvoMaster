@@ -378,7 +378,7 @@ public class JSqlVisitor implements ExpressionVisitor {
         SqlColumn left = (SqlColumn) stack.pop();
         inExpression.getRightExpression().accept(this);
         SqlConditionList right = unwrapSingletonArray((SqlConditionList) stack.pop());
-        stack.push(new SqlInCondition(left, right));
+        stack.push(new SqlInCondition(left, right, inExpression.isNot()));
     }
 
     /**
