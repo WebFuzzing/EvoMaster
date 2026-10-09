@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.asyncapi;
 
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -21,8 +23,8 @@ public class AsyncApiActionDto {
     }
 
     /**
-     * Key of the operation in the AsyncAPI document. Sent along so the driver can report and
-     * log in terms the user will recognise from their own contract.
+     * Key of the operation in the AsyncAPI document, so a driver can log in terms the user will
+     * recognise from their own contract.
      */
     public String operationId;
 
@@ -59,11 +61,9 @@ public class AsyncApiActionDto {
     public Map<String, String> headers = new LinkedHashMap<>();
 
     /**
-     * The value stamped into this message so that a reply can be recognised as answering it.
-     *
-     * It is minted fresh by the core for every execution rather than being part of the message
-     * the search varies: pairing needs a value unique to the execution, and the service only
-     * echoes it back.
+     * The value to stamp into this message so a reply can be recognised as answering it. Minted
+     * fresh for every execution rather than varied by the search, since pairing needs a value
+     * unique to the execution and the service only echoes it back.
      */
     public String correlationId;
 
@@ -87,13 +87,25 @@ public class AsyncApiActionDto {
     public String replyAddress;
 
     /**
-     * How long to wait for a reply before giving up, in milliseconds.
-     *
-     * There is no right answer here: a slow service and a stuck one look the same from outside,
-     * so this is a tuning parameter with no equivalent in a synchronous protocol. It is set
-     * generously and reported with the result.
-     *
-     * Null when no reply is expected, as there is then nothing to wait for.
+     * How long to wait for a reply before giving up, in milliseconds. Set generously, since a
+     * slow service and a stuck one look alike from outside, and reported back with the result.
+     * Null when no reply is expected.
      */
     public Long replyTimeoutMs;
+
+    /**
+     * The language to render {@link AsyncApiReplyDto#testScript} in. Only Java and Kotlin are
+     * ever asked for.
+     *
+     * Null when no script is wanted: either the core is not generating tests, or it is
+     * generating a format this enum cannot name, which is what a Python run is.
+     */
+    public SutInfoDto.OutputFormat outputFormat;
+
+    /**
+     * The name the rendered lines must leave the reply payload in, as text, when a reply is
+     * expected. Named by the core so two actions in one test cannot collide, and set whenever
+     * tests are being generated, whether or not a script was asked for. Null when they are not.
+     */
+    public String replyVariable;
 }

@@ -63,7 +63,8 @@ class AsyncApiSamplerTest {
 
     private fun injector(info: SutInfoDto, starts: Boolean = true, vararg options: String): Injector {
 
-        val args = arrayOf("--seed=42", "--problemType=ASYNCAPI", "--createTests=false") + options
+        //the same options every other test over this problem type runs under
+        val args = AsyncApiTestInjector.argsWith(*options)
 
         val modules = listOf(BaseModule(args), object : AbstractModule() {
             override fun configure() {

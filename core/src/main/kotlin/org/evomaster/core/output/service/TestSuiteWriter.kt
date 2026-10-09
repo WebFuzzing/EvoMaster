@@ -7,6 +7,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.*
+import org.evomaster.core.output.asyncapi.KafkaTestClientEmitter
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter
@@ -601,6 +602,19 @@ class TestSuiteWriter {
             lines.add("import unittest")
             lines.add("import requests")
 
+            /*
+                What the helper that publishes and awaits a reply uses, and only when something
+                in this suite calls it. Python cannot name a type without importing it, so a
+                suite that publishes over another transport would otherwise be made to carry a
+                Kafka dependency it never uses.
+             */
+            if (config.problemType == EMConfig.ProblemType.ASYNCAPI
+                    && KafkaTestClientEmitter.resultsIn(solution).isNotEmpty()) {
+                lines.add("import time")
+                lines.add("import uuid")
+                lines.add("import kafka")
+            }
+
             if(config.sqli){
                 lines.add("import time")
             }
@@ -784,6 +798,8 @@ class TestSuiteWriter {
         }
 
         testCaseWriter.addExtraStaticVariables(lines)
+
+        testCaseWriter.addExtraClassMembers(lines, solution)
 
 //        if (config.expectationsActive) {
 //            if (config.outputFormat.isJavaOrKotlin()) {

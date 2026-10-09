@@ -6,6 +6,7 @@ import com.google.inject.Inject
 import com.webfuzzing.asyncapi.models.AsyncApiChannel
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId
 import com.webfuzzing.asyncapi.models.AsyncApiReply
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.database.sql.SqlAction
@@ -55,6 +56,25 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         private const val TARGET_SEPARATOR = ":"
 
         private const val CORRELATION_SEPARATOR = "-"
+
+        /**
+         * Separator inside a JSON Pointer, whose last segment names the field.
+         */
+        private const val PATH_SEPARATOR = "/"
+
+        /**
+         * What a correlation id's header is called when the document declares no field for it.
+         */
+        private const val DEFAULT_CORRELATION_HEADER = "correlationId"
+
+        /**
+         * What the variable holding a reply is called, before the action's index. The same
+         * `res_0` every other problem type writes.
+         *
+         * Named here rather than by the writer because it is part of what a driver is asked to
+         * render against, so it has to be settled while the search runs. RPC does the same.
+         */
+        private const val REPLY_VARIABLE_PREFIX = "res_"
 
         private const val DEFAULT_CONTENT_TYPE = "application/json"
 
@@ -166,7 +186,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         actionResults.add(result)
 
         val dto = getActionDto(action, index)
-        dto.asyncApiCall = toDto(action)
+        dto.asyncApiCall = toDto(action, index)
 
         val reply = rc.executeNewAsyncApiActionAndGetReply(dto)
 
@@ -183,6 +203,10 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         }
 
         val outcome = record(reply, result)
+        if (dto.asyncApiCall.replyVariable != null) {
+            result.setReplyVariableName(dto.asyncApiCall.replyVariable)
+            recordWhatWasPublished(action, dto.asyncApiCall, result)
+        }
         handleTargets(fv, action, result, outcome, index)
 
         return true
@@ -206,6 +230,10 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         result.setOutcome(outcome)
         reply.waitedMs?.let { result.setWaitedMs(it) }
+
+        //what the generated test will publish with, when the driver rendered it
+        //lines that are all blank are no script: the writer would publish nothing and assert on it
+        reply.testScript?.takeIf { lines -> lines.any { it.isNotBlank() } }?.let { result.setTestScript(it) }
 
         if (outcome == AsyncApiOutcome.REPLIED) {
             reply.replyPayload?.let { result.setReplyPayload(it) }
@@ -342,7 +370,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
      * Everything the driver needs to publish the message and wait for its reply, resolved
      * against the document so that the driver never has to read it.
      */
-    private fun toDto(action: AsyncApiAction): AsyncApiActionDto {
+    private fun toDto(action: AsyncApiAction, index: Int): AsyncApiActionDto {
 
         val document = asyncApiSampler.document
         val message = document.messages[action.messageId]
@@ -359,6 +387,22 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             ?.gene?.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = null)
         dto.contentType = message?.contentType ?: document.defaultContentType ?: DEFAULT_CONTENT_TYPE
         dto.headers = LinkedHashMap(buildHeaders(action))
+
+        if (config.createTests) {
+            /*
+                A transport the contract cannot describe is published by lines the driver renders
+                while the search runs, so it is told which language to render them in. Not asked
+                for when no test will be written, so a driver need not spend time on it.
+
+                SutInfoDto.OutputFormat is the driver's own enum and has no Python, so a Python
+                run asks for no script at all. The reply variable is named here either way: the
+                core owns that name, whoever writes the lines that assign to it.
+             */
+            dto.outputFormat = SutInfoDto.OutputFormat.values()
+                .firstOrNull { it.name == config.outputFormat.name }
+
+            dto.replyVariable = REPLY_VARIABLE_PREFIX + index
+        }
 
         dto.correlationId = runId + CORRELATION_SEPARATOR + published++
         message?.correlationId?.let {
@@ -378,6 +422,46 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         }
 
         return dto
+    }
+
+    /**
+     * Keep on the result what a generated test needs to publish this message again, so that the
+     * writer does not resolve the document a second time. Only when a test will be written.
+     */
+    private fun recordWhatWasPublished(
+        action: AsyncApiAction,
+        call: AsyncApiActionDto,
+        result: AsyncApiCallResult
+    ) {
+        val document = asyncApiSampler.document
+        val channel = document.channels[action.channelName]
+        val server = channel?.let { document.serversOf(it).firstOrNull() }
+
+        result.setPublished(
+            serverName = server?.name,
+            broker = server?.host,
+            protocol = server?.protocol,
+            address = call.address,
+            replyAddress = call.replyAddress,
+            payload = call.payload,
+            headersAsJson = mapper.writeValueAsString(call.headers ?: emptyMap<String, String>()),
+            correlationHeader = correlationHeaderOf(call),
+            replyTimeoutMs = call.replyTimeoutMs
+        )
+    }
+
+    /**
+     * The header a correlation id rides in, when it rides in one. The document names the field
+     * with a pointer, and its last segment is the header's name.
+     */
+    private fun correlationHeaderOf(call: AsyncApiActionDto): String? {
+
+        if (call.correlationLocation != AsyncApiActionDto.CorrelationLocation.HEADER) {
+            return null
+        }
+
+        return call.correlationPointer?.substringAfterLast(PATH_SEPARATOR)?.takeIf { it.isNotBlank() }
+            ?: DEFAULT_CORRELATION_HEADER
     }
 
     /**
