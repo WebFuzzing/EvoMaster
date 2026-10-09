@@ -9,6 +9,7 @@ import org.evomaster.client.java.instrumentation.object.GeoJsonPointToOasConvert
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 
@@ -23,6 +24,41 @@ public abstract class MongoOperationClassReplacement extends ThirdPartyMethodRep
         ExecutionTracer.addMongoInfo(info);
     }
 
+
+    /**
+     * Executes an operation that, unlike find, is executed eagerly (eg, count, delete and update),
+     * so we know right away whether the filter was valid. The query is stored in any case.
+     *
+     * @param singleton       the replacement class holding the replacement with the given id
+     * @param id              the id of the replacement, used to retrieve the original method
+     * @param mongoCollection the collection on which the operation is executed
+     * @param args            the arguments of the original call
+     * @param filter          the query used in the operation
+     * @return the result of the original call
+     */
+    protected static Object handleEagerQuery(ThirdPartyMethodReplacementClass singleton, String id, Object mongoCollection, List<Object> args, Object filter) {
+        long start = System.currentTimeMillis();
+        Method method = getOriginal(singleton, id, mongoCollection);
+        try {
+            Object result = method.invoke(mongoCollection, args.toArray());
+            long end = System.currentTimeMillis();
+            handleMongo(mongoCollection, filter, true, end - start);
+            return result;
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            long end = System.currentTimeMillis();
+            handleMongo(mongoCollection, filter, false, end - start);
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+            if (cause instanceof Error) {
+                throw (Error) cause;
+            }
+            throw new RuntimeException(cause);
+        }
+    }
 
     private static Class<?> extractDocumentsType(Object collection) {
         try {
