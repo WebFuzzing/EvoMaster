@@ -114,6 +114,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         // reads a superset of the layouts a database may emit, of which this is one, so the value
         // round-trips: what is written here is read back to the same instant.
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
+        private const val DATE_FORMAT = "yyyy-MM-dd"
 
         /**
          * Spellings [SmtLibGenerator.TYPE_MAP] already treats as the same type. Taken from the
@@ -491,13 +492,20 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 }
             }
             is LongValue -> {
-                if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.TIMESTAMP_TYPE)) {
+                val datePattern = when {
+                    hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.TIMESTAMP_TYPE) -> TIMESTAMP_FORMAT
+                    // Without this a DATE column was inserted as a bare integer, which the
+                    // database rejects, so no row of its table was ever inserted
+                    hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.DATE_TYPE) -> DATE_FORMAT
+                    else -> null
+                }
+                if (datePattern != null) {
                     val epochSeconds = columnValue.value.toLong()
                     val localDateTime = LocalDateTime.ofInstant(
                         Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
                     )
                     val formatted = localDateTime.format(
-                        DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT)
+                        DateTimeFormatter.ofPattern(datePattern)
                     )
                     ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
                 } else {
@@ -563,8 +571,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * compared case-insensitively as a raw string.
      *
      * CAVEAT: this relies on [ColumnDto.type] containing the exact spelling passed in (currently
-     * "BOOLEAN" and "TIMESTAMP"). It is needed because the SMT sort alone cannot recover these types
-     * (BOOLEAN is encoded as an SMT String, TIMESTAMP as an SMT Int), so gene reconstruction must
+     * "BOOLEAN", "TIMESTAMP" and "DATE"). It is needed because the SMT sort alone cannot recover these
+     * types (BOOLEAN is encoded as an SMT String, TIMESTAMP and DATE as an SMT Int), so gene reconstruction must
      * consult the original SQL type. The set of type spellings recognized here must stay consistent
      * with [SmtLibGenerator.TYPE_MAP]; if a backend reports a variant spelling (e.g. "BOOL" or
      * "TIMESTAMP WITHOUT TIME ZONE"), the special handling is silently skipped. Consolidating these
