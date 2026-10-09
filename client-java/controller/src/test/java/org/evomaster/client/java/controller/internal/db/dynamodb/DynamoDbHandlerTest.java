@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,6 +62,28 @@ public class DynamoDbHandlerTest {
         assertTrue(evaluated.get(0).getDistanceWithMetrics().getDistance() > 0.0d);
         assertTrue(evaluated.get(0).getDistanceWithMetrics().getDistance() < 1.0d);
         assertEquals(1, evaluated.get(0).getDistanceWithMetrics().getNumberOfEvaluatedItems());
+    }
+
+    @Test
+    public void testFailedConditionalPutItemIsEvaluated() {
+        SyncDynamoDbClient client = new SyncDynamoDbClient();
+        DynamoDbHandler handler = enabledHandler(client);
+        Map<String, AttributeValue> values = new HashMap<>();
+        values.put(":player", AttributeValue.builder().s("Lionel Scaloni").build());
+        PutItemRequest request = PutItemRequest.builder()
+                .tableName(TABLE)
+                .item(item("Argentina", "Lionel Messi"))
+                .conditionExpression("playerName = :player")
+                .expressionAttributeValues(values)
+                .build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.PUT_ITEM,
+                request, false, 1L));
+
+        List<DynamoDbCommandWithDistance> evaluated = handler.getEvaluatedDynamoDbCommands();
+
+        assertEquals(1, evaluated.size());
+        assertTrue(evaluated.get(0).getDistanceWithMetrics().getDistance() > 0.0d);
+        assertTrue(evaluated.get(0).getDistanceWithMetrics().getDistance() < 1.0d);
     }
 
     @Test

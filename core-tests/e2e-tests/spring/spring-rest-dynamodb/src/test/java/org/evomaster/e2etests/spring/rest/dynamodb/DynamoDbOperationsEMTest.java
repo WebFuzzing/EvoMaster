@@ -55,6 +55,56 @@ public class DynamoDbOperationsEMTest extends DynamoDbTestBase {
     }
 
     /**
+     * Verifies that a conditional PutItem does not reach the required FIFA ID without DynamoDB distance.
+     *
+     * @throws Throwable when EvoMaster execution fails
+     */
+    @Test
+    public void testConditionalPutItemWithoutDynamoDbHeuristics() throws Throwable {
+        String endpoint = "/operations/sync/put-item-heuristic/{fifaId}";
+
+        runTestHandlingFlaky(
+                "DynamoDbConditionalPutItemWithoutHeuristicsEM",
+                "org.foo.spring.rest.dynamodb.DynamoDbConditionalPutItemWithoutHeuristicsEM",
+                500,
+                false,
+                args -> {
+                    configureDynamoDbHeuristics(args, false);
+                    setOption(args, "endpointFocus", endpoint);
+                    setOption(args, "maxTestSize", "1");
+                    Solution<RestIndividual> baseline = initAndRun(args);
+
+                    assertHasAtLeastOne(baseline, HttpVerb.POST, 409, endpoint, "SYNC PUT_ITEM FAILURE");
+                    assertNone(baseline, HttpVerb.POST, 201, endpoint, "SYNC PUT_ITEM SUCCESS");
+                },
+                5);
+    }
+
+    /**
+     * Verifies that DynamoDB distance guides a conditional PutItem to the required FIFA ID.
+     *
+     * @throws Throwable when EvoMaster execution fails
+     */
+    @Test
+    public void testConditionalPutItemWithDynamoDbHeuristics() throws Throwable {
+        String endpoint = "/operations/sync/put-item-heuristic/{fifaId}";
+
+        runTestHandlingFlaky(
+                "DynamoDbConditionalPutItemWithHeuristicsEM",
+                "org.foo.spring.rest.dynamodb.DynamoDbConditionalPutItemWithHeuristicsEM",
+                1000,
+                false,
+                args -> {
+                    configureDynamoDbHeuristics(args, true);
+                    setOption(args, "endpointFocus", endpoint);
+                    setOption(args, "maxTestSize", "1");
+                    Solution<RestIndividual> guided = initAndRun(args);
+                    assertHasAtLeastOne(guided, HttpVerb.POST, 201, endpoint, "SYNC PUT_ITEM SUCCESS");
+                },
+                5);
+    }
+
+    /**
      * Asserts success and failure outcomes for one client-operation pair.
      *
      * @param solution EvoMaster solution
