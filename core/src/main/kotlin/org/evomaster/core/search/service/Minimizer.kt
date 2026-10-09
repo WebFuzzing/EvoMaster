@@ -179,17 +179,17 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
     }
 
     /**
-     * Removes each main action from [ind] one at a time, starting from [startingIndex] up to N, being N the size of
-     * [ind]. If there is any improvement (ie archive.addIfNeeded returns true), then it applies recursively to all
+     * Removes each main action from [ind] one at a time, starting from 0 up to N, being N the size of [ind]. If
+     * there is any improvement (ie archive.addIfNeeded returns true), then it applies recursively to all
      * copies with length N-1.
      */
-    private fun removeEachMainAction(ind: T, startingIndex: Int = 0) {
+    private fun removeEachMainAction(ind: T) {
         val n = ind.size()
         if (n == 1) {
             return
         }
 
-        (startingIndex until n).forEach { index ->
+        (0 until n).forEach { index ->
             val copy = ind.copy() as T
 
             if (copy is RestIndividual) {
@@ -205,7 +205,7 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
 
             fitness.computeWholeAchievedCoverageForPostProcessing(copy)?.run {
                 if (archive.addIfNeeded(this)) {
-                    removeEachMainAction(this.individual, startingIndex)
+                    removeEachMainAction(this.individual)
                 }
             }
         }
