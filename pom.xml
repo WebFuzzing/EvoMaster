@@ -86,6 +86,7 @@
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
+                <skipAsyncApi>true</skipAsyncApi>
             </properties>
         </profile>
         <profile>
@@ -101,6 +102,7 @@
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
+                <skipAsyncApi>true</skipAsyncApi>
             </properties>
         </profile>
         <profile>
@@ -116,6 +118,7 @@
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
+                <skipAsyncApi>true</skipAsyncApi>
             </properties>
         </profile>
         <profile>
@@ -131,6 +134,7 @@
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
+                <skipAsyncApi>true</skipAsyncApi>
             </properties>
         </profile>
         <profile>
@@ -146,6 +150,7 @@
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
+                <skipAsyncApi>true</skipAsyncApi>
             </properties>
         </profile>
         <profile>
@@ -161,6 +166,7 @@
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
+                <skipAsyncApi>true</skipAsyncApi>
             </properties>
         </profile>
         <profile>
@@ -176,6 +182,7 @@
                 <skipMongo>false</skipMongo> <!-- false -->
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
+                <skipAsyncApi>true</skipAsyncApi>
             </properties>
         </profile>
         <profile>
@@ -191,6 +198,7 @@
                 <skipMongo>true</skipMongo>
                 <skipH2V1>false</skipH2V1> <!-- false -->
                 <skipMiscDB>true</skipMiscDB>
+                <skipAsyncApi>true</skipAsyncApi>
             </properties>
         </profile>
         <profile>
@@ -206,6 +214,28 @@
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>false</skipMiscDB> <!-- false -->
+                <skipAsyncApi>true</skipAsyncApi>
+            </properties>
+        </profile>
+        <profile>
+            <!--
+                The AsyncAPI E2E starts a message broker in a container, so it needs Docker and
+                is slower than the rest. Kept in a profile of its own for the same reason the
+                database ones are.
+            -->
+            <id>AsyncApiTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+                <skipMiscDB>true</skipMiscDB>
+                <skipAsyncApi>false</skipAsyncApi> <!-- false -->
             </properties>
         </profile>
     </profiles>
@@ -266,6 +296,7 @@
         <snakeyaml.version>1.33</snakeyaml.version>
         <asm.version>9.9</asm.version>
         <testcontainers.version>1.21.4</testcontainers.version>
+        <kafka-clients.version>3.7.2</kafka-clients.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
 <!--        <selenium.version>4.31.0</selenium.version>-->
@@ -314,6 +345,7 @@
         <skipMongo>false</skipMongo>
         <skipH2V1>false</skipH2V1>
         <skipMiscDB>false</skipMiscDB>
+        <skipAsyncApi>false</skipAsyncApi>
     </properties>
 
 
@@ -920,6 +952,23 @@
                 <artifactId>testcontainers</artifactId>
                 <version>${testcontainers.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!-- A Kafka broker in Docker, for the AsyncAPI E2E tests -->
+                <groupId>org.testcontainers</groupId>
+                <artifactId>kafka</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!--
+                    Only used by the artificial SUTs of the AsyncAPI E2E tests, their drivers,
+                    and the suites those tests generate and compile. Not shipped with EvoMaster:
+                    no module under client-java, core or core-extra depends on it.
+                -->
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${kafka-clients.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.testcontainers</groupId>

@@ -1,0 +1,44 @@
+package com.foo.asyncapi.ncs.imp;
+
+/*
+    Ported unchanged, apart from the package, from the NCS case study of EMB (WebFuzzing/EMB):
+    jdk_8_maven/cs/rest/artificial/ncs, org.restncs.imp. The routines there follow Numerical
+    Recipes.
+ */
+public class Remainder {
+
+    public static int exe(int a, int b) {
+        int r = 0 - 1;
+        int cy = 0;
+        int ny = 0;
+        if (a == 0) ;
+        else if (b == 0) ;
+        else if (a > 0)
+            if (b > 0)
+                while ((a - ny) >= b) {
+                    ny = ny + b;
+                    r = a - ny;
+                    cy = cy + 1;
+                }
+            else    // b<0
+                while ((a + ny) >= ((b >= 0) ? b : -b)) {
+                    ny = ny + b;
+                    r = a + ny;
+                    cy = cy - 1;
+                }
+        else    // a<0
+            if (b > 0)
+                while (((a + ny) >= 0 ? (a + ny) : -(a + ny)) >= b) {
+                    ny = ny + b;
+                    r = a + ny;
+                    cy = cy - 1;
+                }
+            else
+                while (b >= (a - ny)) {
+                    ny = ny + b;
+                    r = ((a - ny) >= 0 ? (a - ny) : -(a - ny));
+                    cy = cy + 1;
+                }
+        return r;
+    }
+}

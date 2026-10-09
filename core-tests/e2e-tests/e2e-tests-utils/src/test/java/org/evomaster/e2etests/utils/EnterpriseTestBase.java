@@ -430,15 +430,37 @@ public abstract class EnterpriseTestBase {
         }
     }
 
+    private static boolean containsSourceWithExtension(File folder, String extension){
+        File[] children = folder.listFiles();
+        if (children == null) {
+            return false;
+        }
+        for (File f : children) {
+            if (f.isDirectory() && containsSourceWithExtension(f, extension)) {
+                return true;
+            }
+            if (f.isFile() && f.getName().endsWith(extension)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected void compile(String outputFolderName){
 
         long start = System.currentTimeMillis();
 
-        CompilerForTestGenerated.INSTANCE.compile(
-                OutputFormat.KOTLIN_JUNIT_5,
-                new File(outputFolderPath(outputFolderName)),
-                new File("target/test-classes")
-        );
+        File folder = new File(outputFolderPath(outputFolderName));
+
+        /*
+            Which language was generated is not passed down here, but the folder says: a suite is
+            written in one of them, so whichever is on disk is what has to be compiled.
+         */
+        OutputFormat format = containsSourceWithExtension(folder, ".java")
+                ? OutputFormat.JAVA_JUNIT_5
+                : OutputFormat.KOTLIN_JUNIT_5;
+
+        CompilerForTestGenerated.INSTANCE.compile(format, folder, new File("target/test-classes"));
 
         int passed = (int)(System.currentTimeMillis() - start) / 1000;
         System.out.println("Folder compiled in " + passed + " seconds: " + outputFolderName);
