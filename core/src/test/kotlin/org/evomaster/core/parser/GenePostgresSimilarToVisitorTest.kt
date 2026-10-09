@@ -205,23 +205,32 @@ class GenePostgresSimilarToVisitorTest : RegexTestTemplate(){
 
     @Test
     fun testUnsatisfiableClassWithQuantifierThatAllowsZero(){
-        checkSamplesExactly("a[]*b", "ab")
-        checkSamplesExactly("a[]?b", "ab")
-        checkSamplesExactly("([])*a", "a")
+        checkSamplesExactly("a[^\u0000-\uffff]*b", "ab")
+        checkSamplesExactly("a[^\u0000-\uffff]?b", "ab")
+        checkSamplesExactly("([^\u0000-\uffff])*a", "a")
     }
 
     @Test
     fun testUnsatisfiableAlternativeIsDropped(){
-        checkSamplesExactly("[]|a", "a")
-        checkSamplesExactly("a|[]", "a")
-        checkSamplesExactly("a|[]|b", "a", "b")
-        checkSamplesExactly("([]|a)?", "", "a")
+        checkSamplesExactly("[^\u0000-\uffff]|a", "a")
+        checkSamplesExactly("a|[^\u0000-\uffff]", "a")
+        checkSamplesExactly("a|[^\u0000-\uffff]|b", "a", "b")
+        checkSamplesExactly("([^\u0000-\uffff]|a)?", "", "a")
     }
 
     @Test
     fun testUnsatisfiableRegex(){
-        listOf("[]", "a[]b", "a[]+b", "([])", "([])+a", "a([])b", "[]|[]").forEach {
+        val unsat = "[^\u0000-\uffff]"
+        listOf(unsat, "a${unsat}b", "a${unsat}+b", "($unsat)", "($unsat)+a", "a($unsat)b", "$unsat|$unsat").forEach {
             assertThrows<IllegalStateException> { createGene(it) }
+        }
+    }
+
+    @Test
+    fun testEmptyClassIsInvalid(){
+        // a ] right after [ or [^ is a literal in Postgres, so these have no closing bracket, and Postgres rejects them
+        listOf("[]", "[^]", "a[]b", "a|[]", "[]|a", "a[]*b", "([])", "([])*a").forEach {
+            assertThrows<IllegalArgumentException>("Should be invalid: $it") { createGene(it) }
         }
     }
 }

@@ -219,6 +219,12 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
 
         val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
 
+        // in Postgres, a ] right after [ or [^ is a literal, and not the end of the class. So [] and [^] are not a
+        // closed class, and Postgres rejects them (brackets [] not balanced)
+        if (ranges.isEmpty()) {
+            throw IllegalArgumentException("Invalid regular expression: brackets [] not balanced")
+        }
+
         val gene = CharacterRangeRxGene(negated, ranges)
 
         return VisitResult(gene)
