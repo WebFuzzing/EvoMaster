@@ -89,7 +89,15 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
-        val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+        val satisfiableDisjunctions = res.genes
+            .map { it as DisjunctionRxGene }
+            .filter { !it.isUnsatisfiable() }
+
+        if (satisfiableDisjunctions.isEmpty()) {
+            throw IllegalStateException("Regex is unsatisfiable.")
+        }
+
+        val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
 
         // we remove the <EOF> token from end of the string to store as sourceRegex
         val gene = RegexGene(
@@ -105,14 +113,18 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     override fun visitDisjunction(ctx: RegexEcma262Parser.DisjunctionContext): VisitResult {
 
         val altRes = ctx.alternative().accept(this)
-        val assertionMatches = altRes.data as Pair<Boolean, Boolean>
+        val assertionMatches = altRes.data as? Pair<Boolean, Boolean>
+        val res = VisitResult()
 
-        val matchStart = assertionMatches.first
-        val matchEnd = assertionMatches.second
+        if (assertionMatches != null) {
+            val matchStart = assertionMatches.first
+            val matchEnd = assertionMatches.second
 
-        val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart, matchEnd)
+            val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart, matchEnd)
 
-        val res = VisitResult(disj)
+            res.genes.add(disj)
+        }
+        // else: unsatisfiable, skip that alternative
 
         if(ctx.disjunction() != null){
             val disjRes = ctx.disjunction().accept(this)
@@ -138,7 +150,10 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                 res.genes.add(gene)
             } else {
 
-                val assertion = resTerm.data as String
+                // no gene and no assertion, term and alternative are unsatisfiable
+                val assertion = resTerm.data as? String
+                    ?: return VisitResult()
+
                 if(i==0 && assertion == "^"){
                     caret = true
                 } else if(i==ctx.term().size-1 && assertion== "$"){
@@ -170,18 +185,30 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val resAtom = ctx.atom().accept(this)
         val atom = resAtom.genes.firstOrNull()
-                ?: return res
 
         if(ctx.quantifier() != null){
 
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
+
+            // if quantified atom is unsatisfiable we must then check the limits
+            if(atom == null || (atom as? RxTerm)?.isUnsatisfiable() == true){
+                return if (limits.first == 0) {
+                    // if 0 appearances is allowed then the regex is satisfiable only with empty string
+                    VisitResult(PatternCharacterBlockGene("0_QuantifierOnEmptyRegex", ""))
+                } else {
+                    // if not then unsatisfiable, return with no genes
+                    res
+                }
+            }
+
             val q = QuantifierRxGene("q", atom, limits.first, limits.second)
 
             res.genes.add(q)
 
-        } else {
+        } else if (atom != null) {
             res.genes.add(atom)
         }
+        // else atom is unsatisfiable, return no genes
 
         return res
     }
@@ -255,7 +282,16 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
             val res = ctx.disjunction().accept(this)
 
-            val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+            val satisfiableDisjunctions = res.genes
+                .map { it as DisjunctionRxGene }
+                .filter { !it.isUnsatisfiable() }
+
+            if (satisfiableDisjunctions.isEmpty()) {
+                // the group, and so the term, cannot match: no genes
+                return VisitResult()
+            }
+
+            val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
 
             //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
             for(gene in disjList.disjunctions){
