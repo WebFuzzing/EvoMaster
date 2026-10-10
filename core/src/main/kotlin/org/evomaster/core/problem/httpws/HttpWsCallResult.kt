@@ -483,21 +483,20 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         }
 
         if (original is ArrayNode && observed is ArrayNode && merged is ArrayNode) {
-            if (original.size() != observed.size()) {
-                return observed.deepCopy<JsonNode>()
+            // Keep missing positions absent, and preserve evidence of an increase
+            // when no observation has shortened the original array.
+            val shortened = observed.size() < original.size() && observed.size() < merged.size()
+            val firstIncrease = merged.size() == original.size() && observed.size() > original.size()
+            val result = if (shortened || firstIncrease) observed.deepCopy<ArrayNode>() else merged
+
+            // A size difference does not prevent values at shared indices from
+            // changing too. Merge those values instead of returning early.
+            for (i in 0 until minOf(original.size(), observed.size(), result.size())) {
+                val previous = merged.get(i) ?: original[i]
+                result.set(i, mergeJsonDiffFromOriginal(original[i], observed[i], previous))
             }
 
-            // Preserve a size difference recorded by an earlier observation.
-            // Its elements can no longer be merged using the original indices.
-            if (merged.size() != original.size()) {
-                return merged
-            }
-
-            for (i in 0 until observed.size()) {
-                merged.set(i, mergeJsonDiffFromOriginal(original[i], observed[i], merged[i]))
-            }
-
-            return merged
+            return result
         }
 
         return observed.deepCopy<JsonNode>()

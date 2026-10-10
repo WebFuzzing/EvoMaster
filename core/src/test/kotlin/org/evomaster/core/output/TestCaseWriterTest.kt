@@ -56,6 +56,22 @@ class TestCaseWriterTest : WriterTestBase(){
     }
 
     @Test
+    fun testChangedElementIsFilteredAfterArrayShrinks() {
+        val format = OutputFormat.JAVA_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        for (observations in listOf(listOf("[1]", "[9,2]"), listOf("[9,2]", "[1]"))) {
+            val original = RestCallResult("action", false).apply { setBody("[1,2]") }
+            observations.forEachIndexed { index, body ->
+                original.recordFlakyObservation(RestCallResult("action", false).apply { setBody(body) }, index + 1)
+            }
+            val lines = Lines(format)
+            writer.handleJsonStringAssertion("[1,2]", original.getMergedFlakyBody(), lines, null, false)
+            assertTrue(lines.toString().contains("Flaky size"))
+            assertFalse(lines.toString().lineSequence().any { it.trim().startsWith(".body") }, lines.toString())
+        }
+    }
+
+    @Test
     fun testMergedFlakyNestedArraysCanBeWritten() {
         val format = OutputFormat.JAVA_JUNIT_5
         val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
