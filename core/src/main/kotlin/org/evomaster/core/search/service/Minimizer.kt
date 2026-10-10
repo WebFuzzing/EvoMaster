@@ -186,7 +186,7 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
      */
     private fun removeEachMainAction(ind: T) {
         val n = ind.size()
-        if (n == 1) {
+        if (n <= 2) { // these reductions were already analyzed when splitting into single calls
             return
         }
 
