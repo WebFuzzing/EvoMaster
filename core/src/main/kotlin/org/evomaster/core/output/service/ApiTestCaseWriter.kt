@@ -678,7 +678,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             if (i == limit) {
                 break
             }
-            if (flakyList != null && flakyList.size < i){
+            if (flakyList != null && flakyList.size <= i){
                 break
             }
             val flakyItem = if (flakyList != null) flakyList[i] else null

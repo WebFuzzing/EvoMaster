@@ -57,7 +57,13 @@ class ExecutionPhaseController {
             return true
         }
 
-        val budget = (config.timeLimitInSeconds() * config.extraPhaseBudgetPercentage).toLong()
+        val extraPercentage = if (target == Phase.FLAKINESS) config.extraBudgetPercentageForDetectFlakiness else config.extraPhaseBudgetPercentage
+
+        // unbounded time budget
+        if (extraPercentage < 0)
+            return false
+
+        val budget = (config.timeLimitInSeconds() * extraPercentage).toLong()
 
         val passed = elapsedSeconds()
         val timeout = passed > budget

@@ -109,4 +109,16 @@ class StatisticsTest {
         )
     }
 
+    @Test
+    fun testReExecutionTimes() {
+        val statistics = Statistics()
+
+        statistics.reportReExecutionTime(10)
+        statistics.reportReExecutionTime(25)
+        statistics.reportReExecutionTime(5)
+
+        assertEquals(listOf(10L, 25L, 5L), statistics.getReExecutionTimesMs())
+        assertEquals(40L, statistics.getReExecutionTimeMs())
+    }
+
 }
