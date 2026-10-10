@@ -487,6 +487,12 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
                 return observed.deepCopy<JsonNode>()
             }
 
+            // Preserve a size difference recorded by an earlier observation.
+            // Its elements can no longer be merged using the original indices.
+            if (merged.size() != original.size()) {
+                return merged
+            }
+
             for (i in 0 until observed.size()) {
                 merged.set(i, mergeJsonDiffFromOriginal(original[i], observed[i], merged[i]))
             }

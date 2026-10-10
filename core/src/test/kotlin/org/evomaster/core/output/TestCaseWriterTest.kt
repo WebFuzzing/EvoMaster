@@ -43,6 +43,38 @@ import javax.ws.rs.core.MediaType
 
 class TestCaseWriterTest : WriterTestBase(){
 
+    @Test
+    fun testFlakyShortArraysCanBeWritten() {
+        val format = OutputFormat.JAVA_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        for (shortArray in listOf("[]", "[1]")) {
+            val lines = Lines(format)
+            writer.handleJsonStringAssertion("[1,2]", shortArray, lines, null, false)
+            assertTrue(lines.toString().contains("Flaky size"))
+            assertFalse(lines.toString().lineSequence().any { it.trim().startsWith(".body") && it.contains("size()") })
+        }
+    }
+
+    @Test
+    fun testMergedFlakyNestedArraysCanBeWritten() {
+        val format = OutputFormat.JAVA_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val body = """{"items":[{"values":[1,2]}],"stable":7}"""
+        val original = RestCallResult("action", false).apply { setBody(body) }
+        for ((index, value) in listOf("[]", "[1,3]").withIndex()) {
+            val observed = RestCallResult("action", false).apply {
+                setBody("""{"items":[{"values":$value}],"stable":7}""")
+            }
+            original.recordFlakyObservation(observed, index + 1)
+        }
+        val merged = original.getMergedFlakyBody()
+        assertEquals("""{"items":[{"values":[]}],"stable":7}""", merged)
+        val lines = Lines(format)
+        writer.handleJsonStringAssertion(body, merged, lines, null, false)
+        assertTrue(lines.toString().contains("Flaky size"))
+        assertTrue(lines.toString().lineSequence().any { it.trim().startsWith(".body") && it.contains("stable") })
+    }
+
 
 
     @Test
