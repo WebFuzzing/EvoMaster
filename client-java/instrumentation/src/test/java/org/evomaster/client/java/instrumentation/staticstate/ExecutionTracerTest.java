@@ -1,16 +1,17 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
 import org.evomaster.client.java.instrumentation.Action;
+import org.evomaster.client.java.instrumentation.EmittedMessage;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ExecutionTracerTest {
 
@@ -18,6 +19,10 @@ public class ExecutionTracerTest {
      * A numeric comparison reports three objectives at once: less than, equal and greater than.
      */
     private static final int OBJECTIVES_PER_COMPARISON = 3;
+
+    private static final String TOPIC = "replies";
+
+    private static final long JOIN_TIMEOUT_MS = 10_000;
 
     private static final String COMPARISON = "ExecutionTracerTest_comparison";
 
@@ -144,5 +149,38 @@ public class ExecutionTracerTest {
         //and what the previous test reached counts again, since coverage is per test
         ExecutionTracer.executedNumericComparison(COMPARISON, 0.2, 0.2, 0.2);
         assertEquals(OBJECTIVES_PER_COMPARISON, ExecutionTracer.getObjectiveUpdateCount());
+    }
+
+    @Test
+    public void testTheDriverFlagIsPerThread() throws InterruptedException {
+
+        assertFalse(ExecutionTracer.isExecutingDriverAction());
+
+        ExecutionTracer.setExecutingDriverAction(true);
+        try {
+            assertTrue(ExecutionTracer.isExecutingDriverAction());
+
+            AtomicBoolean seenElsewhere = new AtomicBoolean(true);
+            Thread sut = new Thread(() -> seenElsewhere.set(ExecutionTracer.isExecutingDriverAction()));
+            sut.start();
+            sut.join(JOIN_TIMEOUT_MS);
+
+            assertFalse(seenElsewhere.get(), "the SUT's threads were taken for the driver");
+        } finally {
+            ExecutionTracer.setExecutingDriverAction(false);
+        }
+
+        assertFalse(ExecutionTracer.isExecutingDriverAction());
+    }
+
+    @Test
+    public void testWhatTheSutEmitsIsRecordedForTheCurrentAction() {
+
+        EmittedMessage message = new EmittedMessage(TOPIC, null, null);
+
+        ExecutionTracer.addEmittedMessage(message);
+
+        assertEquals(Collections.singletonList(message),
+                ExecutionTracer.exposeAdditionalInfoList().get(0).getEmittedMessagesView());
     }
 }

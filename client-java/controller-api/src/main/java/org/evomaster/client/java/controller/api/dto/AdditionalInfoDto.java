@@ -67,4 +67,10 @@ public class AdditionalInfoDto {
     public List<ExternalServiceInfoDto> employedDefaultWM = new ArrayList<>();
 
     public List<HostnameResolutionInfoDto> hostnameResolutionInfoDtos = new ArrayList<>();
+
+    /**
+     * The messages the SUT handed to a broker client to publish (eg a Kafka producer), in order.
+     * Only recorded for clients the instrumentation tracks.
+     */
+    public List<EmittedMessageDto> emittedMessages = new ArrayList<>();
 }

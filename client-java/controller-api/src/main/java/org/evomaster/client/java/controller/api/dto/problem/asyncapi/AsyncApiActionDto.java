@@ -38,7 +38,16 @@ public class AsyncApiActionDto {
          * objective for the first time, or improving one. A heuristic: a handler that only runs
          * code already covered earlier in the same test leaves coverage stable too.
          */
-        COVERAGE_STABLE
+        COVERAGE_STABLE,
+
+        /**
+         * Stop early once the SUT has received at least one message from {@link #address}, and
+         * every thread that received one has gone back to its client for more, which is what a
+         * consumer loop does when its handler has returned. Read off what the instrumentation
+         * records of the SUT's broker client calls, so only for clients it tracks. A heuristic:
+         * work handed off to another thread looks done as soon as it is handed off.
+         */
+        HANDLER_RETURN
     }
 
     /**

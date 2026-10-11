@@ -131,6 +131,9 @@ public class AgentController {
                     case OBJECTIVE_UPDATE_COUNT:
                         handleObjectiveUpdateCount();
                         break;
+                    case MESSAGE_HANDLING_STATE:
+                        handleMessageHandlingState();
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -285,6 +288,15 @@ public class AgentController {
             sendObject(InstrumentationController.getObjectiveUpdateCount());
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling objective update count: "+e.getMessage());
+        }
+    }
+
+    private static void handleMessageHandlingState(){
+        try {
+            String address = (String) in.readObject();
+            sendObject(InstrumentationController.getMessageHandlingState(address));
+        } catch (Exception e) {
+            SimpleLogger.error("Failure in handling message handling state: "+e.getMessage());
         }
     }
 

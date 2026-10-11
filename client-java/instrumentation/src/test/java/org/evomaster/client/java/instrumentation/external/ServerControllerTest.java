@@ -1,11 +1,14 @@
 package org.evomaster.client.java.instrumentation.external;
 
+import org.evomaster.client.java.instrumentation.MessageHandlingState;
+import org.evomaster.client.java.instrumentation.staticstate.AsyncMessageTracker;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,6 +27,10 @@ public class ServerControllerTest {
     private static final int TIMEOUT_MS = 10_000;
 
     private static final String COMPARISON = "ServerControllerTest_comparison";
+
+    private static final String TOPIC = "ServerControllerTest_requests";
+
+    private static final Integer NOT_AN_ADDRESS = 42;
 
     /**
      * A numeric comparison reports three objectives at once: less than, equal and greater than.
@@ -98,5 +105,24 @@ public class ServerControllerTest {
         assertEquals(OBJECTIVES_PER_COMPARISON, server.getObjectiveUpdateCount());
         assertTrue(server.setExecutingAction(true));
         assertEquals(OBJECTIVES_PER_COMPARISON, server.getObjectiveUpdateCount());
+    }
+    @Test
+    public void testTheMessageHandlingStateComesBackFromTheAgent() {
+
+        MessageHandlingState nothing = server.getMessageHandlingState(TOPIC);
+        assertEquals(0, nothing.getReceived());
+
+        AsyncMessageTracker.received(Collections.singletonList(TOPIC));
+
+        MessageHandlingState pending = server.getMessageHandlingState(TOPIC);
+        assertEquals(1, pending.getReceived());
+        assertEquals(1, pending.getUnhandled());
+
+        //the agent answers on a thread of its own, so this one is still the one that received
+        AsyncMessageTracker.askingForMore(true);
+
+        assertTrue(server.getMessageHandlingState(TOPIC).isHandled());
+        //and other commands still get their own answers
+        assertEquals(0L, server.getObjectiveUpdateCount());
     }
 }

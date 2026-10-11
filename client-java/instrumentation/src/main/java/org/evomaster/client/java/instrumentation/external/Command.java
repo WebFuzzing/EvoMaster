@@ -34,5 +34,6 @@ public enum Command implements Serializable {
      * The controller polls it to detect stable coverage while waiting for an AsyncAPI action
      * to finish; it counts updates, not distinct objectives or executions of covered code.
      */
-    OBJECTIVE_UPDATE_COUNT
+    OBJECTIVE_UPDATE_COUNT,
+    MESSAGE_HANDLING_STATE
 }

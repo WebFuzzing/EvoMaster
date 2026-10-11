@@ -21,6 +21,7 @@ import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.EmittedMessage;
 import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -603,6 +604,15 @@ public class EMController {
         assert trackRequestSource(httpServletRequest);
     }
 
+    private static EmittedMessageDto toDto(EmittedMessage message) {
+        EmittedMessageDto dto = new EmittedMessageDto();
+        dto.address = message.getAddress();
+        dto.payload = message.getPayload();
+        dto.payloadTruncated = message.isPayloadTruncated();
+        dto.payloadType = message.getPayloadType();
+        return dto;
+    }
+
     private Response computeTestResults(
             Set<Integer> ids,
             boolean killSwitch,
@@ -675,6 +685,9 @@ public class EMController {
                                         des.getRemotePort()
                                 )
                         ).collect(Collectors.toList());
+                        info.emittedMessages = a.getEmittedMessagesView().stream()
+                                .map(EMController::toDto)
+                                .collect(Collectors.toList());
                         info.stringSpecializations = new LinkedHashMap<>();
                         for (Map.Entry<String, Set<StringSpecializationInfo>> entry :
                                 a.getStringSpecializationsView().entrySet()) {
@@ -867,6 +880,12 @@ public class EMController {
                 replyDto.index = index;
 
                 try {
+                    /*
+                        So that the driver's own broker client calls are not recorded as the SUT's,
+                        when the driver's classes are instrumented. Only this thread: the SUT's
+                        threads keep consuming meanwhile.
+                     */
+                    ExecutionTracer.setExecutingDriverAction(true);
                     sutController.executeAsyncApiAction(dto.asyncApiCall, replyDto);
                 } catch (Exception e) {
                     /*
@@ -879,6 +898,8 @@ public class EMController {
                     replyDto.published = false;
                     replyDto.errorMessage = msg;
                     return Response.status(500).entity(WrappedResponseDto.withData(replyDto)).build();
+                } finally {
+                    ExecutionTracer.setExecutingDriverAction(false);
                 }
 
                 if (!Boolean.TRUE.equals(replyDto.published)) {
@@ -897,7 +918,8 @@ public class EMController {
                     was already turned off for this action by newAction above, and must stay
                     off for the service's threads, not only this one.
                  */
-                asyncApiSettle.settle(dto.asyncApiCall, replyDto, sutController::getObjectiveUpdateCount);
+                asyncApiSettle.settle(dto.asyncApiCall, replyDto,
+                        sutController::getObjectiveUpdateCount, sutController::getMessageHandlingState);
 
                 return Response.status(200).entity(WrappedResponseDto.withData(replyDto)).build();
             }
