@@ -1,5 +1,6 @@
 package org.evomaster.core.output.asyncapi
 
+import org.evomaster.client.java.controller.api.dto.EmittedMessageDto
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.webfuzzing.asyncapi.models.AsyncApiChannel
 import org.evomaster.core.logging.LoggingUtil
@@ -35,6 +36,8 @@ object KafkaTestClientEmitter {
     val UTILS_CLASS = KafkaEMUtils::class.java.name
 
     const val HELPER_NAME = "publishAndAwaitReply"
+    const val OBSERVE_HELPER_NAME = "observeEmitted"
+    const val AWAIT_HELPER_NAME = "awaitEmitted"
 
     /**
      * Prefix of the variable holding a server's address in a generated test, followed by the
@@ -75,6 +78,115 @@ object KafkaTestClientEmitter {
             .filter { isEmitted(it) }
 
     /**
+     * What the service emitted to the addresses the contract declares for it to send to while
+     * this message was handled: key is the topic, in the order first emitted to, and value is
+     * what was emitted there, in order. Always empty outside white-box mode, where nothing
+     * records what the service emits.
+     *
+     * The address the message itself is published to is left out, even when the contract also
+     * declares the service to send there: the observer would collect the test's own message, and
+     * take it for one the service emitted.
+     */
+    fun observedTopicsOf(result: AsyncApiCallResult): Map<String, List<EmittedMessageDto>> {
+
+        val published = result.getAddress()
+        val topics = result.getDeclaredEmissionAddresses().filter { it != published }
+
+        if (topics.isEmpty()) {
+            return mapOf()
+        }
+
+        val emitted = result.getEmittedMessages()
+
+        return topics.associateWith { topic -> emitted.filter { it.address == topic } }
+            .filterValues { it.isNotEmpty() }
+    }
+
+    /**
+     * Whether some result this writes Kafka code for also has topics to observe, which is when
+     * the helpers that observe them are needed. Derived from [resultsIn], so that the helpers are
+     * only declared where something calls them.
+     */
+    fun observesIn(solution: Solution<*>): Boolean =
+        resultsIn(solution).any { observedTopicsOf(it).isNotEmpty() }
+
+    /**
+     * Before publishing: start observing the topics the service emitted to, from their end, so
+     * that only what this message makes it emit is collected afterwards. Nothing is written when
+     * there is nothing to observe.
+     *
+     * @param observer what the observer is left in
+     * @param broker   where the topics are, as an expression, as for [emit]: the service is
+     *                 taken to emit to the broker it was published to
+     */
+    fun emitObserve(
+        lines: Lines,
+        result: AsyncApiCallResult,
+        observer: String,
+        broker: String,
+        format: OutputFormat
+    ) {
+        val topics = observedTopicsOf(result).keys
+
+        if (topics.isEmpty()) {
+            return
+        }
+
+        val call = "$OBSERVE_HELPER_NAME(${(listOf(broker) + topics.map { TestWriterUtils.quotedEscaped(it, format) }).joinToString(", ")})"
+
+        when {
+            format.isJava() -> lines.add("AutoCloseable $observer = $call;")
+            format.isKotlin() -> lines.add("val $observer = $call")
+            else -> throw IllegalArgumentException("No Kafka client is written for $format")
+        }
+    }
+
+    /**
+     * After publishing: collect what the service emitted to the observed topics, waiting until
+     * each of them got as many messages as the search saw the service emit there, or [timeoutMs]
+     * went by. Counted per topic, so that more than expected on one does not end the wait before
+     * another got its own. Nothing is written when there is nothing to observe.
+     *
+     * @param emitted what the collected messages are left in: topic -> payloads, in arrival order
+     */
+    fun emitAwait(
+        lines: Lines,
+        result: AsyncApiCallResult,
+        observer: String,
+        emitted: String,
+        timeoutMs: Long,
+        format: OutputFormat
+    ) {
+        val topics = observedTopicsOf(result)
+
+        if (topics.isEmpty()) {
+            return
+        }
+
+        //one count per topic, in the order the topics are passed in
+        val counts = topics.values.joinToString(", ") { it.size.toString() }
+        val expected = when {
+            format.isJava() -> "new int[]{$counts}"
+            format.isKotlin() -> "intArrayOf($counts)"
+            else -> throw IllegalArgumentException("No Kafka client is written for $format")
+        }
+        val args = listOf(
+            observer,
+            expected,
+            "${timeoutMs}L"
+        ) + topics.keys.map { TestWriterUtils.quotedEscaped(it, format) }
+
+        val call = "$AWAIT_HELPER_NAME(${args.joinToString(", ")})"
+
+        when {
+            format.isJava() -> lines.add("java.util.Map<String, java.util.List<String>> $emitted = $call;")
+            format.isKotlin() -> lines.add("val $emitted = $call")
+            else -> throw IllegalArgumentException("No Kafka client is written for $format")
+        }
+    }
+
+
+    /**
      * @param variable where the reply payload is stored
      * @param broker   where to publish, as an expression: a variable the suite filled in from
      *                 the driver, or a literal taken from the document
@@ -84,7 +196,8 @@ object KafkaTestClientEmitter {
         result: AsyncApiCallResult,
         variable: String,
         broker: String,
-        format: OutputFormat
+        format: OutputFormat,
+        observer: String? = null
     ) {
 
         val args = mutableListOf(
@@ -102,7 +215,10 @@ object KafkaTestClientEmitter {
             args.add(TestWriterUtils.quotedEscaped(value, format))
         }
 
-        val call = "$HELPER_NAME(${args.joinToString(", ")})"
+        val guarded = observer != null && observedTopicsOf(result).isNotEmpty()
+        val function = if (guarded) "publishAndAwaitReplyObserved" else HELPER_NAME
+        val prefix = if (guarded) "$observer, " else ""
+        val call = "$function($prefix${args.joinToString(", ")})"
 
         when {
             format.isJava() -> lines.add("String $variable = $call;")

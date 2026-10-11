@@ -1,5 +1,7 @@
 package org.evomaster.core.output.service
 
+import org.evomaster.client.java.controller.api.dto.EmittedMessageDto
+import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.EMConfig
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.output.TestCase
@@ -185,5 +187,42 @@ class AsyncApiTestCaseWriterTest {
             val calls = klass.getDeclaredMethod("getCalls").invoke(instance) as List<Long>
             calls + System.nanoTime()
         }
+    }
+
+    @Test
+    fun testEmittedPayloadsUseTheReplyAssertionRules() {
+        val body = emittedAssertions("""{"token": "secret", "kept": 2}""") { fieldsToSkipInAssertions = "token" }
+        assertFalse(body.contains("secret"), body)
+        assertTrue(body.contains("kept"), body)
+        assertEquals("", emittedAssertions("{}") { enableBasicAssertions = false })
+    }
+
+    @Test
+    fun testTruncatedOrMultipleEmissionsHaveNoPayloadAssertions() {
+        val truncated = emittedAssertions("""{"status": "CONFIRMED"}""", truncated = true)
+        assertFalse(truncated.contains("CONFIRMED"), truncated)
+        val multiple = emittedAssertions("""{"status": "CONFIRMED"}""", count = 2)
+        assertFalse(multiple.contains("CONFIRMED"), multiple)
+    }
+
+    private fun emittedAssertions(
+        payload: String, truncated: Boolean = false, count: Int = 1,
+        configure: EMConfig.() -> Unit = {}
+    ): String {
+        val config = EMConfig().apply { outputFormat = OutputFormat.KOTLIN_JUNIT_5; configure() }
+        val result = AsyncApiCallResult("action").apply {
+            setDeclaredEmissionAddresses(listOf("output"))
+            setEmittedMessages(List(count) {
+                EmittedMessageDto().apply {
+                    address = "output"
+                    this.payload = payload
+                    payloadType = String::class.java.name
+                    payloadTruncated = truncated
+                }
+            })
+        }
+        val lines = Lines(config.outputFormat)
+        AsyncApiTestCaseWriter(config).writeEmittedAssertions(lines, result, "messages", "payload", "body")
+        return lines.toString()
     }
 }

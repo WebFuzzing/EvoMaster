@@ -153,6 +153,117 @@ class AsyncApiFitnessTest {
                   address:
                     location: '${'$'}message.header#/replyTo'
         """.trimIndent()
+        /**
+         * A shop that consumes orders and is declared to emit a confirmation for each, and
+         * events about a user on an address naming that user.
+         */
+        private val ORDERS = """
+            asyncapi: 3.0.0
+            info:
+              title: Orders
+              version: 1.0.0
+            servers:
+              kafka:
+                host: localhost:9092
+                protocol: kafka
+            channels:
+              ordersPlaced:
+                address: shop.orders.placed
+                messages:
+                  orderPlaced:
+                    payload:
+                      type: object
+                      required: [orderId]
+                      properties:
+                        orderId:
+                          type: string
+              ordersConfirmed:
+                address: shop.orders.confirmed
+                messages:
+                  orderConfirmed:
+                    payload:
+                      type: object
+                      required: [orderId, status]
+                      properties:
+                        orderId:
+                          type: string
+                        status:
+                          type: string
+                          const: CONFIRMED
+              userEvents:
+                address: shop.users.{userId}.events
+                parameters:
+                  userId: {}
+                messages:
+                  userEvent:
+                    payload:
+                      type: object
+            operations:
+              placeOrder:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/ordersPlaced'
+              confirmOrder:
+                action: send
+                channel:
+                  ${'$'}ref: '#/channels/ordersConfirmed'
+              notifyUser:
+                action: send
+                channel:
+                  ${'$'}ref: '#/channels/userEvents'
+        """.trimIndent()
+    }
+
+    /**
+     * What the shop emits to, in the tests on emitted messages: a declared send channel, one
+     * whose address has a placeholder, the channel it consumes from, and somewhere undeclared.
+     */
+    private object Shop {
+        const val CONFIRMED = "shop.orders.confirmed"
+        const val CONFIRMED_TARGET = "ASYNCAPI_EMITTED:$CONFIRMED:placeOrder"
+        const val CONFIRMED_MESSAGE_TARGET = "ASYNCAPI_EMITTED_MESSAGE:ordersConfirmed.orderConfirmed:placeOrder"
+        const val CONFIRMATION = """{"orderId": "o-1", "status": "CONFIRMED"}"""
+        const val USER_EVENTS = "shop.users.{userId}.events"
+        const val USER_42_EVENTS = "shop.users.42.events"
+        const val PLACED = "shop.orders.placed"
+        const val UNDECLARED = "shop.audit"
+        const val PLACE_ORDER = "placeOrder"
+    }
+
+    /**
+     * A service that consumes from an address it is also declared to send to, so that a test
+     * of its one operation publishes to an address it observes.
+     */
+    private object Relay {
+        const val ADDRESS = "shop.relay"
+        const val RELAY = "relay"
+        const val TARGET = "ASYNCAPI_EMITTED:$ADDRESS:$RELAY"
+
+        val DOCUMENT = """
+            asyncapi: 3.0.0
+            info:
+              title: Relay
+              version: 1.0.0
+            channels:
+              relay:
+                address: $ADDRESS
+                messages:
+                  hop:
+                    payload:
+                      type: object
+                      properties:
+                        n:
+                          type: integer
+            operations:
+              relay:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/relay'
+              forward:
+                action: send
+                channel:
+                  ${'$'}ref: '#/channels/relay'
+        """.trimIndent()
     }
 
     private lateinit var injector: Injector
@@ -937,5 +1048,234 @@ class AsyncApiFitnessTest {
 
         assertNull(results(evaluated).single().getSettledMs())
         assertNull(results(evaluated).single().getSettleEndedBy())
+    }
+
+    /**
+     * What an instrumented driver reports for an action during which the service emitted
+     * [payload], or something it could only name by [payloadType], to each of [addresses].
+     */
+    private fun emittedTo(vararg addresses: String, payload: String? = Shop.CONFIRMATION, payloadType: String? = null) =
+        AdditionalInfoDto().apply {
+            addresses.forEach { a ->
+                emittedMessages.add(EmittedMessageDto().apply {
+                    address = a
+                    this.payload = payload
+                    payloadTruncated = false
+                    this.payloadType = payloadType ?: String::class.java.name
+                })
+            }
+        }
+
+    private fun startShop(perAction: List<AdditionalInfoDto>, vararg options: String) {
+        start(ORDERS, *options) { fireAndForget() }
+        driver.testResults = { TestResultsDto().apply { perAction.forEach { additionalInfoList.add(it) } } }
+    }
+
+    @Test
+    fun testEmittingToADeclaredSendChannelCoversItsTarget() {
+
+        startShop(listOf(emittedTo(Shop.CONFIRMED)))
+
+        val evaluated = evaluate(Shop.PLACE_ORDER)
+        val covered = coveredIds(evaluated)
+
+        assertTrue(covered.contains(Shop.CONFIRMED_TARGET), "$covered")
+        //and the payload is the message declared for that channel
+        assertTrue(covered.contains(Shop.CONFIRMED_MESSAGE_TARGET), "$covered")
+        assertEquals(listOf(Shop.CONFIRMED), results(evaluated).single().getDeclaredEmissionAddresses())
+        assertTrue(faultsOn(evaluated).isEmpty())
+    }
+
+    @Test
+    fun testAPayloadThatIsNoDeclaredMessageStillCoversTheAddress() {
+
+        startShop(listOf(emittedTo(Shop.CONFIRMED, payload = """{"orderId": "o-1"}""")), EXPERIMENTAL_ORACLES)
+
+        val evaluated = evaluate(Shop.PLACE_ORDER)
+        val covered = coveredIds(evaluated)
+
+        assertTrue(covered.contains(Shop.CONFIRMED_TARGET), "$covered")
+        assertFalse(covered.contains(Shop.CONFIRMED_MESSAGE_TARGET), "$covered")
+        //what a service sends is often described loosely: not a fault
+        assertTrue(faultsOn(evaluated).isEmpty())
+    }
+
+    @Test
+    fun testAPayloadThatWasNotTextIsNotClassified() {
+
+        startShop(listOf(emittedTo(Shop.CONFIRMED, payload = null, payloadType = "com.foo.OrderConfirmed")))
+
+        val covered = coveredIds(evaluate(Shop.PLACE_ORDER))
+
+        assertTrue(covered.contains(Shop.CONFIRMED_TARGET), "$covered")
+        assertFalse(covered.contains(Shop.CONFIRMED_MESSAGE_TARGET), "$covered")
+    }
+
+    @Test
+    fun testAnAddressWithAPlaceholderIsMatchedAndNamedAsTheDocumentWritesIt() {
+
+        startShop(listOf(emittedTo(Shop.USER_42_EVENTS, payload = "{}")))
+
+        val evaluated = evaluate(Shop.PLACE_ORDER)
+        val covered = coveredIds(evaluated)
+
+        assertTrue(covered.contains("ASYNCAPI_EMITTED:${Shop.USER_EVENTS}:${Shop.PLACE_ORDER}"), "$covered")
+        assertTrue(covered.contains("ASYNCAPI_EMITTED_MESSAGE:userEvents.userEvent:${Shop.PLACE_ORDER}"), "$covered")
+        //what a generated test observes is the concrete topic
+        assertEquals(listOf(Shop.USER_42_EVENTS), results(evaluated).single().getDeclaredEmissionAddresses())
+    }
+
+    @Test
+    fun testEmittingToAnUndeclaredAddressIsAFaultOnlyWithExperimentalOracles() {
+
+        startShop(listOf(emittedTo(Shop.UNDECLARED)))
+        val quiet = evaluate(Shop.PLACE_ORDER)
+        assertTrue(quiet.fitness.coveredTargets().none { idMapper.isFault(it) }, coveredIds(quiet).toString())
+        assertTrue(faultsOn(quiet).isEmpty())
+        assertTrue(coveredIds(quiet).none { it.startsWith("ASYNCAPI_EMITTED") }, coveredIds(quiet).toString())
+
+        startShop(listOf(emittedTo(Shop.UNDECLARED)), EXPERIMENTAL_ORACLES)
+        val evaluated = evaluate(Shop.PLACE_ORDER)
+
+        val fault = faultsOn(evaluated).single()
+        assertEquals(ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_EMISSION, fault.category)
+        assertEquals(Shop.PLACE_ORDER, fault.operationId)
+        assertEquals(Shop.UNDECLARED, fault.context)
+        val faults = evaluated.fitness.coveredTargets().filter { idMapper.isFault(it) }
+        assertTrue(idMapper.isSpecifiedFault(faults.single(), ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_EMISSION))
+        assertTrue(results(evaluated).single().getDeclaredEmissionAddresses().isEmpty())
+    }
+
+    @Test
+    fun testTwoUndeclaredAddressesAreTwoFaults() {
+
+        startShop(listOf(emittedTo(Shop.UNDECLARED, "shop.other")), EXPERIMENTAL_ORACLES)
+
+        val evaluated = evaluate(Shop.PLACE_ORDER)
+
+        assertEquals(setOf(Shop.UNDECLARED, "shop.other"), faultsOn(evaluated).map { it.context }.toSet())
+        assertEquals(2, evaluated.fitness.coveredTargets().count { idMapper.isFault(it) })
+    }
+
+    @Test
+    fun testTheUndeclaredAddressesOfAnOperationAreCapped() {
+
+        val addresses = (0..10).map { "shop.user.$it" }
+        startShop(listOf(emittedTo(*addresses.toTypedArray())), EXPERIMENTAL_ORACLES)
+
+        val evaluated = evaluate(Shop.PLACE_ORDER)
+
+        //the first ten in the order emitted, the eleventh is not reported
+        assertEquals(addresses.take(10), faultsOn(evaluated).map { it.context })
+        assertEquals(10, evaluated.fitness.coveredTargets().count { idMapper.isFault(it) })
+
+        //one already reported still is, in a later test
+        driver.testResults = { TestResultsDto().apply { additionalInfoList.add(emittedTo(addresses[0], addresses[10])) } }
+        val again = evaluate(Shop.PLACE_ORDER)
+        assertEquals(listOf(addresses[0]), faultsOn(again).map { it.context })
+    }
+
+    @Test
+    fun testWhatWasEmittedWhileAMessageFailedToBePublishedIsNotCreditedToIt() {
+
+        var calls = 0
+        start(ORDERS, EXPERIMENTAL_ORACLES) {
+            if (calls++ == 0) fireAndForget() else AsyncApiReplyDto().apply { published = false }
+        }
+        driver.testResults = {
+            TestResultsDto().apply {
+                additionalInfoList.add(AdditionalInfoDto())
+                //late work of the first message, recorded while the second one was being tried
+                additionalInfoList.add(emittedTo(Shop.CONFIRMED, Shop.UNDECLARED))
+            }
+        }
+
+        val evaluated = evaluate(Shop.PLACE_ORDER, Shop.PLACE_ORDER)
+        val results = results(evaluated)
+
+        assertEquals(AsyncApiOutcome.PUBLISH_FAILED, results[1].getOutcome())
+        val covered = coveredIds(evaluated)
+        assertFalse(covered.contains(Shop.CONFIRMED_TARGET), "$covered")
+        assertTrue(faultsOn(evaluated).isEmpty())
+        assertTrue(results[1].getEmittedMessages().isEmpty())
+        assertTrue(results[1].getDeclaredEmissionAddresses().isEmpty())
+    }
+
+    @Test
+    fun testTheAddressAMessageIsPublishedToIsNotObservedByItsTest() {
+
+        start(Relay.DOCUMENT) { fireAndForget() }
+        driver.testResults = { TestResultsDto().apply { additionalInfoList.add(emittedTo(Relay.ADDRESS)) } }
+
+        val evaluated = evaluate(Relay.RELAY)
+
+        //the service emitting there is still something it did
+        val covered = coveredIds(evaluated)
+        assertTrue(covered.contains(Relay.TARGET), "$covered")
+        //but a test observing that address would collect its own message too
+        assertTrue(results(evaluated).single().getDeclaredEmissionAddresses().isEmpty())
+    }
+
+    @Test
+    fun testEmittingToAChannelTheServiceConsumesIsNeitherATargetNorAFault() {
+
+        startShop(listOf(emittedTo(Shop.PLACED)), EXPERIMENTAL_ORACLES)
+
+        val evaluated = evaluate(Shop.PLACE_ORDER)
+
+        assertTrue(coveredIds(evaluated).none { it.startsWith("ASYNCAPI_EMITTED") }, coveredIds(evaluated).toString())
+        assertTrue(faultsOn(evaluated).isEmpty())
+    }
+
+    @Test
+    fun testAReplyIsNotCountedAgainAsAnEmittedMessage() {
+
+        /*
+            NCS answers on the reply channel of the operation published to, which the reply
+            targets already cover: no emitted target, and no fault, as the channel is declared.
+            The same for a reply on another operation's reply channel.
+         */
+        startNcs(EXPERIMENTAL_ORACLES) { replied(DOUBLE_RESULT) }
+        driver.testResults = {
+            TestResultsDto().apply { additionalInfoList.add(emittedTo(BESSJ_REPLY, "ncs.expint.reply", payload = DOUBLE_RESULT)) }
+        }
+
+        val evaluated = evaluate("bessj")
+        val covered = coveredIds(evaluated)
+
+        assertTrue(covered.contains("ASYNCAPI_REPLY:doubleResult:bessj"), "$covered")
+        assertTrue(covered.none { it.startsWith("ASYNCAPI_EMITTED") }, "$covered")
+        assertTrue(faultsOn(evaluated).isEmpty(), faultsOn(evaluated).toString())
+        assertTrue(results(evaluated).single().getDeclaredEmissionAddresses().isEmpty())
+        //still kept, as everything the service emitted is
+        assertEquals(2, results(evaluated).single().getEmittedMessages().size)
+    }
+
+    @Test
+    fun testEachActionCoversTheTargetsOfWhatItMadeTheServiceEmit() {
+
+        startShop(listOf(AdditionalInfoDto(), emittedTo(Shop.CONFIRMED, Shop.CONFIRMED)))
+
+        val evaluated = evaluate(Shop.PLACE_ORDER, Shop.PLACE_ORDER)
+        val target = evaluated.fitness.coveredTargets().single { idMapper.getDescriptiveId(it) == Shop.CONFIRMED_TARGET }
+
+        //credited to the second message, the one that made the service emit
+        assertTrue(evaluated.fitness.getTargetsByAction(1).contains(target))
+        assertFalse(evaluated.fitness.getTargetsByAction(0).contains(target))
+        val results = results(evaluated)
+        assertTrue(results[0].getDeclaredEmissionAddresses().isEmpty())
+        //one address, however many times it was emitted to
+        assertEquals(listOf(Shop.CONFIRMED), results[1].getDeclaredEmissionAddresses())
+    }
+
+    @Test
+    fun testABlackBoxRunCoversNoEmittedTargets() {
+
+        startShop(listOf(emittedTo(Shop.CONFIRMED, Shop.UNDECLARED)), "$BLACK_BOX=true", EXPERIMENTAL_ORACLES)
+
+        val evaluated = evaluate(Shop.PLACE_ORDER)
+
+        assertTrue(coveredIds(evaluated).none { it.startsWith("ASYNCAPI_EMITTED") }, coveredIds(evaluated).toString())
+        assertTrue(faultsOn(evaluated).isEmpty())
     }
 }

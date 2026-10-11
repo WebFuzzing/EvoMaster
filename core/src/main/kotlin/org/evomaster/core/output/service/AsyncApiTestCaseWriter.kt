@@ -34,6 +34,9 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
         private val log = LoggerFactory.getLogger(AsyncApiTestCaseWriter::class.java)
         private val replyMapper = ObjectMapper()
 
+        /** Payload types whose recorded text represents their wire content. */
+        private val TEXT_PAYLOAD_TYPES = setOf(String::class.java.name, ByteArray::class.java.name)
+
         /**
          * Tolerance when comparing doubles, as the same value can differ slightly once
          * serialized to text.
@@ -135,10 +138,20 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
             script.isNotEmpty() -> script.forEach { lines.add(it) }
 
             //isEmitted already requires a reply variable
-            KafkaTestClientEmitter.isEmitted(asyncApiResult) ->
-                KafkaTestClientEmitter.emit(
-                    lines, asyncApiResult, replyVariable!!, serverAddressExpression(asyncApiResult), format
+            KafkaTestClientEmitter.isEmitted(asyncApiResult) -> {
+                val broker = serverAddressExpression(asyncApiResult)
+                val observer = "observer_$index"
+                KafkaTestClientEmitter.emitObserve(lines, asyncApiResult, observer, broker, format)
+                KafkaTestClientEmitter.emit(lines, asyncApiResult, replyVariable!!, broker, format, observer)
+                KafkaTestClientEmitter.emitAwait(
+                    lines, asyncApiResult, observer, "emitted_$index", completionTimeoutMs(), format
                 )
+            }
+
+            asyncApiResult.getOutcome() == AsyncApiOutcome.PUBLISH_FAILED -> {
+                lines.addSingleCommentLine("The driver could not publish this message while the search ran")
+                return
+            }
 
             else -> {
                 lines.addSingleCommentLine(
@@ -155,6 +168,9 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
         }
 
         addReplyAssertions(lines, asyncApiResult, index)
+        if (KafkaTestClientEmitter.isEmitted(asyncApiResult)) {
+            writeEmittedAssertions(lines, asyncApiResult, "emitted_$index", "emitted_${index}_", "emittedBody_${index}_")
+        }
     }
 
     /**
@@ -477,4 +493,114 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
      */
     private fun isPublished(res: AsyncApiCallResult): Boolean =
         res.getOutcome().let { it != null && it != AsyncApiOutcome.PUBLISH_FAILED } && publishes(res)
+    /** Maximum time to await emitted messages or completion of the message handler. */
+    private fun completionTimeoutMs(): Long =
+        maxOf(config.asyncApiReplyTimeoutMs, config.asyncApiSettleMs).toLong()
+
+    /**
+     * Assertions on what [KafkaTestClientEmitter.emitAwait] collected, from what the search saw the service emit.
+     *
+     * On every topic, that at least as many messages arrived as were seen: a service may also
+     * emit on its own schedule. The payload is asserted on, as a reply is, only for a topic the
+     * search saw get exactly one message, and only if the test collected just one there too:
+     * order is only kept within a partition, and an extra message, on the service's own schedule
+     * or late for an earlier one, could be the one at the front. A payload that is not text on
+     * the wire, or was only partly recorded, is not asserted on, and the test says why.
+     *
+     * @param payloadPrefix what the variable holding a payload is called, before the topic's
+     *                      position among the observed ones
+     * @param bodyPrefix    the same, for the parsed payload
+     */
+    internal fun writeEmittedAssertions(
+        lines: Lines,
+        result: AsyncApiCallResult,
+        emitted: String,
+        payloadPrefix: String,
+        bodyPrefix: String
+    ) {
+        require(format.isJavaOrKotlin()) { "Unsupported format: $format" }
+        if (!config.enableBasicAssertions) return
+        KafkaTestClientEmitter.observedTopicsOf(result).entries.forEachIndexed { i, (topic, messages) ->
+
+            val onTopic = when {
+                format.isJava() -> "$emitted.get(${TestWriterUtils.quotedEscaped(topic, format)})"
+                format.isKotlin() -> "$emitted.getValue(${TestWriterUtils.quotedEscaped(topic, format)})"
+                else -> throw IllegalArgumentException("No Kafka client is written for $format")
+            }
+
+            val size = if (format.isJava()) "$onTopic.size()" else "$onTopic.size"
+            lines.addStatement("assertTrue($size >= ${messages.size})")
+
+            if (messages.size != 1) {
+                lines.addSingleCommentLine(
+                    "${messages.size} messages were emitted to $topic, which may arrive in any order," +
+                            " so their payloads are not asserted on"
+                )
+                return@forEachIndexed
+            }
+
+            val message = messages.single()
+            val payload = message.payload
+
+            val type = message.payloadType
+
+            //no payload and no type: the service sent a null value, a tombstone
+            if (payload == null && type == null) {
+                lines.addSingleCommentLine(
+                    "the message emitted to $topic had a null value, so there is no payload to assert on"
+                )
+                return@forEachIndexed
+            }
+
+            if (payload == null) {
+                lines.addSingleCommentLine(
+                    "the payload emitted to $topic was a $type turned into bytes inside the client," +
+                            " so it is not asserted on"
+                )
+                return@forEachIndexed
+            }
+
+            if (type != null && type !in TEXT_PAYLOAD_TYPES) {
+                lines.addSingleCommentLine(
+                    "the payload emitted to $topic was a $type, which the service's serializer turns into" +
+                            " bytes of its own, so it is not asserted on"
+                )
+                return@forEachIndexed
+            }
+
+            if (message.payloadTruncated == true) {
+                lines.addSingleCommentLine(
+                    "only the start of the payload emitted to $topic was recorded, so it is not asserted on"
+                )
+                return@forEachIndexed
+            }
+
+            val variable = payloadPrefix + i
+            val assertions = Lines(format)
+            writeReplyAssertions(assertions, payload, variable, bodyPrefix + i)
+
+            //no block that would only hold a comment, or nothing at all
+            val comment = "//"
+            val asserts = assertions.toString().lines().any { it.isNotBlank() && !it.trimStart().startsWith(comment) }
+            if (!asserts) {
+                lines.add(assertions)
+                return@forEachIndexed
+            }
+
+            lines.addSingleCommentLine("only when it arrived alone, as any other could be the one at the front")
+            when {
+                format.isJava() -> lines.add("if ($onTopic.size() == 1) {")
+                format.isKotlin() -> lines.add("if ($onTopic.size == 1) {")
+            }
+            lines.indented {
+                when {
+                    format.isJava() -> lines.add("String $variable = $onTopic.get(0);")
+                    format.isKotlin() -> lines.add("val $variable = $onTopic[0]")
+                }
+                lines.add(assertions)
+            }
+            lines.add("}")
+        }
+    }
+
 }
