@@ -1,23 +1,5 @@
 package com.foo.asyncapi.ncs;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.TopicExistsException;
-import org.apache.kafka.common.header.Header;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
@@ -25,8 +7,9 @@ import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiAct
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.client.java.controller.problem.AsyncApiProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
-import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.kafka.KafkaAsyncApiDriverHelper;
 import org.evomaster.client.java.sql.DbSpecification;
+import org.evomaster.client.java.utils.SimpleLogger;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -37,21 +20,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
- * The driver for NCS over Kafka, and the reference implementation of
- * {@link #executeAsyncApiAction}: it owns the broker, publishes what the core asks it to, waits
- * for the reply that answers it, and reports what came back without judging it.
+ * The driver for NCS over Kafka. It owns the broker and the service; everything it does with
+ * Kafka is delegated to {@link KafkaAsyncApiDriverHelper}.
  */
 public class NcsKafkaController extends EmbeddedSutController {
 
@@ -61,60 +37,52 @@ public class NcsKafkaController extends EmbeddedSutController {
 
     private static final String BOOTSTRAP_PROPERTY = "ncs.kafka.bootstrap";
 
+    private static final String GROUP_PROPERTY = "ncs.kafka.group";
+
     /**
-     * The header a correlation id travels in when the document names no location. Kafka has
-     * no native correlation, so the driver has to pick one.
+     * The consumer group the service joins. Named by the driver, so that it can ask how far
+     * behind the group is. The broker is a new container at every start, so the same name
+     * never resumes old offsets.
      */
-    private static final String DEFAULT_CORRELATION_HEADER = "correlationId";
-
-    private static final long DEFAULT_REPLY_TIMEOUT_MS = 5_000;
-
-    private static final long PUBLISH_TIMEOUT_SECONDS = 10;
-
-    private static final long POLL_MS = 100;
+    private static final String GROUP = "ncs";
 
     /**
-     * How long to wait, at start-up, for the service to answer a probe request.
+     * How long to wait, at start-up, for the service to join its group, and then to answer.
      */
     private static final long READY_TIMEOUT_MS = 60_000;
 
     /**
-     * How long to wait for one probe to come back before publishing another.
+     * How long resetStateOfSUT waits for the service to take in what the previous test
+     * published. NCS answers in milliseconds, so this is only reached when something is wrong.
      */
-    private static final long READY_POLL_MS = 2_000;
-
-    private static final Duration CLOSE_TIMEOUT = Duration.ofSeconds(5);
+    private static final long CAUGHT_UP_TIMEOUT_MS = 5_000;
 
     /**
      * A triangle request that is valid, so the service answers with a result rather than an error.
      */
     private static final String PROBE_REQUEST = "{\"a\":3,\"b\":4,\"c\":5}";
 
+    private static final String CORRELATION_POINTER = "/" + NcsRequestConsumer.CORRELATION_HEADER;
+
     /**
      * Every topic the document names, created up front so that no first request or reply has
      * to wait for auto-creation.
      */
     private static final List<String> TOPICS = Arrays.asList(
-            "ncs.triangle.request", "ncs.triangle.reply",
-            "ncs.bessj.request", "ncs.bessj.reply",
-            "ncs.expint.request", "ncs.expint.reply",
-            "ncs.fisher.request", "ncs.fisher.reply",
-            "ncs.gammq.request", "ncs.gammq.reply",
-            "ncs.remainder.request", "ncs.remainder.reply");
+            NcsService.TRIANGLE_REQUEST, NcsService.TRIANGLE_REPLY,
+            NcsService.BESSJ_REQUEST, NcsService.BESSJ_REPLY,
+            NcsService.EXPINT_REQUEST, NcsService.EXPINT_REPLY,
+            NcsService.FISHER_REQUEST, NcsService.FISHER_REPLY,
+            NcsService.GAMMQ_REQUEST, NcsService.GAMMQ_REPLY,
+            NcsService.REMAINDER_REQUEST, NcsService.REMAINDER_REPLY);
+
+    private static final List<String> GROUPS = Collections.singletonList(GROUP);
 
     private final KafkaContainer kafka = new KafkaContainer(KAFKA_IMAGE);
 
-    private final ObjectMapper mapper = new ObjectMapper();
-
-    /**
-     * Reply address -&gt; the consumer positioned on it, created the first time a reply is
-     * awaited there and kept for the rest of the run.
-     */
-    private final Map<String, KafkaConsumer<String, String>> replyConsumers = new LinkedHashMap<>();
-
     private ConfigurableApplicationContext ctx;
 
-    private KafkaProducer<String, String> producer;
+    private KafkaAsyncApiDriverHelper kafkaHelper;
 
     public NcsKafkaController() {
         super.setControllerPort(0);
@@ -141,81 +109,30 @@ public class NcsKafkaController extends EmbeddedSutController {
         kafka.start();
         String bootstrap = kafka.getBootstrapServers();
 
-        createTopics(bootstrap);
+        kafkaHelper = new KafkaAsyncApiDriverHelper(bootstrap);
+        kafkaHelper.createTopics(TOPICS);
 
         ctx = new SpringApplicationBuilder(NcsKafkaApplication.class)
                 .web(WebApplicationType.NONE)
-                .properties(BOOTSTRAP_PROPERTY + "=" + bootstrap)
+                .properties(BOOTSTRAP_PROPERTY + "=" + bootstrap, GROUP_PROPERTY + "=" + GROUP)
                 .run();
 
-        Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
-        props.put(ProducerConfig.ACKS_CONFIG, "all");
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        producer = new KafkaProducer<>(props);
-
-        awaitServiceConsuming();
+        //started is not listening, see awaitAnswering: wait for the group's partitions, then for an answer
+        kafkaHelper.awaitConsumerGroupsAssigned(GROUPS, READY_TIMEOUT_MS);
+        kafkaHelper.awaitAnswering(probe(), READY_TIMEOUT_MS);
 
         //this service has no URL: what there is to know is where its broker listens
         return bootstrap;
     }
 
-    /**
-     * Return only once the service is answering, rather than as soon as it has been started.
-     *
-     * Joining a consumer group takes a moment, and a request published before that happens is
-     * answered late, after whoever sent it has stopped waiting. For a search, that would look
-     * like a service that does not reply, and the first dozen messages would each cost the
-     * whole reply timeout.
-     */
-    private void awaitServiceConsuming() {
-
-        long deadline = System.currentTimeMillis() + READY_TIMEOUT_MS;
-
-        try (KafkaConsumer<String, String> replies = consumerAt(NcsService.TRIANGLE_REPLY)) {
-
-            while (System.currentTimeMillis() < deadline) {
-
-                String probe = "ready-" + System.nanoTime();
-                ProducerRecord<String, String> record =
-                        new ProducerRecord<>(NcsService.TRIANGLE_REQUEST, probe, PROBE_REQUEST);
-                record.headers().add(DEFAULT_CORRELATION_HEADER, bytes(probe));
-                producer.send(record);
-
-                long roundTrip = System.currentTimeMillis() + READY_POLL_MS;
-                while (System.currentTimeMillis() < roundTrip) {
-                    for (ConsumerRecord<String, String> reply : replies.poll(Duration.ofMillis(POLL_MS))) {
-                        Header correlation = reply.headers().lastHeader(DEFAULT_CORRELATION_HEADER);
-                        if (correlation != null && probe.equals(new String(correlation.value(), StandardCharsets.UTF_8))) {
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        throw new IllegalStateException(
-                "The NCS service did not answer a probe within " + READY_TIMEOUT_MS + " ms");
-    }
-
-    private void createTopics(String bootstrap) {
-
-        Properties props = new Properties();
-        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
-
-        try (AdminClient admin = AdminClient.create(props)) {
-            List<NewTopic> topics = TOPICS.stream()
-                    .map(name -> new NewTopic(name, 1, (short) 1))
-                    .collect(Collectors.toList());
-            admin.createTopics(topics).all().get(PUBLISH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (ExecutionException e) {
-            if (!(e.getCause() instanceof TopicExistsException)) {
-                throw new RuntimeException("Could not create the NCS topics", e);
-            }
-        } catch (InterruptedException | TimeoutException e) {
-            throw new RuntimeException("Could not create the NCS topics", e);
-        }
+    private static AsyncApiActionDto probe() {
+        AsyncApiActionDto probe = new AsyncApiActionDto();
+        probe.address = NcsService.TRIANGLE_REQUEST;
+        probe.replyAddress = NcsService.TRIANGLE_REPLY;
+        probe.payload = PROBE_REQUEST;
+        probe.correlationLocation = AsyncApiActionDto.CorrelationLocation.HEADER;
+        probe.correlationPointer = CORRELATION_POINTER;
+        return probe;
     }
 
     @Override
@@ -225,11 +142,9 @@ public class NcsKafkaController extends EmbeddedSutController {
             Every close is given a deadline and is allowed to fail: a Kafka client that will not
             shut down must not keep the whole controller from stopping, which the E2E asserts.
          */
-        closeReplyConsumers();
-
-        if (producer != null) {
-            quietly(() -> producer.close(CLOSE_TIMEOUT));
-            producer = null;
+        if (kafkaHelper != null) {
+            kafkaHelper.close();
+            kafkaHelper = null;
         }
         if (ctx != null) {
             quietly(ctx::close);
@@ -265,13 +180,29 @@ public class NcsKafkaController extends EmbeddedSutController {
             a search restarted under the same seed mints the same correlation ids again, so a
             reply left on a topic by the previous test would answer a request of this one. They
             are dropped here, and the next one to be needed is created at the end of its topic.
+
+            And a request of the previous test may still be in the service's hands, eg one
+            whose reply was given up on. Waiting for the group to catch up keeps what it
+            covers out of this test.
          */
-        closeReplyConsumers();
+        kafkaHelper.resetReplyConsumers();
+        if (!kafkaHelper.awaitConsumerGroupsCaughtUp(GROUPS, CAUGHT_UP_TIMEOUT_MS)) {
+            SimpleLogger.warn("NCS did not catch up with its requests within " + CAUGHT_UP_TIMEOUT_MS + " ms");
+        }
     }
 
-    private void closeReplyConsumers() {
-        replyConsumers.values().forEach(c -> quietly(() -> c.close(CLOSE_TIMEOUT)));
-        replyConsumers.clear();
+    @Override
+    public void executeAsyncApiAction(AsyncApiActionDto dto, AsyncApiReplyDto reply) {
+        kafkaHelper.executeAsyncApiAction(dto, reply);
+    }
+
+    /**
+     * NCS commits its offsets once it has answered what it polled, so a group with no lag is
+     * a service with nothing left to handle.
+     */
+    @Override
+    public Boolean areAsyncApiConsumersCaughtUp() {
+        return kafkaHelper == null ? null : kafkaHelper.consumerGroupsCaughtUp(GROUPS);
     }
 
     @Override
@@ -317,175 +248,5 @@ public class NcsKafkaController extends EmbeddedSutController {
         } catch (IOException e) {
             throw new IllegalStateException("Cannot read " + DOCUMENT, e);
         }
-    }
-
-    @Override
-    public void executeAsyncApiAction(AsyncApiActionDto dto, AsyncApiReplyDto reply) {
-
-        //positioned before publishing, so that the reply cannot slip past
-        KafkaConsumer<String, String> replies = dto.replyAddress == null ? null : consumerOn(dto.replyAddress);
-
-        ProducerRecord<String, String> record = new ProducerRecord<>(dto.address, dto.correlationId, stamped(dto));
-        dto.headers.forEach((name, value) -> record.headers().add(name, bytes(value)));
-        if (dto.correlationLocation == AsyncApiActionDto.CorrelationLocation.HEADER || dto.correlationLocation == null) {
-            record.headers().add(correlationHeaderName(dto), bytes(dto.correlationId));
-        }
-
-        try {
-            producer.send(record).get(PUBLISH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            throw new RuntimeException("Could not publish to " + dto.address + ": " + e.getMessage(), e);
-        }
-        reply.published = true;
-
-        if (replies == null) {
-            reply.replyExpected = false;
-            return;
-        }
-
-        reply.replyExpected = true;
-        awaitReply(replies, dto, reply);
-    }
-
-    private void awaitReply(KafkaConsumer<String, String> replies, AsyncApiActionDto dto, AsyncApiReplyDto reply) {
-
-        long timeout = dto.replyTimeoutMs != null ? dto.replyTimeoutMs : DEFAULT_REPLY_TIMEOUT_MS;
-        long start = System.currentTimeMillis();
-        long deadline = start + timeout;
-
-        while (true) {
-            long remaining = deadline - System.currentTimeMillis();
-            if (remaining <= 0) {
-                break;
-            }
-
-            ConsumerRecords<String, String> polled = replies.poll(Duration.ofMillis(Math.min(POLL_MS, remaining)));
-
-            for (ConsumerRecord<String, String> candidate : polled) {
-                String id = correlationOf(candidate, dto);
-                if (id != null && !id.equals(dto.correlationId)) {
-                    //an answer to some other request
-                    continue;
-                }
-                reply.replyReceived = true;
-                reply.replyPayload = candidate.value();
-                reply.replyHeaders = headersOf(candidate);
-                reply.correlationMatched = id != null;
-                reply.waitedMs = System.currentTimeMillis() - start;
-                return;
-            }
-        }
-
-        reply.waitedMs = timeout;
-    }
-
-    /**
-     * The payload with the correlation id written into it, when that is where the document
-     * says it goes; otherwise the payload as it is.
-     */
-    private String stamped(AsyncApiActionDto dto) {
-
-        if (dto.correlationLocation != AsyncApiActionDto.CorrelationLocation.PAYLOAD
-                || dto.payload == null || dto.correlationPointer == null) {
-            return dto.payload;
-        }
-
-        try {
-            JsonNode root = mapper.readTree(dto.payload);
-            if (!root.isObject()) {
-                return dto.payload;
-            }
-            List<String> segments = segmentsOf(dto.correlationPointer);
-            ObjectNode holder = (ObjectNode) root;
-            for (int i = 0; i < segments.size() - 1; i++) {
-                JsonNode next = holder.get(segments.get(i));
-                holder = next != null && next.isObject() ? (ObjectNode) next : holder.putObject(segments.get(i));
-            }
-            holder.put(segments.get(segments.size() - 1), dto.correlationId);
-            return root.toString();
-        } catch (IOException e) {
-            return dto.payload;
-        }
-    }
-
-    /**
-     * The correlation id a reply carries, read from wherever the request's was written, or null
-     * when it carries none.
-     */
-    private String correlationOf(ConsumerRecord<String, String> record, AsyncApiActionDto dto) {
-
-        if (dto.correlationLocation == AsyncApiActionDto.CorrelationLocation.PAYLOAD) {
-            try {
-                JsonNode node = record.value() == null ? null : mapper.readTree(record.value());
-                for (String segment : segmentsOf(dto.correlationPointer)) {
-                    node = node == null ? null : node.get(segment);
-                }
-                return node == null || !node.isValueNode() ? null : node.asText();
-            } catch (IOException e) {
-                return null;
-            }
-        }
-
-        Header header = record.headers().lastHeader(correlationHeaderName(dto));
-        return header == null ? null : new String(header.value(), StandardCharsets.UTF_8);
-    }
-
-    private static String correlationHeaderName(AsyncApiActionDto dto) {
-        List<String> segments = segmentsOf(dto.correlationPointer);
-        return segments.isEmpty() ? DEFAULT_CORRELATION_HEADER : segments.get(segments.size() - 1);
-    }
-
-    private static List<String> segmentsOf(String pointer) {
-        if (pointer == null) {
-            return Arrays.asList();
-        }
-        return Arrays.stream(pointer.split("/"))
-                .filter(s -> !s.isEmpty())
-                .map(s -> s.replace("~1", "/").replace("~0", "~"))
-                .collect(Collectors.toList());
-    }
-
-    private KafkaConsumer<String, String> consumerOn(String address) {
-
-        return replyConsumers.computeIfAbsent(address, this::consumerAt);
-    }
-
-    /**
-     * A consumer positioned at the end of {@code address}, so that it sees only what is published
-     * from now on.
-     */
-    private KafkaConsumer<String, String> consumerAt(String address) {
-
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-
-        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
-
-        //assigned rather than subscribed: no group, no rebalance to wait for
-        List<TopicPartition> partitions = consumer.partitionsFor(address).stream()
-                .map(p -> new TopicPartition(address, p.partition()))
-                .collect(Collectors.toList());
-        consumer.assign(partitions);
-        consumer.seekToEnd(partitions);
-        //seekToEnd is lazy; asking for the position makes it take effect now
-        partitions.forEach(consumer::position);
-
-        return consumer;
-    }
-
-    private static Map<String, String> headersOf(ConsumerRecord<String, String> record) {
-        Map<String, String> headers = new LinkedHashMap<>();
-        for (Header header : record.headers()) {
-            headers.put(header.key(), header.value() == null ? null : new String(header.value(), StandardCharsets.UTF_8));
-        }
-        return headers;
-    }
-
-    private static byte[] bytes(String value) {
-        return value == null ? null : value.getBytes(StandardCharsets.UTF_8);
     }
 }

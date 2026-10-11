@@ -2103,6 +2103,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         " executeAsyncApiAction. It must be overridden to test an AsyncAPI service.");
     }
 
+    /**
+     * Whether the SUT's consumers have caught up with every message published so far to what
+     * they read. Polled while an action is kept open with
+     * {@link AsyncApiActionDto.Completion#CONSUMER_LAG}, to end the wait early.
+     *
+     * Only the driver knows the broker and which consumers are the SUT's. On Kafka, the
+     * committed offsets of the SUT's consumer groups have reached the end of their partitions,
+     * see {@code KafkaAsyncApiDriverHelper.consumerGroupsCaughtUp} in
+     * {@code evomaster-client-java-kafka}. A consumer that commits before it has finished with a
+     * message, or hands it off to another thread, looks caught up too early.
+     *
+     * Not abstract: a driver that cannot tell need not implement it, and the wait then lasts the
+     * whole window.
+     *
+     * @return true when caught up, false when not yet, null when it cannot be told
+     */
+    public Boolean areAsyncApiConsumersCaughtUp() {
+        return null;
+    }
+
     @Override
     public void resetDatabase(List<String> tablesToClean) {
 
