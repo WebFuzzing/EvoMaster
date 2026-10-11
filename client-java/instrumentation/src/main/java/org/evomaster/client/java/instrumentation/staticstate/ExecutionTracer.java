@@ -94,6 +94,16 @@ public class ExecutionTracer {
     private static Set<String> inputVariables = new HashSet<>();
 
     /**
+     * Most bytes a single Java char takes in UTF-8 (a surrogate pair takes 4 bytes for 2 chars).
+     */
+    private static final int UTF8_MAX_BYTES_PER_CHAR = 3;
+
+    /**
+     * Length, in chars, of the longest string in inputVariables. Volatile, as it is read without the lock.
+     */
+    private static volatile int maxInputVariableLength = 0;
+
+    /**
      * Map of external services mapping. Key is the WireMock signature
      * (use protocol, remote hostname, and port), and value contains information
      * about remote hostname, mock server local IP address, state
@@ -153,6 +163,7 @@ public class ExecutionTracer {
             additionalInfoList.clear();
             additionalInfoList.add(new AdditionalInfo());
             inputVariables = new HashSet<>();
+            maxInputVariableLength = 0;
             killSwitch = false;
             expensiveOperation = 0;
             executingAction = false;
@@ -258,6 +269,10 @@ public class ExecutionTracer {
 
             if (action.getInputVariables() != null && !action.getInputVariables().isEmpty()) {
                 inputVariables = action.getInputVariables();
+                maxInputVariableLength = inputVariables.stream()
+                        .filter(Objects::nonNull)
+                        .mapToInt(String::length)
+                        .max().orElse(0);
             }
 
             if (action.getIndex() == 0) {
@@ -285,6 +300,17 @@ public class ExecutionTracer {
      */
     public static boolean isTaintInput(String input) {
         return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
+    }
+
+    /**
+     * Check, without decoding them, whether UTF-8 encoded bytes could decode into a value for which
+     * {@link #isTaintInput(String)} is true: they start like a TaintInputName value, or are not longer
+     * than the longest input variable can be once encoded.
+     */
+    public static boolean couldBeTaintInput(byte[] utf8) {
+        Objects.requireNonNull(utf8);
+        return TaintInputName.startsWithTaintPrefix(utf8)
+                || utf8.length <= UTF8_MAX_BYTES_PER_CHAR * maxInputVariableLength;
     }
 
     public static void handleExtraParamTaint(String left, String right) {
