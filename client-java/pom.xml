@@ -26,6 +26,7 @@
         <module>test-utils-java</module>
         <module>test-old-libraries</module>
         <module>postgres-test-utils</module>
+        <module>kafka</module>
     </modules>
 
     <licenses>

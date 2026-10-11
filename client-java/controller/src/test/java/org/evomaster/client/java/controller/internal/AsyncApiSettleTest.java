@@ -20,6 +20,16 @@ public class AsyncApiSettleTest {
      */
     private static final Supplier<Long> NO_COVERAGE = () -> null;
 
+    /**
+     * A driver that cannot tell whether the SUT's consumers have caught up.
+     */
+    private static final Supplier<Boolean> CANNOT_TELL = () -> null;
+
+    /**
+     * A SUT whose message handling cannot be read.
+     */
+    private static final Function<String, MessageHandlingState> NO_HANDLING = address -> null;
+
     private static final long SETTLE_MS = 1_000;
 
     /**
@@ -76,7 +86,7 @@ public class AsyncApiSettleTest {
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
 
-        settleThatSleeps().settle(asking(250L), reply, NO_COVERAGE);
+        settleThatSleeps().settle(asking(250L), reply, NO_COVERAGE, NO_HANDLING, CANNOT_TELL);
 
         assertEquals(1, sleeps.size());
         assertEquals(250L, sleeps.get(0));
@@ -91,7 +101,7 @@ public class AsyncApiSettleTest {
 
         for (Long none : new Long[]{null, 0L, -5L}) {
             AsyncApiReplyDto reply = new AsyncApiReplyDto();
-            settle.settle(asking(none), reply, NO_COVERAGE);
+            settle.settle(asking(none), reply, NO_COVERAGE, NO_HANDLING, CANNOT_TELL);
             assertNull(reply.settledMs, "a wait was recorded for settleMs=" + none);
             assertNull(reply.settleEndedBy, "a wait was recorded for settleMs=" + none);
         }
@@ -112,7 +122,7 @@ public class AsyncApiSettleTest {
         });
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settle.settle(asking(250L), reply, NO_COVERAGE);
+        settle.settle(asking(250L), reply, NO_COVERAGE, NO_HANDLING, CANNOT_TELL);
 
         assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
         assertEquals(40L, reply.settledMs, "what was recorded is not the time actually waited");
@@ -128,7 +138,7 @@ public class AsyncApiSettleTest {
         reply.replyReceived = true;
         reply.waitedMs = 12L;
 
-        settleThatSleeps().settle(asking(100L), reply, NO_COVERAGE);
+        settleThatSleeps().settle(asking(100L), reply, NO_COVERAGE, NO_HANDLING, CANNOT_TELL);
 
         assertTrue(reply.published);
         assertTrue(reply.replyReceived);
@@ -141,9 +151,11 @@ public class AsyncApiSettleTest {
 
         AsyncApiSettle settle = settleThatSleeps();
 
-        assertThrows(NullPointerException.class, () -> settle.settle(null, new AsyncApiReplyDto(), NO_COVERAGE));
-        assertThrows(NullPointerException.class, () -> settle.settle(asking(1L), null, NO_COVERAGE));
-        assertThrows(NullPointerException.class, () -> settle.settle(asking(1L), new AsyncApiReplyDto(), null));
+        assertThrows(NullPointerException.class, () -> settle.settle(null, new AsyncApiReplyDto(), NO_COVERAGE, NO_HANDLING, CANNOT_TELL));
+        assertThrows(NullPointerException.class, () -> settle.settle(asking(1L), null, NO_COVERAGE, NO_HANDLING, CANNOT_TELL));
+        assertThrows(NullPointerException.class, () -> settle.settle(asking(1L), new AsyncApiReplyDto(), null, NO_HANDLING, CANNOT_TELL));
+        assertThrows(NullPointerException.class, () -> settle.settle(asking(1L), new AsyncApiReplyDto(), NO_COVERAGE, null, CANNOT_TELL));
+        assertThrows(NullPointerException.class, () -> settle.settle(asking(1L), new AsyncApiReplyDto(), NO_COVERAGE, NO_HANDLING, null));
     }
 
     @Test
@@ -155,7 +167,7 @@ public class AsyncApiSettleTest {
          */
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
 
-        new AsyncApiSettle().settle(asking(1L), reply, NO_COVERAGE);
+        new AsyncApiSettle().settle(asking(1L), reply, NO_COVERAGE, NO_HANDLING, CANNOT_TELL);
 
         assertNotNull(reply.settledMs);
         assertTrue(reply.settledMs >= 0, "negative wait: " + reply.settledMs);
@@ -173,7 +185,7 @@ public class AsyncApiSettleTest {
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
 
-        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, () -> 7L);
+        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, () -> 7L, NO_HANDLING, CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE, reply.settleEndedBy);
         assertEquals(STABLE_MS, reply.settledMs);
@@ -197,7 +209,7 @@ public class AsyncApiSettleTest {
         };
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, busyUntil300);
+        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, busyUntil300, NO_HANDLING, CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE, reply.settleEndedBy);
         assertEquals(300L + STABLE_MS, reply.settledMs);
@@ -209,7 +221,7 @@ public class AsyncApiSettleTest {
         long[] count = {0};
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, () -> ++count[0]);
+        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, () -> ++count[0], NO_HANDLING, CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -219,7 +231,7 @@ public class AsyncApiSettleTest {
     public void testCoverageThatCannotBeReadMeansTheWholeWindow() {
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, NO_COVERAGE);
+        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, NO_COVERAGE, NO_HANDLING, CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -232,7 +244,7 @@ public class AsyncApiSettleTest {
         Supplier<Long> lostAfter50 = () -> now - START < 50 ? Long.valueOf(now) : null;
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, lostAfter50);
+        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, lostAfter50, NO_HANDLING, CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -249,7 +261,7 @@ public class AsyncApiSettleTest {
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
         settleThatSleeps().settle(coverageStable(STABLE_MS), reply, () -> {
             throw new IllegalStateException("agent gone");
-        });
+        }, NO_HANDLING, CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -266,7 +278,7 @@ public class AsyncApiSettleTest {
         };
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, failingAfter50);
+        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, failingAfter50, NO_HANDLING, CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -277,7 +289,7 @@ public class AsyncApiSettleTest {
 
         for (Long none : new Long[]{null, 0L, -1L}) {
             AsyncApiReplyDto reply = new AsyncApiReplyDto();
-            settleThatSleeps().settle(coverageStable(none), reply, () -> 7L);
+            settleThatSleeps().settle(coverageStable(none), reply, () -> 7L, NO_HANDLING, CANNOT_TELL);
             assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy, "stableMs=" + none);
         }
     }
@@ -290,7 +302,10 @@ public class AsyncApiSettleTest {
         dto.stableMs = STABLE_MS;
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(dto, reply, () -> fail("the coverage was read for a fixed wait"));
+        settleThatSleeps().settle(dto, reply,
+                () -> fail("the coverage was read for a fixed wait"),
+                neverRead(),
+                () -> fail("the driver was asked about its consumers for a fixed wait"));
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -308,7 +323,120 @@ public class AsyncApiSettleTest {
 
         long[] count = {0};
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settle.settle(coverageStable(STABLE_MS), reply, () -> ++count[0]);
+        settle.settle(coverageStable(STABLE_MS), reply, () -> ++count[0], NO_HANDLING, CANNOT_TELL);
+
+        assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
+        assertEquals(AsyncApiReplyDto.SettleEnd.INTERRUPTED, reply.settleEndedBy);
+        assertEquals(50L, reply.settledMs);
+    }
+
+    private static AsyncApiActionDto untilCaughtUp() {
+        AsyncApiActionDto dto = asking(SETTLE_MS);
+        dto.completion = AsyncApiActionDto.Completion.CONSUMER_LAG;
+        return dto;
+    }
+
+    @Test
+    public void testConsumersAlreadyCaughtUpEndTheWaitStraightAway() {
+
+        /*
+            The usual case after a reply: the SUT took the message in before answering it, so
+            there is nothing left to wait for.
+         */
+        AsyncApiReplyDto reply = new AsyncApiReplyDto();
+        settleThatSleeps().settle(untilCaughtUp(), reply, NO_COVERAGE, NO_HANDLING, () -> true);
+
+        assertEquals(AsyncApiReplyDto.SettleEnd.CAUGHT_UP, reply.settleEndedBy);
+        assertEquals(0L, reply.settledMs);
+        assertTrue(sleeps.isEmpty(), "slept although the consumers had caught up: " + sleeps);
+    }
+
+    @Test
+    public void testTheWaitEndsOnceTheConsumersCatchUp() {
+
+        Supplier<Boolean> caughtUpAfter200 = () -> now - START >= 200;
+
+        AsyncApiReplyDto reply = new AsyncApiReplyDto();
+        settleThatSleeps().settle(untilCaughtUp(), reply, NO_COVERAGE, NO_HANDLING, caughtUpAfter200);
+
+        assertEquals(AsyncApiReplyDto.SettleEnd.CAUGHT_UP, reply.settleEndedBy);
+        assertEquals(200L, reply.settledMs);
+        assertTrue(sleeps.stream().allMatch(ms -> ms <= AsyncApiSettle.POLL_INTERVAL_MS),
+                "the driver was not asked often enough: " + sleeps);
+    }
+
+    @Test
+    public void testTheDeadlineCapsConsumersThatNeverCatchUp() {
+
+        AsyncApiReplyDto reply = new AsyncApiReplyDto();
+        settleThatSleeps().settle(untilCaughtUp(), reply, NO_COVERAGE, NO_HANDLING, () -> false);
+
+        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(SETTLE_MS, reply.settledMs);
+    }
+
+    @Test
+    public void testADriverThatCannotTellGetsTheWholeWindow() {
+
+        AsyncApiReplyDto reply = new AsyncApiReplyDto();
+        settleThatSleeps().settle(untilCaughtUp(), reply, NO_COVERAGE, NO_HANDLING, CANNOT_TELL);
+
+        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(SETTLE_MS, reply.settledMs);
+    }
+
+    @Test
+    public void testADriverThatStopsBeingAbleToTellGetsTheRestOfTheWindow() {
+
+        //eg the broker going away half-way through the wait
+        Supplier<Boolean> lostAfter50 = () -> now - START < 50 ? Boolean.FALSE : null;
+
+        AsyncApiReplyDto reply = new AsyncApiReplyDto();
+        settleThatSleeps().settle(untilCaughtUp(), reply, NO_COVERAGE, NO_HANDLING, lostAfter50);
+
+        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(SETTLE_MS, reply.settledMs);
+    }
+
+    @Test
+    public void testADriverThatFailsToTellIsTreatedAsOneThatCannot() {
+
+        /*
+            The question is user code. Failing to answer it does not undo the publish, so the
+            action still succeeds, only with the whole window waited.
+         */
+        AsyncApiReplyDto reply = new AsyncApiReplyDto();
+        settleThatSleeps().settle(untilCaughtUp(), reply, NO_COVERAGE, NO_HANDLING, () -> {
+            throw new IllegalStateException("broker timed out");
+        });
+
+        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(SETTLE_MS, reply.settledMs);
+    }
+
+    @Test
+    public void testWaitingForConsumersNeverReadsTheCoverage() {
+
+        AsyncApiReplyDto reply = new AsyncApiReplyDto();
+        settleThatSleeps().settle(untilCaughtUp(), reply,
+                () -> fail("the coverage was read while waiting for the consumers"),
+                neverRead(), () -> true);
+
+        assertEquals(AsyncApiReplyDto.SettleEnd.CAUGHT_UP, reply.settleEndedBy);
+    }
+
+    @Test
+    public void testAnInterruptWhileWaitingForConsumersEndsTheWait() {
+
+        AsyncApiSettle settle = new AsyncApiSettle(() -> now, ms -> {
+            now += ms;
+            if (now - START >= 50) {
+                throw new InterruptedException();
+            }
+        });
+
+        AsyncApiReplyDto reply = new AsyncApiReplyDto();
+        settle.settle(untilCaughtUp(), reply, NO_COVERAGE, NO_HANDLING, () -> false);
 
         assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
         assertEquals(AsyncApiReplyDto.SettleEnd.INTERRUPTED, reply.settleEndedBy);
@@ -335,7 +463,7 @@ public class AsyncApiSettleTest {
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
 
-        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, always(HANDLED));
+        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, always(HANDLED), CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.HANDLER_RETURN, reply.settleEndedBy);
         assertEquals(0L, reply.settledMs);
@@ -349,7 +477,7 @@ public class AsyncApiSettleTest {
                 address -> now - START < 100 ? BEING_HANDLED : HANDLED;
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, doneAfter100);
+        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, doneAfter100, CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.HANDLER_RETURN, reply.settleEndedBy);
         assertEquals(100L, reply.settledMs);
@@ -361,7 +489,7 @@ public class AsyncApiSettleTest {
     public void testNothingReceivedIsWaitedOnUntilTheDeadline() {
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, always(NOTHING_RECEIVED));
+        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, always(NOTHING_RECEIVED), CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -371,7 +499,7 @@ public class AsyncApiSettleTest {
     public void testTheDeadlineCapsAHandlerThatNeverReturns() {
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, always(BEING_HANDLED));
+        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, always(BEING_HANDLED), CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -381,7 +509,7 @@ public class AsyncApiSettleTest {
     public void testWhatTheSutReceivedThatCannotBeReadMeansTheWholeWindow() {
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, address -> null);
+        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, address -> null, CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -399,7 +527,7 @@ public class AsyncApiSettleTest {
         };
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, failingAfter50);
+        settleThatSleeps().settle(untilHandled(), reply, NO_COVERAGE, failingAfter50, CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -412,7 +540,7 @@ public class AsyncApiSettleTest {
         dto.address = null;
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(dto, reply, NO_COVERAGE, neverRead());
+        settleThatSleeps().settle(dto, reply, NO_COVERAGE, neverRead(), CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -427,7 +555,7 @@ public class AsyncApiSettleTest {
             return now - START < 50 ? NOTHING_RECEIVED : HANDLED;
         };
 
-        settleThatSleeps().settle(untilHandled(), new AsyncApiReplyDto(), NO_COVERAGE, recording);
+        settleThatSleeps().settle(untilHandled(), new AsyncApiReplyDto(), NO_COVERAGE, recording, CANNOT_TELL);
 
         assertFalse(asked.isEmpty());
         assertTrue(asked.stream().allMatch(ADDRESS::equals), "Asked about: " + asked);
@@ -438,21 +566,14 @@ public class AsyncApiSettleTest {
 
         AsyncApiActionDto fixed = asking(SETTLE_MS);
         fixed.address = ADDRESS;
-        settleThatSleeps().settle(fixed, new AsyncApiReplyDto(), NO_COVERAGE, neverRead());
+        settleThatSleeps().settle(fixed, new AsyncApiReplyDto(), NO_COVERAGE, neverRead(), CANNOT_TELL);
 
         AsyncApiActionDto stable = coverageStable(STABLE_MS);
         stable.address = ADDRESS;
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(stable, reply, () -> 7L, neverRead());
+        settleThatSleeps().settle(stable, reply, () -> 7L, neverRead(), CANNOT_TELL);
 
         assertEquals(AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE, reply.settleEndedBy);
-    }
-
-    @Test
-    public void testTheHandlingCannotBeNull() {
-
-        assertThrows(NullPointerException.class,
-                () -> settleThatSleeps().settle(untilHandled(), new AsyncApiReplyDto(), NO_COVERAGE, null));
     }
 
     @Test
@@ -466,7 +587,7 @@ public class AsyncApiSettleTest {
         });
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settle.settle(untilHandled(), reply, NO_COVERAGE, always(BEING_HANDLED));
+        settle.settle(untilHandled(), reply, NO_COVERAGE, always(BEING_HANDLED), CANNOT_TELL);
 
         assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
         assertEquals(AsyncApiReplyDto.SettleEnd.INTERRUPTED, reply.settleEndedBy);

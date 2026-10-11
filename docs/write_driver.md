@@ -401,6 +401,38 @@ message to an address the document does not declare at all is reported as a faul
 `--useExperimentalOracles true`. A reply, on the reply address of the operation published to, counts only
 as a reply.
 
+For a service that speaks **Kafka**, the optional `evomaster-client-java-kafka` library does all of the
+above. `KafkaAsyncApiDriverHelper`, built from the broker's bootstrap servers, gives:
+
+- `executeAsyncApiAction(dto, reply)`, which an `executeAsyncApiAction` override can delegate to as it is. It
+  publishes as the generated tests do (the headers, the correlation id where the document puts it, no key, an
+  empty payload for none) and awaits the reply that carries the correlation id, or the first reply when the
+  document declares none, ignoring what was on the reply topic before the publish. A reply topic that does
+  not exist yet is waited for, not created. A failure while waiting, once the message is out, is reported as
+  no reply, with the reason.
+- `resetReplyConsumers()`, for `resetStateOfSUT()`.
+- `createTopics(topics)`, `awaitConsumerGroupsAssigned(groupIds, timeoutMs)` and
+  `awaitAnswering(probe, timeoutMs)`, for `startSut()`, so that the search does not start before the
+  service is listening.
+- `consumerGroupsCaughtUp(groupIds)`, whether the service's consumer groups have committed every message
+  published so far, and `awaitConsumerGroupsCaughtUp(groupIds, timeoutMs)`.
+
+It uses the `kafka-clients` 3.x already on the driver's classpath. Its own Kafka calls are never recorded as
+the service's.
+
+In white-box mode, a service may still be handling a message after the driver has returned, so the action
+can be kept open for a while with `--asyncApiSettleMs`. With `--asyncApiCompletion CONSUMER_LAG` the
+wait ends as soon as the driver's `areAsyncApiConsumersCaughtUp()` says the service's consumers have caught
+up; on Kafka, it can return `consumerGroupsCaughtUp(groupIds)` with the ids of the service's consumer groups.
+A driver that does not override it gets the whole window. As in `executeAsyncApiAction`, the broker client
+calls it makes are not taken for the service's. Committed offsets are what this reads, so it is right only for
+a consumer that commits once it is done with a message, as Spring Kafka does by default: one that commits
+first, hands the message off to another thread, or auto-commits on a timer, looks done too early, or too late.
+A consumer that starts from the latest offset (`auto.offset.reset=latest`) counts as behind until it commits,
+so its topics are best created empty and read from the earliest offset. A group subscribed to a topic that does
+not exist yet looks caught up, so create the topics before the service starts. The Javadoc of
+`consumerGroupsCaughtUp` has the details.
+
 Generated tests publish with a client of the transport rather than through the driver, so the suite needs
 that client library on its classpath: see [library dependencies](library_dependencies.md).
 

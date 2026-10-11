@@ -909,21 +909,32 @@ public class EMController {
                 }
 
                 /*
-                    The driver is done, but the service may not be: it handles the message on a
-                    thread of its own. The action stays open while it does, so that what it
-                    covers is still credited to this action rather than to the next one, or
-                    lost once the results are collected. Not inside a noKillSwitch: the switch
-                    was already turned off for this action by newAction above, and must stay
-                    off for the service's threads, not only this one.
+                    The service may still be handling the message on its own thread, see
+                    AsyncApiSettle. Not inside a noKillSwitch: newAction already turned the switch
+                    off, and it must stay off for the service's threads, not only this one.
                  */
                 asyncApiSettle.settle(dto.asyncApiCall, replyDto,
-                        sutController::getObjectiveUpdateCount, sutController::getMessageHandlingState);
+                        sutController::getObjectiveUpdateCount, sutController::getMessageHandlingState,
+                        this::areAsyncApiConsumersCaughtUpAsTheDriver);
 
                 return Response.status(200).entity(WrappedResponseDto.withData(replyDto)).build();
             }
         }
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+    }
+
+    /**
+     * Ask the driver whether the SUT's consumers have caught up, marked as driver code as when
+     * it publishes, since answering takes broker client calls that are not the SUT's.
+     */
+    private Boolean areAsyncApiConsumersCaughtUpAsTheDriver() {
+        ExecutionTracer.setExecutingDriverAction(true);
+        try {
+            return sutController.areAsyncApiConsumersCaughtUp();
+        } finally {
+            ExecutionTracer.setExecutingDriverAction(false);
+        }
     }
 
 
