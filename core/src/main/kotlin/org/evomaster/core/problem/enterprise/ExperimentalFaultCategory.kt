@@ -18,6 +18,9 @@ enum class ExperimentalFaultCategory(
     // a reply arrived, but it matches none of the messages the contract says a reply can be
     ASYNCAPI_UNDECLARED_REPLY(951, "Undeclared Reply", "repliesWithUndeclaredMessage",
         "TODO"),
+    // the service emitted a message to an address the contract does not declare at all
+    ASYNCAPI_UNDECLARED_EMISSION(952, "Undeclared Emission", "emitsToUndeclaredAddress",
+        "TODO"),
 
     //Implemented
     HTTP_TIMEOUT(960, "Request Timeout", "requestTimeout", "TODO"),

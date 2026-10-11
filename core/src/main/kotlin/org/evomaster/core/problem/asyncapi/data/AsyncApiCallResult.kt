@@ -22,6 +22,7 @@ class AsyncApiCallResult : EnterpriseActionResult {
         const val SETTLE_ENDED_BY = "SETTLE_ENDED_BY"
         const val TEST_SCRIPT = "TEST_SCRIPT"
         const val EMITTED_MESSAGES = "EMITTED_MESSAGES"
+        const val DECLARED_EMISSION_ADDRESSES = "DECLARED_EMISSION_ADDRESSES"
 
         /*
             What was published, kept so that a generated test can publish the same thing without
@@ -58,6 +59,8 @@ class AsyncApiCallResult : EnterpriseActionResult {
         private val mapper = ObjectMapper()
 
         private val emittedMessagesType = object : TypeReference<List<EmittedMessageDto>>() {}
+
+        private val addressesType = object : TypeReference<List<String>>() {}
     }
 
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
@@ -170,6 +173,22 @@ class AsyncApiCallResult : EnterpriseActionResult {
      */
     fun getEmittedMessages(): List<EmittedMessageDto> =
         getResultValue(EMITTED_MESSAGES)?.let { mapper.readValue(it, emittedMessagesType) } ?: listOf()
+
+    /**
+     * The addresses among those of [getEmittedMessages] that the contract declares for the
+     * service to send to, in the order first emitted to. Not the reply address of this message.
+     * Only in white-box mode.
+     */
+    fun setDeclaredEmissionAddresses(addresses: List<String>) {
+        addResultValue(DECLARED_EMISSION_ADDRESSES, mapper.writeValueAsString(addresses))
+    }
+
+    /**
+     * @return the addresses the contract declares for the service to send to that it emitted to
+     * while this message was being handled, or empty when there were none
+     */
+    fun getDeclaredEmissionAddresses(): List<String> =
+        getResultValue(DECLARED_EMISSION_ADDRESSES)?.let { mapper.readValue(it, addressesType) } ?: listOf()
 
     /**
      * The lines the driver rendered for a generated test, or empty when it rendered none.

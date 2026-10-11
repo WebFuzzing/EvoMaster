@@ -6,8 +6,9 @@ info:
   version: 1.0.0
   description: |
     A shop back end that reacts to events published on **Kafka**, and never answers them.
-    Every operation is fire-and-forget: a client publishes a message on the operation's
-    topic, and that is the end of it as far as the client can see.
+    Every operation it receives is fire-and-forget: a client publishes a message on the
+    operation's topic, and that is the end of it as far as the client can see. Every order
+    it takes is confirmed on a topic of its own, for whoever is listening.
 
     What the service does with each message is only visible from inside it: it books
     couriers, pages whoever is on call, renders invoices on a thread of its own, and keeps
@@ -36,6 +37,11 @@ channels:
     messages:
       stockAdjusted:
         $ref: '#/components/messages/stockAdjusted'
+  ordersConfirmed:
+    address: shop.orders.confirmed
+    messages:
+      orderConfirmed:
+        $ref: '#/components/messages/orderConfirmed'
 
 operations:
   placeOrder:
@@ -53,6 +59,11 @@ operations:
     summary: Items of a product were added to, or taken from, the stock.
     channel:
       $ref: '#/channels/stockAdjusted'
+  confirmOrder:
+    action: send
+    summary: An order was taken.
+    channel:
+      $ref: '#/channels/ordersConfirmed'
 
 components:
   messages:
@@ -71,6 +82,11 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/StockAdjusted'
+    orderConfirmed:
+      name: OrderConfirmed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderConfirmed'
 
   schemas:
     OrderPlaced:
@@ -109,3 +125,12 @@ components:
           minimum: -50
           maximum: 20
           description: Items added, or taken away when negative.
+    OrderConfirmed:
+      type: object
+      required: [orderId, status, quantity]
+      properties:
+        orderId: { type: string }
+        status:
+          type: string
+          const: CONFIRMED
+        quantity: { type: integer, format: int32 }

@@ -16,6 +16,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsFitness
+import org.evomaster.core.problem.asyncapi.classifier.AsyncApiEmissionClassifier
 import org.evomaster.core.problem.asyncapi.classifier.AsyncApiReplyClassifier
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
@@ -35,7 +36,8 @@ import org.slf4j.LoggerFactory
 /**
  * Publishes the messages of a test through the driver and turns what comes back into targets:
  * for every operation what publishing to it did, and which of the replies the contract declares
- * was recognised.
+ * was recognised. In white-box mode, also which declared send addresses the service emitted to
+ * while handling the message.
  */
 class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
@@ -57,6 +59,28 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
          * PREFIX:action.
          */
         private const val UNRECOGNISED_REPLY_TARGET_PREFIX = "ASYNCAPI_UNRECOGNISED_REPLY"
+
+        /**
+         * Prefix of the `(declared send address x operation)` targets, covered when handling a
+         * message made the service emit to an address a `send` operation declares, written as
+         * PREFIX:address:action, with the address as the document writes it.
+         */
+        private const val EMITTED_TARGET_PREFIX = "ASYNCAPI_EMITTED"
+
+        /**
+         * Prefix of the `(declared sent message x operation)` targets, covered when what the
+         * service emitted to a declared send address was recognised as one of the messages
+         * declared for it, written as PREFIX:messageId:action.
+         */
+        private const val EMITTED_MESSAGE_TARGET_PREFIX = "ASYNCAPI_EMITTED_MESSAGE"
+
+        /**
+         * How many distinct addresses the document does not declare are reported as faults for
+         * one operation over a run. An address can be derived from data, e.g. a topic per user,
+         * and without a cap the search would be rewarded for just varying that data. The
+         * addresses already reported keep being reported.
+         */
+        private const val MAX_UNDECLARED_EMISSION_ADDRESSES_PER_OPERATION = 10
 
         private const val TARGET_SEPARATOR = ":"
 
@@ -107,6 +131,20 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
          */
         private fun getUnrecognisedReplyTargetId(actionName: String): String =
             listOf(UNRECOGNISED_REPLY_TARGET_PREFIX, actionName).joinToString(TARGET_SEPARATOR)
+
+        /**
+         * The id of the target covered when handling [actionName] made the service emit to the
+         * send channel whose address the document writes as [address].
+         */
+        private fun getEmittedTargetId(address: String, actionName: String): String =
+            listOf(EMITTED_TARGET_PREFIX, address, actionName).joinToString(TARGET_SEPARATOR)
+
+        /**
+         * The id of the target covered when handling [actionName] made the service emit a
+         * message recognised as [messageId], one declared for a send channel.
+         */
+        private fun getEmittedMessageTargetId(messageId: String, actionName: String): String =
+            listOf(EMITTED_MESSAGE_TARGET_PREFIX, messageId, actionName).joinToString(TARGET_SEPARATOR)
     }
 
     @Inject
@@ -128,6 +166,21 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
      * How many messages this run has published, which is what makes each correlation id unique.
      */
     private var published = 0L
+
+    /**
+     * The undeclared addresses reported as faults: key is the name of the operation whose
+     * message was being handled, value is the addresses, in the order first reported, at most
+     * [MAX_UNDECLARED_EMISSION_ADDRESSES_PER_OPERATION] of them.
+     */
+    private val undeclaredEmissions = LinkedHashMap<String, LinkedHashSet<String>>()
+
+    /**
+     * What the document says about the addresses the service emits to. Lazily, as the document
+     * is only there once the sampler has been set up.
+     */
+    private val emissions: AsyncApiEmissionClassifier by lazy {
+        AsyncApiEmissionClassifier(asyncApiSampler.document)
+    }
 
     override fun doCalculateCoverage(
         individual: AsyncApiIndividual,
@@ -166,7 +219,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
                 ?: return null
             handleExtra(dto, fv)
 
-            recordEmittedMessages(dto.additionalInfoList, actionResults.filterIsInstance<AsyncApiCallResult>())
+            handleEmittedMessages(fv, actions, dto.additionalInfoList, actionResults.filterIsInstance<AsyncApiCallResult>())
 
             if (epc.isInSearch() && config.isEnabledTaintAnalysis()) {
                 /*
@@ -196,19 +249,148 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
     /**
      * Keep on the result of each action the messages the service emitted while it was being
-     * handled, as the instrumentation of the service's broker client recorded them.
+     * handled, as the instrumentation of its broker client recorded them, and turn them into
+     * targets.
      *
-     * Entry i of [infos] is for the action with index i, the one [results] has at i too: the
-     * controller records one entry per action it is told about, in order. A test stopped by a
-     * message that could not be published has fewer entries than results, never more.
+     * Entry i of [infos] is for action i, as is entry i of [results]; there are never more
+     * entries than results.
+     *
+     * A message that could not be published is skipped: whatever the service emitted while it
+     * was being tried was caused by an earlier message, handled late.
      */
-    private fun recordEmittedMessages(infos: List<AdditionalInfoDto>, results: List<AsyncApiCallResult>) {
-        infos.zip(results).forEach { (info, result) ->
+    private fun handleEmittedMessages(
+        fv: FitnessValue,
+        actions: List<AsyncApiAction>,
+        infos: List<AdditionalInfoDto>,
+        results: List<AsyncApiCallResult>
+    ) {
+        infos.zip(results).forEachIndexed { index, (info, result) ->
+            if (!wasPublished(result)) {
+                return@forEachIndexed
+            }
             val emitted: List<EmittedMessageDto>? = info.emittedMessages
             if (!emitted.isNullOrEmpty()) {
                 result.setEmittedMessages(emitted)
+                handleEmittedTargets(fv, actions[index], result, emitted, index)
             }
         }
+    }
+
+    /**
+     * Whether the message [result] is for reached the wire, so that what the service reported
+     * while it was being handled can be credited to it.
+     */
+    private fun wasPublished(result: AsyncApiCallResult): Boolean =
+        result.getOutcome().let { it != null && it != AsyncApiOutcome.PUBLISH_FAILED }
+
+    /**
+     * What the messages the service emitted while [action] was being handled say about it.
+     *
+     * One emitted to an address a `send` operation declares covers a target for that address,
+     * and one more for the declared message it was recognised as, if any. One emitted to an
+     * address the document does not declare at all is a fault, up to
+     * [MAX_UNDECLARED_EMISSION_ADDRESSES_PER_OPERATION] per operation.
+     *
+     * The reply address of [action] is left out, as the reply targets already cover it. The
+     * reply addresses of other operations are declared, so a message there is neither a target
+     * nor a fault.
+     *
+     * The address [action] itself publishes to still covers its target, but is left out of what
+     * a generated test observes, as the test would collect its own message there.
+     */
+    private fun handleEmittedTargets(
+        fv: FitnessValue,
+        action: AsyncApiAction,
+        result: AsyncApiCallResult,
+        emitted: List<EmittedMessageDto>,
+        index: Int
+    ) {
+        val name = action.getName()
+        val replyAddress = getReplyAddressOf(action)
+        val ownAddress = getAddress(asyncApiSampler.document.channels[action.channelName], action.channelName)
+
+        //what a generated test observes: the concrete addresses, in the order first emitted to
+        val declared = LinkedHashSet<String>()
+
+        emitted.forEach { message ->
+
+            //the client did not say where it went, so there is nothing to tell about it
+            val address = message.address ?: return@forEach
+
+            if (address == replyAddress) {
+                return@forEach
+            }
+
+            val channel = emissions.sendChannelOf(address)
+
+            if (channel != null) {
+                if (address != ownAddress) {
+                    declared.add(address)
+                }
+                fv.updateTarget(idMapper.handleLocalTarget(getEmittedTargetId(channel.address, name)), 1.0, index)
+                handleEmittedMessageTarget(fv, message, channel, name, index)
+                return@forEach
+            }
+
+            if (!emissions.isDeclared(address) && isReportedAsUndeclared(name, address)) {
+                handleFault(fv, result, ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_EMISSION, name, index, address)
+            }
+        }
+
+        if (declared.isNotEmpty()) {
+            result.setDeclaredEmissionAddresses(declared.toList())
+        }
+    }
+
+    /**
+     * Whether emitting to [address], which the document does not declare, while a message of
+     * [actionName] was handled is reported as a fault: it is, if it already was, or if the
+     * operation has fewer than [MAX_UNDECLARED_EMISSION_ADDRESSES_PER_OPERATION] such addresses
+     * so far, in which case [address] becomes one of them.
+     */
+    private fun isReportedAsUndeclared(actionName: String, address: String): Boolean {
+
+        val reported = undeclaredEmissions.getOrPut(actionName) { LinkedHashSet() }
+
+        if (reported.contains(address)) {
+            return true
+        }
+
+        if (reported.size >= MAX_UNDECLARED_EMISSION_ADDRESSES_PER_OPERATION) {
+            LoggingUtil.uniqueWarn(log, "Handling messages of '$actionName', the service emitted to more than" +
+                    " $MAX_UNDECLARED_EMISSION_ADDRESSES_PER_OPERATION addresses the document does not declare." +
+                    " Only the first $MAX_UNDECLARED_EMISSION_ADDRESSES_PER_OPERATION are reported as faults.")
+            return false
+        }
+
+        reported.add(address)
+        return true
+    }
+
+    /**
+     * Cover the target of the message declared for [channel] that [message] was recognised as,
+     * if any. Matching none is not a fault, unlike for a reply: what a service sends is often
+     * described loosely, and an object turned into bytes inside the client is only recorded by
+     * its class.
+     */
+    private fun handleEmittedMessageTarget(
+        fv: FitnessValue,
+        message: EmittedMessageDto,
+        channel: AsyncApiEmissionClassifier.SendChannel,
+        actionName: String,
+        index: Int
+    ) {
+        val payload = message.payload
+
+        //a cut payload is not JSON any more, and would be judged on its missing end
+        if (payload.isNullOrBlank() || message.payloadTruncated == true || channel.messages.isEmpty()) {
+            return
+        }
+
+        val recognised = AsyncApiReplyClassifier.classify(payload, channel.messages, asyncApiSampler.document.componentSchemas)
+            ?: return
+
+        fv.updateTarget(idMapper.handleLocalTarget(getEmittedMessageTargetId(recognised.id, actionName)), 1.0, index)
     }
 
     /**
@@ -350,15 +532,18 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         result: AsyncApiCallResult,
         category: ExperimentalFaultCategory,
         actionName: String,
-        index: Int
+        index: Int,
+        context: String? = null
     ) {
         if (!config.isEnabledFaultCategory(category)) {
             return
         }
 
-        val descriptiveId = idMapper.getFaultDescriptiveId(category, actionName)
+        //the context tells apart faults of one category on one operation, eg two addresses
+        val postfix = if (context == null) actionName else actionName + TARGET_SEPARATOR + context
+        val descriptiveId = idMapper.getFaultDescriptiveId(category, postfix)
         fv.updateTarget(idMapper.handleLocalTarget(descriptiveId), 1.0, index)
-        result.addFault(DetectedFault(category, actionName, null))
+        result.addFault(DetectedFault(category, actionName, context))
     }
 
     private fun handleReplyTargets(fv: FitnessValue, action: AsyncApiAction, result: AsyncApiCallResult, index: Int) {
@@ -563,6 +748,16 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
     }
 
     /**
+     * Where the reply to [action] is awaited, or null when it declares none, or one whose address
+     * is only known at run time. The same address [getReplyAddress] gives the driver, without
+     * warning again about a reply address announced at run time.
+     */
+    private fun getReplyAddressOf(action: AsyncApiAction): String? {
+        val channelName = action.replyTemplate?.channelName ?: return null
+        return getAddress(asyncApiSampler.document.channels[channelName], channelName)
+    }
+
+    /**
      * Where the driver should wait for the reply, or null when there is nowhere to wait yet.
      */
     private fun getReplyAddress(reply: AsyncApiReply, action: AsyncApiAction): String? {
@@ -603,16 +798,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             return channelName
         }
 
-        val protocol = asyncApiSampler.document.serversOf(channel).firstOrNull()?.protocol
-
-        /*
-            A channel that declares no address of its own is normal for Kafka, where the topic
-            lives in the binding. The protocol is only known when the document declares a server,
-            so when there is no address to keep, the binding's topic is taken whatever it says:
-            it is the one destination the document actually names.
-         */
-        val address = channel.effectiveAddress(protocol)
-            ?: channel.bindings?.kafkaTopic
+        val address = AsyncApiEmissionClassifier.wireAddressOf(asyncApiSampler.document, channel)
             ?: return channelName
 
         if (address.contains(PARAMETER_OPENING)) {
