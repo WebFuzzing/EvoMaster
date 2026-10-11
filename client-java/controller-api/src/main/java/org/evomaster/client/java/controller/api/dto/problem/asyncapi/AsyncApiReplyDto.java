@@ -22,7 +22,8 @@ public class AsyncApiReplyDto {
         /**
          * The whole {@link AsyncApiActionDto#settleMs} window went by. Also what a
          * {@link AsyncApiActionDto.MessageCompletionStrategy#COVERAGE_STABLE} wait ends with when the SUT's
-         * coverage cannot be read.
+         * coverage cannot be read, and a {@link AsyncApiActionDto.MessageCompletionStrategy#HANDLER_RETURN} one
+         * when what the SUT received cannot be.
          */
         DEADLINE,
 
@@ -35,7 +36,13 @@ public class AsyncApiReplyDto {
         /**
          * The waiting thread was interrupted.
          */
-        INTERRUPTED
+        INTERRUPTED,
+
+        /**
+         * Every message the SUT received from {@link AsyncApiActionDto#address} in this action
+         * was handled, see {@link AsyncApiActionDto.MessageCompletionStrategy#HANDLER_RETURN}.
+         */
+        HANDLER_RETURN
     }
 
     /**

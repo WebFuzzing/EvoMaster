@@ -464,6 +464,14 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
+    public final MessageHandlingState getMessageHandlingState(String address) {
+        if (!isInstrumentationActivated()) {
+            return null;
+        }
+        return serverController.getMessageHandlingState(address);
+    }
+
+    @Override
     public final void newActionSpecificHandler(ActionDto dto) {
         if (isInstrumentationActivated()) {
             serverController.setAction(new Action(

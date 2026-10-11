@@ -918,6 +918,17 @@ class EMConfig {
                     " settle window early, so it needs one: set 'asyncApiSettleMs' to the longest wait to allow")
         }
 
+        if (asyncApiCompletion == AsyncApiCompletion.HANDLER_RETURN && asyncApiSettleMs <= 0) {
+            throw ConfigProblemException("'asyncApiCompletion' ${AsyncApiCompletion.HANDLER_RETURN} ends a" +
+                    " settle window early, so it needs one: set 'asyncApiSettleMs' to the longest wait to allow")
+        }
+
+        if (asyncApiCompletion == AsyncApiCompletion.HANDLER_RETURN && !instrumentMR_KAFKA) {
+            throw ConfigProblemException("'asyncApiCompletion' ${AsyncApiCompletion.HANDLER_RETURN} reads what the" +
+                    " instrumentation records of the messages the service consumes, which only Kafka's does so far:" +
+                    " set 'instrumentMR_KAFKA' to true")
+        }
+
         if (problemType == ProblemType.RPC
                 && createTests
                 && (enablePureRPCTestGeneration || enableRPCAssertionWithInstance)
@@ -2465,6 +2476,14 @@ class EMConfig {
     @Experimental
     var instrumentMR_REDIS = false
 
+    @Cfg("Execute instrumentation for method replace with category KAFKA." +
+            " It records the messages the SUT consumes from and emits to Kafka, which testing an AsyncAPI service" +
+            " in white-box mode can use." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_KAFKA = false
+
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
 
@@ -3087,7 +3106,14 @@ class EMConfig {
          * Stop early once the service has gone `asyncApiStableMs` without reaching any coverage
          * objective for the first time, or improving one.
          */
-        COVERAGE_STABLE
+        COVERAGE_STABLE,
+
+        /**
+         * Stop early once the service has received at least one message from the address the
+         * action published to, and every thread that received one has gone back to its broker
+         * client for more. Read off the Kafka instrumentation (`instrumentMR_KAFKA`).
+         */
+        HANDLER_RETURN
     }
 
     @Experimental
@@ -3095,7 +3121,10 @@ class EMConfig {
             " driver's controller decides the service is done with a message. FIXED waits for the whole window." +
             " COVERAGE_STABLE ends it early once the service has gone asyncApiStableMs without reaching any new" +
             " code, or improving on what it reached. That is a heuristic: a handler that only runs code already" +
-            " covered earlier in the same test looks done too.")
+            " covered earlier in the same test looks done too. HANDLER_RETURN ends it once the service has received" +
+            " a message from the address published to, and every thread that received one has asked its broker" +
+            " client for more, as a consumer loop does when its handler returns. It needs instrumentMR_KAFKA, and is" +
+            " a heuristic too: work a handler hands off to another thread looks done as soon as it is handed off.")
     var asyncApiCompletion = AsyncApiCompletion.FIXED
 
     @Experimental
@@ -3764,6 +3793,7 @@ class EMConfig {
         if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
         if (instrumentMR_NEO4J) categories.add(ReplacementCategory.NEO4J.toString())
         if (instrumentMR_DYNAMODB) categories.add(ReplacementCategory.DYNAMODB.toString())
+        if (instrumentMR_KAFKA) categories.add(ReplacementCategory.KAFKA.toString())
         return categories.joinToString(",")
     }
 

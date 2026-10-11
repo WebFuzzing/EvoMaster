@@ -60,6 +60,7 @@ import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
+import org.evomaster.client.java.instrumentation.MessageHandlingState;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.sql.*;
@@ -1881,6 +1882,18 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public Long getObjectiveUpdateCount(long timeoutMs) {
         return getObjectiveUpdateCount();
+    }
+
+    /**
+     * What the SUT received, in the current action, from a broker address (eg a Kafka topic),
+     * and how much of it it is done handling, as recorded by the instrumentation. Read while an
+     * action is kept open.
+     *
+     * @param address where the SUT receives messages from
+     * @return the state, or null when unknown, eg because the SUT is not instrumented
+     */
+    public MessageHandlingState getMessageHandlingState(String address) {
+        return null;
     }
 
     protected BootTimeInfoDto getBootTimeInfoDto(BootTimeObjectiveInfo info){
