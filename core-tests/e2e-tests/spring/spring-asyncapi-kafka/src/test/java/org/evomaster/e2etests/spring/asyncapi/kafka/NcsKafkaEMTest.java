@@ -59,14 +59,9 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
                     args.add("3000");
 
                     /*
-                        The kill switch stops SUT code that is still running once an individual
-                        has been evaluated. It assumes a request handled on its own thread: here
-                        the service consumes on one long-lived thread, so killing it stops the
-                        service for good, and every later message goes unanswered. Any
-                        message-driven SUT has this shape.
+                        The kill switch would stop the service's one consumer thread for good. It
+                        is off by default for AsyncAPI; a missed reply would fail NO_REPLY below.
                      */
-                    args.add("--killSwitch");
-                    args.add("false");
 
                     Solution<AsyncApiIndividual> solution = initAndRun(args);
 
@@ -140,10 +135,6 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
                         //Replies are disabled in the fixture, so this timeout does not decide the outcome.
                         args.add("--asyncApiReplyTimeoutMs");
                         args.add("250");
-
-                        //as in testRunEM: the kill switch would stop the consumer thread for good
-                        args.add("--killSwitch");
-                        args.add("false");
 
                         /*
                             Both AsyncAPI categories are experimental, so without this the outcome is
