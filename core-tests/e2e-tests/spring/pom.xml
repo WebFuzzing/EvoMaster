@@ -37,6 +37,7 @@
         <module>spring-rpc-thrift</module>
         <module>spring-mcp-bb</module>
         <module>spring-asyncapi-kafka</module>
+        <module>spring-asyncapi-kafka-listener</module>
     </modules>
 
     <dependencyManagement>
