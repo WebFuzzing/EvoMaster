@@ -17,6 +17,8 @@ public final class ShopTopics {
 
     public static final String STOCK_ADJUSTED = "shop.stock.adjusted";
 
+    public static final String RETURNS_REQUESTED = "shop.returns.requested";
+
     /**
      * Where the service confirms every order it takes, as the document declares.
      */
@@ -34,11 +36,13 @@ public final class ShopTopics {
 
     public static final String STOCK_LISTENER = "shop-stock";
 
+    public static final String RETURNS_LISTENER = "shop-returns";
+
     /**
      * Every topic above, for whoever has to create them before the service starts.
      */
     public static final List<String> ALL = Collections.unmodifiableList(Arrays.asList(
-            ORDERS_PLACED, INVOICES_REQUESTED, STOCK_ADJUSTED, ORDERS_CONFIRMED, STOCK_CHANGES));
+            ORDERS_PLACED, INVOICES_REQUESTED, STOCK_ADJUSTED, RETURNS_REQUESTED, ORDERS_CONFIRMED, STOCK_CHANGES));
 
     private ShopTopics() {
     }

@@ -45,6 +45,8 @@ public class ShopKafkaEMTest extends AsyncApiTestBase {
 
     private static final String OVERSOLD_STOCK = SUT_PACKAGE + "OversoldStock";
 
+    private static final String DAMAGED_RETURN = SUT_PACKAGE + "DamagedReturn";
+
     @BeforeAll
     public static void initClass() throws Exception {
         AsyncApiTestBase.initClass(new ShopKafkaController());
@@ -198,5 +200,53 @@ public class ShopKafkaEMTest extends AsyncApiTestBase {
                     assertClassCreditedTo(run, OVERSOLD_STOCK, ADJUST_STOCK, 1);
                 },
                 5);
+    }
+
+    /**
+     * The document declares no payload for a return, so without expanding opaque payloads the
+     * operation is not even published. With it, the return is published as an empty object, the
+     * service reads it into {@code ReturnRequested}, and the next mutation publishes that class's
+     * fields instead. A refund is behind its free-text reason, which taint analysis then finds.
+     */
+    @Test
+    public void testRunEMExpandingOpaquePayloads() throws Throwable {
+
+        String outputFolder = "ShopKafkaOpaqueEM";
+        String className = "org.foo.asyncapi.ShopKafkaOpaqueEM";
+
+        //compiled and run too: the payload the generated tests publish is the expanded one
+        runTestHandlingFlakyAndCompilation(
+                outputFolder,
+                className,
+                null,
+                400,
+                true,
+                false,
+                (args) -> {
+
+                    setOption(args, "expandAsyncApiPayloads", "true");
+
+                    /*
+                        The class a message is read into is credited to the action open when the
+                        service read it, so the quiet-period window puts it on the right one. Short
+                        tests, as in testRunEM.
+                     */
+                    setOption(args, "asyncApiSettleMs", "2000");
+                    setOption(args, "asyncApiCompletion", "COVERAGE_QUIESCENCE");
+                    setOption(args, "asyncApiQuietMs", "100");
+                    setOption(args, "maxTestSize", "3");
+
+                    Pair<Injector, Solution<AsyncApiIndividual>> run = initAndDebug(args);
+                    Solution<AsyncApiIndividual> solution = run.getSecond();
+
+                    assertEquals(0, countOutcome(solution, AsyncApiOutcome.PUBLISH_FAILED), "a message never left");
+
+                    assertClassCovered(run, DAMAGED_RETURN);
+                },
+                5);
+
+        //the field the document never names, with the value that got the refund
+        assertTextInTests(outputFolder, className, "reason");
+        assertTextInTests(outputFolder, className, "DAMAGED");
     }
 }
