@@ -124,8 +124,7 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
         /*
             The lines that publish are written in the language the suite is generated in, and
             only one of the two is exercised by the test above. Compiling and running the other
-            is what catches a Java half that was never compiled: the Kotlin one did not compile
-            first time either.
+            is what catches emitted Java that does not compile.
 
             A short budget: what is under test here is the emitted Java, not the search.
          */
