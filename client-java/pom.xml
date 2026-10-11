@@ -45,8 +45,6 @@
         <jersey.version>2.48</jersey.version>
         <!--  THOSE ARE ONLY FOR TESTING -->
         <springboot.version>2.5.4</springboot.version>
-        <!-- The version that Spring Boot 2.5.4 manages. 3.x needs Spring 6 and JDK 17 -->
-        <spring-kafka.version>2.7.6</spring-kafka.version>
     </properties>
 
 

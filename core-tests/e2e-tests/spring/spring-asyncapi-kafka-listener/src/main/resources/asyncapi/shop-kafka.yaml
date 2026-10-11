@@ -1,0 +1,111 @@
+# Artificial: written for the EvoMaster E2E tests, describing the shop service in
+# com.foo.asyncapi.shop. Not taken from a third party.
+asyncapi: 3.0.0
+info:
+  title: Shop events over Kafka
+  version: 1.0.0
+  description: |
+    A shop back end that reacts to events published on **Kafka**, and never answers them.
+    Every operation is fire-and-forget: a client publishes a message on the operation's
+    topic, and that is the end of it as far as the client can see.
+
+    What the service does with each message is only visible from inside it: it books
+    couriers, pages whoever is on call, renders invoices on a thread of its own, and keeps
+    the stock of each product in a database.
+defaultContentType: application/json
+
+servers:
+  kafka:
+    host: localhost:9092
+    protocol: kafka
+    description: Kafka broker carrying the shop topics.
+
+channels:
+  ordersPlaced:
+    address: shop.orders.placed
+    messages:
+      orderPlaced:
+        $ref: '#/components/messages/orderPlaced'
+  invoicesRequested:
+    address: shop.invoices.requested
+    messages:
+      invoiceRequested:
+        $ref: '#/components/messages/invoiceRequested'
+  stockAdjusted:
+    address: shop.stock.adjusted
+    messages:
+      stockAdjusted:
+        $ref: '#/components/messages/stockAdjusted'
+
+operations:
+  placeOrder:
+    action: receive
+    summary: An order was placed.
+    channel:
+      $ref: '#/channels/ordersPlaced'
+  requestInvoice:
+    action: receive
+    summary: The invoice of an order is wanted; it is rendered in the background.
+    channel:
+      $ref: '#/channels/invoicesRequested'
+  adjustStock:
+    action: receive
+    summary: Items of a product were added to, or taken from, the stock.
+    channel:
+      $ref: '#/channels/stockAdjusted'
+
+components:
+  messages:
+    orderPlaced:
+      name: OrderPlaced
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderPlaced'
+    invoiceRequested:
+      name: InvoiceRequested
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/InvoiceRequested'
+    stockAdjusted:
+      name: StockAdjusted
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/StockAdjusted'
+
+  schemas:
+    OrderPlaced:
+      type: object
+      required: [orderId, shipping, priority, quantity]
+      properties:
+        orderId: { type: string }
+        # Deliberately free text, with no enum: which values the service acts on is only
+        # visible from inside it. A real document would often list them.
+        shipping:
+          type: string
+          description: How the order is shipped.
+        priority:
+          type: string
+          description: How urgent the order is.
+        quantity: { type: integer, format: int32, minimum: 1, maximum: 100 }
+    InvoiceRequested:
+      type: object
+      required: [orderId, amountCents]
+      properties:
+        orderId: { type: string }
+        amountCents: { type: integer, format: int32, minimum: 0 }
+    StockAdjusted:
+      type: object
+      required: [sku, delta]
+      properties:
+        # The whole catalogue, so that two adjustments of the same product are a matter of
+        # course rather than of luck.
+        sku:
+          type: string
+          enum: [A-100, B-200]
+        # Mostly sales: more can be taken away at once than added.
+        delta:
+          type: integer
+          format: int32
+          minimum: -50
+          maximum: 20
+          description: Items added, or taken away when negative.
