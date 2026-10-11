@@ -14,6 +14,91 @@ import org.junit.jupiter.api.Test
 
 class AsyncApiActionBuilderTest {
 
+    companion object {
+        /**
+         * One operation whose message declares no payload, one whose payload is declared with no
+         * structure, one whose payload has fields, and one with no payload that is not JSON.
+         */
+        private val OPAQUE = """
+            asyncapi: 3.0.0
+            info:
+              title: Opaque payloads
+              version: 1.0.0
+            channels:
+              returns:
+                address: shop.returns
+                messages:
+                  returnRequested:
+                    name: ReturnRequested
+              audits:
+                address: shop.audits
+                messages:
+                  audit:
+                    payload:
+                      type: object
+              orders:
+                address: shop.orders
+                messages:
+                  order:
+                    payload:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+              images:
+                address: shop.images
+                messages:
+                  image:
+                    contentType: image/png
+            operations:
+              requestReturn:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/returns'
+              audit:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/audits'
+              placeOrder:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/orders'
+              uploadImage:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/images'
+        """.trimIndent()
+
+        /**
+         * A message whose payload is declared, but in Avro, with no content type to say it is
+         * not JSON.
+         */
+        private val AVRO = """
+            asyncapi: 3.0.0
+            info:
+              title: Avro payload
+              version: 1.0.0
+            channels:
+              customers:
+                address: crm.customers
+                messages:
+                  customer:
+                    payload:
+                      schemaFormat: application/vnd.apache.avro;version=1.9.0
+                      schema:
+                        type: record
+                        name: Customer
+                        fields:
+                          - name: id
+                            type: string
+            operations:
+              registerCustomer:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/customers'
+        """.trimIndent()
+    }
+
     private val options = AsyncApiGeneBuilder.options(EMConfig())
 
     @BeforeEach
@@ -26,9 +111,12 @@ class AsyncApiActionBuilderTest {
         return build(schema)
     }
 
-    private fun build(schema: AsyncApiDocument): Pair<Map<String, Action>, List<String>> {
+    private fun build(
+        schema: AsyncApiDocument,
+        expandOpaquePayloads: Boolean = false
+    ): Pair<Map<String, Action>, List<String>> {
         val cluster = mutableMapOf<String, Action>()
-        val messages = AsyncApiActionBuilder.addActionsFromSchema(schema, cluster, options)
+        val messages = AsyncApiActionBuilder.addActionsFromSchema(schema, cluster, options, expandOpaquePayloads)
         return cluster to messages
     }
 
@@ -372,5 +460,83 @@ class AsyncApiActionBuilderTest {
             (first.getValue("bessj") as AsyncApiAction).seeTopGenes().size,
             (second.getValue("bessj") as AsyncApiAction).seeTopGenes().size
         )
+    }
+
+    // ------------------------------------------------------------------ opaque payloads
+
+    private fun payloadParamOf(cluster: Map<String, Action>, name: String): AsyncApiParam =
+        (cluster.getValue(name) as AsyncApiAction).parameters
+            .single { it.name == AsyncApiParam.PAYLOAD } as AsyncApiParam
+
+    @Test
+    fun testAMessageWithoutAPayloadBecomesAnActionWhenOpaquePayloadsAreExpanded() {
+
+        val (cluster, messages) = build(AsyncApiAccess.parseFromText(OPAQUE), expandOpaquePayloads = true)
+
+        //published as an empty object until the service is seen reading it into a class
+        val payload = payloadParamOf(cluster, "requestReturn")
+        assertTrue(payload.opaque)
+        assertTrue(payload.gene is ObjectGene, payload.gene.javaClass.simpleName)
+        assertTrue((payload.gene as ObjectGene).fields.isEmpty())
+        assertFalse(messages.any { it.contains("requestReturn") }, messages.toString())
+    }
+
+    @Test
+    fun testADeclaredOpaquePayloadKeepsTheGenesBuiltForIt() {
+
+        val schema = AsyncApiAccess.parseFromText(OPAQUE)
+
+        val expanded = payloadParamOf(build(schema, expandOpaquePayloads = true).first, "audit")
+        RestActionBuilderV3.cleanCache()
+        val plain = payloadParamOf(build(schema).first, "audit")
+
+        //marked, but built as it always was: only what the service is seen reading replaces it
+        assertTrue(expanded.opaque)
+        assertFalse(plain.opaque)
+        assertEquals(plain.gene.javaClass, expanded.gene.javaClass)
+    }
+
+    @Test
+    fun testAPayloadWithFieldsIsNeverOpaque() {
+
+        val (cluster, _) = build(AsyncApiAccess.parseFromText(OPAQUE), expandOpaquePayloads = true)
+
+        assertFalse(payloadParamOf(cluster, "placeOrder").opaque)
+    }
+
+    @Test
+    fun testAMessageWithoutAJsonPayloadGetsNoPlaceholder() {
+
+        val (cluster, messages) = build(AsyncApiAccess.parseFromText(OPAQUE), expandOpaquePayloads = true)
+
+        assertFalse(cluster.containsKey("uploadImage"), cluster.keys.toString())
+        assertTrue(messages.any { it.contains("neither a payload nor headers") }, messages.toString())
+    }
+
+    @Test
+    fun testAPayloadDeclaredInAFormatThatCannotBeReadIsNotTakenForAMissingOne() {
+
+        val schema = AsyncApiAccess.parseFromText(AVRO)
+
+        //the parser drops a message whose payload it cannot read, rather than keep it without one
+        assertTrue(schema.messages.isEmpty(), schema.messages.keys.toString())
+
+        val (cluster, _) = build(schema, expandOpaquePayloads = true)
+
+        //so there is no empty object to publish in place of an Avro record
+        assertFalse(cluster.containsKey("registerCustomer"), cluster.keys.toString())
+    }
+
+    @Test
+    fun testWithoutExpandingNothingChanges() {
+
+        val (cluster, messages) = build(AsyncApiAccess.parseFromText(OPAQUE))
+
+        //the message without a payload is still left out, and no payload is marked
+        assertEquals(setOf("audit", "placeOrder"), cluster.keys)
+        assertTrue(messages.any { it.contains("'requestReturn'") && it.contains("neither a payload nor headers") },
+            messages.toString())
+        assertTrue(cluster.values.flatMap { (it as AsyncApiAction).parameters }
+            .none { (it as AsyncApiParam).opaque })
     }
 }

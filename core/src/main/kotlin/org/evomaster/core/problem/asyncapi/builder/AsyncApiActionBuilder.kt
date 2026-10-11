@@ -20,12 +20,18 @@ object AsyncApiActionBuilder {
      * Build one action per publishable message and add them to [actionCluster], replacing
      * whatever it held.
      *
+     * @param expandOpaquePayloads whether payloads the document says nothing about (see
+     *                             [AsyncApiGeneBuilder.isOpaque]) are marked as such, to be
+     *                             replaced by what the service is seen reading them into. A
+     *                             message that declares no payload then gets a placeholder one.
+     *                             Only meaningful in white-box mode.
      * @return anything that could not be built, to be reported to the user
      */
     fun addActionsFromSchema(
         schema: AsyncApiDocument,
         actionCluster: MutableMap<String, Action>,
-        options: RestActionBuilderV3.Options
+        options: RestActionBuilderV3.Options,
+        expandOpaquePayloads: Boolean = false
     ): List<String> {
 
         actionCluster.clear()
@@ -45,7 +51,7 @@ object AsyncApiActionBuilder {
                 return@forEach
             }
 
-            val built = buildActionsFor(operation, schema, options, messages)
+            val built = buildActionsFor(operation, schema, options, expandOpaquePayloads, messages)
 
             if (built.isEmpty()) {
                 skipped++
@@ -63,6 +69,7 @@ object AsyncApiActionBuilder {
         operation: AsyncApiOperation,
         schema: AsyncApiDocument,
         options: RestActionBuilderV3.Options,
+        expandOpaquePayloads: Boolean,
         messages: MutableList<String>
     ): List<AsyncApiAction> {
 
@@ -70,8 +77,15 @@ object AsyncApiActionBuilder {
 
         val actions = carried.mapNotNull { message ->
 
+            val opaque = expandOpaquePayloads && AsyncApiGeneBuilder.isOpaque(schema, message)
+
             val payload = try {
+                /*
+                    A declared opaque payload, such as `{type: object}`, keeps its genes until it
+                    is replaced. Only an undeclared one gets the placeholder.
+                 */
                 AsyncApiGeneBuilder.buildPayloadGene(schema, message, options)
+                    ?: if (opaque) AsyncApiGeneBuilder.buildOpaquePayloadPlaceholder(message) else null
             } catch (e: Exception) {
                 /*
                     One message that cannot be built must not cost the whole document, which is
@@ -104,7 +118,7 @@ object AsyncApiActionBuilder {
             }
 
             val parameters = mutableListOf<Param>()
-            payload?.let { parameters.add(AsyncApiParam(AsyncApiParam.PAYLOAD, it)) }
+            payload?.let { parameters.add(AsyncApiParam(AsyncApiParam.PAYLOAD, it, opaque)) }
             headers?.let { parameters.add(AsyncApiParam(AsyncApiParam.HEADERS, it)) }
 
             AsyncApiAction(
