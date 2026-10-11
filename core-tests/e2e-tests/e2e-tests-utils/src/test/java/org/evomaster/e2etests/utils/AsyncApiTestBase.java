@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.utils;
 
 import com.webfuzzing.commons.faults.FaultCategory;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual;
@@ -87,6 +88,15 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
         long unsettled = results.stream().filter(r -> r.getSettledMs() == null).count();
         assertTrue(unsettled == 0, "With seed " + defaultSeed + ": " + unsettled + " of " + results.size()
                 + " published messages were not kept open after the driver returned");
+    }
+
+    /**
+     * How many published messages the controller stopped waiting on for {@code end}.
+     */
+    protected long countSettleEnd(Solution<AsyncApiIndividual> solution, AsyncApiReplyDto.SettleEnd end) {
+        return allResultsOf(solution).stream()
+                .filter(r -> r.getSettleEndedBy() == end)
+                .count();
     }
 
     protected void assertReplied(Solution<AsyncApiIndividual> solution, String operation) {

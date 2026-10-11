@@ -26,5 +26,6 @@ public enum Command implements Serializable {
     EXECUTING_ACTION,
     BOOT_TIME_INFO,
     EXTRACT_JVM_DTO,
-    BOOTING_SUT
+    BOOTING_SUT,
+    OBJECTIVE_UPDATE_COUNT
 }

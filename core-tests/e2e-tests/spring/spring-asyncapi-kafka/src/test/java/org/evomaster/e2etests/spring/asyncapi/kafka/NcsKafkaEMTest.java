@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.asyncapi.kafka;
 
 import com.foo.asyncapi.ncs.NcsKafkaController;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome;
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory;
@@ -168,6 +169,47 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
                     assertEquals(0, countOutcome(solution, AsyncApiOutcome.NO_REPLY), "a promised reply never came");
                     assertEquals(0, countOutcome(solution, AsyncApiOutcome.PUBLISH_FAILED), "a message never left");
                     assertEverySettled(solution);
+                },
+                3);
+    }
+
+    /**
+     * The same, but each action ends once the service stops reaching new code. NCS handles a
+     * message well within the window and then only polls lines already covered, so most waits
+     * end early.
+     */
+    @Test
+    public void testRunEMWithCoverageStable() throws Throwable {
+
+        runTestHandlingFlaky(
+                "NcsKafkaCoverageStableEM",
+                "org.foo.asyncapi.NcsKafkaCoverageStableEM",
+                40,
+                false,
+                (args) -> {
+
+                    setOption(args, "asyncApiReplyTimeoutMs", "3000");
+
+                    /*
+                        A window far longer than NCS ever needs, and a stable period far shorter:
+                        a wait that went to the deadline every time would mean stable coverage was
+                        never detected.
+                     */
+                    setOption(args, "asyncApiSettleMs", "5000");
+                    setOption(args, "asyncApiCompletion", "COVERAGE_STABLE");
+                    setOption(args, "asyncApiStableMs", "100");
+
+                    Solution<AsyncApiIndividual> solution = initAndRun(args);
+
+                    assertTrue(countOutcome(solution, AsyncApiOutcome.REPLIED) > 0, "nothing was answered");
+                    assertEquals(0, countOutcome(solution, AsyncApiOutcome.NO_REPLY), "a promised reply never came");
+                    assertEquals(0, countOutcome(solution, AsyncApiOutcome.PUBLISH_FAILED), "a message never left");
+                    assertEverySettled(solution);
+
+                    assertTrue(countSettleEnd(solution, AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE) > 0,
+                            "no wait ended on stable coverage");
+                    assertEquals(0, countSettleEnd(solution, AsyncApiReplyDto.SettleEnd.INTERRUPTED),
+                            "a wait was interrupted");
                 },
                 3);
     }
