@@ -192,6 +192,9 @@ public class SimpleKafkaEMTest extends AsyncApiTestBase {
                     setOption(args, "asyncApiCompletion", "HANDLER_RETURN");
                     setOption(args, "instrumentMR_KAFKA", "true");
 
+                    //so that an emission to an undeclared address would be reported, see below
+                    setOption(args, "useExperimentalOracles", "true");
+
                     Solution<AsyncApiIndividual> solution = initAndRun(args);
 
                     assertTrue(countOutcome(solution, AsyncApiOutcome.REPLIED) > 0, "nothing was answered");
@@ -216,6 +219,18 @@ public class SimpleKafkaEMTest extends AsyncApiTestBase {
                             .filter(a -> a == null || !a.endsWith(REPLY_TOPIC_SUFFIX))
                             .collect(Collectors.toList());
                     assertTrue(notReplies.isEmpty(), "recorded as emitted by the service: " + notReplies);
+
+                    /*
+                        A reply is accounted for by the reply targets, not again as a message to a
+                        declared send channel, of which the service has none. Its reply channels
+                        are declared, so nothing it emits is a fault either.
+                     */
+                    List<String> declaredEmissions = allResultsOf(solution).stream()
+                            .flatMap(r -> r.getDeclaredEmissionAddresses().stream())
+                            .collect(Collectors.toList());
+                    assertTrue(declaredEmissions.isEmpty(), "counted as emitted to a send channel: " + declaredEmissions);
+                    assertFalse(faultsOf(solution).contains(ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_EMISSION),
+                            "a reply was reported as an undeclared emission");
                 },
                 3);
     }
