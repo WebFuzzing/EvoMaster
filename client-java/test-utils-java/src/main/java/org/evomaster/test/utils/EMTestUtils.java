@@ -13,6 +13,8 @@ package org.evomaster.test.utils;
  */
 
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -30,6 +32,37 @@ public class EMTestUtils {
      * albeit cannot guarantee removal of them
      */
     private static long seed = System.currentTimeMillis();
+
+    /**
+     * Wait until every condition holds, or the timeout expires. Conditions should be
+     * side-effect free: they are checked repeatedly, including once for a zero timeout.
+     * Used by generated JVM tests to wait for asynchronous calls to mocked services.
+     *
+     * @param timeoutMs maximum wait in milliseconds
+     * @param conditions predicates that must all hold
+     * @return whether all conditions held before returning
+     */
+    public static boolean awaitAll(long timeoutMs, BooleanSupplier... conditions) throws InterruptedException {
+        if (timeoutMs < 0) {
+            throw new IllegalArgumentException("Negative timeout: " + timeoutMs);
+        }
+        long start = System.nanoTime();
+        long timeout = TimeUnit.MILLISECONDS.toNanos(timeoutMs);
+        while (true) {
+            boolean ready = true;
+            for (BooleanSupplier condition : conditions) {
+                ready &= condition.getAsBoolean();
+            }
+            if (ready) {
+                return true;
+            }
+            long remaining = timeout - (System.nanoTime() - start);
+            if (remaining <= 0) {
+                return false;
+            }
+            TimeUnit.NANOSECONDS.sleep(Math.min(remaining, TimeUnit.MILLISECONDS.toNanos(50)));
+        }
+    }
 
     /**
      *

@@ -13,6 +13,18 @@ import org.junit.jupiter.api.Assertions.*
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import java.time.Duration
 import org.junit.jupiter.api.Test
+import com.google.inject.Injector
+import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
+import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.service.Randomness
+import java.util.UUID
 
 /**
  * Checks the decisions made when writing a test (eg what is asserted on a reply, and what is
@@ -224,5 +236,52 @@ class AsyncApiTestCaseWriterTest {
         val lines = Lines(config.outputFormat)
         AsyncApiTestCaseWriter(config).writeEmittedAssertions(lines, result, "messages", "payload", "body")
         return lines.toString()
+    }
+
+    @Test
+    fun testUsedStubsAreAwaitedWithEscapedUrls() {
+        listOf(OutputFormat.JAVA_JUNIT_5, OutputFormat.KOTLIN_JUNIT_5).forEach { format ->
+            val body = mockedBody(format, path = "/stock/\"quoted\"/\\path")
+            assertTrue(body.contains("awaitAll("), body)
+            assertTrue(body.contains("\\\"quoted\\\""), body)
+            assertTrue(body.contains("\\\\path"), body)
+            assertFalse(body.contains("while ("), body)
+            assertFalse(body.contains("Thread.sleep"), body)
+            assertTrue(body.indexOf("stubFor(") < body.indexOf("publishAndAwaitReply"), body)
+            assertTrue(body.indexOf("awaitAll(") > body.indexOf("publishAndAwaitReply"), body)
+        }
+    }
+
+    @Test
+    fun testUnusedStubsAndUnpublishedMessagesAreNotAwaited() {
+        val unused = mockedBody(OutputFormat.KOTLIN_JUNIT_5, used = false)
+        assertFalse(unused.contains("awaitAll("), unused)
+        assertTrue(unused.contains("Thread.sleep(1500)"), unused)
+        val failed = mockedBody(OutputFormat.JAVA_JUNIT_5, published = false)
+        assertFalse(failed.contains("awaitAll("), failed)
+        assertFalse(failed.contains("Thread.sleep"), failed)
+    }
+
+    private fun mockedBody(
+        format: OutputFormat, path: String = "/stock", used: Boolean = true, published: Boolean = true
+    ): String {
+        val injector = AsyncApiTestInjector.create(
+            AsyncApiTestInjector.ncsDriver {
+                FakeAsyncApiDriver.fireAndForget().apply { this.published = published; settledMs = 1500L }
+            },
+            "--blackBox=false", "--createTests=true", "--outputFormat=${format.name}",
+            "--asyncApiSettleMs=1500", "--externalServiceIPSelectionStrategy=USER", "--externalServiceIP=127.0.0.5"
+        )
+        val evaluated = AsyncApiTestInjector.evaluate(injector, "bessj")
+        val service = HttpWsExternalService(HttpExternalServiceInfo("http", "supplier.test", 80), "127.0.0.5")
+        val url = "http://supplier.test$path"
+        val request = HttpExternalServiceRequest(UUID.randomUUID(), "GET", path, url, true, service.getSignature(), url, mapOf(), null)
+        val stub = HttpExternalServiceAction(request, HttpWsResponseParam(), service, active = true, used = used, id = 0).apply {
+            doInitialize(injector.getInstance(Randomness::class.java))
+        }
+        val main = evaluated.individual.seeMainExecutableActions().single()
+        (main.parent as EnterpriseActionGroup<*>).addChildrenToGroup(listOf(stub), GroupsOfChildren.EXTERNAL_SERVICES)
+        return injector.getInstance(TestCaseWriter::class.java)
+            .convertToCompilableTestCode(TestCase(evaluated, "testMocked"), "").toString()
     }
 }

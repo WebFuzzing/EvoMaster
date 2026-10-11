@@ -1,5 +1,8 @@
 # Artificial: written for the EvoMaster E2E tests, describing the shop service in
 # com.foo.asyncapi.shop. Not taken from a third party.
+#
+# Restocking, the one operation whose handler calls an HTTP service, is described in
+# shop-restock-kafka.yaml instead.
 asyncapi: 3.0.0
 info:
   title: Shop events over Kafka

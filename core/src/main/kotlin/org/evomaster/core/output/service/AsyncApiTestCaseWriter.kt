@@ -15,9 +15,14 @@ import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome
 import org.evomaster.core.problem.asyncapi.service.AsyncApiSampler
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionResult
+import org.slf4j.Logger
 import java.nio.file.Path
 
 /**
@@ -31,11 +36,11 @@ import java.nio.file.Path
 class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
     companion object {
-        private val log = LoggerFactory.getLogger(AsyncApiTestCaseWriter::class.java)
         private val replyMapper = ObjectMapper()
 
         /** Payload types whose recorded text represents their wire content. */
         private val TEXT_PAYLOAD_TYPES = setOf(String::class.java.name, ByteArray::class.java.name)
+        private val log: Logger = LoggerFactory.getLogger(AsyncApiTestCaseWriter::class.java)
 
         /**
          * Tolerance when comparing doubles, as the same value can differ slightly once
@@ -98,9 +103,22 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
         }
 
         //TODO no database handling yet for AsyncAPI
+        val mocking = config.isEnabledExternalServiceMocking()
+        val mocked = if (mocking) mockedServicesOf(ind) else listOf()
 
         ind.evaluatedMainActions().forEachIndexed { index, evaluated ->
             lines.addEmpty()
+            if (mocking) {
+                /*
+                    As the search does before each message, so a stub set up for one message never
+                    answers a call made for the next. The suite writer does it before each test.
+                    This also clears what the instances were asked, for the wait below.
+                 */
+                if (index > 0) {
+                    resetMockedServices(lines, mocked)
+                }
+                addExternalServiceStubs(lines, evaluated.action)
+            }
             addActionLines(
                 evaluated.action,
                 index,
@@ -110,8 +128,122 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
                 testSuitePath,
                 baseUrlOfSut
             )
-            addSettleWait(lines, evaluated.result)
+            //the calls the service makes say when it is done better than a fixed wait does
+            val awaited = mocking && addServedRequestsWait(lines, evaluated.action, evaluated.result)
+            if (!awaited) {
+                addSettleWait(lines, evaluated.result)
+            }
         }
+    }
+
+    /**
+     * The WireMock instances some message of [ind] has a stub on, once each.
+     */
+    private fun mockedServicesOf(ind: EvaluatedIndividual<*>): List<HttpWsExternalService> =
+        ind.individual.seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE)
+            .filterIsInstance<HttpExternalServiceAction>()
+            .filter { it.active }
+            .map { it.externalService }
+            .distinctBy { it.getSignature() }
+
+    /**
+     * Put [services] back to their default answer, and forget what they were asked, as the
+     * suite writer does before each test.
+     *
+     * Only for Java and Kotlin, the formats the suite writer starts WireMock in.
+     */
+    private fun resetMockedServices(lines: Lines, services: List<HttpWsExternalService>) {
+
+        if (services.isEmpty() || !format.isJavaOrKotlin()) {
+            return
+        }
+
+        services.forEach { service ->
+            lines.addStatement("${TestWriterUtils.getWireMockVariableName(service)}.resetAll()")
+            TestWriterUtils.handleDefaultStubForAsJavaOrKotlin(lines, service, format)
+            lines.appendSemicolon()
+        }
+    }
+
+    /**
+     * After [action], wait until each stub the search saw the service use while handling the
+     * message was called, or for as long as the search waited on the message, whichever ends
+     * first. Counted per stub, so that a call the default answer takes does not end the wait.
+     *
+     * Otherwise a late call could reach the instances after they were reset for the next
+     * message, or the test ended, and get another answer than the search gave it.
+     *
+     * Only for Java and Kotlin, the formats the suite writer starts WireMock in.
+     *
+     * @return whether a wait was written
+     */
+    private fun addServedRequestsWait(lines: Lines, action: Action, result: ActionResult): Boolean {
+
+        //nothing to wait for if the message never went out
+        val res = result as? AsyncApiCallResult ?: return false
+        if (!format.isJavaOrKotlin() || !isPublished(res)) {
+            return false
+        }
+
+        val group = action.parent as? EnterpriseActionGroup<*> ?: return false
+
+        //the request pattern as handleExternalServiceActions registers the stub
+        val count = if (format.isJava()) "getCount()" else "count"
+        val pending = group.getExternalServiceActions()
+            .filterIsInstance<HttpExternalServiceAction>()
+            .filter { it.active && it.used }
+            .map {
+                val instance = TestWriterUtils.getWireMockVariableName(it.externalService)
+                val url = TestWriterUtils.quotedEscaped(it.request.url, format)
+                val pattern = "${it.request.method.lowercase()}RequestedFor(urlEqualTo($url))"
+                val served = "$instance.countRequestsMatching($pattern.build()).$count > 0"
+                if (format.isJava()) "() -> $served"
+                else "java.util.function.BooleanSupplier { $served }"
+            }
+            .distinct()
+            .joinToString(", ")
+
+        if (pending.isEmpty()) {
+            return false
+        }
+
+        lines.addStatement("org.evomaster.test.utils.EMTestUtils.awaitAll(${completionTimeoutMs()}L, $pending)")
+
+        return true
+    }
+
+    /**
+     * Set up what the WireMock instances answer while the service handles [action], as the
+     * search did. The suite writer declares, starts and resets them before each test, and
+     * [handleActionCalls] resets them between messages.
+     *
+     * Only for Java and Kotlin, the formats the suite writer starts WireMock in.
+     */
+    private fun addExternalServiceStubs(lines: Lines, action: Action) {
+
+        val group = action.parent as? EnterpriseActionGroup<*>
+            ?: throw IllegalStateException(
+                "The parent of an AsyncAPI action should be an EnterpriseActionGroup, but it is" +
+                        " ${action.parent?.javaClass?.simpleName}"
+            )
+
+        val stubs = group.getExternalServiceActions()
+            .filterIsInstance<HttpExternalServiceAction>()
+            .filter { it.active }
+
+        if (stubs.isEmpty()) {
+            return
+        }
+
+        if (!format.isJavaOrKotlin()) {
+            LoggingUtil.uniqueWarn(
+                log,
+                "In mocking of external services, only Java and Kotlin are supported, not $format"
+            )
+            return
+        }
+
+        handleExternalServiceActions(lines, stubs)
     }
 
     override fun addActionLinesPerType(
@@ -455,10 +587,9 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
      * After a published message, wait for the window the search kept it open, when it did, so
      * that what the service does handling it does not land on the next message or test.
      *
-     * The whole window is waited, not what the search ended up waiting: where the window ended
-     * early, it ended on what the instrumentation saw, which a generated test has not got. A
-     * message with a reply is waited on too, as the handler may still be running after it
-     * answered.
+     * The whole window, not what the search ended up waiting: an early end came from the
+     * instrumentation, which a generated test has not got. Also after a reply, as the handler may
+     * still be running. Not when the test waits for the calls to the mocked services instead.
      *
      * Only for Java and Kotlin: only a white-box run keeps a message open, and those are the
      * formats it writes.
