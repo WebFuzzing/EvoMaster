@@ -436,6 +436,12 @@ not exist yet looks caught up, so create the topics before the service starts. T
 Generated tests publish with a client of the transport rather than through the driver, so the suite needs
 that client library on its classpath: see [library dependencies](library_dependencies.md).
 
+In white-box mode, the HTTP services a message handler calls can be mocked with WireMock as they are for REST,
+with the same (experimental) options: `--externalServiceIPSelectionStrategy`, together with the `NET` method
+replacements (`--instrumentMR_NET`). What WireMock served is read when the driver returns from an action, so a
+handler that makes its calls after `executeAsyncApiAction` has returned, as one consuming on a thread of its own
+does, needs a settle window (`--asyncApiSettleMs`) for those calls to be seen.
+
 ## RPC APIs
 
 To test RPC APIs, in the the `getProblemInfo()`, you need to return an instance of the

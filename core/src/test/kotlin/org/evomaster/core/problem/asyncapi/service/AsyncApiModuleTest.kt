@@ -9,6 +9,9 @@ import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiRep
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.replied
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceFitnessHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.remote.service.RemoteController
@@ -21,6 +24,7 @@ import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.FlakinessDetector
 import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -176,5 +180,32 @@ class AsyncApiModuleTest {
             val config = AsyncApiTestInjector.create(driver, *options).getInstance(EMConfig::class.java)
             assertTrue(config.createTests, "for ${options.toList()}")
         }
+    }
+
+    @Test
+    fun testEveryoneSeesTheSameWireMockInstances() {
+
+        /*
+            The fitness, the structure mutator, the genes and the suite writer must all see the
+            WireMock instances the fitness started. Left unbound, Guice would give each its own
+            handler.
+         */
+        val driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS))) {
+            replied("""{"resultAsInt": 1}""")
+        }
+        val injector = AsyncApiTestInjector.create(driver, "--blackBox=false")
+
+        val handler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
+
+        assertSame(handler, injector.getInstance(HttpWsExternalServiceHandler::class.java))
+        assertSame(handler, injector.getInstance(SearchGlobalState::class.java).externalServiceHandler)
+        assertSame(
+            injector.getInstance(HarvestActualHttpWsResponseHandler::class.java),
+            injector.getInstance(HarvestActualHttpWsResponseHandler::class.java)
+        )
+        assertSame(
+            injector.getInstance(HttpWsExternalServiceFitnessHandler::class.java),
+            injector.getInstance(HttpWsExternalServiceFitnessHandler::class.java)
+        )
     }
 }

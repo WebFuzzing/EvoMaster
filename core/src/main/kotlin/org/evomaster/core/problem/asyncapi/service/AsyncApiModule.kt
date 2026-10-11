@@ -7,6 +7,9 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceFitnessHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
@@ -100,6 +103,20 @@ class AsyncApiModule : EnterpriseModule() {
             .asEagerSingleton()
 
         bind(TestSuiteWriter::class.java)
+            .asEagerSingleton()
+
+        /*
+            The HTTP services the SUT calls, as for REST. Singletons even when mocking is off: the
+            structure mutator, the test suite writer and the global search state all inject the
+            handler, and must share the same WireMock instances.
+         */
+        bind(HttpWsExternalServiceHandler::class.java)
+            .asEagerSingleton()
+
+        bind(HarvestActualHttpWsResponseHandler::class.java)
+            .asEagerSingleton()
+
+        bind(HttpWsExternalServiceFitnessHandler::class.java)
             .asEagerSingleton()
     }
 }

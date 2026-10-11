@@ -7,6 +7,8 @@ import com.google.inject.TypeLiteral
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.EmittedMessageDto
+import org.evomaster.client.java.controller.api.dto.ExternalServiceInfoDto
+import org.evomaster.client.java.controller.api.dto.HostnameResolutionInfoDto
 import org.evomaster.client.java.controller.api.dto.StringSpecializationInfoDto
 import org.evomaster.client.java.controller.api.dto.TargetInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
@@ -28,6 +30,10 @@ import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.silence
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceFitnessHandlerTest
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
@@ -36,8 +42,11 @@ import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
+import org.evomaster.core.search.service.mutator.StructureMutator
 import org.evomaster.core.search.service.time.ExecutionPhaseController
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -57,6 +66,19 @@ class AsyncApiFitnessTest {
         private const val ERROR = """{"error": {"code": 400, "message": "n must be >= 3"}}"""
 
         private const val BLACK_BOX = "--blackBox"
+
+        /**
+         * A service the SUT calls over HTTP, by a name that does not resolve.
+         */
+        private const val SUPPLIER = HttpWsExternalServiceFitnessHandlerTest.SUPPLIER
+
+        private const val MOCK_IP = HttpWsExternalServiceFitnessHandlerTest.MOCK_IP
+
+        private const val HTTP = "http"
+
+        private const val STOCK_PATH = "/api/stock/A-100"
+
+        private const val OK = 200
 
         /**
          * A line of the SUT, as an instrumented driver would report it once a message reached it.
@@ -420,6 +442,14 @@ class AsyncApiFitnessTest {
     @BeforeEach
     fun reset() {
         RestActionBuilderV3.cleanCache()
+    }
+
+    @AfterEach
+    fun stopWireMock() {
+        //the instances a test started must not keep their address and port for the next one
+        if (this::injector.isInitialized) {
+            injector.getInstance(HttpWsExternalServiceHandler::class.java).reset()
+        }
     }
 
     private fun start(
@@ -1667,5 +1697,144 @@ class AsyncApiFitnessTest {
         assertEquals(0, driver.testResultsRequests)
         assertTrue(updatesOn(evaluated.individual).isEmpty())
         assertFalse(sampler.seeAvailableActions().any { it.getName() == "requestReturn" })
+    }
+
+    /**
+     * What an instrumented driver reports once the service, handling a message, failed to
+     * resolve [SUPPLIER] and, when [port] is given, connected to the address the instrumentation
+     * redirected it to.
+     */
+    private fun calledTheSupplier(port: Int? = null) = TestResultsDto().apply {
+        additionalInfoList.add(AdditionalInfoDto().apply {
+            hostnameResolutionInfoDtos.add(HostnameResolutionInfoDto(SUPPLIER, null))
+            port?.let { externalServices.add(ExternalServiceInfoDto(HTTP, SUPPLIER, it)) }
+        })
+    }
+
+    private fun externalServiceHandler() = injector.getInstance(HttpWsExternalServiceHandler::class.java)
+
+    @Test
+    fun testNoHttpServiceIsMockedByDefault() {
+
+        start(EVENTS) { fireAndForget() }
+        driver.testResults = { calledTheSupplier() }
+
+        evaluate("publishEvent")
+
+        assertFalse(externalServiceHandler().hasLocalDomainNameMapping(SUPPLIER))
+        val sent = driver.actions.single()
+        assertTrue(sent.localAddressMapping.isEmpty())
+        assertTrue(sent.externalServiceMapping.isEmpty())
+    }
+
+    @Test
+    fun testABlackBoxRunMocksNoHttpService() {
+
+        start(EVENTS, "$BLACK_BOX=true", *HttpWsExternalServiceFitnessHandlerTest.MOCKING) { fireAndForget() }
+        driver.testResults = { calledTheSupplier() }
+
+        evaluate("publishEvent")
+
+        assertFalse(externalServiceHandler().hasLocalDomainNameMapping(SUPPLIER))
+        assertTrue(driver.actions.single().localAddressMapping.isEmpty())
+    }
+
+    @Test
+    fun testTheDriverIsToldWhereAHostnameTheServiceCalledNowResolves() {
+
+        start(EVENTS, *HttpWsExternalServiceFitnessHandlerTest.MOCKING) { fireAndForget() }
+        driver.testResults = { calledTheSupplier() }
+
+        val first = evaluate("publishEvent", "publishEvent")
+
+        //the hostname is given a local address, though nothing tells the driver about it yet
+        assertEquals(MOCK_IP, externalServiceHandler().getLocalDomainNameMapping(SUPPLIER))
+        assertTrue(driver.actions.all { it.localAddressMapping.isEmpty() })
+
+        /*
+            The structure mutator adds what the hostname resolves to as an action of the test,
+            and from then on the driver is told, with the first message of the test.
+         */
+        injector.getInstance(StructureMutator::class.java).addInitializingActions(first, null)
+        driver.actions.clear()
+        fitness.calculateCoverage(first.individual.copy() as AsyncApiIndividual, modifiedSpec = null)
+
+        assertEquals(mapOf(SUPPLIER to MOCK_IP), driver.actions[0].localAddressMapping)
+        assertTrue(driver.actions[1].localAddressMapping.isEmpty())
+    }
+
+    @Test
+    fun testTheSearchDecidesWhatAMockedServiceAnswersTheMessage() {
+
+        val port = HttpWsExternalServiceFitnessHandlerTest.freePortOnMockIp()
+        assumeTrue(port != null, "nothing can bind to $MOCK_IP here, see docs/loopback.md")
+
+        //what the service was answered with, each time it called the supplier
+        val statuses = mutableListOf<Int>()
+
+        start(EVENTS, *HttpWsExternalServiceFitnessHandlerTest.MOCKING) {
+            /*
+                Stands in for the service calling the supplier while it handles the message.
+                Once there is a WireMock instance it reaches that, as the instrumentation would.
+             */
+            if (externalServiceHandler().getExternalServices().isNotEmpty()) {
+                statuses.add(HttpWsExternalServiceFitnessHandlerTest.get("$HTTP://$MOCK_IP:$port$STOCK_PATH"))
+            }
+            fireAndForget()
+        }
+        driver.testResults = { calledTheSupplier(port) }
+
+        //the first time, the service found nothing there, so the results are not kept
+        val first = evaluate("publishEvent")
+        assertTrue(results(first).all { it.deathSentence })
+        assertTrue(statuses.isEmpty())
+
+        //the second time a WireMock instance answers, and what it served is recorded
+        val second = fitness.calculateCoverage(first.individual.copy() as AsyncApiIndividual, modifiedSpec = null)!!
+        assertTrue(results(second).none { it.deathSentence })
+        val service = externalServiceHandler().getExternalServices().values.single()
+        assertEquals(listOf(service.getWMDefaultCode()), statuses)
+        assertEquals(STOCK_PATH, second.fitness.getViewAccessedExternalServiceRequests()[0]!!.single().url)
+
+        //which the structure mutator turns into an action, whose response the search chooses
+        injector.getInstance(StructureMutator::class.java).addAndHarvestExternalServiceActions(second, null)
+        val mocked = second.individual.seeExternalServiceActions().filterIsInstance<HttpExternalServiceAction>().single()
+        (mocked.response as HttpWsResponseParam).setStatus(OK)
+
+        fitness.calculateCoverage(second.individual.copy() as AsyncApiIndividual, modifiedSpec = null)
+        assertEquals(listOf(service.getWMDefaultCode(), OK), statuses)
+    }
+
+    @Test
+    fun testWhatAMockedServiceServedWhileAMessageFailedToBePublishedIsNotCreditedToIt() {
+
+        val port = HttpWsExternalServiceFitnessHandlerTest.freePortOnMockIp()
+        assumeTrue(port != null, "nothing can bind to $MOCK_IP here, see docs/loopback.md")
+
+        //which call to the driver fails to publish, after the supplier was called
+        var failing = -1
+        var calls = 0
+
+        start(EVENTS, *HttpWsExternalServiceFitnessHandlerTest.MOCKING) {
+            if (calls++ == failing) {
+                //standing in for the service, still handling an earlier message
+                HttpWsExternalServiceFitnessHandlerTest.get("$HTTP://$MOCK_IP:$port$STOCK_PATH")
+                AsyncApiReplyDto().apply { published = false }
+            } else {
+                fireAndForget()
+            }
+        }
+        driver.testResults = { calledTheSupplier(port) }
+
+        //starts the WireMock instance
+        evaluate("publishEvent")
+
+        //the second message of the next test
+        failing = calls + 1
+        val evaluated = evaluate("publishEvent", "publishEvent")
+
+        assertEquals(AsyncApiOutcome.PUBLISH_FAILED, results(evaluated)[1].getOutcome())
+        val served = evaluated.fitness.getViewAccessedExternalServiceRequests()
+        assertTrue(served[1].isNullOrEmpty(), "$served")
     }
 }
