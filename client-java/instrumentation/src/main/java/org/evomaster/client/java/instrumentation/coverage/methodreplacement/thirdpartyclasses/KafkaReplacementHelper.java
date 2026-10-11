@@ -21,17 +21,14 @@ import java.util.concurrent.Future;
  * and emitted. kafka-clients is not a dependency of EvoMaster, so records are only read by
  * reflection.
  *
- * Two kinds of calls are never recorded:
+ * Two kinds of calls are not recorded:
  * <ul>
- *     <li>those made on the thread running the driver's executeAsyncApiAction, while it runs, see
- *     {@link ExecutionTracer#isExecutingDriverAction()};</li>
- *     <li>those made from inside another replaced call on the same thread. A producer that wraps
- *     another one, as Spring Kafka's CloseSafeProducer does, sends each record twice through the
- *     {@code Producer} interface, and KafkaProducer.send(record) calls send(record, null) on
- *     itself. Both inner calls are replaced as well, since library code is instrumented too, and
- *     would otherwise record the same message again. The price: a send that the code of a
- *     callback or of a custom producer makes, on the same thread, from inside another send, is
- *     not recorded either.</li>
+ *     <li>the driver's, see {@link ExecutionTracer#isExecutingDriverAction()};</li>
+ *     <li>those made from inside another replaced call on the same thread, as library code is
+ *     instrumented too: Spring Kafka's CloseSafeProducer sends each record through the producer
+ *     it wraps, and KafkaProducer.send(record) calls send(record, null). The price: a send made
+ *     from inside another send on the same thread, eg by a callback, is not recorded
+ *     either.</li>
  * </ul>
  */
 final class KafkaReplacementHelper {

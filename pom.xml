@@ -430,6 +430,11 @@
             </dependency>
             <dependency>
                 <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-kafka</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
                 <artifactId>solver</artifactId>
                 <version>${project.version}</version>
             </dependency>

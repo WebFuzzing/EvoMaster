@@ -266,6 +266,44 @@ class AsyncApiFitnessTest {
         """.trimIndent()
     }
 
+    /**
+     * A message whose correlation id rides in a header whose name has the two characters a JSON
+     * Pointer escapes.
+     */
+    private object EscapedHeader {
+        const val OPERATION = "notify"
+        const val HEADER = "x/correlation~id"
+
+        val DOCUMENT = """
+            asyncapi: 3.0.0
+            info:
+              title: Escaped header
+              version: 1.0.0
+            channels:
+              notifications:
+                address: app.notifications
+                messages:
+                  notification:
+                    headers:
+                      type: object
+                      properties:
+                        x/correlation~id:
+                          type: string
+                    correlationId:
+                      location: '${'$'}message.header#/x~1correlation~0id'
+                    payload:
+                      type: object
+                      properties:
+                        text:
+                          type: string
+            operations:
+              notify:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/notifications'
+        """.trimIndent()
+    }
+
     private lateinit var injector: Injector
     private lateinit var driver: FakeAsyncApiDriver
     private lateinit var sampler: AsyncApiSampler
@@ -977,6 +1015,36 @@ class AsyncApiFitnessTest {
         val result = results(evaluate("bessj")).single()
 
         assertTrue(result.getEmittedMessages().isEmpty())
+    }
+
+    @Test
+    fun testConsumerLagIsAskedForWithoutAStableWindow() {
+
+        startNcs("--asyncApiSettleMs=2000", "--asyncApiCompletion=CONSUMER_LAG", "--asyncApiStableMs=150") {
+            fireAndForget().apply {
+                settledMs = 40
+                settleEndedBy = AsyncApiReplyDto.SettleEndReason.CAUGHT_UP
+            }
+        }
+
+        val evaluated = evaluate("bessj")
+
+        val dto = driver.published.single()
+        assertEquals(2000L, dto.settleMs)
+        assertEquals(AsyncApiActionDto.MessageCompletionStrategy.CONSUMER_LAG, dto.completion)
+        //the stable window belongs to COVERAGE_STABLE only
+        assertNull(dto.stableMs)
+        assertEquals(AsyncApiReplyDto.SettleEndReason.CAUGHT_UP, results(evaluated).single().getSettleEndedBy())
+    }
+
+    @Test
+    fun testTheCorrelationHeaderOfAGeneratedTestIsUnescapedAsTheDriverHelperReadsIt() {
+
+        start(EscapedHeader.DOCUMENT, "--createTests=true") { fireAndForget() }
+
+        val result = results(evaluate(EscapedHeader.OPERATION)).single()
+
+        assertEquals(EscapedHeader.HEADER, result.getCorrelationHeader())
     }
 
     @Test

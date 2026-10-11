@@ -26,6 +26,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-kafka</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!--
             Issue with Jersey (coming from client-java) using old version
         -->

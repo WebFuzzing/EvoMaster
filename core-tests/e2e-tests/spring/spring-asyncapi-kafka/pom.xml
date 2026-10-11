@@ -45,6 +45,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <!-- what the driver does with Kafka, so that the driver only starts the broker and the service -->
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-kafka</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-instrumentation</artifactId>
             <type>test-jar</type>

@@ -649,6 +649,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
                     AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE
                 }
                 EMConfig.AsyncApiCompletion.HANDLER_RETURN -> AsyncApiActionDto.MessageCompletionStrategy.HANDLER_RETURN
+                EMConfig.AsyncApiCompletion.CONSUMER_LAG -> AsyncApiActionDto.MessageCompletionStrategy.CONSUMER_LAG
             }
         }
 

@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.internal;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.client.java.instrumentation.MessageHandlingState;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -26,15 +27,17 @@ public class AsyncApiSettle {
             " address a message was published to, so the whole settle window is waited";
 
     /**
-     * How often the SUT's coverage, or what it received, is read while waiting for it to be done,
-     * in milliseconds. Short next to any useful stable window, and long enough that reading it, a
-     * socket round trip for an external SUT, costs little.
+     * How often, in milliseconds, the completion condition is checked while waiting. Short next
+     * to any useful stable window, long enough that each check (a socket round trip for an
+     * external SUT, or a few requests to a broker) costs little.
      */
     static final long POLL_INTERVAL_MS = 25;
 
+    private static final String CAUGHT_UP_FAILURE_WARNING = "The driver failed to tell whether the SUT's" +
+            " consumers have caught up, so the whole settle window is waited";
+
     /**
-     * Where the time comes from, in milliseconds. Only the difference between two readings is
-     * ever used, so it does not have to be wall-clock time.
+     * Time in milliseconds. Only differences are used, so it need not be wall-clock time.
      */
     interface Clock {
         long nowMs();
@@ -74,33 +77,29 @@ public class AsyncApiSettle {
      *
      * @param dto               the action that was just published
      * @param reply             what the driver reported about it, to which the wait is added
-     * @param objectiveUpdates  reads how many times the SUT has reached or improved a coverage
-     *                          objective in the current test, or null when that cannot be known.
-     *                          The argument is the remaining read budget in milliseconds, which the reader must respect.
-     *                          Only read for {@link AsyncApiActionDto.MessageCompletionStrategy#COVERAGE_STABLE}
-     */
-    public void settle(AsyncApiActionDto dto, AsyncApiReplyDto reply, LongFunction<Long> objectiveUpdates) {
-        settle(dto, reply, objectiveUpdates, address -> null);
-    }
-
-    /**
-     * As {@link #settle(AsyncApiActionDto, AsyncApiReplyDto, LongFunction)}, for every completion.
-     *
-     * @param messageHandling   reads what the SUT received from an address in the current action,
-     *                          and how much of it it handled, or null when that cannot be known.
-     *                          Only read, with {@link AsyncApiActionDto#address}, for
+     * @param objectiveUpdates  how many times the SUT has reached or improved a coverage
+     *                          objective in the current test, null if unknown. The argument is the remaining
+     *                          read budget in milliseconds, which the reader must respect. Only read for
+     *                          {@link AsyncApiActionDto.MessageCompletionStrategy#COVERAGE_STABLE}
+     * @param messageHandling   what the SUT received from an address in the current action, and
+     *                          how much of it it handled, null if unknown. Only read for
      *                          {@link AsyncApiActionDto.MessageCompletionStrategy#HANDLER_RETURN}
+     * @param consumersCaughtUp whether the SUT's consumers have caught up, per the driver, null
+     *                          if it cannot tell. Only read for
+     *                          {@link AsyncApiActionDto.MessageCompletionStrategy#CONSUMER_LAG}
      */
     public void settle(
             AsyncApiActionDto dto,
             AsyncApiReplyDto reply,
             LongFunction<Long> objectiveUpdates,
-            Function<String, MessageHandlingState> messageHandling
+            Function<String, MessageHandlingState> messageHandling,
+            Supplier<Boolean> consumersCaughtUp
     ) {
         Objects.requireNonNull(dto);
         Objects.requireNonNull(reply);
         Objects.requireNonNull(objectiveUpdates);
         Objects.requireNonNull(messageHandling);
+        Objects.requireNonNull(consumersCaughtUp);
 
         Long settleMs = dto.settleMs;
         if (settleMs == null || settleMs <= 0) {
@@ -110,6 +109,7 @@ public class AsyncApiSettle {
         boolean coverageStable = dto.completion == AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE
                 && dto.stableMs != null && dto.stableMs > 0;
         boolean handlerReturn = dto.completion == AsyncApiActionDto.MessageCompletionStrategy.HANDLER_RETURN;
+        boolean consumerLag = dto.completion == AsyncApiActionDto.MessageCompletionStrategy.CONSUMER_LAG;
 
         long start = clock.nowMs();
         AsyncApiReplyDto.SettleEndReason end;
@@ -118,6 +118,8 @@ public class AsyncApiSettle {
                 end = waitForStableCoverage(start, settleMs, dto.stableMs, objectiveUpdates);
             } else if (handlerReturn) {
                 end = waitForHandlerReturn(start + settleMs, dto.address, messageHandling);
+            } else if (consumerLag) {
+                end = waitForConsumers(start + settleMs, consumersCaughtUp);
             } else {
                 end = waitUntil(start + settleMs);
             }
@@ -130,19 +132,18 @@ public class AsyncApiSettle {
     }
 
     /**
-     * What {@code reader} reads, where a failure to read counts as not knowing. Reading is a
-     * socket round trip for an external SUT, and the action was published all the same: a
-     * failure here would otherwise turn a dropped connection into a broken setup.
+     * What {@code reader} reads, with a failure counting as unknown: the action was published
+     * all the same, so a dropped connection or a slow broker must not fail it.
      *
-     * @param warning what to warn about, once, as reads come every few milliseconds; the reason
-     *                goes to the debug log
+     * @param warning warned once, as reads come every few milliseconds; the reason goes to the
+     *                debug log
      */
     private static <T> T readOrNull(Supplier<T> reader, String warning) {
         try {
             return reader.get();
         } catch (RuntimeException e) {
-            org.evomaster.client.java.utils.SimpleLogger.uniqueWarn(warning);
-            org.evomaster.client.java.utils.SimpleLogger.debug(warning + ": " + e.getMessage());
+            SimpleLogger.uniqueWarn(warning);
+            SimpleLogger.debug(warning + ": " + e.getMessage());
             return null;
         }
     }
@@ -238,6 +239,34 @@ public class AsyncApiSettle {
                 lastChange = clock.nowMs();
             }
             last = current;
+        }
+    }
+
+    /**
+     * Stop once the driver says the SUT's consumers have caught up, or at the deadline. The
+     * first check is immediate: after a reply the SUT has usually taken the message in already.
+     */
+    private AsyncApiReplyDto.SettleEndReason waitForConsumers(
+            long deadline,
+            Supplier<Boolean> consumersCaughtUp
+    ) throws InterruptedException {
+
+        while (true) {
+            //user code, eg asking a broker that may not answer in time
+            Boolean caughtUp = readOrNull(consumersCaughtUp, CAUGHT_UP_FAILURE_WARNING);
+            if (caughtUp == null) {
+                //the driver cannot tell: wait out the window
+                return waitUntil(deadline);
+            }
+            if (caughtUp) {
+                return AsyncApiReplyDto.SettleEndReason.CAUGHT_UP;
+            }
+
+            long left = deadline - clock.nowMs();
+            if (left <= 0) {
+                return AsyncApiReplyDto.SettleEndReason.DEADLINE;
+            }
+            sleeper.sleep(Math.min(POLL_INTERVAL_MS, left));
         }
     }
 }

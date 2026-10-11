@@ -1,0 +1,61 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.evomaster</groupId>
+        <artifactId>evomaster-client-java</artifactId>
+        <version>6.2.1-SNAPSHOT</version>
+    </parent>
+
+    <!--
+        Optional helper for writing the driver of an AsyncAPI service that speaks Kafka: publish
+        a message and await its reply, create topics, wait for the service to be ready, and
+        tell whether its consumer groups have caught up. Nothing in EvoMaster depends on it; a
+        driver may use it, or talk to Kafka by itself.
+    -->
+    <artifactId>evomaster-client-java-kafka</artifactId>
+    <packaging>jar</packaging>
+    <name>${project.groupId}:${project.artifactId}</name>
+
+    <dependencies>
+        <!--
+            Provided: a driver already has these classes, shaded inside the
+            evomaster-client-java-controller jar. Compile scope would put a second copy of the
+            DTOs on its classpath, with everything controller-api brings along.
+        -->
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-controller-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!--
+            Provided: the helper runs with the Kafka client the driver brings, of the version its
+            service uses. Compiled against 3.x, as 4.x clients need Java 11.
+        -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

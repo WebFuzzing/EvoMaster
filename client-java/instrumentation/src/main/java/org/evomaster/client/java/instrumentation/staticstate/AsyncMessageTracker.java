@@ -23,9 +23,8 @@ import java.util.*;
  *     error handlers do) reads as handled until it is received again.</li>
  * </ul>
  *
- * The SUT's calls are recorded by method replacements, which do not record the calls the driver
- * makes itself while publishing an action, see {@link ExecutionTracer#isExecutingDriverAction()}.
- * Reset with {@link ExecutionTracer#reset()}.
+ * Calls the driver makes itself are not recorded, see
+ * {@link ExecutionTracer#isExecutingDriverAction()}. Reset with {@link ExecutionTracer#reset()}.
  */
 public class AsyncMessageTracker {
 

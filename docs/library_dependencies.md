@@ -94,6 +94,21 @@ which is not brought in by `evomaster-client-java-dependencies`, so it has to be
 Nothing else. The assertions those tests make read the reply as JSON with `jackson-databind`, which
 `evomaster-client-java-dependencies` already brings in.
 
+A white-box driver for a Kafka service can do its Kafka work with an optional helper library, described
+in the documentation for writing [white-box drivers](write_driver.md):
+
+```
+<dependency>
+   <groupId>org.evomaster</groupId>
+   <artifactId>evomaster-client-java-kafka</artifactId>
+   <scope>test</scope>
+   <version>LATEST</version>
+</dependency>
+```
+
+It uses the `kafka-clients` (3.x) and `evomaster-client-java-controller` already on the driver's
+classpath, and brings no dependency of its own.
+
 ## NodeJS (e.g., JavaScript)
 
 Generated tests for block-box testing requires different libraries, such as Jest and SuperAgent.
