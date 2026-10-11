@@ -759,6 +759,58 @@ class AsyncApiFitnessTest {
         evaluate("bessj", "expint")
 
         assertEquals(listOf(250L, 250L), driver.published.map { it.settleMs })
+        //the whole window unless asked otherwise, and no quiet window to go with it
+        assertEquals(AsyncApiActionDto.Completion.FIXED, driver.published.first().completion)
+        assertNull(driver.published.first().quietMs)
+    }
+
+    @Test
+    fun testCoverageQuiescenceIsAskedForWithItsQuietWindow() {
+
+        startNcs("--asyncApiSettleMs=2000", "--asyncApiCompletion=COVERAGE_QUIESCENCE", "--asyncApiQuietMs=150") {
+            fireAndForget()
+        }
+
+        evaluate("bessj")
+
+        val dto = driver.published.single()
+        assertEquals(2000L, dto.settleMs)
+        assertEquals(AsyncApiActionDto.Completion.COVERAGE_QUIESCENCE, dto.completion)
+        assertEquals(150L, dto.quietMs)
+    }
+
+    @Test
+    fun testABlackBoxRunAsksForNoQuiescenceEither() {
+
+        startNcs("$BLACK_BOX=true") { fireAndForget() }
+        //set after start, as EMConfig puts both back to their defaults in black-box
+        injector.getInstance(EMConfig::class.java).apply {
+            asyncApiSettleMs = 2000
+            asyncApiCompletion = EMConfig.AsyncApiCompletion.COVERAGE_QUIESCENCE
+        }
+
+        evaluate("bessj")
+
+        val dto = driver.published.single()
+        assertNull(dto.settleMs)
+        assertNull(dto.completion)
+        assertNull(dto.quietMs)
+    }
+
+    @Test
+    fun testWhyTheControllerStoppedWaitingIsKeptOnTheResult() {
+
+        startNcs("--asyncApiSettleMs=2000", "--asyncApiCompletion=COVERAGE_QUIESCENCE") {
+            fireAndForget().apply {
+                settledMs = 230
+                settleEndedBy = AsyncApiReplyDto.SettleEnd.QUIESCENCE
+            }
+        }
+
+        val result = results(evaluate("bessj")).single()
+
+        assertEquals(230L, result.getSettledMs())
+        assertEquals(AsyncApiReplyDto.SettleEnd.QUIESCENCE, result.getSettleEndedBy())
     }
 
     @Test
@@ -768,7 +820,9 @@ class AsyncApiFitnessTest {
             The window is there so that the code a message reaches is credited to it. A
             black-box run collects no code coverage, so it would only slow the search down.
          */
-        startNcs("$BLACK_BOX=true", "--asyncApiSettleMs=250") { fireAndForget() }
+        startNcs("$BLACK_BOX=true") { fireAndForget() }
+        //set after start, as EMConfig puts it back to 0 in black-box
+        injector.getInstance(EMConfig::class.java).asyncApiSettleMs = 250
 
         evaluate("bessj")
 
@@ -793,5 +847,6 @@ class AsyncApiFitnessTest {
         val evaluated = evaluate("bessj")
 
         assertNull(results(evaluated).single().getSettledMs())
+        assertNull(results(evaluated).single().getSettleEndedBy())
     }
 }

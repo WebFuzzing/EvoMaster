@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiAct
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Keeps an AsyncAPI action open for a while after the driver has returned from publishing it,
@@ -14,6 +15,16 @@ import java.util.Objects;
 public class AsyncApiSettle {
 
     private static final long NANOS_PER_MILLI = 1_000_000L;
+
+    private static final String OBJECTIVE_UPDATES_FAILURE_WARNING = "Failed to read how many coverage objectives" +
+            " the SUT has reached or improved, so the whole settle window is waited";
+
+    /**
+     * How often the SUT's coverage is read while waiting for it to go quiet, in milliseconds.
+     * Short next to any useful quiet window, and long enough that reading it, a socket round
+     * trip for an external SUT, costs little.
+     */
+    static final long POLL_INTERVAL_MS = 25;
 
     /**
      * Where the time comes from, in milliseconds. Only the difference between two readings is
@@ -48,33 +59,112 @@ public class AsyncApiSettle {
     }
 
     /**
-     * Wait as long as {@link AsyncApiActionDto#settleMs} asks, and record in
-     * {@link AsyncApiReplyDto#settledMs} how long that actually was. Nothing is waited, and
-     * nothing recorded, when no wait is asked for.
+     * Wait as {@link AsyncApiActionDto#settleMs} and {@link AsyncApiActionDto#completion} ask,
+     * and record in {@link AsyncApiReplyDto#settledMs} how long that actually was and in
+     * {@link AsyncApiReplyDto#settleEndedBy} why it ended. Nothing is waited or recorded when no
+     * wait is asked for.
      *
-     * The thread calling this is a request thread of the controller, whose code is never
-     * instrumented, so the kill switch does not interrupt it. If it is interrupted all the same,
-     * the wait ends there, the interrupt is left set for whoever owns the thread, and the time
-     * actually waited is what gets recorded.
+     * If the thread is interrupted, the wait ends there and the interrupt flag is left set.
      *
-     * @param dto   the action that was just published
-     * @param reply what the driver reported about it, to which the wait is added
+     * @param dto               the action that was just published
+     * @param reply             what the driver reported about it, to which the wait is added
+     * @param objectiveUpdates  reads how many times the SUT has reached or improved a coverage
+     *                          objective in the current test, or null when that cannot be known.
+     *                          Only read for {@link AsyncApiActionDto.Completion#COVERAGE_QUIESCENCE}
      */
-    public void settle(AsyncApiActionDto dto, AsyncApiReplyDto reply) {
+    public void settle(AsyncApiActionDto dto, AsyncApiReplyDto reply, Supplier<Long> objectiveUpdates) {
         Objects.requireNonNull(dto);
         Objects.requireNonNull(reply);
+        Objects.requireNonNull(objectiveUpdates);
 
         Long settleMs = dto.settleMs;
         if (settleMs == null || settleMs <= 0) {
             return;
         }
 
+        boolean quiescence = dto.completion == AsyncApiActionDto.Completion.COVERAGE_QUIESCENCE
+                && dto.quietMs != null && dto.quietMs > 0;
+
         long start = clock.nowMs();
+        AsyncApiReplyDto.SettleEnd end;
         try {
-            sleeper.sleep(settleMs);
+            end = quiescence
+                    ? waitForQuiescence(start, settleMs, dto.quietMs, objectiveUpdates)
+                    : waitUntil(start + settleMs);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            end = AsyncApiReplyDto.SettleEnd.INTERRUPTED;
         }
         reply.settledMs = clock.nowMs() - start;
+        reply.settleEndedBy = end;
+    }
+
+    /**
+     * What {@code reader} reads, where a failure to read counts as not knowing. Reading is a
+     * socket round trip for an external SUT, and the action was published all the same: a
+     * failure here would otherwise turn a dropped connection into a broken setup.
+     *
+     * @param warning what to warn about, once, as reads come every few milliseconds; the reason
+     *                goes to the debug log
+     */
+    private static <T> T readOrNull(Supplier<T> reader, String warning) {
+        try {
+            return reader.get();
+        } catch (RuntimeException e) {
+            org.evomaster.client.java.utils.SimpleLogger.uniqueWarn(warning);
+            org.evomaster.client.java.utils.SimpleLogger.debug(warning + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    private AsyncApiReplyDto.SettleEnd waitUntil(long deadline) throws InterruptedException {
+        long left = deadline - clock.nowMs();
+        if (left > 0) {
+            sleeper.sleep(left);
+        }
+        return AsyncApiReplyDto.SettleEnd.DEADLINE;
+    }
+
+    /**
+     * Read the SUT's coverage every {@link #POLL_INTERVAL_MS}, and stop once it has gone
+     * {@code quietMs} without moving, or at the deadline, whichever comes first. The quiet
+     * period is counted from the start of the wait, so a service that does nothing new after
+     * the driver returned is let go after {@code quietMs}.
+     */
+    private AsyncApiReplyDto.SettleEnd waitForQuiescence(
+            long start,
+            long settleMs,
+            long quietMs,
+            Supplier<Long> objectiveUpdates
+    ) throws InterruptedException {
+
+        long deadline = start + settleMs;
+
+        Long last = readOrNull(objectiveUpdates, OBJECTIVE_UPDATES_FAILURE_WARNING);
+        long lastChange = start;
+
+        while (true) {
+            if (last == null) {
+                //coverage unknown: wait out the window
+                return waitUntil(deadline);
+            }
+
+            long now = clock.nowMs();
+            if (now >= deadline) {
+                return AsyncApiReplyDto.SettleEnd.DEADLINE;
+            }
+            if (now - lastChange >= quietMs) {
+                return AsyncApiReplyDto.SettleEnd.QUIESCENCE;
+            }
+
+            long nap = Math.min(POLL_INTERVAL_MS, Math.min(deadline - now, lastChange + quietMs - now));
+            sleeper.sleep(nap);
+
+            Long current = readOrNull(objectiveUpdates, OBJECTIVE_UPDATES_FAILURE_WARNING);
+            if (current != null && !current.equals(last)) {
+                lastChange = clock.nowMs();
+            }
+            last = current;
+        }
     }
 }
