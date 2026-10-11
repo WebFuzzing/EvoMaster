@@ -1,6 +1,10 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.core.EMConfig
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
+import org.evomaster.core.output.TestCase
+import org.evomaster.core.problem.asyncapi.service.AsyncApiTestInjector
+import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.junit.jupiter.api.Assertions.*
@@ -106,5 +110,59 @@ class AsyncApiTestCaseWriterTest {
         assertThrows(IllegalArgumentException::class.java) {
             emit("""{"a": 1}""") { outputFormat = OutputFormat.PYTHON_UNITTEST }
         }
+    }
+
+    @Test
+    fun testEachPublishedMessageIsGivenTheWholeSettleWindow() {
+        listOf(OutputFormat.JAVA_JUNIT_5, OutputFormat.KOTLIN_JUNIT_5).forEach { format ->
+            val body = settledBody(format, 1500, 2) {
+                FakeAsyncApiDriver.fireAndForget().apply { settledMs = 300L }
+            }
+            val publish = body.indexOf("publishAndAwaitReply")
+            val wait = body.indexOf("Thread.sleep(1500)")
+            assertTrue(publish >= 0, body)
+            assertTrue(wait > publish, body)
+            assertTrue(body.indexOf("publishAndAwaitReply", publish + 1) > wait, body)
+            assertEquals(2, Regex("Thread[.]sleep[(]1500[)]").findAll(body).count(), body)
+        }
+    }
+
+    @Test
+    fun testMessagesWithRepliesOrTimeoutsAreGivenTheSettleWindow() {
+        listOf(OutputFormat.JAVA_JUNIT_5, OutputFormat.KOTLIN_JUNIT_5).forEach { format ->
+            listOf(FakeAsyncApiDriver.replied(AsyncApiTestInjector.DOUBLE_RESULT), FakeAsyncApiDriver.silence())
+                .forEach { reply ->
+                    val body = settledBody(format, 1500) { reply.apply { settledMs = 1500L } }
+                    val publish = body.indexOf("publishAndAwaitReply")
+                    assertTrue(publish >= 0, body)
+                    assertTrue(body.indexOf("Thread.sleep(1500)") > publish, body)
+                }
+        }
+    }
+
+    @Test
+    fun testNoSettleWaitIsWrittenWhenNoMessageWasKeptOpen() {
+        val noWindow = settledBody(OutputFormat.KOTLIN_JUNIT_5, 0) { FakeAsyncApiDriver.fireAndForget() }
+        assertFalse(noWindow.contains("Thread.sleep"), noWindow)
+        val failed = settledBody(OutputFormat.KOTLIN_JUNIT_5, 1500) {
+            FakeAsyncApiDriver.fireAndForget().apply { published = false }
+        }
+        assertFalse(failed.contains("Thread.sleep"), failed)
+    }
+
+    private fun settledBody(
+        format: OutputFormat,
+        settleMs: Int,
+        count: Int = 1,
+        answer: () -> AsyncApiReplyDto
+    ): String {
+        val injector = AsyncApiTestInjector.create(
+            AsyncApiTestInjector.ncsDriver { answer() },
+            "--blackBox=false", "--createTests=true",
+            "--outputFormat=${format.name}", "--asyncApiSettleMs=$settleMs"
+        )
+        val evaluated = AsyncApiTestInjector.evaluate(injector, *Array(count) { "bessj" })
+        return injector.getInstance(TestCaseWriter::class.java)
+            .convertToCompilableTestCode(TestCase(evaluated, "testSettle"), "").toString()
     }
 }
