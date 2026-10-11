@@ -9,6 +9,7 @@ import com.webfuzzing.asyncapi.models.AsyncApiReply
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsFitness
@@ -24,6 +25,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -160,6 +162,21 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
                 ?: return null
             handleExtra(dto, fv)
+
+            if (epc.isInSearch() && config.isEnabledTaintAnalysis()) {
+                /*
+                    A tainted string in a payload or a header reaches the service inside the
+                    message. The analysis matches what the service reports against the genes of
+                    every action, so nested fields are covered, whichever thread consumed it.
+
+                    At most one entry per result, not exactly one as GraphQL asserts: a driver that
+                    could not be reached records no entry for its message.
+
+                    Only during the search, as for REST and GraphQL: nothing mutates the genes later.
+                 */
+                Lazy.assert { dto.additionalInfoList.size <= actionResults.count { it is AsyncApiCallResult } }
+                TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config)
+            }
         }
 
         return EvaluatedIndividual(
