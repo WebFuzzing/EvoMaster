@@ -60,6 +60,11 @@ public enum ReplacementCategory {
     /**
      * Replacements to handle DYNAMODB command interceptions
      */
-    DYNAMODB
+    DYNAMODB,
+
+    /**
+     * Replacements that track the messages a service consumes from and emits to Kafka
+     */
+    KAFKA
 }
 

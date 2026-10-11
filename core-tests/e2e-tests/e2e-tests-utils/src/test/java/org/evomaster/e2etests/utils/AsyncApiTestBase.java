@@ -3,6 +3,7 @@ package org.evomaster.e2etests.utils;
 import com.google.inject.Injector;
 import com.webfuzzing.commons.faults.FaultCategory;
 import kotlin.Pair;
+import org.evomaster.client.java.controller.api.dto.EmittedMessageDto;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.core.Main;
@@ -130,6 +131,15 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
         return allResultsOf(solution).stream()
                 .filter(r -> r.getSettleEndedBy() == end)
                 .count();
+    }
+
+    /**
+     * Every message the service was recorded emitting, across the whole solution.
+     */
+    protected List<EmittedMessageDto> emittedMessagesOf(Solution<AsyncApiIndividual> solution) {
+        return allResultsOf(solution).stream()
+                .flatMap(r -> r.getEmittedMessages().stream())
+                .collect(Collectors.toList());
     }
 
     protected void assertReplied(Solution<AsyncApiIndividual> solution, String operation) {

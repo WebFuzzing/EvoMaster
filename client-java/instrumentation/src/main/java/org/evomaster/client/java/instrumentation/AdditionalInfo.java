@@ -8,6 +8,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -15,6 +16,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * to collect at runtime when test cases are executed.
  */
 public class AdditionalInfo implements Serializable {
+
+    /**
+     * At most how many of the messages the SUT emits in an action are kept.
+     */
+    public static final int MAX_EMITTED_MESSAGES = 100;
 
     /**
      * In REST APIs, it can happen that some query parameters do not
@@ -121,6 +127,12 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<CassandraTableMetadata> cassandraTableMetadataData = new CopyOnWriteArraySet<>();
 
+    /**
+     * The messages the SUT handed to a broker client to publish, in order, up to
+     * {@link #MAX_EMITTED_MESSAGES}.
+     */
+    private final List<EmittedMessage> emittedMessages = new CopyOnWriteArrayList<>();
+
     public Set<ExecutedSqlCommand> getSqlInfoData(){
         return Collections.unmodifiableSet(executedSqlCommandData);
     }
@@ -191,6 +203,21 @@ public class AdditionalInfo implements Serializable {
 
     public void addCassandraTableMetadata(CassandraTableMetadata cassandraTableMetadata){
         cassandraTableMetadataData.add(cassandraTableMetadata);
+    }
+
+    public void addEmittedMessage(EmittedMessage message){
+        Objects.requireNonNull(message);
+        //checked and added separately, so a burst on several threads can go a little over: harmless
+        if(emittedMessages.size() < MAX_EMITTED_MESSAGES) {
+            emittedMessages.add(message);
+        }
+    }
+
+    /**
+     * @return the messages the SUT emitted, in the order it emitted them
+     */
+    public List<EmittedMessage> getEmittedMessagesView(){
+        return Collections.unmodifiableList(emittedMessages);
     }
 
     public Set<String> getParsedDtoNamesView(){

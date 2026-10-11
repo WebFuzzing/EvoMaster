@@ -48,6 +48,12 @@ public class ReplacementList {
                     new IntegerClassReplacement(),
                     new InetAddressClassReplacement(),
                     new InetSocketAddressClassReplacement(),
+                    new KafkaConsumerClassReplacement(),
+                    new KafkaConsumerInterfaceClassReplacement(),
+                    new KafkaConsumerInterfaceLegacyPollClassReplacement(),
+                    new KafkaConsumerLegacyPollClassReplacement(),
+                    new KafkaProducerClassReplacement(),
+                    new KafkaProducerInterfaceClassReplacement(),
                     new KotlinIntrinsicsClassReplacement(),
                     new JacksonObjectMapperClassReplacement(),
                     new JacksonObjectReaderClassReplacement(),
@@ -189,8 +195,19 @@ public class ReplacementList {
                 )
                 .collect(Collectors.toList());
 
-        assert !strict || (list.size() <= 1); //if strict, at most 1 class can match
+        /*
+            If strict, at most 1 class can replace the constructors of the target. Other classes can
+            target the same class for its methods, eg the Kafka consumer's poll(long) is in a class
+            of its own, as newer versions of the library no longer have it.
+         */
+        assert !strict || list.stream().filter(ReplacementList::replacesConstructors).count() <= 1;
 
         return list;
+    }
+
+    private static boolean replacesConstructors(MethodReplacementClass mrc) {
+        return Arrays.stream(mrc.getClass().getDeclaredMethods())
+                .map(m -> m.getAnnotation(Replacement.class))
+                .anyMatch(r -> r != null && r.replacingConstructor());
     }
 }

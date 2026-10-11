@@ -2,8 +2,10 @@ package org.evomaster.client.java.controller.internal;
 
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
+import org.evomaster.client.java.instrumentation.MessageHandlingState;
 
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -19,10 +21,13 @@ public class AsyncApiSettle {
     private static final String OBJECTIVE_UPDATES_FAILURE_WARNING = "Failed to read how many coverage objectives" +
             " the SUT has reached or improved, so the whole settle window is waited";
 
+    private static final String MESSAGE_HANDLING_FAILURE_WARNING = "Failed to read what the SUT received from the" +
+            " address a message was published to, so the whole settle window is waited";
+
     /**
-     * How often the SUT's coverage is read while waiting for it to go quiet, in milliseconds.
-     * Short next to any useful quiet window, and long enough that reading it, a socket round
-     * trip for an external SUT, costs little.
+     * How often the SUT's coverage, or what it received, is read while waiting for it to be done,
+     * in milliseconds. Short next to any useful quiet window, and long enough that reading it, a
+     * socket round trip for an external SUT, costs little.
      */
     static final long POLL_INTERVAL_MS = 25;
 
@@ -73,9 +78,27 @@ public class AsyncApiSettle {
      *                          Only read for {@link AsyncApiActionDto.Completion#COVERAGE_QUIESCENCE}
      */
     public void settle(AsyncApiActionDto dto, AsyncApiReplyDto reply, Supplier<Long> objectiveUpdates) {
+        settle(dto, reply, objectiveUpdates, address -> null);
+    }
+
+    /**
+     * As {@link #settle(AsyncApiActionDto, AsyncApiReplyDto, Supplier)}, for every completion.
+     *
+     * @param messageHandling   reads what the SUT received from an address in the current action,
+     *                          and how much of it it handled, or null when that cannot be known.
+     *                          Only read, with {@link AsyncApiActionDto#address}, for
+     *                          {@link AsyncApiActionDto.Completion#HANDLER_RETURN}
+     */
+    public void settle(
+            AsyncApiActionDto dto,
+            AsyncApiReplyDto reply,
+            Supplier<Long> objectiveUpdates,
+            Function<String, MessageHandlingState> messageHandling
+    ) {
         Objects.requireNonNull(dto);
         Objects.requireNonNull(reply);
         Objects.requireNonNull(objectiveUpdates);
+        Objects.requireNonNull(messageHandling);
 
         Long settleMs = dto.settleMs;
         if (settleMs == null || settleMs <= 0) {
@@ -84,13 +107,18 @@ public class AsyncApiSettle {
 
         boolean quiescence = dto.completion == AsyncApiActionDto.Completion.COVERAGE_QUIESCENCE
                 && dto.quietMs != null && dto.quietMs > 0;
+        boolean handlerReturn = dto.completion == AsyncApiActionDto.Completion.HANDLER_RETURN;
 
         long start = clock.nowMs();
         AsyncApiReplyDto.SettleEnd end;
         try {
-            end = quiescence
-                    ? waitForQuiescence(start, settleMs, dto.quietMs, objectiveUpdates)
-                    : waitUntil(start + settleMs);
+            if (quiescence) {
+                end = waitForQuiescence(start, settleMs, dto.quietMs, objectiveUpdates);
+            } else if (handlerReturn) {
+                end = waitForHandlerReturn(start + settleMs, dto.address, messageHandling);
+            } else {
+                end = waitUntil(start + settleMs);
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             end = AsyncApiReplyDto.SettleEnd.INTERRUPTED;
@@ -126,10 +154,42 @@ public class AsyncApiSettle {
     }
 
     /**
-     * Read the SUT's coverage every {@link #POLL_INTERVAL_MS}, and stop once it has gone
-     * {@code quietMs} without moving, or at the deadline, whichever comes first. The quiet
-     * period is counted from the start of the wait, so a service that does nothing new after
-     * the driver returned is let go after {@code quietMs}.
+     * Stop once the SUT received something from the action's address in this action and is done
+     * with all of it, or at the deadline. What was received before the driver returned counts
+     * too, as does a leftover message from an earlier action consumed only now. A missing
+     * address or unreadable state means the whole window.
+     */
+    private AsyncApiReplyDto.SettleEnd waitForHandlerReturn(
+            long deadline,
+            String address,
+            Function<String, MessageHandlingState> messageHandling
+    ) throws InterruptedException {
+
+        if (address == null) {
+            return waitUntil(deadline);
+        }
+
+        while (true) {
+            MessageHandlingState state = readOrNull(() -> messageHandling.apply(address),
+                    MESSAGE_HANDLING_FAILURE_WARNING);
+            if (state == null) {
+                return waitUntil(deadline);
+            }
+            if (state.isHandled()) {
+                return AsyncApiReplyDto.SettleEnd.HANDLER_RETURN;
+            }
+
+            long now = clock.nowMs();
+            if (now >= deadline) {
+                return AsyncApiReplyDto.SettleEnd.DEADLINE;
+            }
+            sleeper.sleep(Math.min(POLL_INTERVAL_MS, deadline - now));
+        }
+    }
+
+    /**
+     * Stop once the SUT's coverage has gone {@code quietMs} without moving, counted from the
+     * start of the wait, or at the deadline.
      */
     private AsyncApiReplyDto.SettleEnd waitForQuiescence(
             long start,
