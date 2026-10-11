@@ -11,8 +11,8 @@ info:
     it takes is confirmed on a topic of its own, for whoever is listening.
 
     What the service does with each message is only visible from inside it: it books
-    couriers, pages whoever is on call, renders invoices on a thread of its own, and keeps
-    the stock of each product in a database.
+    couriers, pages whoever is on call, renders invoices on a thread of its own, keeps
+    the stock of each product in a database, and refunds returns.
 defaultContentType: application/json
 
 servers:
@@ -37,6 +37,11 @@ channels:
     messages:
       stockAdjusted:
         $ref: '#/components/messages/stockAdjusted'
+  returnsRequested:
+    address: shop.returns.requested
+    messages:
+      returnRequested:
+        $ref: '#/components/messages/returnRequested'
   ordersConfirmed:
     address: shop.orders.confirmed
     messages:
@@ -59,6 +64,11 @@ operations:
     summary: Items of a product were added to, or taken from, the stock.
     channel:
       $ref: '#/channels/stockAdjusted'
+  requestReturn:
+    action: receive
+    summary: A customer sends back the items of an order.
+    channel:
+      $ref: '#/channels/returnsRequested'
   confirmOrder:
     action: send
     summary: An order was taken.
@@ -82,6 +92,11 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/StockAdjusted'
+    # Deliberately no payload: the document leaves the shape of a return undescribed, as
+    # documents often do for a payload whose schema lives only in the consumer's code.
+    returnRequested:
+      name: ReturnRequested
+      contentType: application/json
     orderConfirmed:
       name: OrderConfirmed
       contentType: application/json

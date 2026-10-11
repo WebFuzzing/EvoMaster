@@ -3144,6 +3144,14 @@ class EMConfig {
     var asyncApiStableMs = 200
 
     @Experimental
+    @Cfg("When testing an AsyncAPI service in white-box mode, replace a message payload the document says nothing" +
+            " about with the shape of the class the service is seen reading it into. A payload is opaque when the" +
+            " message declares none, or declares a schema with no structure: nothing but annotations, `type: object`" +
+            " and `additionalProperties: true`. Such a message is published as an empty JSON object until the service" +
+            " reads one, after which the class its JSON library parsed it into gives the fields to vary.")
+    var expandAsyncApiPayloads = false
+
+    @Experimental
     @Cfg("When testing an AsyncAPI service, the probability of publishing a message's declared example as it is," +
             " rather than a value sampled from its schema. A service that silently drops what it does not recognise" +
             " may never reply to sampled values, and the examples are what its author knows it accepts.")
