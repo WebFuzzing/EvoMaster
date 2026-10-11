@@ -45,6 +45,8 @@
         <jersey.version>2.48</jersey.version>
         <!--  THOSE ARE ONLY FOR TESTING -->
         <springboot.version>2.5.4</springboot.version>
+        <!-- The version that Spring Boot 2.5.4 manages. 3.x needs Spring 6 and JDK 17 -->
+        <spring-kafka.version>2.7.6</spring-kafka.version>
     </properties>
 
 
@@ -100,6 +102,17 @@
                 <groupId>org.glassfish.jersey.inject</groupId>
                 <artifactId>jersey-hk2</artifactId>
                 <version>${jersey.version}</version>
+            </dependency>
+
+            <!--
+                Only for testing that instrumentation applies inside a library that consumes
+                message payloads. Brings kafka-clients, whose version is managed in the root pom.
+            -->
+            <dependency>
+                <groupId>org.springframework.kafka</groupId>
+                <artifactId>spring-kafka</artifactId>
+                <version>${spring-kafka.version}</version>
+                <scope>test</scope>
             </dependency>
 
         </dependencies>
