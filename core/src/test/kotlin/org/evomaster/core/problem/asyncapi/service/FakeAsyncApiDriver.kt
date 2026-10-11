@@ -29,6 +29,12 @@ class FakeAsyncApiDriver(
     val published: MutableList<AsyncApiActionDto> = mutableListOf()
 
     /**
+     * Every action this driver was told to execute, in order, with what the core sent alongside
+     * the message, such as where the hostnames the service calls should resolve to.
+     */
+    val actions: MutableList<ActionDto> = mutableListOf()
+
+    /**
      * What this driver answers when asked for the coverage of a test, as an instrumented one
      * would: code targets, and what the SUT did with its inputs.
      */
@@ -80,6 +86,7 @@ class FakeAsyncApiDriver(
 
     override fun executeNewAsyncApiActionAndGetReply(actionDto: ActionDto): AsyncApiReplyDto? {
         val call = actionDto.asyncApiCall
+        actions.add(actionDto)
         published.add(call)
         return answer(call)?.apply { index = actionDto.index }
     }

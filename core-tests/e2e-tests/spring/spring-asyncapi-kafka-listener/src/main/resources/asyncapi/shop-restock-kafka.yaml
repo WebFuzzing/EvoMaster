@@ -1,0 +1,57 @@
+# Artificial: written for the EvoMaster E2E tests, describing one more operation of the shop
+# service in com.foo.asyncapi.shop. Not taken from a third party.
+#
+# Kept apart from shop-kafka.yaml, which describes the rest of the service, so that the search
+# over restocking spends its whole budget there, and the tests over the rest of the shop are
+# not changed by it.
+asyncapi: 3.0.0
+info:
+  title: Shop restocking over Kafka
+  version: 1.0.0
+  description: |
+    The restocking side of a shop back end that reacts to events published on **Kafka**, and
+    never answers them. A client publishes a restock request, and that is the end of it as far
+    as the client can see.
+
+    What the service does with it is only visible from inside it: it asks the supplier over
+    HTTP whether it can deliver, and acts on the answer.
+defaultContentType: application/json
+
+servers:
+  kafka:
+    host: localhost:9092
+    protocol: kafka
+    description: Kafka broker carrying the shop topics.
+
+channels:
+  restockRequested:
+    address: shop.restock.requested
+    messages:
+      restockRequested:
+        $ref: '#/components/messages/restockRequested'
+
+operations:
+  requestRestock:
+    action: receive
+    summary: More items of a product are wanted from its supplier.
+    channel:
+      $ref: '#/channels/restockRequested'
+
+components:
+  messages:
+    restockRequested:
+      name: RestockRequested
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RestockRequested'
+
+  schemas:
+    RestockRequested:
+      type: object
+      required: [sku, quantity]
+      properties:
+        # The whole catalogue: the supplier is asked about the product by name, in its URL.
+        sku:
+          type: string
+          enum: [A-100, B-200]
+        quantity: { type: integer, format: int32, minimum: 1, maximum: 100 }
