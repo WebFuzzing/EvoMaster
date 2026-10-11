@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -233,6 +234,26 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
         return original;
     }
 
+
+    /**
+     * Call the original method that was replaced, rethrowing whatever it throws as it is.
+     *
+     * @param singleton as in {@link #getOriginal(ThirdPartyMethodReplacementClass, String, Object)}
+     * @param id        of a replacement method
+     * @param caller    the object the method is called on
+     * @param inputs    the inputs of the call
+     */
+    public static Object invokeOriginal(ThirdPartyMethodReplacementClass singleton, String id, Object caller, Object... inputs) throws Throwable {
+        Method original = getOriginal(singleton, id, caller);
+
+        try {
+            return original.invoke(caller, inputs);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
+        }
+    }
 
     private static StateInfo initializeClassInfo(ThirdPartyMethodReplacementClass singleton, ClassLoader loader) {
         Class<?> target = singleton.tryLoadingClass(loader);
