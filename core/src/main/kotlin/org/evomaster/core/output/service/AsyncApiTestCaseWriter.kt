@@ -69,6 +69,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
                 testSuitePath,
                 baseUrlOfSut
             )
+            addSettleWait(lines, evaluated.result)
         }
     }
 
@@ -306,4 +307,47 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
         addFaultsCommentLine(lines, test)
     }
+
+    /**
+     * After a published message, wait for the window the search kept it open, when it did, so
+     * that what the service does handling it does not land on the next message or test.
+     *
+     * The whole window is waited, not what the search ended up waiting: where the window ended
+     * early, it ended on what the instrumentation saw, which a generated test has not got. A
+     * message with a reply is waited on too, as the handler may still be running after it
+     * answered.
+     *
+     * Only for Java and Kotlin: only a white-box run keeps a message open, and those are the
+     * formats it writes.
+     */
+    private fun addSettleWait(lines: Lines, result: ActionResult) {
+
+        val res = result as? AsyncApiCallResult ?: return
+
+        if (!isPublished(res)
+            || res.getSettledMs() == null
+            || config.asyncApiSettleMs <= 0
+            || !format.isJavaOrKotlin()
+        ) {
+            return
+        }
+
+        lines.addSingleCommentLine("the time the search gave the service to finish with this message")
+        lines.add("Thread.sleep(${config.asyncApiSettleMs})")
+        lines.appendSemicolon()
+    }
+
+    /**
+     * Whether the test has lines that publish the message of [res]: the driver's, or those
+     * written from the contract. The same conditions [addActionLinesPerType] writes them on.
+     */
+    private fun publishes(res: AsyncApiCallResult): Boolean =
+        res.getTestScript().any { it.isNotBlank() }
+                || (res.getReplyVariableName() != null && KafkaTestClientEmitter.canEmit(res))
+
+    /**
+     * Whether the message of [res] went out, whatever came back, and the test publishes it too.
+     */
+    private fun isPublished(res: AsyncApiCallResult): Boolean =
+        res.getOutcome().let { it != null && it != AsyncApiOutcome.PUBLISH_FAILED } && publishes(res)
 }
