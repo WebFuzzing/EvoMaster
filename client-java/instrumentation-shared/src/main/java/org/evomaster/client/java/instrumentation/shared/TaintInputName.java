@@ -52,6 +52,28 @@ public class TaintInputName {
     }
 
 
+    /**
+     * Check whether UTF-8 encoded bytes start with the prefix of a tainted value, ignoring case as
+     * {@link #isTaintInput(String)} does. Bytes that do not cannot decode into a tainted value, which
+     * this tells without decoding them.
+     */
+    public static boolean startsWithTaintPrefix(byte[] utf8){
+        if(utf8 == null || utf8.length < PREFIX.length()){
+            return false;
+        }
+        for(int i=0; i<PREFIX.length(); i++){
+            /*
+                PREFIX is ASCII, and in UTF-8 an ASCII character is always the single byte with its value.
+                A byte of a multi-byte sequence is negative, so it never matches.
+             */
+            if(Character.toLowerCase((char) utf8[i]) != Character.toLowerCase(PREFIX.charAt(i))){
+                return false;
+            }
+        }
+        return true;
+    }
+
+
     public static boolean includesTaintInput(String value){
         if(value == null){
             return false;
