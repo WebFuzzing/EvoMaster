@@ -376,6 +376,8 @@ REST API, but no one client for every broker: the transport may be Kafka, AMQP, 
 share nothing. So publishing a message is the driver's job, by overriding `executeAsyncApiAction`. What is
 asked of it is only to put the message on the wire and report what came back, never to judge it: deciding
 what an outcome means is _EvoMaster_'s job, so that it means the same thing whatever the transport.
+In black-box mode the driver is only the way onto the broker: _EvoMaster_ does not ask it for the code
+coverage of the service, even if the service is instrumented, and reports none.
 
 Two things are worth knowing when writing one:
 

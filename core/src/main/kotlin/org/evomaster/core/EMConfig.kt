@@ -1126,6 +1126,15 @@ class EMConfig {
     fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
 
     /**
+     * Whether what the driver measures of the SUT, i.e., its units and boot-time targets, is
+     * read to report the code coverage of this run.
+     *
+     * The same as [usesDriver], except for a black-box AsyncAPI run, where the driver is only
+     * the way onto the broker and no coverage is read from it.
+     */
+    fun readsSutCoverage() = !blackBox || bbExperiments
+
+    /**
      * Whether the driver should be asked to stop SUT code still running once the coverage
      * of a test has been collected. Read this, not [killSwitch], when talking to the driver.
      *
