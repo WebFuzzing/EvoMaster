@@ -57,39 +57,59 @@ public class ClassToSchema {
          */
 
     /**
-     * Key -> DTO class
+     * Key -> DTO class, along with the converters used to derive its schema
      * Value -> its UNNAMED schema representation, as OpenAPI JSON object
      * WARNING: this is a mutable static state, but, being just a cache, should not hopefully
      * have any nasty negative side-effects.
      */
-    private static final Map<Object, String> cacheSchema = new ConcurrentHashMap<>();
+    private static final Map<CacheKey, String> cacheSchema = new ConcurrentHashMap<>();
 
     /**
-     * Key -> DTO class
+     * Key -> DTO class, along with the converters used to derive its schema
      * Value -> the schema representations of the DTO class and its ref DTO class
      */
-    private static final Map<Object, String> cacheSchemaWithItsRef = new ConcurrentHashMap<>();
+    private static final Map<CacheKey, String> cacheSchemaWithItsRef = new ConcurrentHashMap<>();
 
     /**
-     * Key -> DTO class
+     * Key -> DTO class, along with the converters used to derive its schema
      * Value -> the schema representations of the DTO class and its ref DTO class
      */
-    private static final Map<Object, Map<String, String>> cacheMapOfDtoAndItsRefToSchemas = new ConcurrentHashMap<>();
+    private static final Map<CacheKey, Map<String, String>> cacheMapOfDtoAndItsRefToSchemas = new ConcurrentHashMap<>();
 
 
     /**
-     * A schema depends on the converters used to derive it, so the same class derived with
-     * different converters must not share cache entries. With no converters the key is the type
-     * itself.
+     * A schema depends on the type and on the converters used to derive it, so both identify an
+     * entry of the schema caches: the same class derived with different converters must not share
+     * one. With no converters, only the type matters.
      */
-    private static Object cacheKey(Type type, List<CustomTypeToOasConverter> converters) {
-        if (converters == null || converters.isEmpty()) {
-            return type;
+    private static final class CacheKey {
+
+        private final Type type;
+        private final List<String> converterIds;
+
+        CacheKey(Type type, List<CustomTypeToOasConverter> converters) {
+            this.type = type;
+            this.converterIds = converters == null
+                    ? Collections.emptyList()
+                    : converters.stream().map(CustomTypeToOasConverter::cacheId).collect(Collectors.toList());
         }
-        List<Object> key = new ArrayList<>();
-        key.add(type);
-        converters.forEach(c -> key.add(c.cacheId()));
-        return key;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof CacheKey)) return false;
+            CacheKey that = (CacheKey) o;
+            return type.equals(that.type) && converterIds.equals(that.converterIds);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, converterIds);
+        }
+    }
+
+    private static CacheKey cacheKey(Type type, List<CustomTypeToOasConverter> converters) {
+        return new CacheKey(type, converters);
     }
 
     private static final String fieldRefPrefix = "{\"$ref\":\"";
