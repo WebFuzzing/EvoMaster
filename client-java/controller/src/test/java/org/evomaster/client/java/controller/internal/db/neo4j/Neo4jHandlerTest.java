@@ -132,7 +132,7 @@ class Neo4jHandlerTest {
     @Test
     void testAQueryTheGraphDoesNotSatisfyIsRegisteredAsTheInsertionThatWould() {
         Neo4jHandler handler = handlerOverExample1();
-        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Zoe")), true, 1));
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, props("name", "Zoe"), true, 1));
         handler.getEvaluatedNeo4jCommands();
 
         List<Neo4jFailedQueryDto> failed = handler.getExecutionDto().failedQueries;
@@ -148,7 +148,7 @@ class Neo4jHandlerTest {
     @Test
     void testASatisfiedQueryIsNotRegistered() {
         Neo4jHandler handler = handlerOverExample1();
-        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Ana")), true, 1));
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, props("name", "Ana"), true, 1));
 
         assertEquals(0.0, distanceOf(handler), 0.0);
         assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
@@ -157,9 +157,9 @@ class Neo4jHandlerTest {
     @Test
     void testTheSameInsertionIsRegisteredOncePerAction() {
         Neo4jHandler handler = handlerOverExample1();
-        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Zoe")), true, 1));
-        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Zoe")), true, 1));
-        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Max")), true, 1));
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, props("name", "Zoe"), true, 1));
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, props("name", "Zoe"), true, 1));
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, props("name", "Max"), true, 1));
         handler.getEvaluatedNeo4jCommands();
 
         assertEquals(2, handler.getExecutionDto().failedQueries.size());
@@ -172,7 +172,7 @@ class Neo4jHandlerTest {
     void testExtractionCanBeSwitchedOff() {
         Neo4jHandler handler = handlerOverExample1();
         handler.setExtractNeo4jExecution(false);
-        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Zoe")), true, 1));
+        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, props("name", "Zoe"), true, 1));
         handler.getEvaluatedNeo4jCommands();
 
         assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
@@ -208,24 +208,6 @@ class Neo4jHandlerTest {
         handler.reset();
         handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, miss, true, 1));
         assertTrue(distanceOf(handler) > 0.0);
-    }
-
-    @Test
-    void testDriverValuesInsideTheParameterMapAreUnwrapped() {
-        Map<String, Object> parameters = new LinkedHashMap<>();
-        parameters.put("name", new FakeValue("Ana"));
-        Neo4jHandler handler = new Neo4jHandler();
-        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(example1Driver()));
-        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, parameters, true, 1));
-        assertEquals(0.0, distanceOf(handler), 0.0);
-    }
-
-    @Test
-    void testParametersCapturedAsADriverMapValueAreRead() {
-        Neo4jHandler handler = new Neo4jHandler();
-        handler.setNeo4jConnection(new ReflectionBasedNeo4jClient(example1Driver()));
-        handler.handle(new Neo4JRunCommand(PARAMETERISED_QUERY, new FakeValue(props("name", "Ana")), true, 1));
-        assertEquals(0.0, distanceOf(handler), 0.0);
     }
 
     // Fake Neo4j driver, exposing only the methods the reader reflects over.

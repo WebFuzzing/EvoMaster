@@ -40,7 +40,7 @@ class SecurityForbiddenDeleteEMTest : SpringTestBase(){
             assertTrue(solution.individuals.size >= 1)
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
-            assertEquals(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, faults.first())
+            assertEquals(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, faults.first())
         }
     }
 }

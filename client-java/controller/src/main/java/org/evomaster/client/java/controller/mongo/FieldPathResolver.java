@@ -59,9 +59,9 @@ public class FieldPathResolver {
             return;
         }
         final String segment = segments[index];
-        if (isBsonDocument(current)) {
+        if (isDocument(current)) {
             if (documentContainsField(current, segment)) {
-                getActualValues(getValue(current, segment), segments, index + 1, actualValues);
+                getActualValues(documentGetValue(current, segment), segments, index + 1, actualValues);
             } else {
                 actualValues.add(MISSING_FIELD);
             }
@@ -84,7 +84,7 @@ public class FieldPathResolver {
                 // Field name interpretation: the array is traversed implicitly, without consuming
                 // the segment, which is then looked up in each sub-document of the array.
                 // Only sub-documents are traversed, nested arrays are not implicitly unwound
-                if (isBsonDocument(element)) {
+                if (isDocument(element)) {
                     getActualValues(element, segments, index, actualValues);
                 }
             }

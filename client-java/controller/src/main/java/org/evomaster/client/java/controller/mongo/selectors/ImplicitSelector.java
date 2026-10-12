@@ -63,11 +63,11 @@ public class ImplicitSelector extends QuerySelector {
 
     private QueryOperation handleSingleField(Object query) {
         String fieldName = extractFieldName(query);
-        Object value = getValue(query, fieldName);
+        Object value = documentGetValue(query, fieldName);
 
         // If the value is a document, it might contain multiple operators (e.g. {age: {$gte: 18, $lt: 65}})
         // or it might be a literal document to match (e.g. {metadata: {foo: "bar"}})
-        if (isBsonDocument(value)) {
+        if (isDocument(value)) {
             if (isEmptyDocument(value)) {
                 return null;
             }
@@ -114,7 +114,7 @@ public class ImplicitSelector extends QuerySelector {
     }
 
     private boolean isBsonDocumentWithOperators(Object value) {
-        if (!isBsonDocument(value)) {
+        if (!isDocument(value)) {
             return false;
         }
         Set<String> keys = documentKeys(value);
@@ -126,9 +126,9 @@ public class ImplicitSelector extends QuerySelector {
         // Split into multiple conditions: { age: { $gte: 18 } } and { age: { $lt: 65 } }
         List<QueryOperation> conditions = new ArrayList<>();
         for (String operator : operators) {
-            Object operatorValue = getValue(value, operator);
-            Object newQuery = newDocument(query);
-            Object newInnerDoc = newDocument(value);
+            Object operatorValue = documentGetValue(value, operator);
+            Object newQuery = documentNewDocument(query);
+            Object newInnerDoc = documentNewDocument(value);
             appendToDocument(newInnerDoc, operator, operatorValue);
             appendToDocument(newQuery, fieldName, newInnerDoc);
             QueryOperation operation = new QueryParser().parse(newQuery);
@@ -145,8 +145,8 @@ public class ImplicitSelector extends QuerySelector {
         ArrayList<QueryOperation> conditions = new ArrayList<>();
         if (fields == null) return conditions;
         for (String fieldName : fields) {
-            Object newQuery = newDocument(query);
-            appendToDocument(newQuery, fieldName, getValue(query, fieldName));
+            Object newQuery = documentNewDocument(query);
+            appendToDocument(newQuery, fieldName, documentGetValue(query, fieldName));
             QueryOperation operation = new QueryParser().parse(newQuery);
             if (operation == null) {
                 return null; // All parts of an implicit AND must be valid

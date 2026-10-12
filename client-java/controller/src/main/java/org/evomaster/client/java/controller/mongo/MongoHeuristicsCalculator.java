@@ -131,7 +131,7 @@ public class MongoHeuristicsCalculator {
             if (fieldPath.equalsIgnoreCase("$")) {
                 return evaluate(operation, document);
             }
-            if (!isBsonDocument(document)) {
+            if (!isDocument(document)) {
                 return C_FALSE; // cannot extract the field from a non-document value
             }
             final List<Object> actualValues = FieldPathResolver.getActualValues(document, fieldPath);
@@ -458,7 +458,7 @@ public class MongoHeuristicsCalculator {
             return evaluate(condition, element);
         }
 
-        if (isBsonDocument(element)) {
+        if (isDocument(element)) {
             return computeHeuristicQueryOperation(condition, element);
         }
 
@@ -468,7 +468,7 @@ public class MongoHeuristicsCalculator {
     private Truthness computeHeuristic(ExistsOperation operation, Object input) {
         Objects.requireNonNull(operation);
 
-        if (!isBsonDocument(input)) {
+        if (!isDocument(input)) {
             // If the input is not a BSON document, the existence of a field is always false.
             return C_FALSE;
         }
@@ -487,7 +487,7 @@ public class MongoHeuristicsCalculator {
     private static void requireNonNullQueryAndDocument(QueryOperation operation, Object document) {
         Objects.requireNonNull(operation);
         Objects.requireNonNull(document);
-        if (!isBsonDocument(document)) {
+        if (!isDocument(document)) {
             throw new IllegalArgumentException("The provided document is not a valid BSON document: " + document);
         }
     }
@@ -547,7 +547,7 @@ public class MongoHeuristicsCalculator {
     private Truthness computeHeuristic(TypeOperation operation, Object document) {
         Objects.requireNonNull(operation);
 
-        if (!isBsonDocument(document)) {
+        if (!isDocument(document)) {
             return C_FALSE;
         }
 
