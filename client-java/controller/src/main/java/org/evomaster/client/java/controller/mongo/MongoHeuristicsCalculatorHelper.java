@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
-import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.getValue;
+import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.documentGetValue;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.GeoSpatialModel.SPHERICAL;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.getDistanceBetweenPoints;
 import static org.evomaster.client.java.controller.mongo.utils.MongoUtils.getIntegralLongValue;
@@ -105,11 +105,11 @@ public class MongoHeuristicsCalculatorHelper {
      */
     public Truthness evaluateExists(Object currentValue, String[] fieldPathSegments, int index) {
         final String currentSegment = fieldPathSegments[index];
-        if (isBsonDocument(currentValue)) {
+        if (isDocument(currentValue)) {
             if (index == fieldPathSegments.length - 1 || !documentContainsField(currentValue, currentSegment)) {
                 return evaluateExistsFieldName(currentValue, currentSegment);
             }
-            return evaluateExists(getValue(currentValue, currentSegment), fieldPathSegments, index + 1);
+            return evaluateExists(documentGetValue(currentValue, currentSegment), fieldPathSegments, index + 1);
         } else if (currentValue instanceof List<?>) {
             // When a segment is applied to an array, MongoDB's dot notation is ambiguous: a numeric
             // segment such as "0" in "a.0" may denote either the element at that position of the
@@ -138,7 +138,7 @@ public class MongoHeuristicsCalculatorHelper {
                 // Field name interpretation: the array is traversed implicitly, without consuming
                 // the segment, which is then looked up in each sub-document of the array.
                 // Nested arrays are not traversed implicitly.
-                if (isBsonDocument(element)) {
+                if (isDocument(element)) {
                     truthnesses.add(evaluateExists(element, fieldPathSegments, index));
                 }
             }
@@ -200,7 +200,7 @@ public class MongoHeuristicsCalculatorHelper {
         Objects.requireNonNull(actualValue);
         Objects.requireNonNull(op);
         Objects.requireNonNull(expectedValue);
-        if (!isBsonDocument(expectedValue) || !isBsonDocument(actualValue)) {
+        if (!isDocument(expectedValue) || !isDocument(actualValue)) {
             throw new IllegalArgumentException("Both expected and actual values must be BSON documents.");
         }
 
@@ -221,8 +221,8 @@ public class MongoHeuristicsCalculatorHelper {
             if (!expectedFieldName.equals(actualFieldName)) {
                 return truthnesses;
             }
-            Object expectedFieldValue = BsonHelper.getValue(expectedValue, expectedFieldName);
-            Object actualFieldValue = BsonHelper.getValue(actualValue, expectedFieldName);
+            Object expectedFieldValue = BsonHelper.documentGetValue(expectedValue, expectedFieldName);
+            Object actualFieldValue = BsonHelper.documentGetValue(actualValue, expectedFieldName);
             Truthness fieldValueComparisonTruthness = compareNullableValues(actualFieldValue, op, expectedFieldValue);
             truthnesses.add(fieldValueComparisonTruthness);
             if (!Objects.equals(expectedFieldValue, actualFieldValue)) {
@@ -280,28 +280,28 @@ public class MongoHeuristicsCalculatorHelper {
                     actualValueAsInstant, expectedValueAsInstant, op);
 
         } else if (BsonHelper.isBsonTimestamp(actualValue) && BsonHelper.isBsonTimestamp(expectedValue)) {
-            long expectedValueAsTimestampValue = BsonHelper.getBsonTimestampValue(expectedValue);
-            long actualValueAsTimestampValue = BsonHelper.getBsonTimestampValue(actualValue);
+            long expectedValueAsTimestampValue = BsonHelper.timestampGetValue(expectedValue);
+            long actualValueAsTimestampValue = BsonHelper.timestampGetValue(actualValue);
             truthnessOfComparison = calculateTruthnessForNumberComparison(actualValueAsTimestampValue, expectedValueAsTimestampValue, op);
 
         } else if (BsonHelper.isBsonRegularExpression(actualValue) && BsonHelper.isBsonRegularExpression(expectedValue)) {
-            String expectedValuePatternAsString = BsonHelper.bsonRegexGetPattern(expectedValue);
-            String actualValuePatternAsString = BsonHelper.bsonRegexGetPattern(actualValue);
+            String expectedValuePatternAsString = BsonHelper.regexGetPattern(expectedValue);
+            String actualValuePatternAsString = BsonHelper.regexGetPattern(actualValue);
             truthnessOfComparison = calculateTruthnessForStringComparison(actualValuePatternAsString, expectedValuePatternAsString, op);
 
         } else if (BsonHelper.isObjectId(actualValue) && BsonHelper.isObjectId(expectedValue)) {
 
-            byte[] actualValueAsByteArray = BsonHelper.toByteArray(actualValue);
-            byte[] expectedValueAsByteArray = BsonHelper.toByteArray(expectedValue);
+            byte[] actualValueAsByteArray = BsonHelper.objectIdToByteArray(actualValue);
+            byte[] expectedValueAsByteArray = BsonHelper.objectIdToByteArray(expectedValue);
             truthnessOfComparison = compareBinaryData(actualValueAsByteArray, op, expectedValueAsByteArray);
 
         } else if (BsonHelper.isBsonBinary(actualValue) && BsonHelper.isBsonBinary(expectedValue)) {
 
-            byte[] actualValueAsByteArray = BsonHelper.getBinaryData(actualValue);
-            byte[] expectedValueAsByteArray = BsonHelper.getBinaryData(expectedValue);
+            byte[] actualValueAsByteArray = BsonHelper.binaryGetBinaryData(actualValue);
+            byte[] expectedValueAsByteArray = BsonHelper.binaryGetBinaryData(expectedValue);
             truthnessOfComparison = compareBinaryData(actualValueAsByteArray, op, expectedValueAsByteArray);
 
-        } else if (BsonHelper.isBsonDocument(expectedValue) && BsonHelper.isBsonDocument(actualValue)) {
+        } else if (BsonHelper.isDocument(expectedValue) && BsonHelper.isDocument(actualValue)) {
             truthnessOfComparison = compareDocumentValues(actualValue, op, expectedValue);
         } else {
             // If both types are supported, but no actual comparison logic is defined,
@@ -330,7 +330,7 @@ public class MongoHeuristicsCalculatorHelper {
         Objects.requireNonNull(expectedValue);
         Objects.requireNonNull(op);
         Objects.requireNonNull(actualValue);
-        if (!isBsonDocument(expectedValue) || !isBsonDocument(actualValue)) {
+        if (!isDocument(expectedValue) || !isDocument(actualValue)) {
             throw new IllegalArgumentException("Both expected and actual values must be BSON documents.");
         }
 
@@ -442,8 +442,8 @@ public class MongoHeuristicsCalculatorHelper {
             Truthness res = buildOrAggregationTruthness(list.stream()
                     .map(expectedValue -> {
                         if (BsonHelper.isBsonRegularExpression(expectedValue)) {
-                            String expectedPattern = BsonHelper.bsonRegexGetPattern(expectedValue);
-                            String expectedOptions = BsonHelper.bsonRegexGetOptions(expectedValue);
+                            String expectedPattern = BsonHelper.regexGetPattern(expectedValue);
+                            String expectedOptions = BsonHelper.regexGetOptions(expectedValue);
                             Pattern pattern = Pattern.compile(expectedPattern);
                             return evaluateRegularExpression(element.toString(), pattern, taintHandler);
                         } else {
@@ -659,7 +659,7 @@ public class MongoHeuristicsCalculatorHelper {
       type key is case-sensitive.
       (https://datatracker.ietf.org/doc/html/rfc7946#section-1.4)
      */
-        if (isBsonDocument(actualValue)
+        if (isDocument(actualValue)
                 && GeoJsonUtils.isGeoJsonPoint(actualValue)) {
             GeoJsonPoint geoJsonPoint = GeoJsonUtils.toGeoJsonPoint(actualValue);
             x2 = geoSpatialModel == SPHERICAL
@@ -745,7 +745,7 @@ public class MongoHeuristicsCalculatorHelper {
     static Truthness evaluateGeoIntersects(GeoJsonGeometry queryGeometry, Object actualValue) {
         Objects.requireNonNull(queryGeometry);
 
-        if (!isBsonDocument(actualValue)) {
+        if (!isDocument(actualValue)) {
             return C_FALSE;
         }
 
@@ -772,7 +772,7 @@ public class MongoHeuristicsCalculatorHelper {
     static Truthness evaluateGeoWithin(GeoJsonGeometry areaGeometry, Object actualValue) {
         Objects.requireNonNull(areaGeometry);
 
-        if (!isBsonDocument(actualValue)) {
+        if (!isDocument(actualValue)) {
             return C_FALSE;
         }
 

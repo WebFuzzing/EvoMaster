@@ -99,9 +99,9 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ){
-        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
         handleForgottenAuthentication(individual, actionResults, fv)
@@ -397,7 +397,7 @@ class RestSecurityOracle {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_XSS)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_XSS_INJECTION)){
             return
         }
 
@@ -422,10 +422,10 @@ class RestSecurityOracle {
             for(payload in XSS_PAYLOADS){
                 if(responseBody.contains(payload, ignoreCase = false)){
                     val scenarioId = idMapper.handleLocalTarget(
-                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_XSS, a.getName())
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_XSS_INJECTION, a.getName())
                     )
                     fv.updateTarget(scenarioId, 1.0, index)
-                    r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_XSS, a.getName(), null))
+                    r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_XSS_INJECTION, a.getName(), null))
                     break // Only add one fault per action
                 }
             }
@@ -526,7 +526,7 @@ class RestSecurityOracle {
         fv: FitnessValue
     ) {
 
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION)) {
             return
         }
 

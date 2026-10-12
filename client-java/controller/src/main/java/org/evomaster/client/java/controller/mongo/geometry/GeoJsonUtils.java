@@ -29,16 +29,16 @@ public abstract class GeoJsonUtils {
     public static boolean isGeoJsonPoint(Object document) {
         Objects.requireNonNull(document);
 
-        if (!BsonHelper.isBsonDocument(document)) {
+        if (!BsonHelper.isDocument(document)) {
             throw new IllegalArgumentException("argument document must be a BsonDocument");
         }
 
-        Object typeValue = BsonHelper.getValue(document, TYPE);
+        Object typeValue = BsonHelper.documentGetValue(document, TYPE);
         if (typeValue == null || !typeValue.equals(POINT)) {
             return false;
         }
 
-        Object coordinatesValue = BsonHelper.getValue(document, COORDINATES);
+        Object coordinatesValue = BsonHelper.documentGetValue(document, COORDINATES);
         if (!(coordinatesValue instanceof List<?>)) {
             return false;
         }
@@ -78,7 +78,7 @@ public abstract class GeoJsonUtils {
             throw new IllegalArgumentException("The provided document is not a valid GeoJSON Point.");
         }
 
-        List<?> coordinatesList = (List<?>) BsonHelper.getValue(document, COORDINATES);
+        List<?> coordinatesList = (List<?>) BsonHelper.documentGetValue(document, COORDINATES);
         double longitude = ((Number) coordinatesList.get(0)).doubleValue();
         double latitude = ((Number) coordinatesList.get(1)).doubleValue();
 
@@ -93,12 +93,12 @@ public abstract class GeoJsonUtils {
      * consecutive positions cause an {@link IllegalArgumentException}.
      */
     public static GeoJsonLineString toGeoJsonLineString(Object document) {
-        if (document == null || !BsonHelper.isBsonDocument(document)
-                || !GeoJsonLineString.LINE_STRING_TYPE.equals(BsonHelper.getValue(document, TYPE))
+        if (document == null || !BsonHelper.isDocument(document)
+                || !GeoJsonLineString.LINE_STRING_TYPE.equals(BsonHelper.documentGetValue(document, TYPE))
                 || BsonHelper.documentContainsField(document, "crs")) {
             throw new IllegalArgumentException("The provided document is not a supported GeoJSON LineString.");
         }
-        return toLineString(BsonHelper.getValue(document, COORDINATES));
+        return toLineString(BsonHelper.documentGetValue(document, COORDINATES));
     }
 
     /**
@@ -107,12 +107,12 @@ public abstract class GeoJsonUtils {
      * validated the same way as a standalone LineString's coordinates.
      */
     public static GeoJsonMultiLineString toGeoJsonMultiLineString(Object document) {
-        if (document == null || !BsonHelper.isBsonDocument(document)
-                || !GeoJsonMultiLineString.MULTI_LINE_STRING_TYPE.equals(BsonHelper.getValue(document, TYPE))
+        if (document == null || !BsonHelper.isDocument(document)
+                || !GeoJsonMultiLineString.MULTI_LINE_STRING_TYPE.equals(BsonHelper.documentGetValue(document, TYPE))
                 || BsonHelper.documentContainsField(document, "crs")) {
             throw new IllegalArgumentException("The provided document is not a supported GeoJSON MultiLineString.");
         }
-        Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        Object coordinates = BsonHelper.documentGetValue(document, COORDINATES);
         if (!(coordinates instanceof List<?>) || ((List<?>) coordinates).isEmpty()) {
             throw new IllegalArgumentException("MultiLineString coordinates must be a non-empty list of line coordinates.");
         }
@@ -136,12 +136,12 @@ public abstract class GeoJsonUtils {
      * unsupported CRS declarations cause an {@link IllegalArgumentException}.
      */
     public static GeoJsonMultiPoint toGeoJsonMultiPoint(Object document) {
-        if (document == null || !BsonHelper.isBsonDocument(document)
-                || !GeoJsonMultiPoint.MULTI_POINT_TYPE.equals(BsonHelper.getValue(document, TYPE))
+        if (document == null || !BsonHelper.isDocument(document)
+                || !GeoJsonMultiPoint.MULTI_POINT_TYPE.equals(BsonHelper.documentGetValue(document, TYPE))
                 || BsonHelper.documentContainsField(document, "crs")) {
             throw new IllegalArgumentException("The provided document is not a supported GeoJSON MultiPoint.");
         }
-        Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        Object coordinates = BsonHelper.documentGetValue(document, COORDINATES);
         if (!(coordinates instanceof List<?>)) {
             throw new IllegalArgumentException("MultiPoint coordinates must be a list of positions.");
         }
@@ -156,12 +156,12 @@ public abstract class GeoJsonUtils {
      * and polygons without an exterior ring cause an {@link IllegalArgumentException}.
      */
     public static GeoJsonPolygon toGeoJsonPolygon(Object document) {
-        if (document == null || !BsonHelper.isBsonDocument(document)
-                || !GeoJsonPolygon.POLYGON_TYPE.equals(BsonHelper.getValue(document, TYPE))
+        if (document == null || !BsonHelper.isDocument(document)
+                || !GeoJsonPolygon.POLYGON_TYPE.equals(BsonHelper.documentGetValue(document, TYPE))
                 || BsonHelper.documentContainsField(document, "crs")) {
             throw new IllegalArgumentException("The provided document is not a supported GeoJSON Polygon.");
         }
-        return toPolygon(BsonHelper.getValue(document, COORDINATES));
+        return toPolygon(BsonHelper.documentGetValue(document, COORDINATES));
     }
 
     /**
@@ -170,12 +170,12 @@ public abstract class GeoJsonUtils {
      * validated the same way as a standalone Polygon's coordinates.
      */
     public static GeoJsonMultiPolygon toGeoJsonMultiPolygon(Object document) {
-        if (document == null || !BsonHelper.isBsonDocument(document)
-                || !GeoJsonMultiPolygon.MULTI_POLYGON_TYPE.equals(BsonHelper.getValue(document, TYPE))
+        if (document == null || !BsonHelper.isDocument(document)
+                || !GeoJsonMultiPolygon.MULTI_POLYGON_TYPE.equals(BsonHelper.documentGetValue(document, TYPE))
                 || BsonHelper.documentContainsField(document, "crs")) {
             throw new IllegalArgumentException("The provided document is not a supported GeoJSON MultiPolygon.");
         }
-        Object coordinates = BsonHelper.getValue(document, COORDINATES);
+        Object coordinates = BsonHelper.documentGetValue(document, COORDINATES);
         if (!(coordinates instanceof List<?>) || ((List<?>) coordinates).isEmpty()) {
             throw new IllegalArgumentException("MultiPolygon coordinates must be a non-empty list of polygon coordinates.");
         }
@@ -193,12 +193,12 @@ public abstract class GeoJsonUtils {
      * MultiLineString, MultiPolygon, or a nested GeometryCollection).
      */
     public static GeoJsonGeometryCollection toGeoJsonGeometryCollection(Object document) {
-        if (document == null || !BsonHelper.isBsonDocument(document)
-                || !GeoJsonGeometryCollection.GEOMETRY_COLLECTION_TYPE.equals(BsonHelper.getValue(document, TYPE))
+        if (document == null || !BsonHelper.isDocument(document)
+                || !GeoJsonGeometryCollection.GEOMETRY_COLLECTION_TYPE.equals(BsonHelper.documentGetValue(document, TYPE))
                 || BsonHelper.documentContainsField(document, "crs")) {
             throw new IllegalArgumentException("The provided document is not a supported GeoJSON GeometryCollection.");
         }
-        Object geometriesValue = BsonHelper.getValue(document, GEOMETRIES);
+        Object geometriesValue = BsonHelper.documentGetValue(document, GEOMETRIES);
         if (!(geometriesValue instanceof List<?>) || ((List<?>) geometriesValue).isEmpty()) {
             throw new IllegalArgumentException("GeometryCollection must contain a non-empty list of geometries.");
         }

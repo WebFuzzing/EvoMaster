@@ -42,7 +42,7 @@ class OracleMultipleDisableEMTest : SpringTestBase(){
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(3, faults.size)
             assertTrue(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE in faults)
-            assertTrue(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION in faults)
+            assertTrue(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION in faults)
             assertTrue(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED in faults)
         }
     }
@@ -62,7 +62,7 @@ class OracleMultipleDisableEMTest : SpringTestBase(){
             // disabling all the 3 security oracles
             val codes = listOf(
                 DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE.code,
-                DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION.code,
+                DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION.code,
                 DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED.code
             )
 
@@ -75,7 +75,7 @@ class OracleMultipleDisableEMTest : SpringTestBase(){
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(0, faults.size)
             assertFalse(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE in faults)
-            assertFalse(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION in faults)
+            assertFalse(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION in faults)
             assertFalse(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED in faults)
         }
     }

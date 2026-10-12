@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 
 import org.evomaster.client.java.instrumentation.MongoFindCommand;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
+import org.evomaster.client.java.instrumentation.mongo.BsonDocumentConverter;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.object.CustomTypeToOasConverter;
 import org.evomaster.client.java.instrumentation.object.GeoJsonPointToOasConverter;
@@ -17,7 +18,8 @@ public abstract class MongoOperationClassReplacement extends ThirdPartyMethodRep
     protected static void handleMongo(Object mongoCollection, Object bson, boolean successfullyExecuted, long executionTime) {
         List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
         String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(extractDocumentsType(mongoCollection), true, converters);
-        MongoFindCommand info = new MongoFindCommand(getDatabaseName(mongoCollection), getCollectionName(mongoCollection), schema, bson, successfullyExecuted, executionTime);
+        Object bsonDocument = BsonDocumentConverter.toBsonDocument(bson);
+        MongoFindCommand info = new MongoFindCommand(getDatabaseName(mongoCollection), getCollectionName(mongoCollection), schema, bsonDocument, successfullyExecuted, executionTime);
         ExecutionTracer.addMongoInfo(info);
     }
 

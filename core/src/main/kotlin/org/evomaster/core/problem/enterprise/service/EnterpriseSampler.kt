@@ -4,6 +4,9 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto
+import org.evomaster.client.java.controller.api.dto.database.cassandra.CassandraTableSchemaDto
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraInsertBuilder
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.mongo.MongoInsertBuilder
 import org.evomaster.core.output.OutputFormat
@@ -129,6 +132,12 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
 
     fun sampleMongoInsertion(database: String, collection: String, documentsType: String): MongoDbAction {
         val action = MongoInsertBuilder().createMongoInsertionAction(database, collection, documentsType)
+        action.seeTopGenes().forEach{it.doInitialize(randomness)}
+        return action
+    }
+
+    fun sampleCassandraInsertion(tableSchema: CassandraTableSchemaDto): CassandraDbAction {
+        val action = CassandraInsertBuilder().createCassandraInsertionAction(tableSchema)
         action.seeTopGenes().forEach{it.doInitialize(randomness)}
         return action
     }
