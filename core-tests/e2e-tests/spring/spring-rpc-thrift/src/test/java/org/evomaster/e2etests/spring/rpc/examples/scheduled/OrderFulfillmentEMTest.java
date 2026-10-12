@@ -25,11 +25,9 @@ public class OrderFulfillmentEMTest extends SpringRPCTestBase {
                 "org.bar.OrderFulfillmentRPCEM",
                 10,
                 (args) -> {
-                    args.add("--seedTestCases");
-                    args.add("true");
 
-                    args.add("--enableCustomizedMethodForMockObjectHandling");
-                    args.add("true");
+                    setOption(args, "seedTestCases", "true");
+                    setOption(args, "enableCustomizedMethodForMockObjectHandling", "true");
 
                     setOption(args, "enableCustomizedMethodForScheduleTaskHandling", "true");
                     setOption(args, "probOfSamplingScheduleTask", "1.0");
