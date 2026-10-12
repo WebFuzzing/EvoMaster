@@ -138,16 +138,18 @@ public class InstrumentingAgent {
 
             ClassName cn = ClassName.get(className);
 
+            // null means "not transformed"; returning the buffer marks the class as transformed,
+            // which on JDK 25 recursively loads WeakPairMap$Pair$Weak -> ClassCircularityError
             if (!ClassesToExclude.checkIfCanInstrument(loader, cn) ||
                 isAlreadyLoaded(loader, cn.getFullNameWithDots())) {
-                return classfileBuffer;
+                return null;
             }
 
             ClassReader reader = new ClassReader(classfileBuffer);
 
             byte[] instrumented = instrumentator.transformBytes(loader, cn, reader);
             if(instrumented == null){
-                return classfileBuffer;
+                return null;
             }
             return instrumented;
         }

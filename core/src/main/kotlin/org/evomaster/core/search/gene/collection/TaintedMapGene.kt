@@ -253,7 +253,8 @@ class TaintedMapGene(
         learnedTypes.putAll(other.learnedTypes)
 
         other.elements.forEach {
-            addElement(it.copy() as PairGene<StringGene, Gene>)
+            // as in ArrayGene/FlexibleMapGene: copied elements must not keep the local ids of [other]
+            addElement((it.copy() as PairGene<StringGene, Gene>).apply { resetLocalIdRecursively() })
         }
         taintId = other.taintId
 

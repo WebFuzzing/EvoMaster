@@ -29,8 +29,8 @@ abstract class SingleConditionQuerySelector extends QuerySelector {
             return null;
         }
 
-        Object innerDoc = getValue(bsonDocument, fieldName);
-        if (!isBsonDocument(innerDoc) || !hasTheExpectedOperator(bsonDocument)) {
+        Object innerDoc = documentGetValue(bsonDocument, fieldName);
+        if (!isDocument(innerDoc) || !hasTheExpectedOperator(bsonDocument)) {
             return null;
         }
 
@@ -40,7 +40,7 @@ abstract class SingleConditionQuerySelector extends QuerySelector {
         }
 
         if (innerKeys.contains(operator())) {
-            Object value = getValue(innerDoc, operator());
+            Object value = documentGetValue(innerDoc, operator());
             return parseValue(fieldName, value);
         } else {
             return null;
@@ -51,7 +51,7 @@ abstract class SingleConditionQuerySelector extends QuerySelector {
     protected String extractOperator(Object query) {
         String fieldName = extractFieldName(query);
         if (fieldName == null) return null;
-        Set<String> keys = documentKeys(getValue(query, fieldName));
+        Set<String> keys = documentKeys(documentGetValue(query, fieldName));
         return keys == null ? null : keys.stream().findFirst().orElse(null);
     }
 

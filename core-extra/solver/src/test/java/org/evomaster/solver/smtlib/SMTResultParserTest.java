@@ -197,4 +197,41 @@ public class SMTResultParserTest {
         assertTrue(printing_schemas1.getField("CONSUMER_ID") instanceof LongValue);
         assertEquals(2, ((LongValue) printing_schemas1.getField("CONSUMER_ID")).getValue());
     }
+
+    @Test
+    public void testParseComposedTypeWithSpaceInString() {
+        String response = "sat\n((users__1 (id-name-age 2 \"John Smith\" 26)))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue users1 = (StructValue) result.get("users__1");
+        assertEquals(3, users1.getFields().size());
+        assertEquals(2, ((LongValue) users1.getField("ID")).getValue());
+        assertEquals("John Smith", ((StringValue) users1.getField("NAME")).getValue());
+        assertEquals(26, ((LongValue) users1.getField("AGE")).getValue());
+    }
+
+    @Test
+    public void testParseComposedTypeWithParenthesisInString() {
+        String response = "sat\n((t__1 (id-txt-n 0 \"a)b (c\" 7)))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue t1 = (StructValue) result.get("t__1");
+        assertEquals(3, t1.getFields().size());
+        assertEquals(0, ((LongValue) t1.getField("ID")).getValue());
+        assertEquals("a)b (c", ((StringValue) t1.getField("TXT")).getValue());
+        assertEquals(7, ((LongValue) t1.getField("N")).getValue());
+    }
+
+    @Test
+    public void testParseComposedTypeWithNegativeValueAndMultilineString() {
+        String response = "sat\n((t__1 (id-txt-n (- 3)\n  \"x y\"\n  7)))\n((t__2 (id-txt-n 1 \"z\" 2)))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue t1 = (StructValue) result.get("t__1");
+        assertEquals(-3, ((LongValue) t1.getField("ID")).getValue());
+        assertEquals("x y", ((StringValue) t1.getField("TXT")).getValue());
+        assertEquals(7, ((LongValue) t1.getField("N")).getValue());
+        StructValue t2 = (StructValue) result.get("t__2");
+        assertEquals("z", ((StringValue) t2.getField("TXT")).getValue());
+    }
 }

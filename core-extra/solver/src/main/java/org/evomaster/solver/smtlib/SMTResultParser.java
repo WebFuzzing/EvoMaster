@@ -3,7 +3,9 @@ package org.evomaster.solver.smtlib;
 import org.evomaster.solver.Z3Solution;
 import org.evomaster.solver.smtlib.value.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,9 +21,8 @@ public class SMTResultParser {
      * Parses the Z3 solver response and extracts variable values.
      *
      * FRAGILITY: parsing is regex- and position-based and assumes Z3's textual get-value layout
-     * (one struct per line, constructor name split on '-', values split on whitespace). It therefore
-     * assumes string values contain no spaces, hyphens, quotes or parentheses; such values would be
-     * mis-split. Hardening the parser (or requesting values in a more robust format) is future work.
+     * (constructor name split on '-', values split on whitespace outside strings and parentheses).
+     * It therefore assumes column names contain no hyphens.
      *
      * @param z3Response the raw response from Z3 solver
      * @return a {@link Z3Solution} mapping variable names to the {@link SMTLibValue} objects Z3 assigned to them
@@ -36,12 +37,10 @@ public class SMTResultParser {
         // example: ((variableName value)) where value can be an integer, string, or real number
         Pattern valuePattern = Pattern.compile("\\(\\((\\w+) \\(?(" + simpleValuePattern + ")\\)?\\)\\)");
 
-        // Regular expression for matching composed types or structures
-        // example: ((variableName (field1 value1 field2 value2 ...)))
-        String composedValuePattern = "\\(([^)]+)\\)";
-        // Pattern for matching composed types with fields
-        // example: ((variableName (field1 value1 field2 value2 ...)))
-        Pattern composedTypePattern = Pattern.compile("\\(\\((\\w+\\d+) " + composedValuePattern + "\\)\\)");
+        // Pattern for matching the start of a composed type (structure); its body is read by structTokens
+        // example: ((variableName (field1-field2-... value1 value2 ...)))
+        // The constructor name starts with a letter, which tells it apart from a value such as (- 4)
+        Pattern composedTypePattern = Pattern.compile("\\(\\((\\w+\\d+) \\((?=[A-Za-z_])");
 
         // Buffer for multiline values
         StringBuilder buffer = new StringBuilder();
@@ -75,7 +74,16 @@ public class SMTResultParser {
             // Check if the buffer matches a composed type (structure)
             if (composedMatcher.find()) {
                 String variableName = composedMatcher.group(1);
-                String[] fields = composedMatcher.group(2).split(" ");
+                /*
+                    Values must not be split on every space: a string value containing a space or a
+                    parenthesis -- e.g. the literal of a WHERE name = 'John Smith' -- would shift every
+                    later field and run past the end of fieldNames.
+                 */
+                List<String> structTokens = structTokens(buffer.toString(), composedMatcher.end());
+                if (structTokens == null) {
+                    continue; // the struct is not complete yet: keep buffering lines
+                }
+                String[] fields = structTokens.toArray(new String[0]);
                 String[] fieldNames = fields[0].split("-");
 
                 Map<String, SMTLibValue> structValues = new HashMap<>();
@@ -102,6 +110,64 @@ public class SMTResultParser {
             }
         }
         return new Z3Solution(results); // Return the parsed assignments as a solution
+    }
+
+    /**
+     * Splits the body of a struct into its top-level tokens: the constructor name followed by one token
+     * per field value.
+     *
+     * Whitespace separates tokens only outside string literals and outside nested parentheses, so a
+     * string such as {@code "John Smith"} or a negative number such as {@code (- 4)} stays a single
+     * token. Inside a string, SMT-LIB writes a double quote as two double quotes, which therefore does
+     * not end the literal.
+     *
+     * @param text  the buffered response
+     * @param start index of the first character of the struct body, just after its opening parenthesis
+     * @return the tokens, or null when the closing parenthesis of the struct has not been read yet
+     */
+    private static List<String> structTokens(String text, int start) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int depth = 0;
+        boolean inString = false;
+
+        for (int i = start; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (inString) {
+                current.append(c);
+                if (c == '"') {
+                    if (i + 1 < text.length() && text.charAt(i + 1) == '"') {
+                        current.append('"');
+                        i++;
+                    } else {
+                        inString = false;
+                    }
+                }
+            } else if (c == '"') {
+                inString = true;
+                current.append(c);
+            } else if (c == '(') {
+                depth++;
+                current.append(c);
+            } else if (c == ')') {
+                if (depth == 0) {
+                    if (current.length() > 0) {
+                        tokens.add(current.toString());
+                    }
+                    return tokens;
+                }
+                depth--;
+                current.append(c);
+            } else if (Character.isWhitespace(c) && depth == 0) {
+                if (current.length() > 0) {
+                    tokens.add(current.toString());
+                    current.setLength(0);
+                }
+            } else {
+                current.append(c);
+            }
+        }
+        return null;
     }
 
     /**
