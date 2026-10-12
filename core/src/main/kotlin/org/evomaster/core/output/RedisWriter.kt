@@ -115,9 +115,9 @@ object RedisWriter {
             }
             is RedisQueryAction -> {
                 val key = "\"${escape(action.key, format)}\""
-                action.fields.filter { it.isPresent() }.map { field ->
-                    val value = "\"${escape(field.rawValue(), format)}\""
-                    ".hset($key, \"${escape(field.name, format)}\", $value)"
+                action.fields.flatMap { it.hashEntries() }.map { (fieldName, rawValue) ->
+                    val value = "\"${escape(rawValue, format)}\""
+                    ".hset($key, \"${escape(fieldName, format)}\", $value)"
                 }
             }
         }

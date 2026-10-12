@@ -41,6 +41,14 @@ public class RedisFailedCommand {
     public String entityType;
 
     /**
+     * HGETALL only: the name of the property of {@link #entityType} that holds the entity's id,
+     * or null if unknown. Spring Data Redis reads the entity's id from that field of the hash, not
+     * from the key, so the generated hash must set it to the id of the key to look like the
+     * entity that was asked for.
+     */
+    public String entityIdField;
+
+    /**
      * FT.SEARCH/FT.AGGREGATE only: the name of the queried index. Its existence (with a HASH
      * key_type) is a precondition for these commands to be actionable, so a failed command is
      * only ever produced for an index that was found via FT.INFO.
@@ -94,11 +102,20 @@ public class RedisFailedCommand {
      *                    Null if none was observed for the key's keyspace.
      */
     public RedisFailedCommand(String command, List<String> keys, String pattern, String field, String entityType) {
+        this(command, keys, pattern, field, entityType, null);
+    }
+
+    /**
+     * Same as {@link #RedisFailedCommand(String, List, String, String, String)}, additionally
+     * carrying the name of the entity's id property, see {@link #entityIdField}.
+     */
+    public RedisFailedCommand(String command, List<String> keys, String pattern, String field, String entityType, String entityIdField) {
         this.command = command;
         this.keys =  new ArrayList<>(keys);
         this.pattern = pattern;
         this.field = field;
         this.entityType = entityType;
+        this.entityIdField = entityIdField;
     }
 
     /**

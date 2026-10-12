@@ -108,6 +108,7 @@ public class RedisCrudInstrumentedTest {
                 .orElse(null);
 
         assertNotNull(schema, "Expected a schema derived from RedisEntity");
+        assertEquals("id", schema.getIdField(), "Expected the @Id property of RedisEntity to be captured");
         assertTrue(schema.getHashSchema().contains("\"id\""), "Expected field 'id' in the captured schema");
         assertTrue(schema.getHashSchema().contains("\"name\""), "Expected field 'name' in the captured schema");
     }

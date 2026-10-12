@@ -54,7 +54,7 @@ public class RedisHandler {
      * "entities:1"). Value -> the schema of the Java type observed for that keyspace (e.g. via a
      * Spring Data Redis {@code @RedisHash} repository), see {@link RedisHashSchema}.
      */
-    private final Map<String, String> hashSchemasByKeyspace = new HashMap<>();
+    private final Map<String, RedisHashSchema> hashSchemasByKeyspace = new HashMap<>();
 
     private final RedisHeuristicsCalculator calculator = new RedisHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
@@ -101,7 +101,7 @@ public class RedisHandler {
     }
 
     public void handle(RedisHashSchema info) {
-        hashSchemasByKeyspace.put(info.getKeyspace(), info.getHashSchema());
+        hashSchemasByKeyspace.put(info.getKeyspace(), info);
     }
 
     /**
@@ -172,12 +172,14 @@ public class RedisHandler {
                     throw new IllegalArgumentException("Command " + type.getLabel() + " has invalid arguments.");
                 }
                 String keyspace = keyspaceOf(args.get(0));
-                String entityType = keyspace == null ? null : hashSchemasByKeyspace.get(keyspace);                return new RedisFailedCommand(
+                RedisHashSchema schema = keyspace == null ? null : hashSchemasByKeyspace.get(keyspace);
+                return new RedisFailedCommand(
                         type.getLabel().toUpperCase(),
                         args,
                         null,
                         null,
-                        entityType);
+                        schema == null ? null : schema.getHashSchema(),
+                        schema == null ? null : schema.getIdField());
             }
 
             case KEYS: {

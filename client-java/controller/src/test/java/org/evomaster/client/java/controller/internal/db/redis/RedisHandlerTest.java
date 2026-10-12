@@ -100,6 +100,38 @@ class RedisHandlerTest {
     }
 
     @Test
+    void testHgetallFailedCommandCarriesIdFieldOfKnownKeyspace() {
+        ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
+        when(client.getKeysByType("hash")).thenReturn(Collections.emptySet());
+        handler.setRedisClient(client);
+
+        handler.handle(new RedisHashSchema("entities", "{}", "id"));
+
+        RedisCommand cmd = new RedisCommand(RedisCommand.RedisCommandType.HGETALL, new String[]{"entities:1"}, true, 1);
+        handler.handle(cmd);
+        handler.getEvaluatedRedisCommands();
+
+        List<RedisFailedCommand> failed = handler.getExecutionDto().failedCommands;
+        assertEquals(1, failed.size());
+        assertEquals("id", failed.get(0).entityIdField);
+    }
+
+    @Test
+    void testHgetallFailedCommandHasNullIdFieldWhenSchemaHasNone() {
+        ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
+        when(client.getKeysByType("hash")).thenReturn(Collections.emptySet());
+        handler.setRedisClient(client);
+
+        handler.handle(new RedisHashSchema("entities", "{}"));
+
+        RedisCommand cmd = new RedisCommand(RedisCommand.RedisCommandType.HGETALL, new String[]{"entities:1"}, true, 1);
+        handler.handle(cmd);
+        handler.getEvaluatedRedisCommands();
+
+        assertNull(handler.getExecutionDto().failedCommands.get(0).entityIdField);
+    }
+
+    @Test
     void testHgetallFailedCommandHasNullEntityTypeForUnknownKeyspace() {
         ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
         when(client.getKeysByType("hash")).thenReturn(Collections.emptySet());

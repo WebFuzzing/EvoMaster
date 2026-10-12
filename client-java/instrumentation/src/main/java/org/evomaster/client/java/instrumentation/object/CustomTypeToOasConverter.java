@@ -20,4 +20,12 @@ public abstract class CustomTypeToOasConverter {
      * @return true if the class is compatible, false otherwise.
      */
     public abstract boolean isInstanceOf(Class<?> klass);
+
+    /**
+     * Identifies this converter in the schema caches: two converters with the same id must convert
+     * the same types in the same way. By default, that is true of every instance of the same class.
+     */
+    public String cacheId() {
+        return getClass().getName();
+    }
 }

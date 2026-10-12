@@ -70,7 +70,7 @@ object RedisInsertBuilder {
             "HGETALL" -> {
                 val key = keys.firstOrNull() ?: return emptyList()
                 if (key in existingKeys) return emptyList()
-                val fields = buildFieldsFromEntityType(cmd.entityType)
+                val fields = buildFieldsFromEntityType(cmd.entityType, cmd.entityIdField, key)
                 if (fields != null) {
                     listOf(RedisQueryAction(key = key, fields = fields))
                 } else {
@@ -224,10 +224,15 @@ object RedisInsertBuilder {
      * ([RestActionBuilderV3.createGeneForDTO]), instead of a single placeholder field/value that
      * would leave every other field null after deserialization.
      *
+     * Spring Data Redis takes the id of the entity it reads from a field of the hash, not from the
+     * key. So that the entity looks like the one that was asked for, the field of [idField] is fixed
+     * to the id part of [key] (what follows its keyspace) instead of being free for the search to
+     * change.
+     *
      * @return null when there is no known schema for the command, or it could not be turned into
      * fields, so the caller falls back to the generic placeholder field.
      */
-    private fun buildFieldsFromEntityType(entityType: String?): List<RedisQueryField>? {
+    private fun buildFieldsFromEntityType(entityType: String?, idField: String?, key: String): List<RedisQueryField>? {
         if (entityType == null) return null
 
         val typeName = entityType.substringBefore(":").drop(1).dropLast(1)
@@ -242,7 +247,14 @@ object RedisInsertBuilder {
         val fixedFields = (gene as? ObjectGene)?.fixedFields ?: return null
         if (fixedFields.isEmpty()) return null
 
-        return fixedFields.map { RedisQueryField(it.name, valueGene = it) }
+        val idValue = key.substringAfter(':')
+        return fixedFields.map {
+            if (it.name == idField) {
+                RedisQueryField(it.name, constantValue = idValue)
+            } else {
+                RedisQueryField(it.name, valueGene = it)
+            }
+        }
     }
 
     private fun escapeRegexLiteral(word: String): String {

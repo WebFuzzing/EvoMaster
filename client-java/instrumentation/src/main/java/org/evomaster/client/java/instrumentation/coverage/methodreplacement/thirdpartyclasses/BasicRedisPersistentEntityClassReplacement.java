@@ -5,12 +5,16 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Repl
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
+import org.evomaster.client.java.instrumentation.object.RedisTypeToOasConverter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 
@@ -66,6 +70,33 @@ public class BasicRedisPersistentEntityClassReplacement extends ThirdPartyMethod
     }
 
     /**
+     * The entity's id property is the one annotated with Spring Data's {@code @Id} or, failing
+     * that, the one named "id" (the same rule Spring applies). It cannot be asked to the persistent
+     * entity itself, since its properties are only added after the constructor returns.
+     *
+     * @return the name of the field, or null if there is none
+     */
+    static String findIdFieldName(Class<?> type) {
+        String namedId = null;
+        for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {
+            for (Field f : c.getDeclaredFields()) {
+                if (Modifier.isStatic(f.getModifiers())) {
+                    continue;
+                }
+                for (Annotation a : f.getAnnotations()) {
+                    if (a.annotationType().getName().equals("org.springframework.data.annotation.Id")) {
+                        return f.getName();
+                    }
+                }
+                if (namedId == null && f.getName().equals("id")) {
+                    namedId = f.getName();
+                }
+            }
+        }
+        return namedId;
+    }
+
+    /**
      * Resolves the original constructor and invokes it directly via the classloader of the actual
      * arguments received at the call site, rather than reusing a {@link Constructor} object cached
      * by {@link #getOriginalConstructor(ThirdPartyMethodReplacementClass, String)}: that cache is
@@ -89,8 +120,8 @@ public class BasicRedisPersistentEntityClassReplacement extends ThirdPartyMethod
             addInstance(entity);
             String keySpace = (String) entity.getClass().getMethod("getKeySpace").invoke(entity);
             Class<?> type = (Class<?>) entity.getClass().getMethod("getType").invoke(entity);
-            String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(type);
-            ExecutionTracer.addRedisHashType(new RedisHashSchema(keySpace, schema));
+            String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(type, false, RedisTypeToOasConverter.defaults());
+            ExecutionTracer.addRedisHashType(new RedisHashSchema(keySpace, schema, findIdFieldName(type)));
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
