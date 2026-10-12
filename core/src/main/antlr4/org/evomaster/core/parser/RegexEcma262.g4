@@ -88,9 +88,9 @@ atom
  | DOT
  | atomEscape
  | characterClass
- | PAREN_open disjunction PAREN_close
- //TODO
-// | '(' '?' ':' disjunction ')'
+ // capturing and non capturing groups
+ | PAREN_open disjunction PAREN_close // capturing
+ | PAREN_open QUESTION COLON disjunction PAREN_close // non capturing
  ;
 
 
@@ -144,6 +144,7 @@ patternCharacter
  | COMMA
  | MINUS
  | DecimalDigit
+ | COLON
  // These are also allowed as literals when no matching pair exists
  | BRACE_close
  | BRACKET_close
@@ -188,7 +189,7 @@ classAtomNoDash
  : classEscape
  | BaseChar
  | DecimalDigit
- | COMMA | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
+ | COMMA | COLON | CARET | DOLLAR | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR;
 
 
@@ -242,11 +243,12 @@ BRACE_close                : '}';
 OR                         : '|';
 MINUS                      : '-';
 COMMA                      : ',';
+COLON                      : ':';
 
 
 BaseChar
  // practically all chars but the ones used for control and digits
- : ~[0-9,^$\\.*+?()[\]{}|-]
+ : ~[0-9,:^$\\.*+?()[\]{}|-]
  ;
 
 fragment OctalEscapeSequence

@@ -435,4 +435,27 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
             rangesOf("""^[0\x41-\x7a]$""")
         )
     }
+
+    @Test
+    fun testNonCapturingGroup(){
+        checkSamplesExactly("""^(?:a|b)c$""", "ac", "bc")
+        checkSamplesExactly("""^x(?:a|b)?y$""", "xy", "xay", "xby")
+        checkSamplesExactly("""^(?:a(?:b|c))$""", "ab", "ac")
+        checkSamplesExactly("""^(?:)a$""", "a")
+        checkSamplesExactly("""^(?:[^\s\S]|a)b$""", "ab")
+    }
+
+    @Test
+    fun testColonIsStillALiteral(){
+        checkSamplesExactly("""^a:b$""", "a:b")
+        checkSamplesExactly("""^(:a)$""", ":a")
+        checkSamplesExactly("""^[:]$""", ":")
+        checkSamplesExactly("""^[a:-<]$""", "a", ":", ";", "<")
+    }
+
+    @Test
+    fun testNonCapturingOpeningInsideClassIsThreeCharacters(){
+        checkSamplesExactly("""^[(?:]$""", "(", "?", ":")
+        checkCanSample("""^[(?:-z]$""", listOf("(", "?", ":", ">", "z"), 5000) // :-z is a range
+    }
 }
