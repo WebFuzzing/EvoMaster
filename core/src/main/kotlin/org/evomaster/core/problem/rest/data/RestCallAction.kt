@@ -11,6 +11,7 @@ import org.evomaster.core.problem.rest.link.BackwardLinkReference
 import org.evomaster.core.problem.rest.link.RestLink
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
+import org.evomaster.core.problem.rest.service.HttpSemanticsService.Companion.HTTP_CALL_LOCATION_FOLLOWUP_KEY
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
@@ -402,4 +403,10 @@ class RestCallAction(
         return copy
     }
 
+    /**
+     * @return whether the action is follow-up action
+     */
+    fun isFollowUpAction(): Boolean{
+        return path.toString() == "/" && id.contains(HTTP_CALL_LOCATION_FOLLOWUP_KEY)
+    }
 }

@@ -30,6 +30,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.database.sql.schema.TableId
+import org.evomaster.core.problem.rest.data.RestPath
+import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -88,13 +90,17 @@ class ResourceDepManageService {
         val removedMap = mutableMapOf<String, MutableSet<TableId>>()
 
         restIndividual.seeMainExecutableActions().forEachIndexed { index, action ->
-            if (config.doesApplyNameMatching) updateParamInfo(action as RestCallAction, tables)
+            val path = if (action.isFollowUpAction())
+                restIndividual.getActualPathForFollowUpAction(index)
+            else action.path
+
+            if (config.doesApplyNameMatching) updateParamInfo(action as RestCallAction, path, tables)
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
             if (index < dto.extraHeuristics.size) {
                 val dbDto = dto.extraHeuristics[index].sqlSqlExecutionsDto
                 if (dbDto != null) {
                     val de = DatabaseExecution.fromDto(dbDto, tables.keys)
-                    updateResourceToTable(action, de, tables, addedMap, removedMap)
+                    updateResourceToTable(action, path, de, tables, addedMap, removedMap)
                 }
             }
         }
@@ -103,8 +109,9 @@ class ResourceDepManageService {
 
     }
 
-    private fun updateParamInfo(action: RestCallAction, tables: Map<TableId, Table>) {
-        val r = rm.getResourceNodeFromCluster(action.path.toString())
+    private fun updateParamInfo(action: RestCallAction, path: RestPath?, tables: Map<TableId, Table>) {
+        val rPath = if (action.isFollowUpAction()) path else action.path
+        val r = rm.getResourceNodeFromCluster(rPath!!.toString())
         // skip resource if it is ExcludedResourceNode
         if (r is ExcludedResourceNode) return
 
@@ -183,13 +190,16 @@ class ResourceDepManageService {
 
     private fun updateResourceToTable(
         action: RestCallAction,
+        path: RestPath?,
         updated: Map<TableId, Set<String>>,
         matchedWithVerb: Boolean,
         tables: Map<TableId, Table>,
         addedMap: MutableMap<String, MutableSet<TableId>>,
         removedMap: MutableMap<String, MutableSet<TableId>>
     ) {
-        val ar = rm.getResourceNodeFromCluster(action.path.toString())
+        val rpath = if (action.isFollowUpAction()) path else action.path
+
+        val ar = rm.getResourceNodeFromCluster(rpath!!.toString())
         val rToTable = ar.resourceToTable
 
         if (updated.isNotEmpty() && matchedWithVerb) {
@@ -241,18 +251,19 @@ class ResourceDepManageService {
 
     private fun updateResourceToTable(
         action: RestCallAction,
+        path: RestPath?,
         de: DatabaseExecution,
         tables: Map<TableId, Table>,
         addedMap: MutableMap<String, MutableSet<TableId>>,
         removedMap: MutableMap<String, MutableSet<TableId>>
     ) {
 
-        updateResourceToTable(action, de.insertedData, (action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
-        updateResourceToTable(action, de.updatedData, (action.verb == HttpVerb.PATCH || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
-        updateResourceToTable(action, de.deletedData.map { Pair(it, mutableSetOf<String>()) }.toMap(), (action.verb == HttpVerb.PATCH || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
-        updateResourceToTable(action, de.queriedData, true, tables, addedMap, removedMap)
+        updateResourceToTable(action, path,de.insertedData, (action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
+        updateResourceToTable(action, path,de.updatedData, (action.verb == HttpVerb.PATCH || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
+        updateResourceToTable(action, path,de.deletedData.map { Pair(it, mutableSetOf<String>()) }.toMap(), (action.verb == HttpVerb.PATCH || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
+        updateResourceToTable(action, path,de.queriedData, true, tables, addedMap, removedMap)
 
-        val relatedTable = rm.getResourceNodeFromCluster(action.path.toString())
+        val relatedTable = rm.getResourceNodeFromCluster((if (action.isFollowUpAction()) path!! else action.path).toString())
             .resourceToTable
 
         relatedTable.updateActionRelatedToTable(

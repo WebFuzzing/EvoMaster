@@ -486,4 +486,20 @@ class RestIndividual(
             it.verb == actionVerb && it.path.isEquivalent(path)
         }
     }
+
+    /**
+     * for the follow-up action, get its previous valid rest action
+     */
+    fun getActualPathForFollowUpAction(index: Int): RestPath?{
+        if (index == 0) return null
+        var cur = index - 1
+        val seq = seeMainExecutableActions()
+        while (cur >= 0){
+            val found = seq[cur]
+            if (!found.isFollowUpAction())
+                return found.path
+            cur --
+        }
+        throw IllegalStateException("cannot find any valid path before $index of this individual")
+    }
 }

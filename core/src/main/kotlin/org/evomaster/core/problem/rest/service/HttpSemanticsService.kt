@@ -39,6 +39,8 @@ class HttpSemanticsService : TimeBoxedPhase{
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpSemanticsService::class.java)
+
+        const val HTTP_CALL_LOCATION_FOLLOWUP_KEY = "LOCATION-FOLLOWUP"
     }
 
     /**
@@ -868,7 +870,7 @@ class HttpSemanticsService : TimeBoxedPhase{
             // (relative/absolute, possibly with query params). We do not bind to a schema
             // The path here is a structural placeholder; the real URL comes from chainState.
             val followUp = RestCallAction(
-                id = "$verb:LOCATION-FOLLOWUP",
+                id = "$verb:$HTTP_CALL_LOCATION_FOLLOWUP_KEY",
                 verb = verb,
                 path = RestPath("/"),
                 parameters = mutableListOf(),
