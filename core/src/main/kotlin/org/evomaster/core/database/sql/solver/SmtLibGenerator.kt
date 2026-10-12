@@ -235,6 +235,10 @@ class SmtLibGenerator(
         } catch (e: JSQLParserException) {
             LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $expression. Reason: ${e.message}")
             null
+        } catch (e: RuntimeException) {
+            // e.g. "Extraction of condition not yet implemented", for a function call or arithmetic
+            LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $expression. Reason: ${e.message}")
+            null
         }
 
     /**
@@ -263,10 +267,22 @@ class SmtLibGenerator(
     private fun appendCheckConstraints(smt: SMTLib, smtTable: SmtTable) {
         for (check in smtTable.dto.tableCheckExpressions) {
             val condition = parseCheckExpressionCached(check.sqlCheckExpression) ?: continue
-            for (i in 1..numberOfRows) {
-                val constraint: SMTNode = parseCheckExpression(smtTable, condition, i)
-                smt.addNode(constraint)
+            /*
+                Like a CHECK that cannot be parsed, one that parses but cannot be translated (e.g. an
+                IN list holding a column or NULL) is skipped. Every table is declared for every query,
+                so letting the exception through made generation fail for all queries against the
+                schema, not only for those touching this table.
+             */
+            val constraints = try {
+                (1..numberOfRows).map { i -> parseCheckExpression(smtTable, condition, i) }
+            } catch (e: RuntimeException) {
+                LoggingUtil.uniqueWarn(
+                    LoggingUtil.getInfoLogger(),
+                    "Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}"
+                )
+                continue
             }
+            constraints.forEach { smt.addNode(it) }
         }
     }
 
