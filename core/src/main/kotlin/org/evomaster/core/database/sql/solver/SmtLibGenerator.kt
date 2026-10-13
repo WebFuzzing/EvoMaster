@@ -4,8 +4,11 @@ import net.sf.jsqlparser.schema.Table
 import net.sf.jsqlparser.statement.Statement
 import net.sf.jsqlparser.statement.delete.Delete
 import net.sf.jsqlparser.statement.select.FromItem
+import net.sf.jsqlparser.statement.select.ParenthesedSelect
 import net.sf.jsqlparser.statement.select.PlainSelect
 import net.sf.jsqlparser.statement.select.Select
+import net.sf.jsqlparser.statement.select.SetOperationList
+import net.sf.jsqlparser.statement.select.UnionOp
 import net.sf.jsqlparser.statement.update.Update
 import net.sf.jsqlparser.util.TablesNamesFinder
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
@@ -52,7 +55,20 @@ class SmtLibGenerator(
     var skippedQueryConstraints = 0
         private set
 
-    private val smtTables: List<SmtTable> = schema.tables.map { SmtTable(it) }
+    /**
+     * Tables left out of the formula, by lowercase name: those with a column whose type has no entry in
+     * [TYPE_MAP], and, transitively, those with a foreign key to one of them, since a row referencing
+     * a table that is not declared could never be inserted.
+     *
+     * Every table of the schema is declared for every query, so a single column of an unmapped type
+     * used to make generation fail for all queries against the schema, including those that never
+     * touch that table. Now only the queries that read from one of these tables are rejected.
+     */
+    private val undeclaredTables: Set<String> = undeclaredTables(schema.tables)
+
+    private val smtTables: List<SmtTable> = schema.tables
+        .filter { it.id.name.lowercase() !in undeclaredTables }
+        .map { SmtTable(it) }
     private val smtTableByOriginalName: Map<String, SmtTable> = smtTables.associateBy { it.originalName }
 
     companion object {
@@ -88,6 +104,14 @@ class SmtLibGenerator(
          */
         const val DATE_TYPE = "DATE"
         internal const val SECONDS_PER_DAY = 86400L
+
+        /**
+         * Encoded as SMT Strings with no constraint on their form, so the value Z3 assigns need not be
+         * a valid UUID or JSON document; SMTLibZ3DbConstraintSolver turns it into one.
+         */
+        const val UUID_TYPE = "UUID"
+        const val JSON_TYPE = "JSON"
+        const val JSONB_TYPE = "JSONB"
 
         /**
          * Spellings of [BOOLEAN_TYPE] that [TYPE_MAP] treats as the same type (PostgreSQL reports a
@@ -155,10 +179,13 @@ class SmtLibGenerator(
             "VARCHAR" to SMT_STRING,
             "TEXT" to SMT_STRING,
             "CHARACTER LARGE OBJECT" to SMT_STRING,
+            // the same type, as H2 1.4 reports it
+            "CLOB" to SMT_STRING,
             BOOLEAN_TYPE to SMT_STRING,
             "BOOL" to SMT_STRING,
-            "UUID" to SMT_STRING,
-            "JSONB" to SMT_STRING,
+            UUID_TYPE to SMT_STRING,
+            JSON_TYPE to SMT_STRING,
+            JSONB_TYPE to SMT_STRING,
             "BYTEA" to SMT_STRING,
         )
     }
@@ -170,6 +197,7 @@ class SmtLibGenerator(
      * @return An SMTLib object containing the generated SMT-LIB constraints.
      */
     fun generateSMT(sqlQuery: Statement): SMTLib {
+        rejectUndeclaredTables(sqlQuery)
         val smt = SMTLib()
 
         appendTableDefinitions(smt)
@@ -181,6 +209,42 @@ class SmtLibGenerator(
         appendGetValuesFromQuery(smt, sqlQuery)
 
         return smt
+    }
+
+    private fun undeclaredTables(tables: List<TableDto>): Set<String> {
+        val undeclared = tables
+            .filter { table -> table.columns.any { TYPE_MAP[it.type.uppercase()] == null } }
+            .map { it.id.name.lowercase() }
+            .toMutableSet()
+        do {
+            val referencing = tables
+                .filter { table ->
+                    table.id.name.lowercase() !in undeclared &&
+                        table.foreignKeys.any { it.targetTable.lowercase() in undeclared }
+                }
+                .map { it.id.name.lowercase() }
+        } while (undeclared.addAll(referencing))
+        return undeclared
+    }
+
+    /**
+     * Fails for a query that reads from a table left out of the formula, see [undeclaredTables].
+     */
+    private fun rejectUndeclaredTables(sqlQuery: Statement) {
+        if (undeclaredTables.isEmpty()) return
+        val queryTables = try {
+            TablesNamesFinder().getTables(sqlQuery)
+        } catch (e: Exception) {
+            emptySet<String>() // same fallback as appendGetValuesFromQuery
+        }
+        val undeclared = queryTables.firstOrNull { it.lowercase() in undeclaredTables } ?: return
+        val unmapped = schema.tables
+            .firstOrNull { it.id.name.equals(undeclared, ignoreCase = true) }
+            ?.columns?.firstOrNull { TYPE_MAP[it.type.uppercase()] == null }
+        throw RuntimeException(
+            if (unmapped != null) "Unsupported column type: ${unmapped.type} (column ${unmapped.name} of table $undeclared)"
+            else "Table $undeclared references, through foreign keys, a table with an unsupported column type"
+        )
     }
 
     /**
@@ -242,6 +306,10 @@ class SmtLibGenerator(
         } catch (e: JSQLParserException) {
             LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $expression. Reason: ${e.message}")
             null
+        } catch (e: RuntimeException) {
+            // e.g. "Extraction of condition not yet implemented", for a function call or arithmetic
+            LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: $expression. Reason: ${e.message}")
+            null
         }
 
     /**
@@ -270,10 +338,22 @@ class SmtLibGenerator(
     private fun appendCheckConstraints(smt: SMTLib, smtTable: SmtTable) {
         for (check in smtTable.dto.tableCheckExpressions) {
             val condition = parseCheckExpressionCached(check.sqlCheckExpression) ?: continue
-            for (i in 1..numberOfRows) {
-                val constraint: SMTNode = parseCheckExpression(smtTable, condition, i)
-                smt.addNode(constraint)
+            /*
+                Like a CHECK that cannot be parsed, one that parses but cannot be translated (e.g. an
+                IN list holding a column or NULL) is skipped. Every table is declared for every query,
+                so letting the exception through made generation fail for all queries against the
+                schema, not only for those touching this table.
+             */
+            val constraints = try {
+                (1..numberOfRows).map { i -> parseCheckExpression(smtTable, condition, i) }
+            } catch (e: RuntimeException) {
+                LoggingUtil.uniqueWarn(
+                    LoggingUtil.getInfoLogger(),
+                    "Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}"
+                )
+                continue
             }
+            constraints.forEach { smt.addNode(it) }
         }
     }
 
@@ -571,8 +651,8 @@ class SmtLibGenerator(
 
         val (where, defaultTable) = when (sqlQuery) {
             is Select -> {
-                val plainSelect = sqlQuery.selectBody as PlainSelect
-                Pair(plainSelect.where, defaultTableOf(sqlQuery, plainSelect))
+                val plainSelect = plainSelectOf(sqlQuery)
+                Pair(plainSelect.where, defaultTableOf(plainSelect))
             }
             is Delete -> Pair(sqlQuery.where, sqlQuery.table.getName())
             is Update -> Pair(sqlQuery.where, sqlQuery.table.getName())
@@ -671,18 +751,20 @@ class SmtLibGenerator(
         queryTables: Collection<String>
     ) {
         if (sqlQuery is Select) { // TODO: Handle other queries
-            val plainSelect = sqlQuery.selectBody as PlainSelect
+            val plainSelect = plainSelectOf(sqlQuery)
             val joins = plainSelect.joins
             if (joins != null) {
                 for (join in joins) {
                     val onExpressions = join.onExpressions
                     if (onExpressions.isNotEmpty()) {
-                        // TODO: only the first ON expression is used; a composite ON
-                        // (e.g. "a = b AND c = d") drops all but the first conjunct.
+                        // TODO: only the first ON expression is used. A join has more than one only in
+                        // the nested form "a JOIN b JOIN c ON b.x = c.x ON a.x = b.x", where every ON after
+                        // the first is dropped. A composite ON such as "a = b AND c = d" is a single
+                        // expression, and each of its conjuncts is translated.
                         val onExpression = onExpressions.elementAt(0)
                         try {
                             val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
-                            val tableFromQuery = defaultTableOf(sqlQuery, plainSelect)!!
+                            val tableFromQuery = defaultTableOf(plainSelect)!!
                             // TODO: the ON condition is translated with the SAME row index on
                             // both sides ("diagonal pairing"): row i of one table is matched only with row i
                             // of the other. This is sufficient at the default numberOfRows=1 to force a
@@ -734,10 +816,13 @@ class SmtLibGenerator(
      * The table an unqualified column falls back to when no single query table declares it: the
      * table in `FROM`. [TablesNamesFinder] returns its tables in a hash set, so its first element is
      * not necessarily that table — in `FROM products p JOIN users u` it is `users`.
+     *
+     * [plainSelect] is the SELECT being translated, the first branch of a UNION, so the fallback only
+     * looks at the tables of that branch.
      */
-    private fun defaultTableOf(sqlQuery: Select, plainSelect: PlainSelect): String? =
+    private fun defaultTableOf(plainSelect: PlainSelect): String? =
         (plainSelect.fromItem as? Table)?.name
-            ?: TablesNamesFinder().getTables(sqlQuery as Statement).firstOrNull()
+            ?: TablesNamesFinder().getTables(plainSelect as Statement).firstOrNull()
 
     /**
      * Builds the [SMTConditionVisitor.ColumnScope] for one query from the aliases its `FROM` and
@@ -779,6 +864,27 @@ class SmtLibGenerator(
     )
 
     /**
+     * The plain `SELECT` whose clauses are translated: the query itself when it is a [PlainSelect], or
+     * the first branch of a `UNION`. Always a [PlainSelect].
+     *
+     * A `UNION` returns rows as soon as any one of its branches does, so generating data for its first
+     * branch is enough; the branch is translated as if it were the whole query. `INTERSECT` and
+     * `EXCEPT` constrain every branch, which this translation cannot express, so they are rejected
+     * and the query is recorded as untranslatable.
+     */
+    private fun plainSelectOf(select: Select): PlainSelect = when (select) {
+        is PlainSelect -> select
+        is ParenthesedSelect -> plainSelectOf(select.select)
+        is SetOperationList ->
+            if (select.operations.all { it is UnionOp }) {
+                plainSelectOf(select.selects.first())
+            } else {
+                throw RuntimeException("Unsupported set operation, only UNION can be translated: $select")
+            }
+        else -> throw RuntimeException("Unsupported SELECT form ${select.javaClass.simpleName}: $select")
+    }
+
+    /**
      * Reads the aliases a query declares.
      *
      * A FROM item with no schema table behind it is a derived table. Its alias is recorded rather
@@ -791,7 +897,7 @@ class SmtLibGenerator(
 
         when (sqlQuery) {
             is Select -> {
-                val plainSelect = sqlQuery.selectBody as PlainSelect
+                val plainSelect = plainSelectOf(sqlQuery)
                 val fromItem = plainSelect.fromItem
                 if (fromItem != null) {
                     val tableName = getTableName(fromItem)
@@ -871,7 +977,7 @@ class SmtLibGenerator(
 
         // Add tables from JOINs and WHERE clause if they exist
         if (sqlQuery is Select) {
-            val plainSelect = sqlQuery.selectBody as PlainSelect
+            val plainSelect = plainSelectOf(sqlQuery)
 
             // Add tables from JOINs
             plainSelect.joins?.forEach { join ->
