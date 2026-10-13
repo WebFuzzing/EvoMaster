@@ -25,6 +25,11 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     }
 
     /**
+     * Number of capture groups that were found so far.
+     */
+    private var captureGroupCount = 0
+
+    /**
      * Interprets a \c<x> token text according to JS semantics.
      * [inCharClass] controls whether digits/underscore are valid control letters.
      * Returns either a single control char, or the literal chars.
@@ -280,6 +285,14 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         if(ctx.disjunction() != null){
 
+            val isCapturingGroup = !ctx.text.startsWith("(?:")
+            // to correctly handle group nesting order, we must record group index before visiting
+            val groupNumber = if (isCapturingGroup) {
+                ++captureGroupCount
+            } else {
+                null
+            }
+
             val res = ctx.disjunction().accept(this)
 
             val satisfiableDisjunctions = res.genes
@@ -291,7 +304,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                 return VisitResult()
             }
 
-            val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
+            val disjList = DisjunctionListRxGene(satisfiableDisjunctions, groupNumber)
 
             //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
             for(gene in disjList.disjunctions){
