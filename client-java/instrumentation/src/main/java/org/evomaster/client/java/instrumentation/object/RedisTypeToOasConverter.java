@@ -10,12 +10,15 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Represents a Java type the way Spring Data Redis stores it in a hash field, rather than the way a
- * JSON body would carry it: each hash field is a plain string that the SUT parses back into the
- * property's type, so the generated value must be one that parse accepts.
+ * A {@link CustomTypeToOasConverter} (see {@link ClassToSchema}) that describes, as an OpenAPI
+ * Schema Object, the way Spring Data Redis stores a Java type in a hash field, rather than the way
+ * {@link ClassToSchema} would describe it by default (i.e., as it would travel in a JSON body).
  * <p>
- * For example, a {@link Date} is stored as epoch milliseconds, and a "2024-01-02" string (the
- * default JSON representation) makes reading the entity fail.
+ * The OpenAPI schema format is only used as the common description language already understood by
+ * {@link ClassToSchema} and by the search's gene construction: each hash field is a plain string
+ * that the SUT parses back into the property's type, so the generated value must be one that parse
+ * accepts. For example, a {@link Date} is stored as epoch milliseconds, and a "2024-01-02" string
+ * (the default schema for a date) makes reading the entity fail.
  */
 public class RedisTypeToOasConverter extends CustomTypeToOasConverter {
 

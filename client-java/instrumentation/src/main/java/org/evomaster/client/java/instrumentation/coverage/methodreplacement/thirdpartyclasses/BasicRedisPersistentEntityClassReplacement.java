@@ -30,11 +30,19 @@ import java.util.List;
  */
 public class BasicRedisPersistentEntityClassReplacement extends ThirdPartyMethodReplacementClass {
 
+    private static final String ENTITY_CLASS_NAME = "org.springframework.data.redis.core.mapping.BasicRedisPersistentEntity";
+    private static final String TYPE_INFORMATION_CLASS_NAME = "org.springframework.data.util.TypeInformation";
+    private static final String KEY_SPACE_RESOLVER_CLASS_NAME = "org.springframework.data.keyvalue.core.mapping.KeySpaceResolver";
+    private static final String TIME_TO_LIVE_ACCESSOR_CLASS_NAME = "org.springframework.data.redis.core.TimeToLiveAccessor";
+    private static final String ID_ANNOTATION_CLASS_NAME = "org.springframework.data.annotation.Id";
+    private static final String GET_KEY_SPACE_METHOD_NAME = "getKeySpace";
+    private static final String GET_TYPE_METHOD_NAME = "getType";
+
     private static final ThreadLocal<Object> instance = new ThreadLocal<>();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
-        return "org.springframework.data.redis.core.mapping.BasicRedisPersistentEntity";
+        return ENTITY_CLASS_NAME;
     }
 
     public static Object consumeInstance() {
@@ -59,12 +67,12 @@ public class BasicRedisPersistentEntityClassReplacement extends ThirdPartyMethod
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.REDIS,
             id = "constructorEntity",
-            castTo = "org.springframework.data.redis.core.mapping.BasicRedisPersistentEntity"
+            castTo = ENTITY_CLASS_NAME
     )
     public static void BasicRedisPersistentEntity(
-            @ThirdPartyCast(actualType = "org.springframework.data.util.TypeInformation") Object information,
-            @ThirdPartyCast(actualType = "org.springframework.data.keyvalue.core.mapping.KeySpaceResolver") Object fallbackKeySpaceResolver,
-            @ThirdPartyCast(actualType = "org.springframework.data.redis.core.TimeToLiveAccessor") Object timeToLiveAccessor) {
+            @ThirdPartyCast(actualType = TYPE_INFORMATION_CLASS_NAME) Object information,
+            @ThirdPartyCast(actualType = KEY_SPACE_RESOLVER_CLASS_NAME) Object fallbackKeySpaceResolver,
+            @ThirdPartyCast(actualType = TIME_TO_LIVE_ACCESSOR_CLASS_NAME) Object timeToLiveAccessor) {
         handleBasicRedisPersistentEntityConstructor(
                 Arrays.asList(information, fallbackKeySpaceResolver, timeToLiveAccessor));
     }
@@ -73,6 +81,9 @@ public class BasicRedisPersistentEntityClassReplacement extends ThirdPartyMethod
      * The entity's id property is the one annotated with Spring Data's {@code @Id} or, failing
      * that, the one named "id" (the same rule Spring applies). It cannot be asked to the persistent
      * entity itself, since its properties are only added after the constructor returns.
+     *
+     * Package-private only so that it can be unit tested directly, with plain classes, instead of
+     * going through the replaced constructor.
      *
      * @return the name of the field, or null if there is none
      */
@@ -84,7 +95,7 @@ public class BasicRedisPersistentEntityClassReplacement extends ThirdPartyMethod
                     continue;
                 }
                 for (Annotation a : f.getAnnotations()) {
-                    if (a.annotationType().getName().equals("org.springframework.data.annotation.Id")) {
+                    if (a.annotationType().getName().equals(ID_ANNOTATION_CLASS_NAME)) {
                         return f.getName();
                     }
                 }
@@ -109,17 +120,16 @@ public class BasicRedisPersistentEntityClassReplacement extends ThirdPartyMethod
     private static void handleBasicRedisPersistentEntityConstructor(List<Object> args) {
         try {
             ClassLoader loader = args.get(0).getClass().getClassLoader();
-            Class<?> targetClass = loader.loadClass(
-                    "org.springframework.data.redis.core.mapping.BasicRedisPersistentEntity");
-            Class<?> informationType = loader.loadClass("org.springframework.data.util.TypeInformation");
-            Class<?> keySpaceResolverType = loader.loadClass("org.springframework.data.keyvalue.core.mapping.KeySpaceResolver");
-            Class<?> timeToLiveAccessorType = loader.loadClass("org.springframework.data.redis.core.TimeToLiveAccessor");
+            Class<?> targetClass = loader.loadClass(ENTITY_CLASS_NAME);
+            Class<?> informationType = loader.loadClass(TYPE_INFORMATION_CLASS_NAME);
+            Class<?> keySpaceResolverType = loader.loadClass(KEY_SPACE_RESOLVER_CLASS_NAME);
+            Class<?> timeToLiveAccessorType = loader.loadClass(TIME_TO_LIVE_ACCESSOR_CLASS_NAME);
 
             Constructor constructor = targetClass.getConstructor(informationType, keySpaceResolverType, timeToLiveAccessorType);
             Object entity = constructor.newInstance(args.toArray());
             addInstance(entity);
-            String keySpace = (String) entity.getClass().getMethod("getKeySpace").invoke(entity);
-            Class<?> type = (Class<?>) entity.getClass().getMethod("getType").invoke(entity);
+            String keySpace = (String) entity.getClass().getMethod(GET_KEY_SPACE_METHOD_NAME).invoke(entity);
+            Class<?> type = (Class<?>) entity.getClass().getMethod(GET_TYPE_METHOD_NAME).invoke(entity);
             String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(type, false, RedisTypeToOasConverter.defaults());
             ExecutionTracer.addRedisHashType(new RedisHashSchema(keySpace, schema, findIdFieldName(type)));
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {

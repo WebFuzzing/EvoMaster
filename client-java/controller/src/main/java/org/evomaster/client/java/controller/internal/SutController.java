@@ -421,7 +421,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         List<AdditionalInfo> list = getAdditionalInfoList();
         if (!list.isEmpty()) {
             AdditionalInfo last = list.get(list.size() - 1);
-            last.getRedisHashSchemaData().forEach(redisHandler::handle);
+            last.getRedisHashSchemaData().forEach(schema -> redisHandler.handle(schema));
         }
     }
 
