@@ -860,7 +860,7 @@ class Statistics : SearchListener {
 
         return aiMetricsAsPairs(
             enabled = true,
-            type = config.aiModelForResponseClassification.joinToString(","),
+            type = "\"" + config.aiModelForResponseClassification.joinToString(",") + "\"",
             accuracy = metrics.accuracy,
             precision = metrics.precision400,
             sensitivity = metrics.sensitivity400,
