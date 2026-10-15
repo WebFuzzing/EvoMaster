@@ -117,6 +117,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         // reads a superset of the layouts a database may emit, of which this is one, so the value
         // round-trips: what is written here is read back to the same instant.
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
+        private const val DATE_FORMAT = "yyyy-MM-dd"
 
         private val UUID_PATTERN = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 
@@ -499,13 +500,20 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 }
             }
             is LongValue -> {
-                if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.TIMESTAMP_TYPE)) {
+                val datePattern = when {
+                    hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.TIMESTAMP_TYPE) -> TIMESTAMP_FORMAT
+                    // Without this a DATE column was inserted as a bare integer, which the
+                    // database rejects, so no row of its table was ever inserted
+                    hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.DATE_TYPE) -> DATE_FORMAT
+                    else -> null
+                }
+                if (datePattern != null) {
                     val epochSeconds = columnValue.value.toLong()
                     val localDateTime = LocalDateTime.ofInstant(
                         Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
                     )
                     val formatted = localDateTime.format(
-                        DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT)
+                        DateTimeFormatter.ofPattern(datePattern)
                     )
                     ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
                 } else {
@@ -571,8 +579,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * compared case-insensitively as a raw string.
      *
      * CAVEAT: this relies on [ColumnDto.type] containing the exact spelling passed in (currently
-     * "BOOLEAN" and "TIMESTAMP"). It is needed because the SMT sort alone cannot recover these types
-     * (BOOLEAN is encoded as an SMT String, TIMESTAMP as an SMT Int), so gene reconstruction must
+     * "BOOLEAN", "TIMESTAMP" and "DATE"). It is needed because the SMT sort alone cannot recover these
+     * types (BOOLEAN is encoded as an SMT String, TIMESTAMP and DATE as an SMT Int), so gene reconstruction must
      * consult the original SQL type. The set of type spellings recognized here must stay consistent
      * with [SmtLibGenerator.TYPE_MAP]; if a backend reports a variant spelling (e.g. "BOOL" or
      * "TIMESTAMP WITHOUT TIME ZONE"), the special handling is silently skipped. Consolidating these
@@ -607,7 +615,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * deterministically: equal strings give equal values and different strings different ones, so
      * the equalities and distinctions the formula imposes (foreign keys, unique and primary keys)
      * still hold. Constraining the form inside the formula instead would need Z3's regular
-     * expressions, which make solving noticeably more expensive.
+     * expressions, which make solving noticeably more expensive. Any other value goes on to
+     * [binaryValue].
      */
     private fun validTextValue(schemaDto: DbInfoDto, table: Table, columnName: String, value: String): String =
         when {
@@ -616,7 +625,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             (hasColumnType(schemaDto, table, columnName, SmtLibGenerator.JSON_TYPE) ||
                 hasColumnType(schemaDto, table, columnName, SmtLibGenerator.JSONB_TYPE)) && !isJson(value) ->
                 JSON_MAPPER.writeValueAsString(value) // the value as a JSON string
-            else -> value
+            else -> binaryValue(schemaDto, table, columnName, value)
         }
 
     private fun isJson(value: String): Boolean =
@@ -626,6 +635,23 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         } catch (e: JsonProcessingException) {
             false
         }
+
+    /**
+     * Writes the value Z3 assigned to a BLOB column in a form H2 accepts.
+     *
+     * H2 1.4 reads a string literal given for a binary column as hexadecimal, so a value such as "abc"
+     * made it reject the INSERT of the whole row. The value is written as the hex of its UTF-8 bytes,
+     * which H2 2.x accepts too. The mapping is injective, so the equalities and distinctions the
+     * formula imposes (unique and primary keys) still hold. MySQL takes any string as is.
+     */
+    private fun binaryValue(schemaDto: DbInfoDto, table: Table, columnName: String, value: String): String {
+        if (schemaDto.databaseType != DatabaseType.H2) return value
+        val type = schemaDto.tables.firstOrNull { it.id.name.equals(table.id.name, ignoreCase = true) }
+            ?.columns?.firstOrNull { it.name.equals(columnName, ignoreCase = true) }
+            ?.type?.uppercase()
+        if (type !in SmtLibGenerator.BLOB_TYPES) return value
+        return value.toByteArray(StandardCharsets.UTF_8).joinToString("") { "%02x".format(it) }
+    }
 
     /**
      * Whether a column's declared type is the expected one, accounting for spellings that

@@ -59,6 +59,7 @@ public class ReplacementList {
                     new MessageBodyReaderClassReplacement(),
                     new MethodClassReplacement(),
                     new MongoCollectionClassReplacement(),
+                    new MongoCollectionPipelineUpdateClassReplacement(),
                     new MongoTemplateClassReplacement(),
                     new OpenSearchClientClassReplacement(),
                     new Neo4JSessionClassReplacement(),
