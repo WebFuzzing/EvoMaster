@@ -99,6 +99,13 @@ class SmtLibGenerator(
         const val TIMESTAMP_TYPE = "TIMESTAMP"
 
         /**
+         * Encoded like [TIMESTAMP_TYPE], in epoch seconds (SMT Int), constrained to midnight UTC. The
+         * shared unit lets a DATE column be compared with a TIMESTAMP literal.
+         */
+        const val DATE_TYPE = "DATE"
+        internal const val SECONDS_PER_DAY = 86400L
+
+        /**
          * Encoded as SMT Strings with no constraint on their form, so the value Z3 assigns need not be
          * a valid UUID or JSON document; SMTLibZ3DbConstraintSolver turns it into one.
          */
@@ -162,7 +169,7 @@ class SmtLibGenerator(
             "SMALLSERIAL" to SMT_INT,
             "BIGSERIAL" to SMT_INT,
             TIMESTAMP_TYPE to SMT_INT,
-            "DATE" to SMT_INT,
+            DATE_TYPE to SMT_INT,
             "FLOAT" to SMT_REAL,
             "DOUBLE" to SMT_REAL,
             "DECIMAL" to SMT_REAL,
@@ -417,7 +424,8 @@ class SmtLibGenerator(
     private fun appendTimestampConstraints(smt: SMTLib) {
         for (smtTable in smtTables) {
             for (column in smtTable.dto.columns) {
-                if (column.type.equals(TIMESTAMP_TYPE, ignoreCase = true)) {
+                val isDate = column.type.equals(DATE_TYPE, ignoreCase = true)
+                if (isDate || column.type.equals(TIMESTAMP_TYPE, ignoreCase = true)) {
                     val columnName = smtTable.smtColumnName(column.name).uppercase()
 
                     for (i in 1..numberOfRows) {
@@ -437,6 +445,15 @@ class SmtLibGenerator(
                                 )
                             )
                         )
+                        if (isDate) {
+                            smt.addNode(
+                                AssertSMTNode(
+                                    EqualsAssertion(
+                                        listOf("(mod ($columnName ${rowConstantName(smtTable.smtName, i)}) $SECONDS_PER_DAY)", "0")
+                                    )
+                                )
+                            )
+                        }
                     }
                 }
             }
