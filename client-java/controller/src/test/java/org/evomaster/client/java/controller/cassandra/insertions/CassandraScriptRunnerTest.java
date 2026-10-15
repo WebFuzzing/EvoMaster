@@ -34,6 +34,13 @@ public class CassandraScriptRunnerTest {
     private static final String KEYSPACE = "testks";
     private static final String TABLE = "users";
 
+    /**
+     * A table whose partition key and clustering column are both of a text type, used to check which
+     * of the two rejects an empty value. Cassandra's rule is what decides the columns
+     * CassandraColumnGeneBuilder in the core module has to keep non-empty.
+     */
+    private static final String KEYED_TABLE = "keyed";
+
     @BeforeAll
     public static void initClass() {
         cassandra.start();
@@ -48,6 +55,8 @@ public class CassandraScriptRunnerTest {
         connection.execute("CREATE TABLE IF NOT EXISTS " + KEYSPACE + "." + TABLE +
                 " (id int PRIMARY KEY, name text, elapsed duration, ip inet," +
                 " tags set<text>, scores list<int>, favs map<text, int>)");
+        connection.execute("CREATE TABLE IF NOT EXISTS " + KEYSPACE + "." + KEYED_TABLE +
+                " (pk text, ck text, val text, PRIMARY KEY ((pk), ck))");
     }
 
     @AfterAll
@@ -60,6 +69,7 @@ public class CassandraScriptRunnerTest {
     @BeforeEach
     public void clearTable() {
         connection.execute("TRUNCATE " + KEYSPACE + "." + TABLE);
+        connection.execute("TRUNCATE " + KEYSPACE + "." + KEYED_TABLE);
     }
 
     @Test
@@ -162,5 +172,64 @@ public class CassandraScriptRunnerTest {
 
         //the third insertion must have been attempted, in spite of the second one having failed
         assertEquals(2, connection.execute("SELECT * FROM " + KEYSPACE + "." + TABLE).all().size());
+    }
+
+    /**
+     * Cassandra rejects an empty value for a column composing the partition key. This is why
+     * CassandraColumnGeneBuilder in the core module has to keep the gene of such a column non-empty:
+     * were it left free to generate the empty string, as any other text column is, the insertion the
+     * search asked for would never land.
+     */
+    @Test
+    public void testEmptyPartitionKeyIsRejected() {
+        List<CassandraInsertionDto> insertions = CassandraDsl.cassandra()
+                .insertInto(KEYSPACE, KEYED_TABLE)
+                .d("pk", "''")
+                .d("ck", "'aCk'")
+                .d("val", "'aValue'")
+                .dtos();
+
+        CassandraInsertionResultsDto resultsDto = CassandraScriptRunner.executeInsert(connection, insertions);
+
+        assertFalse(resultsDto.executionResults.get(0));
+        assertFalse(connection.execute("SELECT * FROM " + KEYSPACE + "." + KEYED_TABLE).iterator().hasNext());
+    }
+
+    /**
+     * A clustering column, unlike a partition key, does accept an empty value. This is what scopes the
+     * constraint in CassandraColumnGeneBuilder to the partition key alone.
+     */
+    @Test
+    public void testEmptyClusteringColumnIsAccepted() {
+        List<CassandraInsertionDto> insertions = CassandraDsl.cassandra()
+                .insertInto(KEYSPACE, KEYED_TABLE)
+                .d("pk", "'aPk'")
+                .d("ck", "''")
+                .d("val", "'aValue'")
+                .dtos();
+
+        CassandraInsertionResultsDto resultsDto = CassandraScriptRunner.executeInsert(connection, insertions);
+
+        assertTrue(resultsDto.executionResults.get(0));
+        assertEquals(1, connection.execute("SELECT * FROM " + KEYSPACE + "." + KEYED_TABLE).all().size());
+    }
+
+    /**
+     * A single character is enough for a partition key, which is why the minimum length imposed on the
+     * gene of such a column is 1 rather than some larger number.
+     */
+    @Test
+    public void testOneCharacterPartitionKeyIsAccepted() {
+        List<CassandraInsertionDto> insertions = CassandraDsl.cassandra()
+                .insertInto(KEYSPACE, KEYED_TABLE)
+                .d("pk", "'a'")
+                .d("ck", "'aCk'")
+                .d("val", "'aValue'")
+                .dtos();
+
+        CassandraInsertionResultsDto resultsDto = CassandraScriptRunner.executeInsert(connection, insertions);
+
+        assertTrue(resultsDto.executionResults.get(0));
+        assertEquals(1, connection.execute("SELECT * FROM " + KEYSPACE + "." + KEYED_TABLE).all().size());
     }
 }

@@ -53,6 +53,11 @@ class SqlConditionParserTest {
         return new SqlInCondition(column(columName), stringLiteralList);
     }
 
+    private static SqlInCondition notIn(String columName, String... stringLiteralValues) {
+        SqlInCondition in = in(columName, stringLiteralValues);
+        return new SqlInCondition(in.getSqlColumn(), in.getLiteralList(), true);
+    }
+
     private static SqlInCondition inNumbers(String columName, int... values) {
         List<SqlCondition> literals = Arrays.stream(values).mapToObj(SqlConditionParserTest::intL).collect(Collectors.toList());
         return new SqlInCondition(column(columName), new SqlConditionList(literals));
@@ -215,6 +220,16 @@ class SqlConditionParserTest {
         SqlCondition actual = parse("(STATUS IN ('A', 'B', 'C', 'D', 'E'))");
         SqlInCondition expected = in("STATUS", "A", "B", "C", "D", "E");
         assertEquals(expected, actual);
+    }
+
+    /**
+     * NOT IN must keep its negation: read as a plain IN, it would mean the opposite.
+     */
+    @Test
+    void testNotInCondition() throws SqlConditionParserException {
+        SqlCondition actual = parse("(STATUS NOT IN ('A', 'B'))");
+        assertEquals(notIn("STATUS", "A", "B"), actual);
+        assertNotEquals(in("STATUS", "A", "B"), actual);
     }
 
     @Disabled("SIMILAR TO is not directly supported by JSQL parser")

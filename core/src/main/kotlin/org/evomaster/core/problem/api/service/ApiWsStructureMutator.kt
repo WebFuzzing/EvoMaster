@@ -1,13 +1,25 @@
 package org.evomaster.core.problem.api.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
-import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
+import org.evomaster.client.java.controller.api.dto.database.execution.*
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.cassandra.CassandraDbAction
+import org.evomaster.core.database.cassandra.CassandraInsertBuilder
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbInsertBuilder
 import org.evomaster.core.database.mongo.MongoDbAction
+import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.neo4j.Neo4jInsertBuilder
+import org.evomaster.core.database.neo4j.Neo4jSchema
+import org.evomaster.core.database.redis.RedisDbAction
+import org.evomaster.core.database.redis.RedisInsertBuilder
+import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.database.sql.SqlActionUtils
+import org.evomaster.core.database.sql.SqlInsertBuilder
+import org.evomaster.core.database.sql.schema.TableId
+import org.evomaster.core.database.sql.solver.service.SMTLibZ3DbConstraintSolver
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
@@ -15,13 +27,6 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
-import org.evomaster.core.database.redis.RedisDbAction
-import org.evomaster.core.database.redis.RedisInsertBuilder
-import org.evomaster.core.database.dynamodb.DynamoDbAction
-import org.evomaster.core.database.dynamodb.DynamoDbInsertBuilder
-import org.evomaster.core.database.neo4j.Neo4jDbAction
-import org.evomaster.core.database.neo4j.Neo4jInsertBuilder
-import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
@@ -31,11 +36,6 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
-import org.evomaster.core.database.sql.solver.service.SMTLibZ3DbConstraintSolver
-import org.evomaster.core.database.sql.SqlAction
-import org.evomaster.core.database.sql.SqlActionUtils
-import org.evomaster.core.database.sql.SqlInsertBuilder
-import org.evomaster.core.database.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -203,6 +203,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         addInitializingRedisDbActions(individual, mutatedGenes, sampler)
         addInitializingDynamoDbActions(individual, mutatedGenes, sampler)
         addInitializingNeo4jDbActions(individual, mutatedGenes, sampler)
+        addInitializingCassandraDbActions(individual, mutatedGenes, sampler)
         addInitializingHostnameResolutionActions(individual, mutatedGenes, sampler)
         // TODO if we handle schedule actions with structure mutator
     }
@@ -331,7 +332,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val oldNeo4jDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
 
-        val addedNeo4jDbInsertions = handleFailedNeo4jQueries(ind, failedQueries)
+        val addedNeo4jDbInsertions = handleFailedNeo4jQueries(ind, failedQueries, sampler.neo4jSchema)
             .let { if (it.isEmpty()) emptyList() else listOf(it) }
 
         if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
@@ -340,6 +341,41 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 oldNeo4jDbActions,
                 addedNeo4jDbInsertions,
                 ImpactsOfIndividual.NEO4JDB_ACTION_KEY,
+                config
+            )
+        }
+    }
+
+    private fun <T: ApiWsIndividual> addInitializingCassandraDbActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
+        if (!config.shouldGenerateCassandraData()) {
+            return
+        }
+
+        val ind = individual.individual as? T
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val failedQueries = individual.fitness.getViewOfAggregatedFailedCassandraQueries()
+
+        if (failedQueries.isEmpty()) {
+            return
+        }
+
+        val oldCassandraDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
+
+        val addedCassandraDbInsertions = handleFailedCql(ind, failedQueries, mutatedGenes, sampler)
+
+        ind.repairInitializationActions(randomness)
+        // update impact based on added genes
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                oldCassandraDbActions,
+                addedCassandraDbInsertions,
+                ImpactsOfIndividual.CASSANDRADB_ACTION_KEY,
                 config
             )
         }
@@ -640,7 +676,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
     private fun <T : ApiWsIndividual> handleFailedNeo4jQueries(
         ind: T,
-        failedQueries: List<Neo4jFailedQueryDto>
+        failedQueries: List<Neo4jFailedQueryDto>,
+        schema: Neo4jSchema?
     ): List<EnvironmentAction> {
 
         val existingKeys = ind.seeInitializingActions()
@@ -648,16 +685,39 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             .map { it.insertionKey() }
             .toSet()
 
-        val addedActions = Neo4jInsertBuilder.buildInsertActions(failedQueries, existingKeys)
+        val addedActions = Neo4jInsertBuilder.buildInsertActions(failedQueries, existingKeys, schema)
 
         if (addedActions.isNotEmpty()) {
             ind.addInitializingActions(actions = addedActions)
             addedActions.forEach { action ->
+                action.seeSchemaGenes().forEach { gene -> gene.randomize(randomness, false) }
                 action.seeTopGenes().forEach { gene -> gene.markAllAsInitialized() }
             }
         }
 
         return addedActions
+    }
+
+    private fun <T : ApiWsIndividual> handleFailedCql(
+        ind: T,
+        failedQueries: List<CassandraFailedQuery>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ): MutableList<List<CassandraDbAction>>? {
+
+        val builder = CassandraInsertBuilder()
+        val addedCassandraDbInsertions = if (mutatedGenes != null) mutableListOf<List<CassandraDbAction>>() else null
+
+        failedQueries
+            .mapNotNull { it.tableSchema }
+            .filter { builder.canBuildInsertionFor(it) }
+            .forEach {
+                val insertion = listOf(sampler.sampleCassandraInsertion(it))
+                ind.addInitializingCassandraDbActions(actions = insertion)
+                addedCassandraDbInsertions?.add(insertion)
+            }
+
+        return addedCassandraDbInsertions
     }
 
     private fun findMissing(

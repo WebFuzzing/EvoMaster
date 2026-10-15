@@ -16,13 +16,17 @@ import org.evomaster.solver.smtlib.assertion.*
  * @param tables A list of table definitions, used to determine if an operand is a column.
  * @param rowIndex The index of the row to be used in SMT-LIB variable declarations.
  * @param columnScope Decides whether a column reference belongs to a derived table. See [ColumnScope].
+ * @param queryTables The schema tables the query reads from, by original name, mapped to their SMT-LIB
+ *                    names. An unqualified column is resolved to the one of them that has it, falling
+ *                    back to [defaultTableName] when none or several do.
  */
 class SMTConditionVisitor(
     private val defaultTableName: String,
     private val tableAliases: Map<String, String>,
     private val tables: List<TableDto>,
     private val rowIndex: Int,
-    private val columnScope: ColumnScope = ColumnScope.UNRESOLVED
+    private val columnScope: ColumnScope = ColumnScope.UNRESOLVED,
+    private val queryTables: Map<String, String> = emptyMap()
 ) : SqlConditionVisitor<SMTNode, Void> {
 
     /**
@@ -63,6 +67,21 @@ class SMTConditionVisitor(
      * @param columnName The name of the column.
      * @return The SMT-LIB column reference string.
      */
+    /**
+     * The query table that declares an unqualified column. In a JOIN, an unqualified column can belong
+     * to any of the joined tables; resolving it to a fixed default would constrain a column of the
+     * wrong row, or one that table does not even have.
+     *
+     * @return the SMT-LIB name of the table, or null when no query table or more than one declares it
+     */
+    private fun tableOwningColumn(columnName: String): String? =
+        queryTables.filterKeys { queryTable ->
+            tables.any { table ->
+                table.id.name.equals(queryTable, ignoreCase = true) &&
+                    table.columns.any { it.name.equals(columnName, ignoreCase = true) }
+            }
+        }.values.toSet().singleOrNull()
+
     private fun getColumnReference(tableName: String, columnName: String): String {
         val rowConstant = SmtLibGenerator.rowConstantName(convertToAscii(tableName).lowercase(), rowIndex)
         return "(${convertToAscii(columnName).uppercase()} $rowConstant)"
@@ -150,12 +169,12 @@ class SMTConditionVisitor(
                  */
                 val name = sqlCondition.columnName
                 if (sqlCondition.tableName == null && isBooleanLiteral(name) && !isAColumn(name)) {
-                    return if (name.equals("true", ignoreCase = true)) "\"True\"" else "\"False\""
+                    return booleanLiteral(name.equals("true", ignoreCase = true))
                 }
 
                 val tableName = sqlCondition.tableName?.let {
                     tableAliases[it] ?: it
-                } ?: defaultTableName
+                } ?: tableOwningColumn(name) ?: defaultTableName
 
                 /*
                     A column of a derived table — a sub-select in FROM or JOIN, a CTE, a lateral
@@ -202,16 +221,7 @@ class SMTConditionVisitor(
                 getColumnReference(tableName, sqlCondition.columnName)
             }
 
-            is SqlStringLiteralValue -> {
-                var text = sqlCondition.toSql()
-                if (text.startsWith("\'\"")) {
-                    text = text.replace("\'\"", "")
-                    text = text.replace("\"\'", "")
-                } else if (text.startsWith("\'")) {
-                    text = text.replace("\'", "")
-                }
-                "\"${text}\""
-            }
+            is SqlStringLiteralValue -> stringLiteral(sqlCondition)
 
             is SqlBigIntegerLiteralValue,
             is SqlBigDecimalLiteralValue -> {
@@ -219,11 +229,7 @@ class SMTConditionVisitor(
             }
 
             is SqlBooleanLiteralValue -> {
-                if (sqlCondition.toString().equals("TRUE", ignoreCase = true) ) {
-                    "\"True\""
-                } else {
-                    "\"False\""
-                }
+                booleanLiteral(sqlCondition.toString().equals("TRUE", ignoreCase = true))
             }
 
             else -> {
@@ -260,6 +266,13 @@ class SMTConditionVisitor(
     }
 
     /**
+     * Encodes a SQL boolean literal as the SMT string a BOOLEAN column is constrained to, so that the
+     * comparison can be satisfied by the values SmtLibGenerator allows for that column.
+     */
+    private fun booleanLiteral(value: Boolean): String =
+        "\"${if (value) SmtLibGenerator.BOOLEAN_TRUE else SmtLibGenerator.BOOLEAN_FALSE}\""
+
+    /**
      * Maps SQL comparison operators to SMT-LIB comparators.
      *
      * @param sqlComparator The SQL comparison operator as a string.
@@ -279,6 +292,16 @@ class SMTConditionVisitor(
 
     override fun visit(condition: SqlInCondition, parameter: Void?): SMTNode {
         val left = getVariableAndLiteral(condition.sqlColumn)
+        if (condition.isNegated) {
+            // NOT IN: the column must differ from every value in the list
+            val conditions = condition.literalList.sqlConditionExpressions
+                .map { DistinctAssertion(listOf(left, asLiteral(it))) }
+            return if (conditions.size == 1) {
+                AssertSMTNode(conditions[0])
+            } else {
+                AssertSMTNode(AndAssertion(conditions))
+            }
+        }
         val conditions = condition.literalList.sqlConditionExpressions
             .map {
                 AssertSMTNode(EqualsAssertion(listOf(left, asLiteral(it))))
@@ -290,9 +313,25 @@ class SMTConditionVisitor(
         }
     }
 
+    /**
+     * Writes a SQL string literal as an SMT-LIB string literal.
+     *
+     * The value is taken already unquoted, with SQL's '' turned back into ', so an apostrophe in it
+     * is kept. A double quote is written as "", the SMT-LIB escape; left as is, it would end the
+     * literal early and Z3 would reject the whole formula. A value wrapped in double quotes, as in
+     * '"x"', is still read as x.
+     */
+    private fun stringLiteral(literal: SqlStringLiteralValue): String {
+        var value = literal.stringValue
+        if (value.length >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+            value = value.substring(1, value.length - 1)
+        }
+        return "\"${value.replace("\"", "\"\"")}\""
+    }
+
     private fun asLiteral(expression: SqlCondition?): String {
         if (expression is SqlStringLiteralValue) {
-            return expression.toString().replace("'", "\"")
+            return stringLiteral(expression)
         } else if (expression is SqlBigDecimalLiteralValue) {
             return expression.toString()
         } else if (expression is SqlBigIntegerLiteralValue) {

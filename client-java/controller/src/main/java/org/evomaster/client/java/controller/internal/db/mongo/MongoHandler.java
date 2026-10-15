@@ -7,7 +7,7 @@ import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.controller.mongo.MongoOperation;
 import org.evomaster.client.java.instrumentation.MongoCollectionSchema;
 import org.evomaster.client.java.instrumentation.MongoFindCommand;
-import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.instrumentation.mongo.BsonDocumentConverter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -152,12 +152,20 @@ public class MongoHandler {
         Iterable<?> documents = getDocuments(collection);
         boolean collectionIsEmpty = !documents.iterator().hasNext();
 
+        final Object queryAsBsonDocument = info.getQuery();
+        final Object queryAsDocument = toDocument(queryAsBsonDocument);
+
         if (collectionIsEmpty) {
-            emptyCollections.add(new MongoOperation(info.getCollectionName(), info.getQuery(), info.getDatabaseName(), info.getDocumentsType()));
+            emptyCollections.add(new MongoOperation(info.getCollectionName(), queryAsDocument, info.getDatabaseName(), info.getDocumentsType()));
         }
 
-        MongoDistanceWithMetrics mongoDistanceWithMetrics = calculator.computeDistanceDocuments(info.getQuery(), documents); // to update the metrics
+        MongoDistanceWithMetrics mongoDistanceWithMetrics = calculator.computeDistanceDocuments(queryAsDocument, documents); // to update the metrics
         return mongoDistanceWithMetrics;
+    }
+
+    private /*org.bson.Document*/ Object toDocument(Object /*org.bson.BsonDocument*/ queryAsBsonDocument) {
+        // Implementation to convert BSON document to a regular document
+        return BsonDocumentConverter.toDocument(queryAsBsonDocument);
     }
 
     private Object getCollection(String databaseName, String collectionName) {

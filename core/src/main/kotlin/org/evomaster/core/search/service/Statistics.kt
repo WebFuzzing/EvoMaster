@@ -160,6 +160,11 @@ class Statistics : SearchListener {
     private var neo4jHeuristicEvaluationFailureCount = 0
     private val neo4jNodesAverageCalculator = IncrementalAverage()
 
+    // cassandra heuristic evaluation statistic
+    private var cassandraHeuristicEvaluationSuccessCount = 0
+    private var cassandraHeuristicEvaluationFailureCount = 0
+    private val cassandraRowsAverageCalculator = IncrementalAverage()
+
     //how long time spent in choosing names for the generated test cases
     private var timeSpentChoosingTestNamesMs = 0L
 
@@ -357,6 +362,10 @@ class Statistics : SearchListener {
         neo4jNodesAverageCalculator.addValue(numberOfEvaluatedNodes)
     }
 
+    fun reportNumberOfEvaluatedRowsForCassandraHeuristic(numberOfEvaluatedRows: Int) {
+        cassandraRowsAverageCalculator.addValue(numberOfEvaluatedRows)
+    }
+
     fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
         if (numberOfParsingFailures<0) {
             throw IllegalArgumentException("Invalid number of parsing failures: $numberOfParsingFailures")
@@ -396,6 +405,14 @@ class Statistics : SearchListener {
     /** Records one failed DynamoDB heuristic evaluation. */
     fun reportDynamoDbHeuristicEvaluationFailure() {
         dynamoDbHeuristicEvaluationFailureCount++
+    }
+
+    fun reportCassandraHeuristicEvaluationSuccess() {
+        cassandraHeuristicEvaluationSuccessCount++
+    }
+
+    fun reportCassandraHeuristicEvaluationFailure() {
+        cassandraHeuristicEvaluationFailureCount++
     }
 
     fun reportSqlZ3Sat(z3TimeMs: Long) {
@@ -533,6 +550,12 @@ class Statistics : SearchListener {
 
     /** Returns the average number of nodes inspected by Neo4j heuristics. */
     fun averageNumberOfEvaluatedNodesForNeo4jHeuristics(): Double = neo4jNodesAverageCalculator.mean
+
+    /** Returns the total number of Cassandra heuristic evaluations. */
+    fun getCassandraHeuristicsEvaluationCount(): Int = cassandraHeuristicEvaluationSuccessCount + cassandraHeuristicEvaluationFailureCount
+
+    /** Returns the average number of rows inspected by DynamoDB heuristics. */
+    fun averageNumberOfEvaluatedRowsForCassandraHeuristics(): Double = cassandraRowsAverageCalculator.mean
 
     override fun newActionsEvaluated(n: Int) {
 
@@ -716,6 +739,10 @@ class Statistics : SearchListener {
             add(Pair("averageNumberOfEvaluatedNodesForNeo4jHeuristics","${averageNumberOfEvaluatedNodesForNeo4jHeuristics()}"))
             add(Pair("neo4jHeuristicsEvaluationCount","${getNeo4jHeuristicsEvaluationCount()}"))
 
+            // statistics info for Cassandra Heuristics
+            add(Pair("averageNumberOfEvaluatedRowsForCassandraHeuristics","${averageNumberOfEvaluatedRowsForCassandraHeuristics()}"))
+            add(Pair("cassandraHeuristicsEvaluationCount","${getCassandraHeuristicsEvaluationCount()}"))
+
             add(Pair("timeSpentChoosingTestNamesMs", "$timeSpentChoosingTestNamesMs"))
 
             add(Pair("oracleApplicability", oracleApplicability.exportStatsAsSingleString()))
@@ -833,7 +860,7 @@ class Statistics : SearchListener {
 
         return aiMetricsAsPairs(
             enabled = true,
-            type = config.aiModelForResponseClassification.joinToString(","),
+            type = "\"" + config.aiModelForResponseClassification.joinToString(",") + "\"",
             accuracy = metrics.accuracy,
             precision = metrics.precision400,
             sensitivity = metrics.sensitivity400,

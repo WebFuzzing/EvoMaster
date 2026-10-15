@@ -197,4 +197,72 @@ public class SMTResultParserTest {
         assertTrue(printing_schemas1.getField("CONSUMER_ID") instanceof LongValue);
         assertEquals(2, ((LongValue) printing_schemas1.getField("CONSUMER_ID")).getValue());
     }
+
+    @Test
+    public void testParseComposedTypeWithSpaceInString() {
+        String response = "sat\n((users__1 (id-name-age 2 \"John Smith\" 26)))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue users1 = (StructValue) result.get("users__1");
+        assertEquals(3, users1.getFields().size());
+        assertEquals(2, ((LongValue) users1.getField("ID")).getValue());
+        assertEquals("John Smith", ((StringValue) users1.getField("NAME")).getValue());
+        assertEquals(26, ((LongValue) users1.getField("AGE")).getValue());
+    }
+
+    @Test
+    public void testParseComposedTypeWithParenthesisInString() {
+        String response = "sat\n((t__1 (id-txt-n 0 \"a)b (c\" 7)))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue t1 = (StructValue) result.get("t__1");
+        assertEquals(3, t1.getFields().size());
+        assertEquals(0, ((LongValue) t1.getField("ID")).getValue());
+        assertEquals("a)b (c", ((StringValue) t1.getField("TXT")).getValue());
+        assertEquals(7, ((LongValue) t1.getField("N")).getValue());
+    }
+
+    @Test
+    public void testParseComposedTypeWithNegativeValueAndMultilineString() {
+        String response = "sat\n((t__1 (id-txt-n (- 3)\n  \"x y\"\n  7)))\n((t__2 (id-txt-n 1 \"z\" 2)))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue t1 = (StructValue) result.get("t__1");
+        assertEquals(-3, ((LongValue) t1.getField("ID")).getValue());
+        assertEquals("x y", ((StringValue) t1.getField("TXT")).getValue());
+        assertEquals(7, ((LongValue) t1.getField("N")).getValue());
+        StructValue t2 = (StructValue) result.get("t__2");
+        assertEquals("z", ((StringValue) t2.getField("TXT")).getValue());
+    }
+
+    @Test
+    public void testParseComposedTypeWithRationalValue() {
+        // Z3 prints a Real that is not an integer as a division, e.g. for PRICE = 19.99
+        String response = "sat\n((p__1 (id-price 0 (/ 1999.0 100.0))))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue p1 = (StructValue) result.get("p__1");
+        assertEquals(0, ((LongValue) p1.getField("ID")).getValue());
+        assertEquals(19.99, ((RealValue) p1.getField("PRICE")).getValue(), 1e-9);
+    }
+
+    @Test
+    public void testParseComposedTypeWithNegativeRealValues() {
+        String response = "sat\n((t__1 (id-price-total 0 (- (/ 7.0 2.0)) (- 20.0))))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue t1 = (StructValue) result.get("t__1");
+        assertEquals(-3.5, ((RealValue) t1.getField("PRICE")).getValue(), 1e-9);
+        assertEquals(-20.0, ((RealValue) t1.getField("TOTAL")).getValue(), 1e-9);
+    }
+
+    @Test
+    public void testParseComposedTypeWithEscapedQuoteInString() {
+        // SMT-LIB writes a double quote inside a string as two double quotes
+        String response = "sat\n((t__1 (id-txt 0 \"say \"\"hi\"\" O'Brien\")))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue t1 = (StructValue) result.get("t__1");
+        assertEquals("say \"hi\" O'Brien", ((StringValue) t1.getField("TXT")).getValue());
+    }
 }

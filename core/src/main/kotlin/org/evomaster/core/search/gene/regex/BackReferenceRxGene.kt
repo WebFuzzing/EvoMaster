@@ -12,18 +12,28 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 
 /**
  * Represents a backreference \N in a regex (N being a number).
- * Its value is always identical to the current value of its [captureGroup].
+ * Its value is the one that the capture group number [groupIndex] has in the tree as it is rendered.
+ * That is found when rendering, from the [RegexGene] this is part of, and not by keeping a reference to the group
+ * (as this causes `.copy()` issues and problems with groups inside quantifiers).
+ *
  * It has no independent state and is therefore immutable.
- * If capture group is null then the referenced group was unsatisfiable,
- * in which case the same is true for the backreference to it.
+ *
+ * If the group did not take part in what was rendered (or this is not part of a [RegexGene]), the value is "".
+ * This is what JS does for non-participating referenced groups. For Java this would make the backref unsatisfiable
+ * (as long as the group is not participating), but as that gets complex we can make its value empty and if that
+ * causes a mismatch the regex verifier on [RegexGene] would re-randomize.
+ *
+ * @param groupIndex The number of the referenced group
+ * @param unsatisfiable Whether this backreference can never match. In Java this happens when the captured group is
+ * unsatisfiable, or when the reference points to a future group (or itself).
  */
 class BackReferenceRxGene(
     val groupIndex: Int,
-    val captureGroup: DisjunctionListRxGene?
+    private val unsatisfiable: Boolean = false
 ) : RxAtom, SimpleGene("\\$groupIndex") {
 
     override fun isUnsatisfiable(): Boolean {
-        return captureGroup == null || captureGroup.isUnsatisfiable()
+        return unsatisfiable
     }
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean = true
@@ -34,7 +44,7 @@ class BackReferenceRxGene(
     override fun isMutable(): Boolean = false
 
     override fun copyContent(): Gene {
-        val copy = BackReferenceRxGene(groupIndex, captureGroup)
+        val copy = BackReferenceRxGene(groupIndex, unsatisfiable)
         copy.name = this.name //in case name is changed from its default
         return copy
     }
@@ -66,15 +76,16 @@ class BackReferenceRxGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        if (captureGroup == null) {
+        if (unsatisfiable) {
             throw IllegalStateException("Cannot get value from invalid backreference \\$groupIndex")
         }
-        return captureGroup.getValueAsPrintableString(previousGenes, mode, targetFormat)
+        return getFirstParent(RegexGene::class.java)?.getCapturedValue(groupIndex) ?: ""
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
+        // there is no state, the value comes from the group
         if (other !is BackReferenceRxGene) return false
-        return captureGroup == other.captureGroup
+        return groupIndex == other.groupIndex && unsatisfiable == other.unsatisfiable
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
@@ -89,7 +100,7 @@ class BackReferenceRxGene(
     override val canBeZeroWidth: Boolean = false
 
     /**
-     * Always 0: a backreference's value is derived entirely from a previous [captureGroup],
+     * Always 0: a backreference's value is derived entirely from a previous capture group,
      * so unlike an ordinary leaf it can not be forced to absorb arbitrary candidate text.
      * @see [RxAbsorbable.tryForce]
      */

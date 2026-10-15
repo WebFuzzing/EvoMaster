@@ -29,7 +29,7 @@ class BsonHelperTest {
     void testNewDocument() {
         Document original = new Document("name", "John");
 
-        Object created = BsonHelper.newDocument(original);
+        Object created = BsonHelper.documentNewDocument(original);
 
         assertTrue(created instanceof Document);
         assertNotSame(original, created);
@@ -38,7 +38,7 @@ class BsonHelperTest {
 
     @Test
     void testNewDocumentRejectsInvalidType() {
-        assertThrows(IllegalArgumentException.class, () -> BsonHelper.newDocument(new Object()));
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.documentNewDocument(new Object()));
     }
 
     @Test
@@ -47,7 +47,7 @@ class BsonHelperTest {
 
         BsonHelper.appendToDocument(doc, "age", 42);
 
-        assertEquals(42, BsonHelper.getValue(doc, "age"));
+        assertEquals(42, BsonHelper.documentGetValue(doc, "age"));
     }
 
     @Test
@@ -75,9 +75,9 @@ class BsonHelperTest {
 
     @Test
     void testIsBsonDocument() {
-        assertTrue(BsonHelper.isBsonDocument(new Document()));
-        assertFalse(BsonHelper.isBsonDocument(null));
-        assertFalse(BsonHelper.isBsonDocument(new Object()));
+        assertTrue(BsonHelper.isDocument(new Document()));
+        assertFalse(BsonHelper.isDocument(null));
+        assertFalse(BsonHelper.isDocument(new Object()));
     }
 
 
@@ -142,11 +142,11 @@ class BsonHelperTest {
     void testNullArguments() {
         Document doc = new Document();
 
-        assertThrows(NullPointerException.class, () -> BsonHelper.newDocument(null));
+        assertThrows(NullPointerException.class, () -> BsonHelper.documentNewDocument(null));
         assertThrows(NullPointerException.class, () -> BsonHelper.appendToDocument(null, "a", 1));
         assertThrows(NullPointerException.class, () -> BsonHelper.appendToDocument(doc, null, 1));
-        assertThrows(NullPointerException.class, () -> BsonHelper.getValue(null, "a"));
-        assertThrows(NullPointerException.class, () -> BsonHelper.getValue(doc, null));
+        assertThrows(NullPointerException.class, () -> BsonHelper.documentGetValue(null, "a"));
+        assertThrows(NullPointerException.class, () -> BsonHelper.documentGetValue(doc, null));
         assertThrows(NullPointerException.class, () -> BsonHelper.documentContainsField(null, "a"));
         assertThrows(NullPointerException.class, () -> BsonHelper.documentContainsField(doc, null));
         assertThrows(NullPointerException.class, () -> BsonHelper.documentKeys(null));
@@ -172,13 +172,13 @@ class BsonHelperTest {
     void testGetBsonTimestampValue() {
         BsonTimestamp timestamp = new BsonTimestamp(1, 2);
 
-        assertEquals(timestamp.getValue(), BsonHelper.getBsonTimestampValue(timestamp));
+        assertEquals(timestamp.getValue(), BsonHelper.timestampGetValue(timestamp));
     }
 
     @Test
     void testGetBsonTimestampValueRejectsInvalidType() {
-        assertThrows(IllegalArgumentException.class, () -> BsonHelper.getBsonTimestampValue(new Object()));
-        assertThrows(NullPointerException.class, () -> BsonHelper.getBsonTimestampValue(null));
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.timestampGetValue(new Object()));
+        assertThrows(NullPointerException.class, () -> BsonHelper.timestampGetValue(null));
     }
 
     @Test
@@ -193,7 +193,7 @@ class BsonHelperTest {
     void testBsonRegexGetPattern() {
         BsonRegularExpression regex = new BsonRegularExpression("^hospital.*near$");
 
-        assertEquals("^hospital.*near$", BsonHelper.bsonRegexGetPattern(regex));
+        assertEquals("^hospital.*near$", BsonHelper.regexGetPattern(regex));
     }
 
     @Test
@@ -201,16 +201,16 @@ class BsonHelperTest {
         BsonRegularExpression regexWithOptions = new BsonRegularExpression("hospital", "ims");
         BsonRegularExpression regexWithoutOptions = new BsonRegularExpression("hospital");
 
-        assertEquals("ims", BsonHelper.bsonRegexGetOptions(regexWithOptions));
-        assertEquals("", BsonHelper.bsonRegexGetOptions(regexWithoutOptions));
+        assertEquals("ims", BsonHelper.regexGetOptions(regexWithOptions));
+        assertEquals("", BsonHelper.regexGetOptions(regexWithoutOptions));
     }
 
     @Test
     void testBsonRegexGettersRejectInvalidValues() {
-        assertThrows(NullPointerException.class, () -> BsonHelper.bsonRegexGetPattern(null));
-        assertThrows(NullPointerException.class, () -> BsonHelper.bsonRegexGetOptions(null));
-        assertThrows(IllegalArgumentException.class, () -> BsonHelper.bsonRegexGetPattern("hospital"));
-        assertThrows(IllegalArgumentException.class, () -> BsonHelper.bsonRegexGetOptions("hospital"));
+        assertThrows(NullPointerException.class, () -> BsonHelper.regexGetPattern(null));
+        assertThrows(NullPointerException.class, () -> BsonHelper.regexGetOptions(null));
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.regexGetPattern("hospital"));
+        assertThrows(IllegalArgumentException.class, () -> BsonHelper.regexGetOptions("hospital"));
     }
 
     @Test
@@ -226,7 +226,7 @@ class BsonHelperTest {
         byte[] data = new byte[]{0x01, 0x02, 0x03};
         Binary binary = new Binary((byte) 0x01, data);
 
-        assertArrayEquals(data, BsonHelper.getBinaryData(binary));
+        assertArrayEquals(data, BsonHelper.binaryGetBinaryData(binary));
     }
 
     @Test
@@ -247,6 +247,6 @@ class BsonHelperTest {
     void testGetBigDecimalValue() {
         Decimal128 decimal128 = new Decimal128(1234567890123456789L);
         final BigDecimal expectedBigDecimalValue = decimal128.bigDecimalValue();
-        assertEquals(expectedBigDecimalValue, BsonHelper.getBigDecimalValue(decimal128));
+        assertEquals(expectedBigDecimalValue, BsonHelper.decimal128GetBigDecimalValue(decimal128));
     }
 }
