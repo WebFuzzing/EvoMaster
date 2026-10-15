@@ -496,7 +496,7 @@ class RestIndividual(
         val seq = seeMainExecutableActions()
         while (cur >= 0){
             val found = seq[cur]
-            if (!found.isFollowUpAction())
+            if (!found.isDirectLocationAction())
                 return found.path
             cur --
         }

@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallAction.Companion.HTTP_CALL_LOCATION_FOLLOWUP_KEY
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.data.RestPath
@@ -39,8 +40,6 @@ class HttpSemanticsService : TimeBoxedPhase{
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpSemanticsService::class.java)
-
-        const val HTTP_CALL_LOCATION_FOLLOWUP_KEY = "LOCATION-FOLLOWUP"
     }
 
     /**

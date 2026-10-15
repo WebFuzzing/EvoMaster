@@ -31,7 +31,6 @@ import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.database.sql.DatabaseExecution
 import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.problem.rest.data.RestPath
-import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -90,7 +89,7 @@ class ResourceDepManageService {
         val removedMap = mutableMapOf<String, MutableSet<TableId>>()
 
         restIndividual.seeMainExecutableActions().forEachIndexed { index, action ->
-            val path = if (action.isFollowUpAction())
+            val path = if (action.isDirectLocationAction())
                 restIndividual.getActualPathForFollowUpAction(index)
             else action.path
 
@@ -110,7 +109,7 @@ class ResourceDepManageService {
     }
 
     private fun updateParamInfo(action: RestCallAction, path: RestPath?, tables: Map<TableId, Table>) {
-        val rPath = if (action.isFollowUpAction()) path else action.path
+        val rPath = if (action.isDirectLocationAction()) path else action.path
         val r = rm.getResourceNodeFromCluster(rPath!!.toString())
         // skip resource if it is ExcludedResourceNode
         if (r is ExcludedResourceNode) return
@@ -197,7 +196,7 @@ class ResourceDepManageService {
         addedMap: MutableMap<String, MutableSet<TableId>>,
         removedMap: MutableMap<String, MutableSet<TableId>>
     ) {
-        val rpath = if (action.isFollowUpAction()) path else action.path
+        val rpath = if (action.isDirectLocationAction()) path else action.path
 
         val ar = rm.getResourceNodeFromCluster(rpath!!.toString())
         val rToTable = ar.resourceToTable
@@ -263,7 +262,7 @@ class ResourceDepManageService {
         updateResourceToTable(action, path,de.deletedData.map { Pair(it, mutableSetOf<String>()) }.toMap(), (action.verb == HttpVerb.PATCH || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
         updateResourceToTable(action, path,de.queriedData, true, tables, addedMap, removedMap)
 
-        val relatedTable = rm.getResourceNodeFromCluster((if (action.isFollowUpAction()) path!! else action.path).toString())
+        val relatedTable = rm.getResourceNodeFromCluster((if (action.isDirectLocationAction()) path!! else action.path).toString())
             .resourceToTable
 
         relatedTable.updateActionRelatedToTable(

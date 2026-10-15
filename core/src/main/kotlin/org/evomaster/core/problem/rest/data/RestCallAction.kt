@@ -9,16 +9,13 @@ import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.link.BackwardLinkReference
 import org.evomaster.core.problem.rest.link.RestLink
-import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
-import org.evomaster.core.problem.rest.service.HttpSemanticsService.Companion.HTTP_CALL_LOCATION_FOLLOWUP_KEY
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import java.net.URLEncoder
@@ -82,6 +79,12 @@ class RestCallAction(
          * defining potential verb for creating resources
          */
         val CONFIG_POTENTIAL_VERB_FOR_CREATION = listOf(HttpVerb.PUT, HttpVerb.POST)
+
+        /**
+         * Defines the key used to identify a location follow-up action.
+         * The action ID is composed of its HTTP verb and this key.
+         */
+        const val HTTP_CALL_LOCATION_FOLLOWUP_KEY = "LOCATION-FOLLOWUP"
     }
 
     val endpoint = Endpoint(verb,path)
@@ -404,9 +407,14 @@ class RestCallAction(
     }
 
     /**
-     * @return whether the action is follow-up action
+     * Checks whether this action is a location follow-up action.
+     * A location follow-up action sends an HTTP request to the URL specified
+     * in the Location header of a previous HTTP response, rather than using
+     * a predefined URL from the API schema.
+     *
+     * @return whether this action is a location follow-up action
      */
-    fun isFollowUpAction(): Boolean{
-        return path.toString() == "/" && id.contains(HTTP_CALL_LOCATION_FOLLOWUP_KEY)
+    fun isDirectLocationAction(): Boolean{
+        return id.contains(HTTP_CALL_LOCATION_FOLLOWUP_KEY)
     }
 }

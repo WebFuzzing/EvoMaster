@@ -16,7 +16,6 @@ import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.ResourceDepManageService
 import org.evomaster.core.problem.rest.service.ResourceManageService
@@ -121,7 +120,7 @@ class ResourceRestFitness : AbstractRestFitness() {
             TODO: Man shall we update the action cluster based on expanded action?
          */
         individual.seeMainExecutableActions().forEachIndexed { index, action ->
-            val path = if (action.isFollowUpAction())
+            val path = if (action.isDirectLocationAction())
                 individual.getActualPathForFollowUpAction(index)
             else action.path
             val node = rm.getResourceNodeFromCluster(path.toString())
