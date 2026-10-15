@@ -428,13 +428,7 @@ object GeneSamplerForTests {
     }
 
     fun sampleBackReferenceRxGene(rand: Randomness): BackReferenceRxGene {
-        val captureGroup = sampleDisjunctionListRxGene(rand)
-        // as we do not allow to mutate the inner captureGroup gene using the backref gene we must first initialize it
-        captureGroup.doInitialize(rand)
-        return BackReferenceRxGene(
-            groupIndex = rand.nextInt(1, 99),
-            captureGroup = captureGroup
-        )
+        return BackReferenceRxGene(groupIndex = rand.nextInt(1, 99))
     }
 
     fun sampleAssertionRxGene(rand: Randomness): AssertionRxGene {

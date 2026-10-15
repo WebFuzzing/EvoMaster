@@ -18,6 +18,10 @@ public class BsonDocumentConverter {
     public static final String DECODE = "decode";
     public static final String BUILDER = "builder";
     public static final String BUILD = "build";
+    private static final String ORG_BSON_CODECS_CONFIGURATION_CODEC_REGISTRY = "org.bson.codecs.configuration.CodecRegistry";
+    private static final String COM_MONGODB_MONGO_CLIENT_SETTINGS = "com.mongodb.MongoClientSettings";
+    private static final String COM_MONGODB_MONGO_CLIENT = "com.mongodb.MongoClient";
+    private static final String GET_DEFAULT_CODEC_REGISTRY = "getDefaultCodecRegistry";
 
     /**
      * Checks if the given object is an instance of a org.bson.BsonDocument.
@@ -62,11 +66,38 @@ public class BsonDocumentConverter {
             if (bsonDocumentClass.isInstance(bson)) {
                 return bson;
             }
-            Object bsonDocument = bsonClass.getMethod(TO_BSON_DOCUMENT).invoke(bson);
-            return bsonDocument;
+            return invokeToBsonDocument(bsonClass, bsonDocumentClass, bson);
         } catch (Exception | LinkageError e) {
             SimpleLogger.uniqueWarn("Failed to convert Mongo query from Bson: " + e);
             return null;
+        }
+    }
+
+    /**
+     * Calls the no-arg Bson.toBsonDocument(), which only exists since driver 4.2.
+     * For older drivers, falls back to toBsonDocument(Class, CodecRegistry) with the default registry.
+     */
+    private static Object invokeToBsonDocument(Class<?> bsonClass, Class<?> bsonDocumentClass, Object bson) throws Exception {
+        try {
+            return bsonClass.getMethod(TO_BSON_DOCUMENT).invoke(bson);
+        } catch (NoSuchMethodException e) {
+            // driver < 4.2
+            Class<?> codecRegistryClass = loadClass(ORG_BSON_CODECS_CONFIGURATION_CODEC_REGISTRY, bson);
+            Object registry = getDefaultCodecRegistry(bson);
+            return bsonClass.getMethod(TO_BSON_DOCUMENT, Class.class, codecRegistryClass)
+                    .invoke(bson, bsonDocumentClass, registry);
+        }
+    }
+
+    private static Object getDefaultCodecRegistry(Object instance) throws Exception {
+        try {
+            // driver >= 3.7
+            return loadClass(COM_MONGODB_MONGO_CLIENT_SETTINGS, instance)
+                    .getMethod(GET_DEFAULT_CODEC_REGISTRY).invoke(null);
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
+            // legacy driver (eg, 3.2)
+            return loadClass(COM_MONGODB_MONGO_CLIENT, instance)
+                    .getMethod(GET_DEFAULT_CODEC_REGISTRY).invoke(null);
         }
     }
 

@@ -1,5 +1,6 @@
 package org.evomaster.core.parser
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.utils.CharacterRange
@@ -43,22 +44,20 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
      * Capture groups in order of appearance (1-based index -> list index 0).
      * Populated as the tree is walked. A backreference is only valid if it
      * appears after the group it references, which Java regex requires anyway.
-     * The value is nullable to represent a captured group that is unsatisfiable,
-     * for example when the group contains an empty character class like `([a&&b])`.
-     * In that case the map holds null instead of a DisjunctionListRxGene.
+     * The value is whether the group is unsatisfiable, which is all a backreference needs to know about it (its
+     * value is read from the tree when rendering, see [BackReferenceRxGene] & [RegexGene]). It is true while the
+     * group is being visited (a backreference to itself from inside could never match on Java), and stays so
+     * when the group is unsatisfiable, for example when it contains an empty character class like `([a&&b])`.
      * @see buildDisjunctionList
      */
-    private val captureGroups = mutableListOf<DisjunctionListRxGene?>()
+    private val captureGroupUnsatisfiable = mutableListOf<Boolean>()
 
     /**
-     * Same as [captureGroups] but for named backreferences, which can be accessed
-     * with their name or number.
-     * The value is nullable to represent a captured group that is unsatisfiable,
-     * for example when the group contains an empty character class like `([a&&b])`.
-     * In that case the map holds null instead of a DisjunctionListRxGene.
-     * @see buildDisjunctionList
+     * Similar to [captureGroupUnsatisfiable] but for named backreferences, which can be accessed with their
+     * name or number. The key is the group name and its value is the number of the group, to look up in
+     * [captureGroupUnsatisfiable].
      */
-    private val namedCaptureGroups = mutableMapOf<String, DisjunctionListRxGene?>()
+    private val namedCaptureGroups = mutableMapOf<String, Int>()
 
     /**
      * Tracks the flags active in the current lexical scope.
@@ -68,9 +67,30 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     private var currentFlags = externalRegexFlags
 
     /**
-     * Builds DisjunctionListRxGenes from a disjunction context, returns null if disjunction is unsatisfiable.
+     * [captureGroupUnsatisfiable] and [namedCaptureGroups] are two structures that must stay aligned: the values of
+     * the latter are group numbers (1-based), which are positions (plus one) in the former. This lazily checks the
+     * invariants between them.
+     *
+     * Note that every named group is a capturing group, but not the other way around.
      */
-    private fun buildDisjunctionList(ctx: RegexJavaParser.DisjunctionContext): DisjunctionListRxGene? {
+    private fun checkCaptureGroupInvariants() {
+        val numberOfCaptureGroups = captureGroupUnsatisfiable.size
+        val namedGroupNumbers = namedCaptureGroups.values
+
+        // named capture groups are a subset of capture groups
+        Lazy.assert { namedCaptureGroups.size <= numberOfCaptureGroups }
+        // two names can never point to the same group, as each group has at most one name
+        Lazy.assert { namedGroupNumbers.toSet().size == namedGroupNumbers.size }
+        // group numbers start at 1, so the group number n is at index n-1 of captureGroupUnsatisfiable
+        Lazy.assert { namedGroupNumbers.all { it in 1..numberOfCaptureGroups } }
+    }
+
+    /**
+     * Builds DisjunctionListRxGenes from a disjunction context, returns null if disjunction is unsatisfiable.
+     *
+     * @param captureGroupIndex if the disjunction is the content of a capturing group, the number of the group
+     */
+    private fun buildDisjunctionList(ctx: RegexJavaParser.DisjunctionContext, captureGroupIndex: Int? = null): DisjunctionListRxGene? {
         val res = ctx.accept(this)
         val validDisjunctions = res.genes.map { it as DisjunctionRxGene }
 
@@ -82,7 +102,7 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             return null
         }
 
-        val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
+        val disjList = DisjunctionListRxGene(satisfiableDisjunctions, captureGroupIndex)
 
         for (gene in disjList.disjunctions) {
             gene.extraPrefix = false
@@ -183,6 +203,8 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     override fun visitPattern(ctx: RegexJavaParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
+
+        checkCaptureGroupInvariants()
 
         val satisfiableDisjunctions = res.genes
             .map { it as DisjunctionRxGene }
@@ -473,24 +495,28 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
 
         if(ctx.disjunction() != null){
 
-            // to correctly handle group nesting order, we must record group index before visiting
-            val groupIndex = captureGroups.size
-            captureGroups.add(null) // add placeholder for the gene
-
-            val disjList = buildDisjunctionList(ctx.disjunction())
-
             val isCapturingGroup = !ctx.text.startsWith("(?:")
             val isNamedCaptureGroup = ctx.NAMED_CAPTURE_GROUP_OPEN() != null
 
+            // to correctly handle group nesting order, we must record group index before visiting
+            val groupIndex = captureGroupUnsatisfiable.size
             if (isCapturingGroup) {
-                captureGroups[groupIndex] = disjList
+                captureGroupUnsatisfiable.add(true) // unsatisfiable until we know it is not
+            }
+
+            // group numbers start at 1
+            val disjList =
+                buildDisjunctionList(ctx.disjunction(), if (isCapturingGroup) groupIndex + 1 else null)
+
+            if (isCapturingGroup) {
+                captureGroupUnsatisfiable[groupIndex] = disjList == null
             }
             if (isNamedCaptureGroup) {
                 val name = ctx.NAMED_CAPTURE_GROUP_OPEN().text.drop(3).dropLast(1) // strip "(?<" and ")"
                 if (namedCaptureGroups.containsKey(name)) {
                     throw IllegalStateException("Duplicate capture group name: '$name'")
                 }
-                namedCaptureGroups[name] = disjList
+                namedCaptureGroups[name] = groupIndex + 1
             }
 
             return if (disjList != null) {
@@ -679,20 +705,21 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
         // unnamed backreference \N (N number)
         if (ctx.BackReference() != null) {
             val allDigits = txt.drop(1)
-            val maxDigits = captureGroups.size.toString().length
+            val maxDigits = captureGroupUnsatisfiable.size.toString().length
 
             // In Java, multi-digit back references interprets trailing digits literally, see more:
             // https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#groupname:~:text=the%20parser%20will-,drop%20digits,-until%20the%20number
             val backRefDigitCount = when {
                 maxDigits > allDigits.length -> allDigits.length
-                allDigits.take(maxDigits).toInt() <= captureGroups.size -> maxDigits
+                allDigits.take(maxDigits).toInt() <= captureGroupUnsatisfiable.size -> maxDigits
                 maxDigits > 1 -> maxDigits - 1
                 else -> 1
             }
 
             val n = allDigits.take(backRefDigitCount).toInt()
 
-            val result = VisitResult(BackReferenceRxGene(n, captureGroups.getOrNull(n - 1)))
+            // no such group means the backref is unsatisfiable, so we use getOrElse true
+            val result = VisitResult(BackReferenceRxGene(n, captureGroupUnsatisfiable.getOrElse(n - 1) { true }))
 
             val remainingChars = allDigits.drop(backRefDigitCount)
 
@@ -711,9 +738,8 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             if(name !in namedCaptureGroups){
                 throw IllegalStateException("Named backreference \\k<$name> refers to unknown group '$name'")
             }
-            val group = namedCaptureGroups[name]
-            val groupIndex = captureGroups.indexOf(group) + 1  // 1-based, for the gene name
-            return VisitResult(BackReferenceRxGene(groupIndex, group))
+            val groupIndex = namedCaptureGroups.getValue(name)
+            return VisitResult(BackReferenceRxGene(groupIndex, captureGroupUnsatisfiable[groupIndex - 1]))
         }
 
         if (ctx.LinebreakMatcher() != null){
