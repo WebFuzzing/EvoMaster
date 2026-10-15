@@ -1,5 +1,8 @@
 package org.evomaster.core.database.sql.solver.service
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 
 import net.sf.jsqlparser.JSQLParserException
@@ -18,6 +21,7 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Statistics
@@ -56,6 +60,13 @@ import kotlin.io.path.exists
 import kotlin.text.equals
 
 /**
+ * A row already turned into an action, kept so that later rows can bind their foreign keys to it.
+ *
+ * @param values the value Z3 assigned to each column, keyed by the uppercase column name.
+ */
+private class InsertedRow(val tableId: TableId, val actionId: Long, val values: Map<String, String?>)
+
+/**
  * An SMT solver implementation using Z3 in a Docker container.
  * It generates the SMT problem from the database schema and the SQL query,
  * then executes Z3 to get values and returns the necessary list of SqlActions
@@ -69,7 +80,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
-    // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT or UNSAT only; errors are not cached)
+    // Memoization cache: (sqlQuery, numberOfRows) -> Z3Result (SAT, UNSAT, or an ERROR that is deterministic)
     // Schema is assumed stable within a single run, so only query + row count form the key.
     // Null until Z3 SQL generation is enabled in postConstruct — avoids allocating the map in runs where Z3 SQL generation is off.
     //
@@ -108,12 +119,18 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
         private const val DATE_FORMAT = "yyyy-MM-dd"
 
+        private val UUID_PATTERN = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+
+        /** Rejects trailing content, so that e.g. "1 2" is not taken for the JSON document 1. */
+        private val JSON_MAPPER = ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+
         /**
-         * Spellings [SmtLibGenerator.TYPE_MAP] already treats as the same type. The canonical one is
-         * taken from the generator rather than repeated, so the two cannot drift apart; consolidating
-         * all three type vocabularies into one source of truth remains future work.
+         * Spellings [SmtLibGenerator.TYPE_MAP] already treats as the same type. Taken from the
+         * generator rather than repeated, so the domain constraint and the gene reconstruction cannot
+         * drift apart; consolidating all three type vocabularies into one source of truth remains
+         * future work.
          */
-        private val BOOLEAN_SPELLINGS = setOf(SmtLibGenerator.BOOLEAN_TYPE, "BOOL")
+        private val BOOLEAN_SPELLINGS = SmtLibGenerator.BOOLEAN_TYPES
     }
 
     @Inject
@@ -322,7 +339,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             Z3Result.Status.ERROR -> {
                 LoggingUtil.uniqueWarn(LoggingUtil.getInfoLogger(), "SQL-Z3: Z3 error for query '$sqlQuery': ${z3Result.errorMessage}")
                 stats?.reportSqlZ3Error(z3TimeMs)
-                // Errors are not cached — they may be transient Docker failures
+                // Only an error the same formula always reproduces (Z3 rejected it, or its output could
+                // not be parsed) is cached; any other one may be a transient Docker failure
+                if (z3Result.isDeterministicError) {
+                    z3ResultCache?.set(cacheKey, z3Result)
+                }
                 emptyList()
             }
         }
@@ -361,6 +382,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     private fun toSqlActionList(schemaDto: DbInfoDto, solution: Z3Solution): List<SqlAction> {
         val actions = mutableListOf<SqlAction>()
+        val insertedRows = mutableListOf<InsertedRow>()
 
         for (row in inInsertionOrder(schemaDto, solution.assignments)) {
             val tableName = getTableName(row.key)
@@ -371,65 +393,136 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             val actionId = idCounter
             idCounter++
 
-            val genes = mutableListOf<Gene>()
+            val valueGenes = mutableListOf<Gene>()
+            val rawValues = mutableMapOf<String, String?>()
             for (smtColumn in columns.fields) {
                 val dbColumn = table.columns.firstOrNull {
                     convertToAscii(it.name).equals(smtColumn, ignoreCase = true)
                 }
                 val dbColumnName = dbColumn?.name ?: smtColumn
+                val columnValue = columns.getField(smtColumn)
 
-                var gene: Gene = IntegerGene(dbColumnName, 0)
-                when (val columnValue = columns.getField(smtColumn)) {
-                    is StringValue -> {
-                        gene = if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.BOOLEAN_TYPE)) {
-                            BooleanGene(dbColumnName, toBoolean(columnValue.value))
-                        } else {
-                            StringGene(dbColumnName, columnValue.value)
-                        }
-                    }
-                    is LongValue -> {
-                        val datePattern = when {
-                            hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.TIMESTAMP_TYPE) -> TIMESTAMP_FORMAT
-                            // Without this a DATE column was inserted as a bare integer, which the
-                            // database rejects, so no row of its table was ever inserted
-                            hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.DATE_TYPE) -> DATE_FORMAT
-                            else -> null
-                        }
-                        gene = if (datePattern != null) {
-                            val epochSeconds = columnValue.value.toLong()
-                            val localDateTime = LocalDateTime.ofInstant(
-                                Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
-                            )
-                            val formatted = localDateTime.format(
-                                DateTimeFormatter.ofPattern(datePattern)
-                            )
-                            ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
-                        } else {
-                            LongGene(dbColumnName, columnValue.value.toLong())
-                        }
-                    }
-                    is RealValue -> {
-                        gene = DoubleGene(dbColumnName, columnValue.value)
-                    }
-                }
-                if (dbColumn != null && dbColumn.primaryKey) {
-                    gene = SqlPrimaryKeyGene(dbColumnName, table.id, gene, actionId)
-                }
-                /*
-                    TODO: a foreign key column is returned as a plain value gene, not as a
-                    SqlForeignKeyGene bound to the action of the referenced row. Z3 makes the value
-                    match that row's primary key, but once the search mutates either gene the
-                    reference can break, and FK repair does not see this column as a foreign key.
-                 */
-                gene.markAllAsInitialized()
-                genes.add(gene)
+                rawValues[dbColumnName.uppercase()] = rawValue(columnValue)
+                valueGenes.add(toValueGene(schemaDto, table, dbColumnName, columnValue))
             }
 
-            val sqlAction = SqlAction(table, table.columns, actionId, genes.toList())
-            actions.add(sqlAction)
+            val foreignKeyGenes = bindForeignKeys(table, actionId, rawValues, insertedRows)
+
+            val genes = valueGenes.map { valueGene ->
+                var gene: Gene = foreignKeyGenes[valueGene.name.uppercase()] ?: valueGene
+                val dbColumn = table.columns.firstOrNull { it.name.equals(valueGene.name, ignoreCase = true) }
+                if (dbColumn != null && dbColumn.primaryKey) {
+                    gene = SqlPrimaryKeyGene(valueGene.name, table.id, gene, actionId)
+                }
+                gene.markAllAsInitialized()
+                gene
+            }
+
+            actions.add(SqlAction(table, table.columns, actionId, genes))
+            insertedRows.add(InsertedRow(table.id, actionId, rawValues))
         }
 
         return actions
+    }
+
+    /**
+     * Builds a [SqlForeignKeyGene] for each foreign key column of a row, bound to the action of the row
+     * it references.
+     *
+     * Z3 makes the value of a foreign key equal to the primary key of some row of the referenced
+     * table, but a plain value gene would only copy that value: once the search mutates either side,
+     * the reference breaks, and the FK repair of EvoMaster does not recognise the column as a foreign
+     * key. Binding the gene to the referenced action keeps the two linked, as for any other insertion.
+     *
+     * The referenced row is the one, among the rows inserted before this one, whose target columns hold
+     * the values Z3 assigned to the source columns. A foreign key is left as plain values when no such
+     * row exists: when its target columns are not the primary key, which a [SqlForeignKeyGene] cannot
+     * refer to, or when a row references itself, since no action precedes it.
+     *
+     * @return the foreign key genes, keyed by the uppercase name of their source column.
+     */
+    private fun bindForeignKeys(
+        table: Table,
+        actionId: Long,
+        rawValues: Map<String, String?>,
+        insertedRows: List<InsertedRow>
+    ): Map<String, SqlForeignKeyGene> {
+        val genes = mutableMapOf<String, SqlForeignKeyGene>()
+
+        for (foreignKey in table.foreignKeys) {
+            if (foreignKey.targetColumns.any { !it.primaryKey }) continue
+
+            val referenced = insertedRows.lastOrNull { row ->
+                row.tableId == foreignKey.targetTableId &&
+                    foreignKey.sourceColumns.indices.all { i ->
+                        val value = rawValues[foreignKey.sourceColumns[i].name.uppercase()]
+                        value != null && value == row.values[foreignKey.targetColumns[i].name.uppercase()]
+                    }
+            } ?: continue
+
+            foreignKey.sourceColumns.forEachIndexed { i, sourceColumn ->
+                genes[sourceColumn.name.uppercase()] = SqlForeignKeyGene(
+                    sourceColumn = sourceColumn.name,
+                    uniqueId = actionId,
+                    targetTable = foreignKey.targetTableId,
+                    targetColumn = foreignKey.targetColumns[i].name,
+                    nullable = sourceColumn.nullable,
+                    uniqueIdOfPrimaryKey = referenced.actionId,
+                    otherSourceColumnsInCompositeFK = foreignKey.sourceColumns
+                        .filter { it != sourceColumn }.map { it.name }.toSet()
+                )
+            }
+        }
+
+        return genes
+    }
+
+    /**
+     * The value Z3 assigned to a column, as a string that can be compared across rows.
+     */
+    private fun rawValue(value: SMTLibValue?): String? = when (value) {
+        is LongValue -> value.value.toString()
+        is RealValue -> value.value.toString()
+        is StringValue -> value.value
+        else -> null
+    }
+
+    /**
+     * Builds the gene holding the value Z3 assigned to a column, according to the column's SQL type.
+     */
+    private fun toValueGene(schemaDto: DbInfoDto, table: Table, dbColumnName: String, columnValue: SMTLibValue?): Gene {
+        return when (columnValue) {
+            is StringValue -> {
+                if (hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.BOOLEAN_TYPE)) {
+                    BooleanGene(dbColumnName, toBoolean(columnValue.value))
+                } else {
+                    StringGene(dbColumnName, validTextValue(schemaDto, table, dbColumnName, columnValue.value))
+                }
+            }
+            is LongValue -> {
+                val datePattern = when {
+                    hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.TIMESTAMP_TYPE) -> TIMESTAMP_FORMAT
+                    // Without this a DATE column was inserted as a bare integer, which the
+                    // database rejects, so no row of its table was ever inserted
+                    hasColumnType(schemaDto, table, dbColumnName, SmtLibGenerator.DATE_TYPE) -> DATE_FORMAT
+                    else -> null
+                }
+                if (datePattern != null) {
+                    val epochSeconds = columnValue.value.toLong()
+                    val localDateTime = LocalDateTime.ofInstant(
+                        Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
+                    )
+                    val formatted = localDateTime.format(
+                        DateTimeFormatter.ofPattern(datePattern)
+                    )
+                    ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
+                } else {
+                    LongGene(dbColumnName, columnValue.value.toLong())
+                }
+            }
+            is RealValue -> DoubleGene(dbColumnName, columnValue.value)
+            else -> IntegerGene(dbColumnName, 0)
+        }
     }
 
     /**
@@ -514,6 +607,53 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     /**
+     * Makes the value Z3 assigned to a UUID, JSON or JSONB column one the database accepts.
+     *
+     * They are encoded as SMT Strings with no constraint on their form, so unless the query pins the
+     * value, Z3 picks something like "" and the INSERT of the whole row is rejected. A value that is
+     * already valid -- e.g. one copied from the query -- is kept. Any other is mapped
+     * deterministically: equal strings give equal values and different strings different ones, so
+     * the equalities and distinctions the formula imposes (foreign keys, unique and primary keys)
+     * still hold. Constraining the form inside the formula instead would need Z3's regular
+     * expressions, which make solving noticeably more expensive. Any other value goes on to
+     * [binaryValue].
+     */
+    private fun validTextValue(schemaDto: DbInfoDto, table: Table, columnName: String, value: String): String =
+        when {
+            hasColumnType(schemaDto, table, columnName, SmtLibGenerator.UUID_TYPE) && !UUID_PATTERN.matches(value) ->
+                UUID.nameUUIDFromBytes(value.toByteArray(StandardCharsets.UTF_8)).toString()
+            (hasColumnType(schemaDto, table, columnName, SmtLibGenerator.JSON_TYPE) ||
+                hasColumnType(schemaDto, table, columnName, SmtLibGenerator.JSONB_TYPE)) && !isJson(value) ->
+                JSON_MAPPER.writeValueAsString(value) // the value as a JSON string
+            else -> binaryValue(schemaDto, table, columnName, value)
+        }
+
+    private fun isJson(value: String): Boolean =
+        try {
+            // readTree returns a MissingNode, rather than failing, on blank input
+            !JSON_MAPPER.readTree(value).isMissingNode
+        } catch (e: JsonProcessingException) {
+            false
+        }
+
+    /**
+     * Writes the value Z3 assigned to a BLOB column in a form H2 accepts.
+     *
+     * H2 1.4 reads a string literal given for a binary column as hexadecimal, so a value such as "abc"
+     * made it reject the INSERT of the whole row. The value is written as the hex of its UTF-8 bytes,
+     * which H2 2.x accepts too. The mapping is injective, so the equalities and distinctions the
+     * formula imposes (unique and primary keys) still hold. MySQL takes any string as is.
+     */
+    private fun binaryValue(schemaDto: DbInfoDto, table: Table, columnName: String, value: String): String {
+        if (schemaDto.databaseType != DatabaseType.H2) return value
+        val type = schemaDto.tables.firstOrNull { it.id.name.equals(table.id.name, ignoreCase = true) }
+            ?.columns?.firstOrNull { it.name.equals(columnName, ignoreCase = true) }
+            ?.type?.uppercase()
+        if (type !in SmtLibGenerator.BLOB_TYPES) return value
+        return value.toByteArray(StandardCharsets.UTF_8).joinToString("") { "%02x".format(it) }
+    }
+
+    /**
      * Whether a column's declared type is the expected one, accounting for spellings that
      * [SmtLibGenerator.TYPE_MAP] already treats as equivalent.
      *
@@ -562,7 +702,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         return Table(
             TableId.fromDto(schema.databaseType, tableDto.id),
             findColumns(schema, tableDto),
-            findForeignKeys(tableDto) // TODO: Implement this method
+            findForeignKeys(schema, tableDto)
         )
     }
 
@@ -665,9 +805,34 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         }
     }
 
-    // TODO: Implement this method
-    private fun findForeignKeys(tableDto: TableDto): Set<ForeignKey> {
-        return emptySet()
+    /**
+     * Rebuilds the foreign keys of a table from the schema, in the same way as
+     * [org.evomaster.core.database.sql.SqlInsertBuilder]: when the schema does not name the target
+     * columns, the foreign key references the primary key of the target table. A foreign key whose
+     * table or columns cannot be resolved is skipped.
+     */
+    private fun findForeignKeys(schema: DbInfoDto, tableDto: TableDto): Set<ForeignKey> {
+        val sourceColumns = findColumns(schema, tableDto)
+
+        return tableDto.foreignKeys.mapNotNull { foreignKey ->
+            val targetDto = schema.tables.find { it.id.name.equals(foreignKey.targetTable, ignoreCase = true) }
+                ?: return@mapNotNull null
+            val targetColumns = findColumns(schema, targetDto)
+
+            val source = foreignKey.sourceColumns.map { name ->
+                sourceColumns.find { it.name.equals(name, ignoreCase = true) } ?: return@mapNotNull null
+            }
+            val target = if (foreignKey.targetColumns.isEmpty()) {
+                targetColumns.filter { it.primaryKey }
+            } else {
+                foreignKey.targetColumns.map { name ->
+                    targetColumns.find { it.name.equals(name, ignoreCase = true) } ?: return@mapNotNull null
+                }
+            }
+            if (source.isEmpty() || source.size != target.size) return@mapNotNull null
+
+            ForeignKey(source, TableId.fromDto(schema.databaseType, targetDto.id), target)
+        }.toSet()
     }
 
     /**

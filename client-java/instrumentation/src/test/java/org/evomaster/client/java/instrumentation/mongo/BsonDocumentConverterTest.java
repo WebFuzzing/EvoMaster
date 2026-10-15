@@ -9,6 +9,9 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
+import java.net.URLClassLoader;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class BsonDocumentConverterTest {
@@ -141,5 +144,61 @@ class BsonDocumentConverterTest {
         Object back = BsonDocumentConverter.toDocument(bson);
 
         assertEquals(original, back);
+    }
+
+    // isolated class loader: the converter must use the class loader of the given object,
+    // not its own, otherwise these fail (the bson classes below are different from the ones in this classpath)
+
+    private static URLClassLoader isolatedBsonClassLoader() throws Exception {
+        URL bsonJar = BsonDocument.class.getProtectionDomain().getCodeSource().getLocation();
+        // null parent: bson classes can only be resolved from the jar, never from the test classpath
+        return new URLClassLoader(new URL[]{bsonJar}, null);
+    }
+
+    private static Object newIsolatedBsonDocument(ClassLoader loader) throws Exception {
+        Class<?> bsonDocumentClass = Class.forName("org.bson.BsonDocument", true, loader);
+        Class<?> bsonValueClass = Class.forName("org.bson.BsonValue", true, loader);
+        Class<?> bsonStringClass = Class.forName("org.bson.BsonString", true, loader);
+        Object value = bsonStringClass.getConstructor(String.class).newInstance("foo");
+        return bsonDocumentClass.getConstructor(String.class, bsonValueClass).newInstance("name", value);
+    }
+
+    @Test
+    void isolatedBsonDocumentIsNotSeenByTestClassLoader() throws Exception {
+        try (URLClassLoader loader = isolatedBsonClassLoader()) {
+            Object isolated = newIsolatedBsonDocument(loader);
+            // sanity check of the test setup itself
+            assertFalse(isolated instanceof BsonDocument);
+            assertNotSame(BsonDocument.class, isolated.getClass());
+        }
+    }
+
+    @Test
+    void isBsonDocumentUsesClassLoaderOfValue() throws Exception {
+        try (URLClassLoader loader = isolatedBsonClassLoader()) {
+            assertTrue(BsonDocumentConverter.isBsonDocument(newIsolatedBsonDocument(loader)));
+        }
+    }
+
+    @Test
+    void toBsonDocumentUsesClassLoaderOfValue() throws Exception {
+        try (URLClassLoader loader = isolatedBsonClassLoader()) {
+            Object isolated = newIsolatedBsonDocument(loader);
+            assertSame(isolated, BsonDocumentConverter.toBsonDocument(isolated));
+        }
+    }
+
+    @Test
+    void toDocumentUsesClassLoaderOfValue() throws Exception {
+        try (URLClassLoader loader = isolatedBsonClassLoader()) {
+            Object isolated = newIsolatedBsonDocument(loader);
+
+            Object result = BsonDocumentConverter.toDocument(isolated);
+
+            assertNotNull(result);
+            assertEquals("org.bson.Document", result.getClass().getName());
+            assertSame(loader, result.getClass().getClassLoader());
+            assertEquals("foo", ((java.util.Map<?, ?>) result).get("name"));
+        }
     }
 }
