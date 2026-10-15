@@ -32,8 +32,8 @@ class UnmappedColumnTypeTest {
             SqlScriptRunner.execCommand(
                 connection,
                 "CREATE TABLE users(id bigint primary key, name varchar(255));\n" +
-                    "CREATE TABLE blobs(id bigint primary key, payload blob);\n" +
-                    "CREATE TABLE blob_refs(id bigint primary key, blob_id bigint REFERENCES blobs(id));\n"
+                    "CREATE TABLE periods(id bigint primary key, length interval year);\n" +
+                    "CREATE TABLE period_refs(id bigint primary key, period_id bigint REFERENCES periods(id));\n"
             )
             schemaDto = DbInfoExtractor.extract(connection)
         }
@@ -53,12 +53,12 @@ class UnmappedColumnTypeTest {
         val smt = generate("SELECT * FROM users WHERE name = 'x'")
 
         assertTrue(smt.contains("(get-value (users__1))")) { "expected the users row to be requested:\n$smt" }
-        assertFalse(smt.contains("blobs", ignoreCase = true)) { "the unmapped table must not be declared:\n$smt" }
+        assertFalse(smt.contains("periods", ignoreCase = true)) { "the unmapped table must not be declared:\n$smt" }
     }
 
     @Test
     fun `a query on the table with the unmapped column is rejected`() {
-        val e = assertThrows(RuntimeException::class.java) { generate("SELECT * FROM blobs WHERE id = 1") }
+        val e = assertThrows(RuntimeException::class.java) { generate("SELECT * FROM periods WHERE id = 1") }
 
         assertTrue(e.message!!.contains("Unsupported column type")) { e.message }
     }
@@ -66,6 +66,6 @@ class UnmappedColumnTypeTest {
     @Test
     fun `a query on a table referencing it through a foreign key is rejected`() {
         // Its rows would reference rows of a table that is not declared, and could never be inserted
-        assertThrows(RuntimeException::class.java) { generate("SELECT * FROM blob_refs WHERE id = 1") }
+        assertThrows(RuntimeException::class.java) { generate("SELECT * FROM period_refs WHERE id = 1") }
     }
 }
