@@ -3118,10 +3118,8 @@ class EMConfig {
     var execNumForDetectFlakiness = 1
 
     @Experimental
-    @Cfg("Specify extra budget percentage of the search budget for flakiness detection phase." +
-            "A negative value indicates an unlimited time budget.")
-    @Min(-1.0)
-    var extraBudgetPercentageForDetectFlakiness = -1.0
+    @Cfg("Specify whether to use an unbounded time budget for flakiness detection.")
+    var unboundBudgetForFlakiness = true
 
     @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +

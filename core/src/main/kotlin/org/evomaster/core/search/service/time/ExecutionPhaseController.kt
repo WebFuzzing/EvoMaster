@@ -48,6 +48,10 @@ class ExecutionPhaseController {
             throw IllegalArgumentException("Cannot query timeout for a non time-boxed phase: $target")
         }
 
+        // unbounded time budget
+        if (target == Phase.FLAKINESS && config.unboundBudgetForFlakiness)
+            return false
+
         if(config.stoppingCriterion != EMConfig.StoppingCriterion.TIME){
             //timeouts are defined only when we run base search on time, which is the default
             return false
@@ -57,13 +61,7 @@ class ExecutionPhaseController {
             return true
         }
 
-        val extraPercentage = if (target == Phase.FLAKINESS) config.extraBudgetPercentageForDetectFlakiness else config.extraPhaseBudgetPercentage
-
-        // unbounded time budget
-        if (extraPercentage < 0)
-            return false
-
-        val budget = (config.timeLimitInSeconds() * extraPercentage).toLong()
+        val budget = (config.timeLimitInSeconds() * config.extraPhaseBudgetPercentage).toLong()
 
         val passed = elapsedSeconds()
         val timeout = passed > budget
