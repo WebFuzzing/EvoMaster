@@ -488,18 +488,23 @@ class RestIndividual(
     }
 
     /**
-     * for the follow-up action, get its previous valid rest action
+     * Follows location bindings to the first source action with a schema path.
      */
-    fun getActualPathForFollowUpAction(index: Int): RestPath?{
+    fun getSourcePathOfLocationFollowUpAction(index: Int): RestPath?{
         if (index == 0) return null
-        var cur = index - 1
+        var cur = index
         val seq = seeMainExecutableActions()
-        while (cur >= 0){
-            val found = seq[cur]
-            if (!found.isDirectLocationAction())
-                return found.path
-            cur --
+        while (cur > 0){
+            val locationId = seq[cur].usePreviousLocationId
+            cur = (cur - 1 downTo 0).firstOrNull {
+                val candidate = seq[it]
+                candidate.isPotentialActionForCreation() && candidate.creationLocationId() == locationId
+            } ?: throw IllegalStateException("No previous action with location id $locationId before action $cur")
+
+            val source = seq[cur]
+            if (!source.isDirectLocationAction())
+                return source.path
         }
-        throw IllegalStateException("cannot find any valid path before $index of this individual")
+        throw IllegalStateException("No schema path found in location chain for action $index")
     }
 }

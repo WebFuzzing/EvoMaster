@@ -121,7 +121,7 @@ class ResourceRestFitness : AbstractRestFitness() {
          */
         individual.seeMainExecutableActions().forEachIndexed { index, action ->
             val path = if (action.isDirectLocationAction())
-                individual.getActualPathForFollowUpAction(index)
+                individual.getSourcePathOfLocationFollowUpAction(index)
             else action.path
             val node = rm.getResourceNodeFromCluster(path.toString())
             node.updateActionsWithAdditionalParams(action)

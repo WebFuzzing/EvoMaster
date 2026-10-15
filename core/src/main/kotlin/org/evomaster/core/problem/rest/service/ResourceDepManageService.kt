@@ -90,7 +90,7 @@ class ResourceDepManageService {
 
         restIndividual.seeMainExecutableActions().forEachIndexed { index, action ->
             val path = if (action.isDirectLocationAction())
-                restIndividual.getActualPathForFollowUpAction(index)
+                restIndividual.getSourcePathOfLocationFollowUpAction(index)
             else action.path
 
             if (config.doesApplyNameMatching) updateParamInfo(action as RestCallAction, path, tables)
