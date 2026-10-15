@@ -537,8 +537,8 @@ class Statistics : SearchListener {
     internal fun getSqlZ3SolveTimeMs() = sqlZ3SolveTimeMs
     internal fun getSqlInsertionExecutionTimeMs() = sqlInsertionExecutionTimeMs
     internal fun getSqlInsertionExecutionCount() = sqlInsertionExecutionCount
-    internal fun getReExecutionTimesMs(): List<Long> = reExecutionTimesMs.toList()
-    internal fun getReExecutionTimeMs() = reExecutionTimesMs.sum()
+    internal fun getAllReExecutionTimesMs(): List<Long> = reExecutionTimesMs.toList()
+    internal fun getSumOfReExecutionTimesMs() = reExecutionTimesMs.sum()
 
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
 
