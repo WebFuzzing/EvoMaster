@@ -63,6 +63,16 @@ class WhereClauseTranslationLimitsTest {
     }
 
     /**
+     * A DATE literal shares the TIMESTAMP encoding, at midnight UTC, so a DATE column can be compared
+     * with either. It used to be rejected, dropping the whole clause.
+     */
+    @Test
+    fun `date literals are encoded as the epoch of their midnight`() {
+        assertEpoch("D > DATE '2026-08-18'", 1787011200)
+        assertEpoch("D = {d '2026-08-18'}", 1787011200)
+    }
+
+    /**
      * The layouts accepted are a set, not a prefix rule. A separator carries the time of day with it,
      * so a date followed by a dangling `T` or space is rejected rather than silently read as midnight,
      * and an offset without a time is rejected too. Getting this wrong is invisible at runtime: the
