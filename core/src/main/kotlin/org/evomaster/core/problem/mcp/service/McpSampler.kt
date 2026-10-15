@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.mcp.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.remote.SutProblemException
@@ -36,14 +37,14 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
 
     private lateinit var mcpClient: HttpMcpClient
 
-    /** Actions for MCP tool calls, keyed by "tool:<toolName>" */
-    private val toolActionCluster: MutableMap<String, McpToolCallAction> = mutableMapOf()
+    /** Actions for MCP tool calls; key -> tool action ID ("tool:<toolName>"), value -> corresponding action. */
+    private val toolActionCluster: MutableMap<String, McpToolCallAction> = linkedMapOf()
 
-    /** Declared output JSON Schema per tool name, as returned by `tools/list` (null if the tool declares none) */
-    private val outputSchemas: MutableMap<String, Map<String, Any?>?> = mutableMapOf()
+    /** Declared output schemas; key -> tool name, value -> its JSON Schema, or null if none was declared. */
+    private val outputSchemas: MutableMap<String, JsonNode?> = linkedMapOf()
 
-    /** Actions for MCP resource reads, keyed by "resource:<uri>" or template key */
-    private val resourceActionCluster: MutableMap<String, McpResourceReadAction> = mutableMapOf()
+    /** Actions for MCP resource reads; key -> resource URI or template key, value -> corresponding action. */
+    private val resourceActionCluster: MutableMap<String, McpResourceReadAction> = linkedMapOf()
 
     /** Pre-built single-call individuals, drained first in smartSample() */
     private val adHocInitialIndividuals: MutableList<McpIndividual> = mutableListOf()
@@ -51,6 +52,8 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     /** Builds the tool actions cluster as part of the initialization process */
     private fun discoverTools() {
         val tools = mcpClient.listTools()
+        outputSchemas.clear()
+        tools.forEach { outputSchemas[it.name] = it.outputSchema }
         val options = RestActionBuilderV3.Options(config)
         val messages = McpActionBuilder.addActionsFromToolList(tools, toolActionCluster, options)
         messages.forEach { log.warn(it) }
@@ -92,6 +95,7 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
 
         actionCluster.clear()
         toolActionCluster.clear()
+        outputSchemas.clear()
         resourceActionCluster.clear()
 
         // MCP requires initialize handshake before any other call

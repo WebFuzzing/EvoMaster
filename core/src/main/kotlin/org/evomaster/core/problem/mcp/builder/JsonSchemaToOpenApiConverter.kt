@@ -43,11 +43,12 @@ object JsonSchemaToOpenApiConverter {
         }
 
         // Collect def names first so ref rewriting is aware of every sibling.
-        val defNames = HashSet<String>()
+        // Preserve the order in which definitions appear in the input schema.
+        val defNames = LinkedHashSet<String>()
         collectDefNames(rootCopy, defNames)
 
         // Lift defs into siblings, disambiguating against the root name.
-        val defRename = HashMap<String, String>()
+        val defRename = LinkedHashMap<String, String>()
         for (name in defNames) {
             defRename[name] = if (name == rootName) "${name}_def" else name
         }
