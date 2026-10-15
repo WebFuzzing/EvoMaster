@@ -221,16 +221,7 @@ class SMTConditionVisitor(
                 getColumnReference(tableName, sqlCondition.columnName)
             }
 
-            is SqlStringLiteralValue -> {
-                var text = sqlCondition.toSql()
-                if (text.startsWith("\'\"")) {
-                    text = text.replace("\'\"", "")
-                    text = text.replace("\"\'", "")
-                } else if (text.startsWith("\'")) {
-                    text = text.replace("\'", "")
-                }
-                "\"${text}\""
-            }
+            is SqlStringLiteralValue -> stringLiteral(sqlCondition)
 
             is SqlBigIntegerLiteralValue,
             is SqlBigDecimalLiteralValue -> {
@@ -322,9 +313,25 @@ class SMTConditionVisitor(
         }
     }
 
+    /**
+     * Writes a SQL string literal as an SMT-LIB string literal.
+     *
+     * The value is taken already unquoted, with SQL's '' turned back into ', so an apostrophe in it
+     * is kept. A double quote is written as "", the SMT-LIB escape; left as is, it would end the
+     * literal early and Z3 would reject the whole formula. A value wrapped in double quotes, as in
+     * '"x"', is still read as x.
+     */
+    private fun stringLiteral(literal: SqlStringLiteralValue): String {
+        var value = literal.stringValue
+        if (value.length >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+            value = value.substring(1, value.length - 1)
+        }
+        return "\"${value.replace("\"", "\"\"")}\""
+    }
+
     private fun asLiteral(expression: SqlCondition?): String {
         if (expression is SqlStringLiteralValue) {
-            return expression.toString().replace("'", "\"")
+            return stringLiteral(expression)
         } else if (expression is SqlBigDecimalLiteralValue) {
             return expression.toString()
         } else if (expression is SqlBigIntegerLiteralValue) {
