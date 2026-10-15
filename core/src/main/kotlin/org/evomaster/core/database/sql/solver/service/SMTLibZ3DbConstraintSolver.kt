@@ -615,7 +615,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * deterministically: equal strings give equal values and different strings different ones, so
      * the equalities and distinctions the formula imposes (foreign keys, unique and primary keys)
      * still hold. Constraining the form inside the formula instead would need Z3's regular
-     * expressions, which make solving noticeably more expensive.
+     * expressions, which make solving noticeably more expensive. Any other value goes on to
+     * [binaryValue].
      */
     private fun validTextValue(schemaDto: DbInfoDto, table: Table, columnName: String, value: String): String =
         when {
@@ -624,7 +625,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             (hasColumnType(schemaDto, table, columnName, SmtLibGenerator.JSON_TYPE) ||
                 hasColumnType(schemaDto, table, columnName, SmtLibGenerator.JSONB_TYPE)) && !isJson(value) ->
                 JSON_MAPPER.writeValueAsString(value) // the value as a JSON string
-            else -> value
+            else -> binaryValue(schemaDto, table, columnName, value)
         }
 
     private fun isJson(value: String): Boolean =
@@ -634,6 +635,23 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         } catch (e: JsonProcessingException) {
             false
         }
+
+    /**
+     * Writes the value Z3 assigned to a BLOB column in a form H2 accepts.
+     *
+     * H2 1.4 reads a string literal given for a binary column as hexadecimal, so a value such as "abc"
+     * made it reject the INSERT of the whole row. The value is written as the hex of its UTF-8 bytes,
+     * which H2 2.x accepts too. The mapping is injective, so the equalities and distinctions the
+     * formula imposes (unique and primary keys) still hold. MySQL takes any string as is.
+     */
+    private fun binaryValue(schemaDto: DbInfoDto, table: Table, columnName: String, value: String): String {
+        if (schemaDto.databaseType != DatabaseType.H2) return value
+        val type = schemaDto.tables.firstOrNull { it.id.name.equals(table.id.name, ignoreCase = true) }
+            ?.columns?.firstOrNull { it.name.equals(columnName, ignoreCase = true) }
+            ?.type?.uppercase()
+        if (type !in SmtLibGenerator.BLOB_TYPES) return value
+        return value.toByteArray(StandardCharsets.UTF_8).joinToString("") { "%02x".format(it) }
+    }
 
     /**
      * Whether a column's declared type is the expected one, accounting for spellings that
