@@ -4,7 +4,7 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.database.sql.SqlAction
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
