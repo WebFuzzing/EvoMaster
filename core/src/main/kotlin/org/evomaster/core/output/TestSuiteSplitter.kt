@@ -6,6 +6,8 @@ import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rpc.RPCCallResult
+import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
+import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.*
 import com.google.gson.*
@@ -122,8 +124,17 @@ object TestSuiteSplitter {
                         &&
                         ind.evaluatedMainActions().all { ac ->
                             //TODO generic per type
-                            val code = (ac.result as HttpWsCallResult).getStatusCode()
-                            (code != null && code < 400)
+                            when (val r = ac.result) {
+                                is HttpWsCallResult -> r.getStatusCode().let { it != null && it < 400 }
+                                /*
+                                    A message that went out, and was answered when an answer was
+                                    promised. There is no status code to read here.
+                                 */
+                                is AsyncApiCallResult -> r.getOutcome().let {
+                                    it == AsyncApiOutcome.PUBLISHED || it == AsyncApiOutcome.REPLIED
+                                }
+                                else -> true
+                            }
                         }
             }.toMutableList()
 

@@ -5,6 +5,9 @@ executing `evomaster.jar`.
 These drivers have to be built manually for each system under test (SUT).
 See the [EMB repository](https://github.com/WebFuzzing/EMB) for a set of existing SUTs with drivers.
 
+One kind of API needs a driver in _black-box_ mode as well: AsyncAPI services, where there is no universal
+client for a message broker for _EvoMaster_ to publish through. See [AsyncAPI Schema](#asyncapi-schema) below.
+
 To build a client driver in Java (or any JVM language), you need to import the
 _EvoMaster_ Java client library. For example, in Maven:
 
@@ -358,6 +361,36 @@ To test a GraphQL API, in the the `getProblemInfo()`, you need to return an inst
 `GraphQlProblem` class.
 Here, you need to specify the endpoint of where the GraphQL API can be accessed. Default value is `/graphql`.
 Note: must be able to do an _introspective query_ on such API to fetch its schema. If this is disabled for security reasons, _EvoMaster_ will fail.
+
+## AsyncAPI Schema
+
+To test an AsyncAPI service, in the `getProblemInfo()` you need to return an instance of the
+`AsyncApiProblem` class, built from the AsyncAPI document itself, either its text or where to find it.
+Only AsyncAPI 3.x is supported, as it is the first version able to declare the reply to an operation, and
+that reply is what makes a service observable from outside.
+
+Unlike REST and GraphQL, **a driver is needed in black-box mode too**. There is one HTTP client for every
+REST API, but no one client for every broker: the transport may be Kafka, AMQP, MQTT or a socket, and they
+share nothing. So publishing a message is the driver's job, by overriding `executeAsyncApiAction`. What is
+asked of it is only to put the message on the wire and report what came back, never to judge it: deciding
+what an outcome means is _EvoMaster_'s job, so that it means the same thing whatever the transport.
+
+Two things are worth knowing when writing one:
+
+- **A reply that was already on the destination before the action published is never an answer to it.**
+  Only the driver can ensure that, by seeking to the end of the reply destination before publishing, or by
+  a fresh subscription. _EvoMaster_ does not vary its correlation ids between runs to compensate, because a
+  run repeated under the same seed has to behave the same way.
+- **Where a server actually is may not be what the document says.** The document gives the address of the
+  deployment its author had in mind; a system started for testing is often elsewhere, and a broker in a
+  container binds a port chosen at start-up. Override `getAsyncApiServerAddress(String serverName)` to say
+  where it is now. A generated suite that carries the driver -- white-box, or black-box with
+  `--bbExperiments` -- asks for it when it starts, in the same way it takes the base URL of a REST system
+  from `startSut()`. A plain black-box suite has no driver in it, so it publishes to the address the
+  document declares, as it does when this returns `null`, which is the default.
+
+Generated tests publish with a client of the transport rather than through the driver, so the suite needs
+that client library on its classpath: see [library dependencies](library_dependencies.md).
 
 ## RPC APIs
 
