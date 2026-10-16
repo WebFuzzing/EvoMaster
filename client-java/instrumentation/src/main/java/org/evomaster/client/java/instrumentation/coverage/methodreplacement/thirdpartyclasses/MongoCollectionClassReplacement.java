@@ -71,6 +71,7 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleCount("countDocumentsClientSessionBsonCountOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
     }
 
+
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "deleteOneBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.DeleteResult")
     public static Object deleteOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleDelete("deleteOneBson", mongoCollection, Arrays.asList(filter), filter);
@@ -219,7 +220,7 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleEagerQuery(id, mongoCollection, args, filter);
     }
 
-    /**
+      /**
      * Handles the update of documents (updateOne/updateMany) in the provided collection.
      *
      * @param id The identifier of the replacement, used to retrieve the original update method.
