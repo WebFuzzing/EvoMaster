@@ -12,6 +12,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The SutController will start a TCP server, and the Agent in the external
@@ -352,6 +353,41 @@ public class ServerController {
         }
 
         return (Long) response;
+    }
+
+    /**
+     * Cheap enough to be polled every few milliseconds, as {@link #getObjectiveUpdateCount()}.
+     *
+     * @param address where the SUT receives messages from, eg a Kafka topic
+     * @return what the SUT received from {@code address} in its current action, and how much of
+     * it it is done with, or null if the agent could not be asked, or failed to answer
+     */
+    public synchronized MessageHandlingState getMessageHandlingState(String address) {
+
+        Objects.requireNonNull(address);
+
+        boolean sent = sendCommand(Command.MESSAGE_HANDLING_STATE);
+        if (!sent) {
+            SimpleLogger.error("Failed to send message");
+            return null;
+        }
+
+        if (!sendObject(address)) {
+            SimpleLogger.error("Failed to send address");
+            return null;
+        }
+
+        Object response = waitAndGetResponse();
+        if (response == null) {
+            SimpleLogger.error("Failed to read response about message handling state");
+            return null;
+        }
+
+        if (!(response instanceof MessageHandlingState)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "a MessageHandlingState"));
+        }
+
+        return (MessageHandlingState) response;
     }
 
     public synchronized UnitsInfoRecorder getUnitsInfoRecorder(){

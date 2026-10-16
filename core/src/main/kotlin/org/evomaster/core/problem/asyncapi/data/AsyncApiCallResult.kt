@@ -1,5 +1,8 @@
 package org.evomaster.core.problem.asyncapi.data
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.evomaster.client.java.controller.api.dto.EmittedMessageDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.search.action.Action
@@ -18,6 +21,7 @@ class AsyncApiCallResult : EnterpriseActionResult {
         const val SETTLED_MS = "SETTLED_MS"
         const val SETTLE_ENDED_BY = "SETTLE_ENDED_BY"
         const val TEST_SCRIPT = "TEST_SCRIPT"
+        const val EMITTED_MESSAGES = "EMITTED_MESSAGES"
 
         /*
             What was published, kept so that a generated test can publish the same thing without
@@ -39,6 +43,21 @@ class AsyncApiCallResult : EnterpriseActionResult {
          * A result holds strings, and a line of source never contains this.
          */
         private const val SCRIPT_SEPARATOR = "\n"
+
+        /**
+         * How many characters of the payload of an emitted message a result keeps. Results are
+         * kept for every action in the archive, and the instrumentation's own cut, at a few
+         * thousand characters, is more than a generated test needs. A payload cut here is
+         * flagged as truncated, and is not asserted on.
+         */
+        const val EMITTED_PAYLOAD_MAX_LENGTH = 1024
+
+        /**
+         * Writes and reads the emitted messages, which a result can only hold as a string.
+         */
+        private val mapper = ObjectMapper()
+
+        private val emittedMessagesType = object : TypeReference<List<EmittedMessageDto>>() {}
     }
 
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
@@ -105,6 +124,52 @@ class AsyncApiCallResult : EnterpriseActionResult {
 
     fun getSettleEndedBy(): AsyncApiReplyDto.SettleEnd? =
         getResultValue(SETTLE_ENDED_BY)?.let { AsyncApiReplyDto.SettleEnd.valueOf(it) }
+
+    /**
+     * The messages the service emitted while this one was being handled, in the order it emitted
+     * them, as the instrumentation of its broker client recorded them. Only in white-box mode.
+     *
+     * Only what the search and the generated tests read is kept of each: the address, the
+     * payload cut at [EMITTED_PAYLOAD_MAX_LENGTH] characters, whether it was cut, and the class
+     * of the payload.
+     */
+    fun setEmittedMessages(messages: List<EmittedMessageDto>) {
+        addResultValue(EMITTED_MESSAGES, mapper.writeValueAsString(messages.map { slim(it) }))
+    }
+
+    /**
+     * A copy of [message] with only what a result keeps of it.
+     */
+    private fun slim(message: EmittedMessageDto): EmittedMessageDto {
+
+        val payload = message.payload
+        val cut = payload != null && payload.length > EMITTED_PAYLOAD_MAX_LENGTH
+
+        return EmittedMessageDto().apply {
+            address = message.address
+            payloadType = message.payloadType
+            if (cut) {
+                //not between the two halves of a surrogate pair, which would leave half a character
+                val end = if (Character.isHighSurrogate(payload!![EMITTED_PAYLOAD_MAX_LENGTH - 1])) {
+                    EMITTED_PAYLOAD_MAX_LENGTH - 1
+                } else {
+                    EMITTED_PAYLOAD_MAX_LENGTH
+                }
+                this.payload = payload.substring(0, end)
+                payloadTruncated = true
+            } else {
+                this.payload = payload
+                payloadTruncated = message.payloadTruncated
+            }
+        }
+    }
+
+    /**
+     * @return the messages the service emitted while this one was being handled, or empty when
+     * none was recorded
+     */
+    fun getEmittedMessages(): List<EmittedMessageDto> =
+        getResultValue(EMITTED_MESSAGES)?.let { mapper.readValue(it, emittedMessagesType) } ?: listOf()
 
     /**
      * The lines the driver rendered for a generated test, or empty when it rendered none.
