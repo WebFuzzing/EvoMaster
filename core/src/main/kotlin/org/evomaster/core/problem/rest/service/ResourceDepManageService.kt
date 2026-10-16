@@ -91,7 +91,7 @@ class ResourceDepManageService {
         restIndividual.seeMainExecutableActions().forEachIndexed { index, action ->
             val path = if (action.isDirectLocationAction())
                 restIndividual.getSourcePathOfLocationFollowUpAction(index)
-            else action.path
+            else null
 
             if (config.doesApplyNameMatching) updateParamInfo(action as RestCallAction, path, tables)
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
@@ -108,9 +108,12 @@ class ResourceDepManageService {
 
     }
 
-    private fun updateParamInfo(action: RestCallAction, path: RestPath?, tables: Map<TableId, Table>) {
-        val rPath = if (action.isDirectLocationAction()) path
-            else if (path != null) throw IllegalArgumentException("path should be null if the action is not direct location action")
+    /**
+     * @param pathOfFUA refers to the path of source action of action if it is location follow-up action
+     */
+    private fun updateParamInfo(action: RestCallAction, pathOfFUA: RestPath?, tables: Map<TableId, Table>) {
+        val rPath = if (action.isDirectLocationAction()) pathOfFUA
+            else if (pathOfFUA != null) throw IllegalArgumentException("path should be null if the action is not direct location action")
             else action.path
         val r = rm.getResourceNodeFromCluster(rPath!!.toString())
         // skip resource if it is ExcludedResourceNode
@@ -189,17 +192,20 @@ class ResourceDepManageService {
         }
     }
 
+    /**
+     * @param pathOfFUA refers to the path of source action of action if it is location follow-up action
+     */
     private fun updateResourceToTable(
         action: RestCallAction,
-        path: RestPath?,
+        pathOfFUA: RestPath?,
         updated: Map<TableId, Set<String>>,
         matchedWithVerb: Boolean,
         tables: Map<TableId, Table>,
         addedMap: MutableMap<String, MutableSet<TableId>>,
         removedMap: MutableMap<String, MutableSet<TableId>>
     ) {
-        val rpath = if (action.isDirectLocationAction()) path
-            else if (path != null) throw IllegalArgumentException("path should be null if the action is not direct location action")
+        val rpath = if (action.isDirectLocationAction()) pathOfFUA
+            else if (pathOfFUA != null) throw IllegalArgumentException("path should be null if the action is not direct location action")
             else action.path
 
         val ar = rm.getResourceNodeFromCluster(rpath!!.toString())
@@ -252,22 +258,25 @@ class ResourceDepManageService {
         }
     }
 
+    /**
+     * @param pathOfFUA refers to the path of source action of action if it is location follow-up action
+     */
     private fun updateResourceToTable(
         action: RestCallAction,
-        path: RestPath?,
+        pathOfFUA: RestPath?,
         de: DatabaseExecution,
         tables: Map<TableId, Table>,
         addedMap: MutableMap<String, MutableSet<TableId>>,
         removedMap: MutableMap<String, MutableSet<TableId>>
     ) {
 
-        updateResourceToTable(action, path,de.insertedData, (action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
-        updateResourceToTable(action, path,de.updatedData, (action.verb == HttpVerb.PATCH || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
-        updateResourceToTable(action, path,de.deletedData.map { Pair(it, mutableSetOf<String>()) }.toMap(), (action.verb == HttpVerb.PATCH || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
-        updateResourceToTable(action, path,de.queriedData, true, tables, addedMap, removedMap)
+        updateResourceToTable(action, pathOfFUA,de.insertedData, (action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
+        updateResourceToTable(action, pathOfFUA,de.updatedData, (action.verb == HttpVerb.PATCH || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
+        updateResourceToTable(action, pathOfFUA,de.deletedData.map { Pair(it, mutableSetOf<String>()) }.toMap(), (action.verb == HttpVerb.PATCH || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
+        updateResourceToTable(action, pathOfFUA,de.queriedData, true, tables, addedMap, removedMap)
 
-        val rPath = if (action.isDirectLocationAction()) path
-            else if (path != null) throw IllegalArgumentException("path should be null if the action is not direct location action")
+        val rPath = if (action.isDirectLocationAction()) pathOfFUA
+            else if (pathOfFUA != null) throw IllegalArgumentException("path should be null if the action is not direct location action")
             else action.path
 
         val relatedTable = rm.getResourceNodeFromCluster(rPath!!.toString())
