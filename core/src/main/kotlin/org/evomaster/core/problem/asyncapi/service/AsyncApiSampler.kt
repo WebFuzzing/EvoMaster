@@ -72,10 +72,15 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
 
         document = readSchema(problem)
 
+        /*
+            Only in white-box mode: an opaque payload is replaced by what the service is seen
+            reading it into, which a black-box run never asks about.
+         */
         val messages = AsyncApiActionBuilder.addActionsFromSchema(
             document,
             actionCluster,
-            AsyncApiGeneBuilder.options(config)
+            AsyncApiGeneBuilder.options(config),
+            expandOpaquePayloads = config.expandAsyncApiPayloads && !config.blackBox
         )
         handleMessages(document.warnings + messages)
 

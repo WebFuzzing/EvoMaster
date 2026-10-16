@@ -23,11 +23,14 @@ import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome
 import org.evomaster.core.problem.asyncapi.param.AsyncApiParam
+import org.evomaster.core.problem.asyncapi.param.UpdateForAsyncApiPayloadParam
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
+import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
@@ -120,6 +123,17 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         private const val DEFAULT_CONTENT_TYPE = "application/json"
 
         /**
+         * What a reference from the schema of one parsed class to another starts with, the class
+         * name following. Those schemas are OpenAPI ones, so this is OpenAPI's, not AsyncAPI's.
+         */
+        private const val DTO_SCHEMA_REF_PREFIX = "#/components/schemas/"
+
+        /**
+         * What a reference is quoted with in those schemas, which are JSON.
+         */
+        private const val JSON_QUOTE = "\""
+
+        /**
          * What a {placeholder} in a channel address starts with.
          */
         private const val PARAMETER_OPENING = "{"
@@ -194,6 +208,12 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         AsyncApiEmissionClassifier(asyncApiSampler.document)
     }
 
+    /**
+     * What the driver last said about the service, kept for the schemas of the classes the
+     * service read payloads into. Null until first needed; see [sutInfoWithSchemasOf].
+     */
+    private var sutInfo: SutInfoDto? = null
+
     override fun doCalculateCoverage(
         individual: AsyncApiIndividual,
         targets: Set<Int>,
@@ -232,6 +252,11 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             handleExtra(dto, fv)
 
             handleEmittedMessages(fv, actions, dto.additionalInfoList, actionResults.filterIsInstance<AsyncApiCallResult>())
+
+            if (epc.isInSearch() && config.expandAsyncApiPayloads) {
+                //before taint analysis, as REST does: a replacement payload starts out untainted
+                expandOpaquePayloads(actions, dto.additionalInfoList, actionResults.filterIsInstance<AsyncApiCallResult>())
+            }
 
             if (epc.isInSearch() && config.isEnabledTaintAnalysis()) {
                 /*
@@ -403,6 +428,113 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             ?: return
 
         fv.updateTarget(idMapper.handleLocalTarget(getEmittedMessageTargetId(recognised.id, actionName)), 1.0, index)
+    }
+
+    /**
+     * For every message whose payload the document says nothing about, line up the shape of the
+     * class the service was seen reading it into, to replace the payload at the next mutation
+     * (see [UpdateForAsyncApiPayloadParam]). The AsyncAPI counterpart of what REST does for a
+     * body the schema leaves out.
+     *
+     * A class is credited to the action the controller had open when the service parsed it.
+     * That is only right if the service read the message before the next one was published,
+     * which is what a settle window (asyncApiSettleMs) is for; without one, a late read lands on
+     * the next message, or on none. The harm is bounded: only an opaque payload is replaced, a
+     * wrong class only reaches less, and the archive keeps what reaches more.
+     *
+     * A class another reported class refers to is not a candidate: the first read of a class
+     * also reports the classes of its fields. Among what is left, several reads in one window,
+     * one is chosen at random, again at every evaluation, so all get tried. Only object genes
+     * are candidates, as an opaque payload is published as a JSON object. A message read as a
+     * list of some class is not told apart, and is replaced by one object of it.
+     *
+     * A message that could not be published is skipped: whatever the service read meanwhile
+     * was sent before it.
+     */
+    private fun expandOpaquePayloads(
+        actions: List<AsyncApiAction>,
+        additionalInfoList: List<AdditionalInfoDto>,
+        results: List<AsyncApiCallResult>
+    ) {
+
+        //one entry per action the controller was told about, so fewer when a test stopped early
+        for (index in 0 until minOf(actions.size, additionalInfoList.size, results.size)) {
+
+            if (!wasPublished(results[index])) {
+                continue
+            }
+
+            val action = actions[index]
+
+            val payload = action.parameters
+                .firstOrNull { it is AsyncApiParam && it.name == AsyncApiParam.PAYLOAD } as AsyncApiParam?
+
+            if (payload == null || !payload.opaque
+                || action.parameters.any { it is UpdateForAsyncApiPayloadParam }) {
+                continue
+            }
+
+            val reported = additionalInfoList[index].parsedDtoNames
+
+            if (reported.isNullOrEmpty()) {
+                continue
+            }
+
+            val info = sutInfoWithSchemasOf(reported) ?: continue
+            val schemas = info.unitsInfoDto.parsedDtos
+
+            //sorted, as the controller reports them in a set of no particular order
+            val known = reported.filter { schemas.containsKey(it) }.sorted()
+
+            if (known.size < reported.size) {
+                LoggingUtil.uniqueWarn(log, "The driver reported that these classes were parsed, but has no schema" +
+                        " for some of them: ${reported.sorted()}")
+            }
+
+            val genes = ParserDtoUtil.getOrParseDtoWithSutInfo(info, config.enableSchemaConstraintHandling)
+
+            val outermost = known
+                .filter { name -> known.none { other -> other != name && schemas.getValue(other).contains(refTo(name)) } }
+                //classes that refer to each other leave none out: any of them may be the message
+                .ifEmpty { known }
+                .filter { genes[it] is ObjectGene }
+
+            if (outermost.isEmpty()) {
+                continue
+            }
+
+            val name = if (outermost.size == 1) outermost.first() else randomness.choose(outermost)
+            val gene = genes.getValue(name).copy()
+            gene.doInitialize(randomness)
+
+            action.addParam(UpdateForAsyncApiPayloadParam(gene))
+        }
+    }
+
+    /**
+     * How the schema of one parsed class refers to the class named [name].
+     */
+    private fun refTo(name: String) = JSON_QUOTE + DTO_SCHEMA_REF_PREFIX + name + JSON_QUOTE
+
+    /**
+     * What the driver says about the service, with the schemas of every class in [names] it has
+     * one for, or null if it could not be asked.
+     *
+     * The driver records the schema of a class when the service first reads one, so it is
+     * asked again for a class not in the last fetch. The whole info is fetched, as this happens
+     * at most once per class.
+     */
+    private fun sutInfoWithSchemasOf(names: Collection<String>): SutInfoDto? {
+
+        val known = sutInfo
+        if (known != null && names.all { known.unitsInfoDto?.parsedDtos?.containsKey(it) == true }) {
+            return known
+        }
+
+        val fetched = rc.getSutInfo() ?: return null
+        sutInfo = fetched
+
+        return fetched.takeIf { it.unitsInfoDto?.parsedDtos != null }
     }
 
     /**
