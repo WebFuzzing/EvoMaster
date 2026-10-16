@@ -5,11 +5,17 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.StringSpecializationInfoDto
 import org.evomaster.client.java.controller.api.dto.TargetInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.client.java.instrumentation.shared.TaintType
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
@@ -21,10 +27,12 @@ import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -55,6 +63,21 @@ class AsyncApiFitnessTest {
          * The numeric id the driver gives [SUT_LINE].
          */
         private const val SUT_LINE_ID = 1
+
+        /**
+         * The payload field of [EVENTS] that taint analysis is checked on.
+         */
+        private const val PAYLOAD_FIELD = "id"
+
+        /**
+         * What the service compared the tainted payload field with, in the tests on taint.
+         */
+        private const val COMPARED_WITH = "order-created"
+
+        /**
+         * A value taint analysis would recognise as its own once the service reports it back.
+         */
+        private val TAINTED = TaintInputName.getTaintName(0)
 
         /**
          * One operation that expects nothing back, and one whose message carries a header
@@ -240,6 +263,106 @@ class AsyncApiFitnessTest {
         assertTrue(covered.contains("ASYNCAPI_OUTCOME:REPLIED:bessj"), "$covered")
         assertTrue(covered.contains("ASYNCAPI_REPLY:doubleResult:expint"), "$covered")
         assertEquals(2, driver.published.size)
+    }
+
+    /**
+     * The [PAYLOAD_FIELD] string gene in the payload of the action at [index].
+     */
+    private fun payloadField(individual: AsyncApiIndividual, index: Int = 0): StringGene =
+        individual.seeMainExecutableActions()[index].seeTopGenes()
+            .flatMap { it.flatView() }
+            .filterIsInstance<StringGene>()
+            .single { it.name == PAYLOAD_FIELD }
+
+    /**
+     * What an instrumented driver reports for an action where the service compared [TAINTED]
+     * with [COMPARED_WITH].
+     */
+    private fun comparedWithAConstant() = AdditionalInfoDto().apply {
+        stringSpecializations[TAINTED] = listOf(StringSpecializationInfoDto(
+            StringSpecialization.CONSTANT.name, COMPARED_WITH, TaintType.FULL_MATCH.name))
+    }
+
+    /**
+     * Evaluates [count] messages of [EVENTS], the first of which carries [TAINTED] in its payload,
+     * with the driver reporting [perAction] as what the service did with its inputs.
+     */
+    private fun evaluateTainted(count: Int, vararg perAction: AdditionalInfoDto): EvaluatedIndividual<AsyncApiIndividual> {
+
+        driver.testResults = { TestResultsDto().apply { additionalInfoList.addAll(perAction) } }
+
+        val individual = individualOf(*Array(count) { "publishEvent" })
+        payloadField(individual).value = TAINTED
+
+        return fitness.calculateCoverage(individual, modifiedSpec = null)
+            ?: fail("the fitness gave up on the individual")
+    }
+
+    private fun startTheSearch() =
+        injector.getInstance(ExecutionPhaseController::class.java).markStartingSearch()
+
+    private fun specializationsOf(gene: StringGene) = gene.specializationGenes.map { it.getValueAsRawString() }
+
+    @Test
+    fun testAPayloadStringLearnsWhatTheServiceComparedItWith() {
+
+        start(EVENTS) { fireAndForget() }
+        startTheSearch()
+
+        val evaluated = evaluateTainted(1, comparedWithAConstant())
+
+        //the tainted value went out inside the message, which is how the service got to see it
+        assertTrue(driver.published.single().payload.contains(TAINTED), driver.published.single().payload)
+        assertEquals(listOf(COMPARED_WITH), specializationsOf(payloadField(evaluated.individual)))
+    }
+
+    @Test
+    fun testATestThatStoppedAtAFailedPublishIsStillAnalysed() {
+
+        /*
+            The second publish fails, so the controller reports two entries for three actions.
+            That is what a test that stops early looks like, not an inconsistency.
+         */
+        var sent = 0
+        start(EVENTS) {
+            sent++
+            if (sent == 1) fireAndForget() else AsyncApiReplyDto().apply { published = false }
+        }
+        startTheSearch()
+
+        val evaluated = evaluateTainted(3, comparedWithAConstant(), AdditionalInfoDto())
+
+        assertEquals(2, driver.published.size)
+        assertTrue(results(evaluated)[1].stopping)
+        assertEquals(listOf(COMPARED_WITH), specializationsOf(payloadField(evaluated.individual)))
+    }
+
+    @Test
+    fun testABlackBoxRunNeverRunsTaintAnalysis() {
+
+        /*
+            MIO turns taint analysis on even in black-box mode, but there is nothing to analyse
+            without asking the driver what the service did, and a black-box run does not ask.
+         */
+        start(EVENTS, "$BLACK_BOX=true", "--algorithm=MIO") { fireAndForget() }
+        startTheSearch()
+        assertTrue(injector.getInstance(EMConfig::class.java).isEnabledTaintAnalysis())
+
+        val evaluated = evaluateTainted(1, comparedWithAConstant())
+
+        assertEquals(0, driver.testResultsRequests)
+        assertTrue(specializationsOf(payloadField(evaluated.individual)).isEmpty())
+    }
+
+    @Test
+    fun testTaintAnalysisRunsOnlyDuringTheSearch() {
+
+        start(EVENTS) { fireAndForget() }
+
+        val evaluated = evaluateTainted(1, comparedWithAConstant())
+
+        assertTrue(driver.testResultsRequests > 0)
+        assertTrue(specializationsOf(payloadField(evaluated.individual)).isEmpty())
     }
 
     @Test
