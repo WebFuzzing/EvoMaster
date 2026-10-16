@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPro
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.LongGene
@@ -23,17 +24,26 @@ import org.evomaster.core.search.gene.string.StringGene
 data class Neo4jPropertyGene(
     val key: String,
     val type: Neo4jPropertyTypeDto,
-    val gene: Gene
+    val gene: Gene,
+    /**
+     * Whether the failed query fixed this property, so that the seed in [gene] is what the query looked
+     * for. Otherwise the property comes from the entity schema and its value is free.
+     */
+    val fromQuery: Boolean = true
 ) {
     /** The value in the text form the controller reads, according to [type]. */
     fun valueAsText(): String = when (type) {
-        Neo4jPropertyTypeDto.STRING -> (gene as StringGene).value
+        Neo4jPropertyTypeDto.STRING -> when (gene) {
+            is StringGene -> gene.value
+            is EnumGene<*> -> gene.getValueAsRawString()
+            else -> throw IllegalStateException("Unexpected gene for a string property: ${gene::class.simpleName}")
+        }
         Neo4jPropertyTypeDto.INTEGER -> (gene as LongGene).value.toString()
         Neo4jPropertyTypeDto.FLOAT -> (gene as DoubleGene).value.toString()
         Neo4jPropertyTypeDto.BOOLEAN -> (gene as BooleanGene).value.toString()
     }
 
-    fun copy(): Neo4jPropertyGene = Neo4jPropertyGene(key, type, gene.copy())
+    fun copy(): Neo4jPropertyGene = Neo4jPropertyGene(key, type, gene.copy(), fromQuery)
 }
 
 /**
@@ -90,6 +100,11 @@ class Neo4jDbAction(
 
     override fun seeTopGenes(): List<Gene> = allProperties().map { it.gene }
 
+    /**
+     * The genes of the properties the failed query did not fix, i.e. those added from the entity schema.
+     */
+    fun seeSchemaGenes(): List<Gene> = allProperties().filter { !it.fromQuery }.map { it.gene }
+
     override fun copyContent(): Action = Neo4jDbAction(nodes.map { it.copy() }, edges.map { it.copy() }, query)
 
     override fun getName(): String =
@@ -98,32 +113,40 @@ class Neo4jDbAction(
     override fun getActionGroupKey(): String = Neo4jDbAction::class.java.name
 
     /** Stable key used to avoid adding the same inferred insertion twice. */
+    /**
+     * Identifies the failed query this insertion answers: labels, relationships and the properties the
+     * query fixed. The properties added from the schema are left out, so that the key still matches the
+     * one the driver computes from the query alone.
+     */
     fun insertionKey(): String {
-        val nodeDtos = nodes.mapIndexed { index, node -> toNodeDto(index.toLong(), node) }
-        val edgeDtos = edges.map { toEdgeDto(it, 0) }
+        val nodeDtos = nodes.mapIndexed { index, node -> toNodeDto(index.toLong(), node, onlyFromQuery = true) }
+        val edgeDtos = edges.map { toEdgeDto(it, 0, onlyFromQuery = true) }
         return Neo4jInsertionKeyBuilder.fromCommands(nodeDtos, edgeDtos)
     }
 
     /**
      * @param id the id the node gets in the batch it is sent in
      */
-    fun toNodeDto(id: Long, node: Neo4jNodeTemplate): Neo4jNodeInsertionDto =
+    fun toNodeDto(id: Long, node: Neo4jNodeTemplate, onlyFromQuery: Boolean = false): Neo4jNodeInsertionDto =
         Neo4jNodeInsertionDto().also { dto ->
             dto.id = id
             dto.labels = node.labels.toMutableList()
-            dto.properties = node.properties.map { toEntryDto(it) }.toMutableList()
+            dto.properties = toEntryDtos(node.properties, onlyFromQuery)
         }
 
     /**
      * @param firstNodeId the id of the first node of this action in the batch it is sent in
      */
-    fun toEdgeDto(edge: Neo4jEdgeTemplate, firstNodeId: Long): Neo4jEdgeInsertionDto =
+    fun toEdgeDto(edge: Neo4jEdgeTemplate, firstNodeId: Long, onlyFromQuery: Boolean = false): Neo4jEdgeInsertionDto =
         Neo4jEdgeInsertionDto().also { dto ->
             dto.type = edge.type
             dto.fromNodeId = firstNodeId + edge.fromIndex
             dto.toNodeId = firstNodeId + edge.toIndex
-            dto.properties = edge.properties.map { toEntryDto(it) }.toMutableList()
+            dto.properties = toEntryDtos(edge.properties, onlyFromQuery)
         }
+
+    private fun toEntryDtos(properties: List<Neo4jPropertyGene>, onlyFromQuery: Boolean) =
+        properties.filter { !onlyFromQuery || it.fromQuery }.map { toEntryDto(it) }.toMutableList()
 
     private fun toEntryDto(property: Neo4jPropertyGene): Neo4jInsertionEntryDto =
         Neo4jInsertionEntryDto(property.key, property.type, property.valueAsText())

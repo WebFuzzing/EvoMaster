@@ -24,7 +24,6 @@ public abstract class MongoOperationClassReplacement extends ThirdPartyMethodRep
         ExecutionTracer.addMongoInfo(info);
     }
 
-
     /**
      * Executes an operation that, unlike find, is executed eagerly (eg, count, delete and update),
      * so we know right away whether the filter was valid. The query is stored in any case.

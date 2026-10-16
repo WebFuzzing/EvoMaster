@@ -132,6 +132,7 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleCount("countDocumentsClientSessionBsonCountOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
     }
 
+
     /**
      * Replacement for {@code MongoCollection.deleteOne(Bson)}.
      * <p>
