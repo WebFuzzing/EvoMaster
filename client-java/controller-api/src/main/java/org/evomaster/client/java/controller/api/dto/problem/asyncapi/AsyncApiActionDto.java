@@ -23,6 +23,25 @@ public class AsyncApiActionDto {
     }
 
     /**
+     * How the controller decides that the service is done with a message, and the action can
+     * be closed, within the {@link #settleMs} window.
+     */
+    public enum Completion {
+
+        /**
+         * Wait for the whole window.
+         */
+        FIXED,
+
+        /**
+         * Stop early once the SUT has gone {@link #quietMs} without reaching any coverage
+         * objective for the first time, or improving one. A heuristic: a handler that only runs
+         * code already covered earlier in the same test looks quiet too.
+         */
+        COVERAGE_QUIESCENCE
+    }
+
+    /**
      * Key of the operation in the AsyncAPI document, so a driver can log in terms the user will
      * recognise from their own contract.
      */
@@ -103,6 +122,19 @@ public class AsyncApiActionDto {
      * negative mean no wait. Only set when the SUT is instrumented.
      */
     public Long settleMs;
+
+    /**
+     * How the controller decides, within {@link #settleMs}, that the action can be closed. Null
+     * is read as {@link Completion#FIXED}. Meaningless without a {@link #settleMs}.
+     */
+    public Completion completion;
+
+    /**
+     * For {@link Completion#COVERAGE_QUIESCENCE}: how long, in milliseconds, the SUT has to go
+     * without improving any coverage objective to end the wait early. Null, zero or negative
+     * make it a {@link Completion#FIXED} wait. Null for any other completion.
+     */
+    public Long quietMs;
 
     /**
      * The language to render {@link AsyncApiReplyDto#testScript} in. Only Java and Kotlin are

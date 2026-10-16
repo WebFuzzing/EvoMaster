@@ -10,6 +10,7 @@ import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiRep
 import org.evomaster.client.java.controller.problem.AsyncApiProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.InstrumentingAgent;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +31,15 @@ public class EMControllerTest {
 
     private static final int SERVER_ERROR = 500;
 
+    private static final long SETTLE_MS = 1_000;
+
+    private static final long QUIET_MS = 100;
+
+    /**
+     * What the coverage objectives a fake SUT thread reaches are named after.
+     */
+    private static final String OBJECTIVE_PREFIX = "EMControllerTest_";
+
     /**
      * What happened, in order, across the driver and the controller's wait.
      */
@@ -39,6 +50,30 @@ public class EMControllerTest {
     private AsyncApiDriver driver;
 
     private EMController controller;
+
+    /**
+     * An embedded controller only reads the instrumentation once the agent is active. Unit tests
+     * run without it, and only need the shared ExecutionTracer, so the flag is set by hand.
+     */
+    private static void setAgentActive(boolean active) {
+        try {
+            Field flag = InstrumentingAgent.class.getDeclaredField("active");
+            flag.setAccessible(true);
+            flag.setBoolean(null, active);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @BeforeEach
+    public void activateTheAgent() {
+        setAgentActive(true);
+    }
+
+    @AfterEach
+    public void deactivateTheAgent() {
+        setAgentActive(false);
+    }
 
     @BeforeEach
     public void init() {
@@ -55,15 +90,28 @@ public class EMControllerTest {
     @AfterEach
     public void tearDown() {
         //static state, shared with whatever runs next in this JVM
-        ExecutionTracer.setKillSwitch(false);
+        ExecutionTracer.reset();
     }
 
     private Response publish(Long settleMs) {
+        AsyncApiActionDto call = new AsyncApiActionDto();
+        call.settleMs = settleMs;
+        return publishCall(call);
+    }
+
+    private Response publishCall(AsyncApiActionDto call) {
         ActionDto dto = new ActionDto();
         dto.index = 0;
-        dto.asyncApiCall = new AsyncApiActionDto();
-        dto.asyncApiCall.settleMs = settleMs;
+        dto.asyncApiCall = call;
         return controller.newAction(dto, false, mock(HttpServletRequest.class));
+    }
+
+    private static AsyncApiActionDto untilQuiet() {
+        AsyncApiActionDto call = new AsyncApiActionDto();
+        call.settleMs = SETTLE_MS;
+        call.completion = AsyncApiActionDto.Completion.COVERAGE_QUIESCENCE;
+        call.quietMs = QUIET_MS;
+        return call;
     }
 
     private static AsyncApiReplyDto replyIn(Response response) {
@@ -83,6 +131,7 @@ public class EMControllerTest {
         AsyncApiReplyDto reply = replyIn(response);
         assertTrue(reply.published);
         assertEquals(300L, reply.settledMs);
+        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
     }
 
     @Test
@@ -165,6 +214,51 @@ public class EMControllerTest {
         publish(300L);
 
         assertEquals("kill switch false", events.get(1));
+    }
+
+    @Test
+    public void testASutThatReachesNothingNewIsLetGoOnceQuiet() {
+
+        Response response = publishCall(untilQuiet());
+
+        AsyncApiReplyDto reply = replyIn(response);
+        assertEquals(AsyncApiReplyDto.SettleEnd.QUIESCENCE, reply.settleEndedBy);
+        assertEquals(QUIET_MS, reply.settledMs);
+    }
+
+    @Test
+    public void testWithoutTheAgentQuiescenceWaitsTheWholeWindow() {
+
+        /*
+            Nothing is instrumented, so the coverage never moves: that says nothing about whether
+            the SUT is done, and must not end the wait early.
+         */
+        setAgentActive(false);
+
+        Response response = publishCall(untilQuiet());
+
+        AsyncApiReplyDto reply = replyIn(response);
+        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(SETTLE_MS, reply.settledMs);
+    }
+
+    @Test
+    public void testASutStillReachingNewCodeIsWaitedOnUntilTheDeadline() {
+
+        /*
+            Stands in for the service's consumer thread, which keeps reaching new objectives
+            while the controller waits.
+         */
+        controller = new EMController(driver, new AsyncApiSettle(() -> now, ms -> {
+            now += ms;
+            ExecutionTracer.executedNumericComparison(OBJECTIVE_PREFIX + now, 0.5, 1, 0.5);
+        }));
+
+        Response response = publishCall(untilQuiet());
+
+        AsyncApiReplyDto reply = replyIn(response);
+        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(SETTLE_MS, reply.settledMs);
     }
 
     /**

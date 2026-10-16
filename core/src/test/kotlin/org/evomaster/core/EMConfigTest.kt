@@ -928,6 +928,62 @@ internal class EMConfigTest{
     }
 
     @Test
+    fun testSettleOptionsAreIgnoredInBlackBox(){
+
+        fun parse(vararg args: String) =
+            EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse(*args)) }
+
+        //no settle window to end early, which would be an error in white-box
+        val noWindow = parse("--$blackBox", "true", "--problemType", "ASYNCAPI", "--createTests", "false",
+            "--asyncApiCompletion", "COVERAGE_QUIESCENCE")
+        assertEquals(EMConfig.AsyncApiCompletion.FIXED, noWindow.asyncApiCompletion)
+        assertEquals(0, noWindow.asyncApiSettleMs)
+
+        val window = parse("--$blackBox", "true", "--problemType", "ASYNCAPI", "--createTests", "false",
+            "--asyncApiSettleMs", "2000")
+        assertEquals(0, window.asyncApiSettleMs, "a black-box run never keeps an action open")
+
+        //while in white-box they are kept as given
+        val whiteBox = parse("--$blackBox", "false", "--problemType", "ASYNCAPI",
+            "--asyncApiCompletion", "COVERAGE_QUIESCENCE", "--asyncApiSettleMs", "2000")
+        assertEquals(EMConfig.AsyncApiCompletion.COVERAGE_QUIESCENCE, whiteBox.asyncApiCompletion)
+        assertEquals(2000, whiteBox.asyncApiSettleMs)
+    }
+
+    @Test
+    fun testAQuietPeriodNoShorterThanTheWindowIsAllowed(){
+
+        //it can never end the window early, which is worth a warning, not a failure
+        val config = EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse(
+            "--blackBox", "false", "--problemType", "ASYNCAPI", "--asyncApiCompletion", "COVERAGE_QUIESCENCE",
+            "--asyncApiSettleMs", "200", "--asyncApiQuietMs", "500")) }
+        assertEquals(EMConfig.AsyncApiCompletion.COVERAGE_QUIESCENCE, config.asyncApiCompletion)
+        assertEquals(500, config.asyncApiQuietMs)
+    }
+
+    @Test
+    fun testCoverageQuiescenceNeedsASettleWindowToEndEarly(){
+
+        //in white-box, as the settle options are ignored in black-box
+        fun parse(vararg args: String) =
+            EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse("--blackBox", "false", *args)) }
+
+        val e = assertThrows<ConfigProblemException> {
+            parse("--problemType", "ASYNCAPI", "--asyncApiCompletion", "COVERAGE_QUIESCENCE")
+        }
+        assertTrue(e.message!!.contains("asyncApiSettleMs"), e.message)
+
+        val config = parse("--problemType", "ASYNCAPI",
+            "--asyncApiCompletion", "COVERAGE_QUIESCENCE", "--asyncApiSettleMs", "2000")
+        assertEquals(EMConfig.AsyncApiCompletion.COVERAGE_QUIESCENCE, config.asyncApiCompletion)
+
+        //and the defaults ask for no wait at all
+        val defaults = parse("--problemType", "ASYNCAPI")
+        assertEquals(0, defaults.asyncApiSettleMs)
+        assertEquals(EMConfig.AsyncApiCompletion.FIXED, defaults.asyncApiCompletion)
+    }
+
+    @Test
     fun testSetFalseOnDependsOn(){
 
         val parser = EMConfig.getOptionParser()
