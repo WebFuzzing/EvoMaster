@@ -58,7 +58,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         txt[1] == 'c' -> interpretControlEscapeLetterSequence(txt, inCharClass)
         txt[1] in escapeMap -> escapeMap[txt[1]]!!
         txt[1] in hexEscapePrefixes -> Character.toString(txt.substring(2).toInt(16))
-        txt[1].isDigit() -> Character.toString(txt.substring(1).toInt(8)) // legacy octal
+        txt[1] in '0'..'7' -> Character.toString(txt.substring(1).toInt(8)) // legacy octal
         else -> txt.substring(1) // identity escape
     }
 
@@ -446,6 +446,11 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         if (ctx.CharacterClassEscape() != null) {
             return VisitResult(CharacterClassEscapeRxGene(txt.substring(1)))
+        }
+        if (ctx.BackReference() != null) {
+            // Back references in ECMA are never unsatisfiable, if the group did not capture input when the reference
+            // appears then the reference matches "". This happens even when the captured group is unsatisfiable.
+            return VisitResult(BackReferenceRxGene(txt.substring(1).toInt()))
         }
         // CharacterEscape
         val charEscapeResult = resolveCharacterEscapeString(txt, inCharClass = false)
