@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -158,6 +159,13 @@ public class EMControllerTest {
         call.settleMs = SETTLE_MS;
         call.completion = AsyncApiActionDto.Completion.COVERAGE_QUIESCENCE;
         call.quietMs = QUIET_MS;
+        return call;
+    }
+
+    private static AsyncApiActionDto untilCaughtUp() {
+        AsyncApiActionDto call = new AsyncApiActionDto();
+        call.settleMs = SETTLE_MS;
+        call.completion = AsyncApiActionDto.Completion.CONSUMER_LAG;
         return call;
     }
 
@@ -377,7 +385,47 @@ public class EMControllerTest {
     }
 
     @Test
-    public void testWhatTheSutEmittedAndConsumedReachesTheTestResults() {
+    public void testTheDriverIsAskedWhetherTheConsumersCaughtUpOnceItHasPublished() {
+
+        driver.caughtUpAfterAsking = 3;
+
+        Response response = publishCall(untilCaughtUp());
+
+        assertEquals(OK, response.getStatus());
+        assertEquals("publish", events.get(0));
+        assertEquals("caught up? false", events.get(1));
+
+        AsyncApiReplyDto reply = replyIn(response);
+        assertEquals(AsyncApiReplyDto.SettleEnd.CAUGHT_UP, reply.settleEndedBy);
+        assertEquals(2 * AsyncApiSettle.POLL_INTERVAL_MS, reply.settledMs,
+                "two naps between three questions");
+    }
+
+    @Test
+    public void testTheDriverIsAskedAboutTheConsumersMarkedAsTheDriver() {
+
+        //its broker client calls to answer are not the SUT's, as when it publishes
+        driver.caughtUpAfterAsking = 2;
+
+        publishCall(untilCaughtUp());
+
+        assertEquals(Arrays.asList(true, true), driver.markedAsDriverWhenAsked);
+        assertFalse(ExecutionTracer.isExecutingDriverAction(), "the mark outlived the question");
+    }
+
+    @Test
+    public void testADriverThatDoesNotSayWhetherTheConsumersCaughtUpGetsTheWholeWindow() {
+
+        //what every driver written before CONSUMER_LAG existed does
+        Response response = publishCall(untilCaughtUp());
+
+        AsyncApiReplyDto reply = replyIn(response);
+        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(SETTLE_MS, reply.settledMs);
+    }
+
+    @Test
+    public void testWhatTheSutEmittedReachesTheTestResults() {
 
         ExecutionTracer.addEmittedMessage(new EmittedMessage(ADDRESS, PAYLOAD, String.class.getName()));
 
@@ -412,6 +460,31 @@ public class EMControllerTest {
          * Whether the thread publishing was marked as running the driver, when it published.
          */
         private Boolean markedAsDriver = null;
+
+        /**
+         * After how many questions the driver says the SUT's consumers have caught up. Null
+         * for a driver that does not override the question at all.
+         */
+        private Integer caughtUpAfterAsking = null;
+
+        private int asked = 0;
+
+        /**
+         * Whether the thread asking was marked as running the driver, each time it asked.
+         */
+        private final List<Boolean> markedAsDriverWhenAsked = new ArrayList<>();
+
+        @Override
+        public Boolean areAsyncApiConsumersCaughtUp() {
+            if (caughtUpAfterAsking == null) {
+                return super.areAsyncApiConsumersCaughtUp();
+            }
+            asked++;
+            markedAsDriverWhenAsked.add(ExecutionTracer.isExecutingDriverAction());
+            boolean caughtUp = asked >= caughtUpAfterAsking;
+            events.add("caught up? " + caughtUp);
+            return caughtUp;
+        }
 
         @Override
         public void executeAsyncApiAction(AsyncApiActionDto dto, AsyncApiReplyDto reply) {

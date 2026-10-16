@@ -20,10 +20,9 @@ public class AsyncApiReplyDto {
     public enum SettleEnd {
 
         /**
-         * The whole {@link AsyncApiActionDto#settleMs} window went by. Also what a
-         * {@link AsyncApiActionDto.Completion#COVERAGE_QUIESCENCE} wait ends with when the SUT's
-         * coverage cannot be read, and a {@link AsyncApiActionDto.Completion#HANDLER_RETURN} one
-         * when what the SUT received cannot be.
+         * The whole {@link AsyncApiActionDto#settleMs} window went by. Also the outcome when
+         * what the completion relies on cannot be read: the SUT's coverage, what it received, or
+         * whether its consumers have caught up.
          */
         DEADLINE,
 
@@ -42,7 +41,13 @@ public class AsyncApiReplyDto {
          * Every message the SUT received from {@link AsyncApiActionDto#address} in this action
          * was handled, see {@link AsyncApiActionDto.Completion#HANDLER_RETURN}.
          */
-        HANDLER_RETURN
+        HANDLER_RETURN,
+
+        /**
+         * The driver said that the SUT's consumers had caught up with every message published
+         * so far, as asked by {@link AsyncApiActionDto.Completion#CONSUMER_LAG}.
+         */
+        CAUGHT_UP
     }
 
     /**
@@ -112,7 +117,8 @@ public class AsyncApiReplyDto {
     public SettleEnd settleEndedBy;
 
     /**
-     * Why publishing failed, when it did.
+     * Why publishing failed, when it did. With {@link #published} true, why waiting for the
+     * reply failed, if the driver says: that counts as no reply, not as a failed publish.
      */
     public String errorMessage;
 
