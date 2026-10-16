@@ -10,11 +10,22 @@ import java.util.Objects;
 
 /**
  * Caches normalized DynamoDB table items loaded during one command evaluation batch.
+ * <p>
+ * The cache maintains an unmodifiable list of item maps for each table accessed in the batch.
+ * Note that while the outer list and the per-item attribute maps are unmodifiable, the underlying
+ * {@link Object} attribute values (for instance, nested collections, maps, or byte arrays) are not
+ * guaranteed to be deeply immutable.
  */
 final class DynamoDbTableItemsCache {
 
     private final DynamoDbTableDataAccessor tableDataAccessor;
     private final Object dynamoDbClient;
+
+    /**
+     * Map from DynamoDB table name ({@link String}) to the list of items scanned from that table.
+     * Each item is represented as a {@link Map} where the key is the attribute name ({@link String})
+     * and the value is the attribute value ({@link Object}).
+     */
     private final Map<String, List<Map<String, Object>>> itemsByTable = new HashMap<>();
 
     /**
@@ -33,7 +44,10 @@ final class DynamoDbTableItemsCache {
      * Returns the cached items for a table, scanning it on the first request in this batch.
      *
      * @param tableName table to read
-     * @return immutable normalized items for the table
+     * @return unmodifiable list of normalized items for the table, where each item is represented
+     *         as an unmodifiable map of attribute name ({@link String}) to attribute value ({@link Object}).
+     *         Note that the individual attribute value {@link Object}s are not guaranteed to be
+     *         deeply immutable.
      */
     List<Map<String, Object>> getItems(String tableName) {
         String validTableName = validateTableName(tableName);
@@ -46,24 +60,27 @@ final class DynamoDbTableItemsCache {
     }
 
     /**
-     * Checks that a table name can be used as a stable cache key.
+     * Checks that a table name can be used as a stable cache key and returns its trimmed representation.
      *
      * @param tableName candidate table name
-     * @return validated table name
+     * @return validated and trimmed table name
      */
     private String validateTableName(String tableName) {
         Objects.requireNonNull(tableName, "DynamoDB table name cannot be null");
-        if (tableName.trim().isEmpty()) {
+        String trimmed = tableName.trim();
+        if (trimmed.isEmpty()) {
             throw new IllegalArgumentException("DynamoDB table name cannot be blank");
         }
-        return tableName;
+        return trimmed;
     }
 
     /**
-     * Copies scanned items into an immutable structure and checks the cache invariants.
+     * Copies scanned items into unmodifiable structures and checks the cache invariants.
      *
-     * @param items scanned table items
-     * @return immutable table items
+     * @param items scanned table items, where each item is a {@link Map} of attribute name ({@link String})
+     *              to attribute value ({@link Object})
+     * @return unmodifiable list of unmodifiable item maps. Note that individual attribute value
+     *         {@link Object} instances within each map are not guaranteed to be deeply immutable.
      */
     private List<Map<String, Object>> validateItems(List<Map<String, Object>> items) {
         Objects.requireNonNull(items, "DynamoDB table items cannot be null");
