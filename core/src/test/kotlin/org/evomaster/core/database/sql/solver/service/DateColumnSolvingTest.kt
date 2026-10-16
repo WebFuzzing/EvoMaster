@@ -32,7 +32,7 @@ class DateColumnSolvingTest {
         @BeforeAll
         fun setup() {
             connection = DriverManager.getConnection("jdbc:h2:mem:date_column_test", "sa", "")
-            SqlScriptRunner.execCommand(connection, "CREATE TABLE ev(id bigint primary key, d date);\n")
+            SqlScriptRunner.execCommand(connection, "CREATE TABLE ev(id bigint primary key, d date, ts timestamp);\n")
             schemaDto = DbInfoExtractor.extract(connection)
             solver = SMTLibZ3DbConstraintSolver()
             solver.initializeExecutor()
@@ -58,7 +58,12 @@ class DateColumnSolvingTest {
         "SELECT * FROM ev WHERE id = 1",
         "SELECT * FROM ev WHERE d = DATE '2024-03-05'",
         "SELECT * FROM ev WHERE d > DATE '2024-01-01'",
-        "SELECT * FROM ev WHERE d > TIMESTAMP '2024-01-01 10:00:00'"
+        "SELECT * FROM ev WHERE d > TIMESTAMP '2024-01-01 10:00:00'",
+        // plain string literals, as an ORM's bound parameters arrive, read as dates and timestamps
+        "SELECT * FROM ev WHERE d > '2024-01-01'",
+        "SELECT * FROM ev WHERE '2024-03-05' = d",
+        "SELECT * FROM ev WHERE d IN ('2024-03-05', '2024-03-06')",
+        "SELECT * FROM ev WHERE ts > '2024-01-01 10:00:00'"
     ])
     fun generatedRowsAreInsertedAndSatisfyTheQuery(query: String) {
         val actions = solver.solve(schemaDto, query, 1)
