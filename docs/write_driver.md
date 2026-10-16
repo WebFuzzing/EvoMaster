@@ -393,10 +393,13 @@ Two things are worth knowing when writing one:
 
 In white-box mode, with `--instrumentMR_KAFKA true`, the instrumentation also records what the service
 consumes from and emits to Kafka, through `poll` on a `KafkaConsumer` or `Consumer` and `send` on a
-`KafkaProducer` or `Producer`. A driver in the same JVM as the service can have its own calls recorded as
-the service's when they are made on threads it starts itself. The calls it makes on the
-thread running `executeAsyncApiAction`, while that runs, are never
-taken for the service's, even when the driver runs in the same JVM as the service.
+`KafkaProducer` or `Producer`. Calls a driver in the same JVM makes on the thread running
+`executeAsyncApiAction`, while that runs, are never taken for the service's; calls on threads it starts can be.
+What the service emits to an address that a `send` operation of the document declares is a target of the
+search, and the generated tests observe those topics around each publish and assert on what arrives. A
+message to an address the document does not declare at all is reported as a fault with
+`--useExperimentalOracles true`. A reply, on the reply address of the operation published to, counts only
+as a reply.
 
 Generated tests publish with a client of the transport rather than through the driver, so the suite needs
 that client library on its classpath: see [library dependencies](library_dependencies.md).

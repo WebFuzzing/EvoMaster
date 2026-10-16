@@ -25,9 +25,18 @@ import java.nio.file.Path
  * driver at run time.
  *
  * What the core adds around them is what only it knows: the outcome, which declared message a
- * reply was recognised as, and that a promised reply arrived.
+ * reply was recognised as, and that a promised reply arrived. Over Kafka, also what the service
+ * emitted to the addresses the contract declares for it to send to, when the search saw it do so.
  */
 class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
+
+    companion object {
+
+        /**
+         * What separates a variable's name from the index it is numbered with, as in `res_0`.
+         */
+        private const val INDEX_SEPARATOR = "_"
+    }
 
     /**
      * The servers this suite publishes to, each with the address the document declares. Filled
@@ -41,6 +50,15 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
      * was parsed from.
      */
     private val bodyVariablePrefix = "body_"
+
+    /**
+     * What the variables about what the service emitted are called in a generated test, before
+     * the index of the action: the observer started before publishing, what it collected, and,
+     * after a further index, the topic among the observed ones, a payload and its parsed form.
+     */
+    private val observerVariablePrefix = "observer_"
+    private val emittedVariablePrefix = "emitted_"
+    private val emittedBodyVariablePrefix = "emittedBody_"
 
     override fun handleActionCalls(
         lines: Lines,
@@ -105,8 +123,29 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
                 document named the broker, the topics and the header the id rides in, so nothing
                 else has to.
              */
-            variable != null && KafkaTestClientEmitter.canEmit(res) ->
-                KafkaTestClientEmitter.emit(lines, res, variable, brokerOf(res), format)
+            variable != null && KafkaTestClientEmitter.canEmit(res) -> {
+                val broker = brokerOf(res)
+                val index = indexOf(variable)
+                /*
+                    The declared send addresses are observed from before the message goes out, so
+                    that what is collected is what this message made the service emit. Nothing is
+                    written when the search saw nothing emitted there, as always in black-box mode.
+                 */
+                val observer = observerVariablePrefix + index
+                KafkaTestClientEmitter.emitObserve(lines, res, observer, broker, format)
+                KafkaTestClientEmitter.emit(lines, res, variable, broker, format, observer)
+                KafkaTestClientEmitter.emitAwait(
+                    lines, res, observer, emittedVariablePrefix + index, emittedTimeoutMs(), format
+                )
+            }
+
+            //the search stopped the test here, and the fitness recorded why
+            res.getOutcome() == AsyncApiOutcome.PUBLISH_FAILED -> {
+                lines.addSingleCommentLine(
+                    "The driver could not publish this message while the search ran, so nothing is written to publish it"
+                )
+                return
+            }
 
             else -> {
                 /*
@@ -127,7 +166,33 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         }
 
         addReplyAssertions(lines, res)
+
+        /*
+            Only where the lines were written from the contract: the observer was started there,
+            and a driver's own lines collect nothing.
+         */
+        if (script.none { it.isNotBlank() } && variable != null) {
+            val index = indexOf(variable)
+            KafkaTestClientEmitter.emitEmittedAssertions(
+                lines,
+                res,
+                emittedVariablePrefix + index,
+                emittedVariablePrefix + index + INDEX_SEPARATOR,
+                emittedBodyVariablePrefix + index + INDEX_SEPARATOR,
+                config,
+                format
+            )
+        }
     }
+
+    /**
+     * How long a generated test waits for what the service emits: as long as the search waited
+     * for a reply, or kept a message open for the service to finish with it, whichever is
+     * longer. The wait ends as soon as everything expected has arrived, so a generous one only
+     * costs time when something is missing.
+     */
+    private fun emittedTimeoutMs(): Long =
+        maxOf(config.asyncApiReplyTimeoutMs, config.asyncApiSettleMs).toLong()
 
     /**
      * What the core can say about the reply, on top of whatever the driver's own lines assert.
@@ -197,6 +262,10 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         }
 
         KafkaTestClientEmitter.emitHelper(lines, format)
+
+        if (KafkaTestClientEmitter.observesIn(solution)) {
+            KafkaTestClientEmitter.emitObserveHelpers(lines, format)
+        }
 
         if (!canAskDriver()) {
             return
@@ -276,7 +345,13 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
      * What the parsed reply is called, beside the reply it was parsed from.
      */
     private fun bodyVariableFor(replyVariable: String) =
-        bodyVariablePrefix + replyVariable.substringAfterLast('_')
+        bodyVariablePrefix + indexOf(replyVariable)
+
+    /**
+     * The index of the action a reply variable is for, which is what the other variables of the
+     * action are named after so that two actions cannot collide.
+     */
+    private fun indexOf(replyVariable: String) = replyVariable.substringAfterLast(INDEX_SEPARATOR)
 
     private fun variableFor(serverName: String) =
         KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX + TestWriterUtils.safeVariableName(serverName)

@@ -5,8 +5,8 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.stereotype.Component;
 
 /**
- * Consumes {@link StockAdjusted}, and keeps the stock of each product in the database through
- * {@link StockLedger}.
+ * Consumes {@link StockAdjusted}, keeps the stock of each product in the database through
+ * {@link StockLedger}, and announces the change through {@link ShopEvents}.
  */
 @Component
 public class StockListener {
@@ -16,8 +16,11 @@ public class StockListener {
 
     private final StockLedger ledger;
 
-    public StockListener(StockLedger ledger) {
+    private final ShopEvents events;
+
+    public StockListener(StockLedger ledger, ShopEvents events) {
         this.ledger = ledger;
+        this.events = events;
     }
 
     @KafkaListener(id = ShopTopics.STOCK_LISTENER, topics = ShopTopics.STOCK_ADJUSTED, properties = VALUE_TYPE)
@@ -28,5 +31,6 @@ public class StockListener {
             return;
         }
         ledger.adjust(adjustment.getSku(), adjustment.getDelta());
+        events.stockChanged(adjustment.getSku(), adjustment.getDelta());
     }
 }

@@ -4,7 +4,10 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.EmittedMessageDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.output.asyncapi.KafkaTestClientEmitter
@@ -118,6 +121,50 @@ class AsyncApiTestCaseWriterTest {
                 channel:
                   ${'$'}ref: '#/channels/tellRequest'
         """.trimIndent()
+
+        /**
+         * A service that is declared to emit a confirmation for every order it consumes.
+         */
+        private val SHOP = """
+            asyncapi: 3.0.0
+            info:
+              title: Shop
+              version: 1.0.0
+            servers:
+              kafka:
+                host: localhost:9092
+                protocol: kafka
+            channels:
+              ordersPlaced:
+                address: shop.orders.placed
+                messages:
+                  orderPlaced:
+                    payload:
+                      type: object
+                      required: [orderId]
+                      properties:
+                        orderId:
+                          type: string
+              ordersConfirmed:
+                address: shop.orders.confirmed
+                messages:
+                  orderConfirmed:
+                    payload:
+                      type: object
+            operations:
+              placeOrder:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/ordersPlaced'
+              confirmOrder:
+                action: send
+                channel:
+                  ${'$'}ref: '#/channels/ordersConfirmed'
+        """.trimIndent()
+
+        private const val CONFIRMED = "shop.orders.confirmed"
+
+        private const val CONFIRMATION = """{"orderId": "o-1", "status": "CONFIRMED"}"""
 
         /**
          * Every line any other suite opens with, taken verbatim from what the writer produces
@@ -284,18 +331,29 @@ class AsyncApiTestCaseWriterTest {
                 append("    private String ${KafkaTestClientEmitter.HELPER_NAME}(String broker, String topic,")
                 append(" String replyTopic, String payload, String correlationHeader, long timeoutMs,")
                 append(" String... headerPairs) throws Exception { return null; }\n")
+                append("    private AutoCloseable ${KafkaTestClientEmitter.OBSERVE_HELPER_NAME}(String broker,")
+                append(" String... topics) { return () -> {}; }\n")
+                append("    private java.util.Map<String, java.util.List<String>> ${KafkaTestClientEmitter.AWAIT_HELPER_NAME}(")
+                append("AutoCloseable observer, int[] expected, long timeoutMs, String... topics) throws Exception {")
+                append(" return null; }\n")
                 append(indented).append("\n}\n")
             }
         } else {
             buildString {
                 append("import org.junit.jupiter.api.Test\n")
                 append("import org.junit.jupiter.api.Timeout\n")
-                append("import org.junit.jupiter.api.Assertions.*\n\n")
+                append("import org.junit.jupiter.api.Assertions.*\n")
+                //as every generated Kotlin suite does, so that a bare List in the body means this one
+                append("import java.util.List\n\n")
                 append("internal class $name {\n")
                 servers.forEach { append("    private val $it: String = \"localhost:9092\"\n") }
                 append("    private fun ${KafkaTestClientEmitter.HELPER_NAME}(broker: String, topic: String,")
                 append(" replyTopic: String?, payload: String?, correlationHeader: String?, timeoutMs: Long,")
                 append(" vararg headerPairs: String): String? = null\n")
+                append("    private fun ${KafkaTestClientEmitter.OBSERVE_HELPER_NAME}(broker: String,")
+                append(" vararg topics: String): AutoCloseable = AutoCloseable {}\n")
+                append("    private fun ${KafkaTestClientEmitter.AWAIT_HELPER_NAME}(observer: AutoCloseable, expected: IntArray,")
+                append(" timeoutMs: Long, vararg topics: String): Map<String, kotlin.collections.List<String?>> = mapOf()\n")
                 append(indented).append("\n}\n")
             }
         }
@@ -1004,6 +1062,19 @@ class AsyncApiTestCaseWriterTest {
     }
 
     @Test
+    fun testAMessageTheDriverCouldNotPublishSaysSo() {
+
+        startWith(VARIANTS) { FakeAsyncApiDriver.fireAndForget().apply { published = false } }
+
+        val body = bodyOf(evaluate("tell"))
+
+        assertTrue(body.contains("could not publish this message"), body)
+        //not mistaken for a transport nothing can write
+        assertFalse(body.contains("not one"), body)
+        assertFalse(body.contains(KafkaTestClientEmitter.HELPER_NAME), body)
+    }
+
+    @Test
     fun testAMessageThatWentUnansweredIsWrittenWithoutAReplyAssertion() {
 
         start {
@@ -1018,5 +1089,123 @@ class AsyncApiTestCaseWriterTest {
         assertTrue(body.contains("NO_REPLY"), body)
         //nothing arrived, so there is nothing to assert on
         assertFalse(body.contains("assertNotNull"), body)
+    }
+
+    /**
+     * The shop, with a driver reporting that the order made the service emit [messages].
+     */
+    private fun startShop(vararg options: String, messages: () -> List<EmittedMessageDto>) {
+        startWith(SHOP, *options) { FakeAsyncApiDriver.fireAndForget() }
+        driver.testResults = {
+            TestResultsDto().apply { additionalInfoList.add(AdditionalInfoDto().apply { emittedMessages.addAll(messages()) }) }
+        }
+    }
+
+    private fun confirmation(address: String = CONFIRMED) = EmittedMessageDto().apply {
+        this.address = address
+        payload = CONFIRMATION
+        payloadTruncated = false
+        payloadType = String::class.java.name
+    }
+
+    @Test
+    fun testWhatTheServiceEmittedIsObservedAroundThePublishAndCompiles() {
+
+        OutputFormat.values().filter { it.isJavaOrKotlin() && it.isJUnit5() }.forEach { format ->
+
+            startShop("--outputFormat=${format.name}") { listOf(confirmation()) }
+
+            val (members, body) = membersAndBodyOf(evaluate("placeOrder"))
+
+            assertTrue(members.contains(KafkaTestClientEmitter.OBSERVE_HELPER_NAME), "for $format:\n$members")
+            assertTrue(members.contains(KafkaTestClientEmitter.AWAIT_HELPER_NAME), "for $format:\n$members")
+
+            //observed from before the message goes out, collected once it has
+            val observe = body.indexOf("${KafkaTestClientEmitter.OBSERVE_HELPER_NAME}(asyncApiServer_kafka, \"$CONFIRMED\")")
+            val publish = body.indexOf("${KafkaTestClientEmitter.HELPER_NAME}(asyncApiServer_kafka, \"shop.orders.placed\"")
+            val counts = if (format.isJava()) "new int[]{1}" else "intArrayOf(1)"
+            val await = body.indexOf("${KafkaTestClientEmitter.AWAIT_HELPER_NAME}(observer_0, $counts, 5000L, \"$CONFIRMED\")")
+            assertTrue(observe in 0 until publish, "for $format:\n$body")
+            assertTrue(publish < await, "for $format:\n$body")
+            //a publish that fails closes the observer, which the await would otherwise have
+            assertTrue(body.indexOf("observer_0.close()") in publish until await, "for $format:\n$body")
+
+            //and what arrived is asserted on, payload included
+            assertTrue(body.contains("emittedBody_0_0"), "for $format:\n$body")
+            assertTrue(body.contains("\"CONFIRMED\""), "for $format:\n$body")
+
+            compiles(members, body, format, "AsyncApiEmitted${format.name}")
+        }
+    }
+
+    @Test
+    fun testTwoActionsObserveWithVariablesOfTheirOwn() {
+
+        startShop { listOf(confirmation()) }
+        driver.testResults = {
+            TestResultsDto().apply {
+                repeat(2) { additionalInfoList.add(AdditionalInfoDto().apply { emittedMessages.add(confirmation()) }) }
+            }
+        }
+
+        val (members, body) = membersAndBodyOf(evaluate("placeOrder", "placeOrder"))
+
+        assertTrue(body.contains("val observer_0 ="), body)
+        assertTrue(body.contains("val observer_1 ="), body)
+        assertTrue(body.contains("val emitted_1 = awaitEmitted(observer_1,"), body)
+        assertTrue(body.contains("emittedBody_1_0"), body)
+
+        compiles(members, body, OutputFormat.KOTLIN_JUNIT_5, "AsyncApiEmittedTwice")
+    }
+
+    @Test
+    fun testNothingIsObservedWhereNothingDeclaredWasEmitted() {
+
+        //the service emitted, but to an address the document does not declare
+        startShop { listOf(confirmation("shop.audit")) }
+
+        val (members, body) = membersAndBodyOf(evaluate("placeOrder"))
+
+        assertFalse(members.contains(KafkaTestClientEmitter.OBSERVE_HELPER_NAME), members)
+        assertFalse(body.contains("observer_0"), body)
+        //the message is still published
+        assertTrue(body.contains(KafkaTestClientEmitter.HELPER_NAME), body)
+    }
+
+    @Test
+    fun testTheObserveHelpersAreLeftOutWhenTheServiceEmitsNothing() {
+
+        start { FakeAsyncApiDriver.replied(DOUBLE_RESULT) }
+
+        val (members, body) = membersAndBodyOf(evaluate("bessj"))
+
+        assertTrue(members.contains(KafkaTestClientEmitter.HELPER_NAME), members)
+        assertFalse(members.contains(KafkaTestClientEmitter.OBSERVE_HELPER_NAME), members)
+        assertFalse(body.contains("observer_0"), body)
+    }
+
+    @Test
+    fun testATestWaitsForWhatIsEmittedAsLongAsTheSearchKeptAMessageOpen() {
+
+        startShop("--asyncApiSettleMs=8000") { listOf(confirmation()) }
+
+        val body = bodyOf(evaluate("placeOrder"))
+
+        assertTrue(body.contains("${KafkaTestClientEmitter.AWAIT_HELPER_NAME}(observer_0, intArrayOf(1), 8000L,"), body)
+    }
+
+    @Test
+    fun testADriversOwnLinesObserveNothing() {
+
+        startWith(SHOP) { FakeAsyncApiDriver.fireAndForget().apply { testScript = listOf("publishSomehow()") } }
+        driver.testResults = {
+            TestResultsDto().apply { additionalInfoList.add(AdditionalInfoDto().apply { emittedMessages.add(confirmation()) }) }
+        }
+
+        val (members, body) = membersAndBodyOf(evaluate("placeOrder"))
+
+        assertTrue(body.contains("publishSomehow()"), body)
+        assertFalse(body.contains("emitted_0"), body)
+        assertFalse(members.contains(KafkaTestClientEmitter.OBSERVE_HELPER_NAME), members)
     }
 }
