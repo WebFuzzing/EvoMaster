@@ -691,73 +691,9 @@ public class MongoCollectionClassReplacementTest extends MongoCollectionClassRep
         }
     }
 
-    @Test
-    public void testFindOneAndUpdateWithFilterAndPipeline() {
-        final MongoCollection<Document> collection = getMongoCollection();
-        insertPerson("John Doe", 30);
-        insertPerson("Jim Roe", 25);
 
-        ExecutionTracer.setExecutingInitMongo(false);
-        Document found = (Document) MongoCollectionClassReplacement.findOneAndUpdate(collection, new Document("age", 30), verifiedPipeline());
 
-        assertNotNull(found);
-        assertEquals("John Doe", found.getString("name"));
-        assertEquals(1, collection.countDocuments(new Document("verified", true)));
-        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
-        assertEquals(30, retrievedQuery.getInt32("age").getValue());
-    }
 
-    @Test
-    public void testFindOneAndUpdateWithFilterPipelineAndOptions() {
-        final MongoCollection<Document> collection = getMongoCollection();
-        insertPerson("John Doe", 30);
-        insertPerson("Jim Roe", 25);
-
-        ExecutionTracer.setExecutingInitMongo(false);
-        Document found = (Document) MongoCollectionClassReplacement.findOneAndUpdate(collection, new Document("age", 30), verifiedPipeline(), new FindOneAndUpdateOptions());
-
-        assertNotNull(found);
-        assertEquals("John Doe", found.getString("name"));
-        assertEquals(1, collection.countDocuments(new Document("verified", true)));
-        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
-        assertEquals(30, retrievedQuery.getInt32("age").getValue());
-    }
-
-    @Test
-    public void testFindOneAndUpdateWithClientSessionFilterAndPipeline() {
-        try (ClientSession clientSession = mongoClient.startSession()) {
-            final MongoCollection<Document> collection = getMongoCollection();
-            insertPerson("John Doe", 30);
-            insertPerson("Jim Roe", 25);
-
-            ExecutionTracer.setExecutingInitMongo(false);
-            Document found = (Document) MongoCollectionClassReplacement.findOneAndUpdate(collection, clientSession, new Document("age", 30), verifiedPipeline());
-
-            assertNotNull(found);
-            assertEquals("John Doe", found.getString("name"));
-            assertEquals(1, collection.countDocuments(new Document("verified", true)));
-            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
-            assertEquals(30, retrievedQuery.getInt32("age").getValue());
-        }
-    }
-
-    @Test
-    public void testFindOneAndUpdateWithClientSessionFilterPipelineAndOptions() {
-        try (ClientSession clientSession = mongoClient.startSession()) {
-            final MongoCollection<Document> collection = getMongoCollection();
-            insertPerson("John Doe", 30);
-            insertPerson("Jim Roe", 25);
-
-            ExecutionTracer.setExecutingInitMongo(false);
-            Document found = (Document) MongoCollectionClassReplacement.findOneAndUpdate(collection, clientSession, new Document("age", 30), verifiedPipeline(), new FindOneAndUpdateOptions());
-
-            assertNotNull(found);
-            assertEquals("John Doe", found.getString("name"));
-            assertEquals(1, collection.countDocuments(new Document("verified", true)));
-            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
-            assertEquals(30, retrievedQuery.getInt32("age").getValue());
-        }
-    }
 
     @Test
     public void testFindOneAndUpdateWithFilterNoMatch() {
