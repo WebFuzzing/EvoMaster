@@ -596,7 +596,7 @@ class Statistics : SearchListener {
 
     fun getData(solution: Solution<*>): List<Pair> {
 
-        val sutInfo : SutInfoDto? = if(config.usesDriver()) {
+        val sutInfo : SutInfoDto? = if(config.readsSutCoverage()) {
             remoteController?.getSutInfo()
         } else {
             null
@@ -987,7 +987,7 @@ class Statistics : SearchListener {
 
 
         // append boot-time targets
-        if(config.usesDriver()) {
+        if(config.readsSutCoverage()) {
             remoteController?.getSutInfo()?.bootTimeInfoDto?.targets?.map { it.descriptiveId }?.sorted()?.apply {
                 if (isNotEmpty()){
                     content.add(System.lineSeparator())

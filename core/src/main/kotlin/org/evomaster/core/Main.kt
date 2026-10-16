@@ -366,7 +366,7 @@ class Main {
             solution: Solution<*>,
             idMapper: IdMapper
         ) {
-            if (config.usesDriver()) {
+            if (config.readsSutCoverage()) {
                 val rc = injector.getInstance(RemoteController::class.java)
                 val unitsInfo = rc.getSutInfo()?.unitsInfoDto
                 val bootTimeInfo = rc.getSutInfo()?.bootTimeInfoDto

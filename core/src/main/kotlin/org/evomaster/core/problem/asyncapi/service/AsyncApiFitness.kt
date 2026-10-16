@@ -151,14 +151,16 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         /*
             There is no separate black-box fitness here, unlike REST and GraphQL: AsyncAPI publishes
-            through the driver in both modes, which is what EMConfig.usesDriver() states. What
-            changes is only what this call adds on top of the outcome and reply targets above: an
-            instrumented SUT reports the lines and branches the messages reached, an uninstrumented
-            one reports none.
+            through the driver in both modes (see EMConfig.usesDriver()). Only in white-box mode is
+            the coverage of the SUT read on top of the outcome and reply targets. In black-box mode,
+            as for REST, it is not: it would add whatever the driver instruments to the targets,
+            and, with the kill switch on, stop the service's threads after every test.
          */
-        val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
-            ?: return null
-        handleExtra(dto, fv)
+        if (!config.blackBox) {
+            val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
+                ?: return null
+            handleExtra(dto, fv)
+        }
 
         return EvaluatedIndividual(
             fv,
