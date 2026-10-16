@@ -3570,6 +3570,13 @@ class EMConfig {
             " This is just an heuristics though, and unrestricted strings would still be sampled with a given probability.")
     var inferFormatFromNames = false
 
+    @Experimental
+    @Cfg("Enable log-based coverage: collect Docker container logs after each test and use novel log templates" +
+            " (detected via Drain log parsing) as additional fitness targets." +
+            " Requires Python 3 and the evolog-parser Docker image to be available on the host." +
+            " The Docker Compose project to monitor can be specified via the LOG_COLLECTOR_PROJECT environment variable.")
+    var enableLogCollector = false
+
 
     @Experimental
     @ExistingPath(true,false)
