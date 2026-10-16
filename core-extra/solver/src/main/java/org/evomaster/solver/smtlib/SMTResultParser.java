@@ -39,8 +39,10 @@ public class SMTResultParser {
 
         // Pattern for matching the start of a composed type (structure); its body is read by structTokens
         // example: ((variableName (field1-field2-... value1 value2 ...)))
-        // The constructor name starts with a letter, which tells it apart from a value such as (- 4)
-        Pattern composedTypePattern = Pattern.compile("\\(\\((\\w+\\d+) \\((?=[A-Za-z_])");
+        // The constructor name starts with a letter, which tells it apart from a value such as (- 4).
+        // When two datatypes share a constructor name, Z3 qualifies it with its sort:
+        // ((variableName ((as field1-field2-... SortName) value1 value2 ...)))
+        Pattern composedTypePattern = Pattern.compile("\\(\\((\\w+\\d+) \\((?=[A-Za-z_]|\\(as )");
 
         // Buffer for multiline values
         StringBuilder buffer = new StringBuilder();
@@ -84,7 +86,7 @@ public class SMTResultParser {
                     continue; // the struct is not complete yet: keep buffering lines
                 }
                 String[] fields = structTokens.toArray(new String[0]);
-                String[] fieldNames = fields[0].split("-");
+                String[] fieldNames = constructorName(fields[0]).split("-");
 
                 Map<String, SMTLibValue> structValues = new HashMap<>();
                 // Iterate over fields to extract field names and values
@@ -168,6 +170,20 @@ public class SMTResultParser {
             }
         }
         return null;
+    }
+
+    /**
+     * The name of a struct's constructor, from the first token of the struct.
+     *
+     * The generator names a table's constructor after its columns, so two tables with the same
+     * columns share it. Z3 then qualifies the name with its sort, as in {@code (as id-name UsersRow)},
+     * for every value of either table.
+     */
+    private static String constructorName(String token) {
+        if (token.startsWith("(as ")) {
+            return token.substring("(as ".length()).trim().split("\\s+")[0];
+        }
+        return token;
     }
 
     /**
