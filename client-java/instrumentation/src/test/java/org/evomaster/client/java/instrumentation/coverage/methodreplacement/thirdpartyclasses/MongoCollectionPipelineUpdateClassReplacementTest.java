@@ -1,31 +1,13 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
 import com.mongodb.client.*;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.BsonDocument;
 import org.bson.Document;
-import org.bson.codecs.configuration.CodecRegistries;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
-import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.MongoFindCommand;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
-import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MongoCollectionPipelineUpdateClassReplacementTest extends MongoCollectionClassReplacementTestBase {

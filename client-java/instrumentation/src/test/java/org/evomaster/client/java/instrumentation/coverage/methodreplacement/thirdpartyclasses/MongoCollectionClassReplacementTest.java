@@ -21,20 +21,12 @@ import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.object.CustomTypeToOasConverter;
 import org.evomaster.client.java.instrumentation.object.GeoJsonPointToOasConverter;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MongoCollectionClassReplacementTest extends MongoCollectionClassReplacementTestBase {
