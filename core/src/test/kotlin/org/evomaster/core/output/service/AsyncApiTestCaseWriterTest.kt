@@ -24,7 +24,15 @@ import org.evomaster.core.problem.asyncapi.service.AsyncApiTestInjector
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
+import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceFitnessHandlerTest
+import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.FitnessFunction
@@ -34,6 +42,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.UUID
 
 /**
  * What a generated test looks like. The lines that publish are the driver's, so the fake one
@@ -43,6 +52,12 @@ class AsyncApiTestCaseWriterTest {
 
     companion object {
         private const val DOUBLE_RESULT = """{"resultAsDouble": 1.5}"""
+
+        private const val SUPPLIER_PROTOCOL = "http"
+
+        private const val SUPPLIER_PORT = 8080
+
+        private const val SUPPLIER_PATH = "/api/stock/A-100"
 
         /**
          * A document that reaches what the shared one cannot.
@@ -319,15 +334,24 @@ class AsyncApiTestCaseWriterTest {
             .map { it.value }
             .toSet()
 
+        //the WireMock instances the suite writer would declare and start
+        val wireMocks = Regex("wireMock__\\w+").findAll(body).map { it.value }.toSet()
+
         val indented = body.trimEnd().lines().joinToString("\n") { "    $it" }
 
         val code = if (format.isJava()) {
             buildString {
                 append("import org.junit.jupiter.api.Test;\n")
                 append("import org.junit.jupiter.api.Timeout;\n")
-                append("import static org.junit.jupiter.api.Assertions.*;\n\n")
+                append("import static org.junit.jupiter.api.Assertions.*;\n")
+                if (wireMocks.isNotEmpty()) {
+                    append("import static com.github.tomakehurst.wiremock.client.WireMock.*;\n")
+                    append("import com.github.tomakehurst.wiremock.WireMockServer;\n")
+                }
+                append("\n")
                 append("public class $name {\n")
                 servers.forEach { append("    private String $it = \"localhost:9092\";\n") }
+                wireMocks.forEach { append("    private WireMockServer $it;\n") }
                 append("    private String ${KafkaTestClientEmitter.HELPER_NAME}(String broker, String topic,")
                 append(" String replyTopic, String payload, String correlationHeader, long timeoutMs,")
                 append(" String... headerPairs) throws Exception { return null; }\n")
@@ -343,10 +367,15 @@ class AsyncApiTestCaseWriterTest {
                 append("import org.junit.jupiter.api.Test\n")
                 append("import org.junit.jupiter.api.Timeout\n")
                 append("import org.junit.jupiter.api.Assertions.*\n")
+                if (wireMocks.isNotEmpty()) {
+                    append("import com.github.tomakehurst.wiremock.client.WireMock.*\n")
+                    append("import com.github.tomakehurst.wiremock.WireMockServer\n")
+                }
                 //as every generated Kotlin suite does, so that a bare List in the body means this one
                 append("import java.util.List\n\n")
                 append("internal class $name {\n")
                 servers.forEach { append("    private val $it: String = \"localhost:9092\"\n") }
+                wireMocks.forEach { append("    private lateinit var $it: WireMockServer\n") }
                 append("    private fun ${KafkaTestClientEmitter.HELPER_NAME}(broker: String, topic: String,")
                 append(" replyTopic: String?, payload: String?, correlationHeader: String?, timeoutMs: Long,")
                 append(" vararg headerPairs: String): String? = null\n")
@@ -1207,5 +1236,193 @@ class AsyncApiTestCaseWriterTest {
         assertTrue(body.contains("publishSomehow()"), body)
         assertFalse(body.contains("emitted_0"), body)
         assertFalse(members.contains(KafkaTestClientEmitter.OBSERVE_HELPER_NAME), members)
+    }
+
+    /**
+     * Adds to the message at [message] of [evaluated] what the search has once the service
+     * called a supplier over HTTP: an action answering the call to [path] with [status], which
+     * the call reached when [used] holds. The WireMock instance is never started, as writing a
+     * test only needs to know where it is.
+     */
+    private fun answeredBySupplier(
+        evaluated: EvaluatedIndividual<AsyncApiIndividual>,
+        status: Int,
+        used: Boolean = true,
+        message: Int = 0,
+        path: String = SUPPLIER_PATH
+    ) {
+
+        val supplier = HttpWsExternalServiceFitnessHandlerTest.SUPPLIER
+        val service = HttpWsExternalService(
+            HttpExternalServiceInfo(SUPPLIER_PROTOCOL, supplier, SUPPLIER_PORT),
+            HttpWsExternalServiceFitnessHandlerTest.MOCK_IP
+        )
+        val url = "$SUPPLIER_PROTOCOL://$supplier:$SUPPLIER_PORT$path"
+        val request = HttpExternalServiceRequest(
+            UUID.randomUUID(), "GET", path, url, true, service.getSignature(), url, mapOf(), null
+        )
+        val action = HttpExternalServiceAction(
+            request, HttpWsResponseParam(), service, active = true, used = used, id = 0
+        ).apply {
+            doInitialize(injector.getInstance(Randomness::class.java))
+            (response as HttpWsResponseParam).setStatus(status)
+        }
+
+        val main = evaluated.individual.seeMainExecutableActions()[message]
+        (main.parent as EnterpriseActionGroup<*>).addChildrenToGroup(listOf(action), GroupsOfChildren.EXTERNAL_SERVICES)
+    }
+
+    @Test
+    fun testWhatAMockedServiceAnswersIsSetUpBeforeTheMessageIsPublishedAndCompiles() {
+
+        OutputFormat.values().filter { it.isJavaOrKotlin() && it.isJUnit5() }.forEach { format ->
+
+            startWith(VARIANTS, "--outputFormat=${format.name}", *HttpWsExternalServiceFitnessHandlerTest.MOCKING) {
+                FakeAsyncApiDriver.fireAndForget()
+            }
+            val evaluated = evaluate("tell")
+            answeredBySupplier(evaluated, 201)
+
+            val (members, body) = membersAndBodyOf(evaluated)
+
+            val stub = body.indexOf(".stubFor(")
+            val publish = body.indexOf(KafkaTestClientEmitter.HELPER_NAME)
+            assertTrue(stub >= 0, "for $format:\n$body")
+            assertTrue(body.contains("get(urlEqualTo(\"$SUPPLIER_PATH\"))"), "for $format:\n$body")
+            assertTrue(body.contains(".withStatus(201)"), "for $format:\n$body")
+            //the service may call the supplier as soon as it has the message, so the stub comes first
+            assertTrue(publish > stub, "for $format:\n$body")
+            //a single message has nothing to reset between
+            assertFalse(body.contains("resetAll()"), "for $format:\n$body")
+
+            compiles(members, body, format, "AsyncApiStub${format.name}")
+        }
+    }
+
+    @Test
+    fun testAMessageWhoseStubTheServiceUsedWaitsForTheCallRatherThanTheSettleWindow() {
+
+        OutputFormat.values().filter { it.isJavaOrKotlin() && it.isJUnit5() }.forEach { format ->
+
+            startWith(
+                VARIANTS,
+                "--outputFormat=${format.name}",
+                "--asyncApiSettleMs=1500",
+                *HttpWsExternalServiceFitnessHandlerTest.MOCKING
+            ) { FakeAsyncApiDriver.fireAndForget().apply { settledMs = 1500L } }
+            val evaluated = evaluate("tell")
+            answeredBySupplier(evaluated, 201)
+
+            val (members, body) = membersAndBodyOf(evaluated)
+
+            val publish = body.indexOf(KafkaTestClientEmitter.HELPER_NAME)
+            val count = if (format.isJava()) "getCount()" else "count"
+            //counted on the stub, not on whatever the instance was asked
+            val wait = body.indexOf(
+                ".countRequestsMatching(getRequestedFor(urlEqualTo(\"$SUPPLIER_PATH\")).build()).$count == 0"
+            )
+            assertTrue(wait > publish, "for $format:\n$body")
+            assertFalse(body.contains("getAllServeEvents"), "for $format:\n$body")
+            //bounded by what the search waited, the longer of the reply timeout and the settle window
+            assertTrue(body.contains("System.currentTimeMillis() + 5000L"), "for $format:\n$body")
+            assertTrue(body.contains("Thread.sleep(50)"), "for $format:\n$body")
+            assertFalse(body.contains("Thread.sleep(1500)"), "for $format:\n$body")
+
+            compiles(members, body, format, "AsyncApiServedWait${format.name}")
+        }
+    }
+
+    @Test
+    fun testEachStubTheServiceUsedIsWaitedForOnItsOwnAndCompiles() {
+
+        OutputFormat.values().filter { it.isJavaOrKotlin() && it.isJUnit5() }.forEach { format ->
+
+            startWith(VARIANTS, "--outputFormat=${format.name}", *HttpWsExternalServiceFitnessHandlerTest.MOCKING) {
+                FakeAsyncApiDriver.fireAndForget()
+            }
+            val evaluated = evaluate("tell")
+            //two calls to one instance: one call to either must not end the wait for the other
+            answeredBySupplier(evaluated, 201)
+            answeredBySupplier(evaluated, 200, path = "/api/price/A-100")
+
+            val (members, body) = membersAndBodyOf(evaluated)
+
+            assertEquals(2, Regex("countRequestsMatching").findAll(body).count(), "for $format:\n$body")
+            assertTrue(body.contains("urlEqualTo(\"/api/price/A-100\")).build())"), "for $format:\n$body")
+
+            compiles(members, body, format, "AsyncApiServedWaitPerStub${format.name}")
+        }
+    }
+
+    @Test
+    fun testAMessageThatWasNotPublishedDoesNotWaitForTheMockedServices() {
+
+        startWith(VARIANTS, "--asyncApiSettleMs=1500", *HttpWsExternalServiceFitnessHandlerTest.MOCKING) {
+            FakeAsyncApiDriver.fireAndForget().apply { published = false }
+        }
+        val evaluated = evaluate("tell")
+        //what a stub carried over from the parent of the test would say
+        answeredBySupplier(evaluated, 201, used = true)
+
+        val body = bodyOf(evaluated)
+
+        assertFalse(body.contains("countRequestsMatching"), body)
+        assertFalse(body.contains("Thread.sleep"), body)
+    }
+
+    @Test
+    fun testAStubTheServiceDidNotUseIsNotWaitedFor() {
+
+        startWith(VARIANTS, "--asyncApiSettleMs=1500", *HttpWsExternalServiceFitnessHandlerTest.MOCKING) {
+            FakeAsyncApiDriver.fireAndForget().apply { settledMs = 1500L }
+        }
+        val evaluated = evaluate("tell")
+        answeredBySupplier(evaluated, 201, used = false)
+
+        val body = bodyOf(evaluated)
+
+        assertTrue(body.contains(".stubFor("), body)
+        assertFalse(body.contains("countRequestsMatching"), body)
+        //so the settle window is what holds the test back
+        assertTrue(body.contains("Thread.sleep(1500)"), body)
+    }
+
+    @Test
+    fun testTheMockedServicesAreResetBetweenTheMessagesOfATest() {
+
+        OutputFormat.values().filter { it.isJavaOrKotlin() && it.isJUnit5() }.forEach { format ->
+
+            startWith(VARIANTS, "--outputFormat=${format.name}", *HttpWsExternalServiceFitnessHandlerTest.MOCKING) {
+                FakeAsyncApiDriver.fireAndForget()
+            }
+            //only the first message has a stub, which must not answer what the second makes the service call
+            val evaluated = evaluate("tell", "tell")
+            answeredBySupplier(evaluated, 201, message = 0)
+
+            val (members, body) = membersAndBodyOf(evaluated)
+
+            val first = body.indexOf(KafkaTestClientEmitter.HELPER_NAME)
+            val second = body.indexOf(KafkaTestClientEmitter.HELPER_NAME, first + 1)
+            val reset = body.indexOf(".resetAll()")
+            assertTrue(reset in first until second, "for $format:\n$body")
+            assertEquals(1, Regex("\\.resetAll\\(\\)").findAll(body).count(), "for $format:\n$body")
+            //and back to the default answer, as before each test
+            assertTrue(body.indexOf(".stubFor(", reset) in reset until second, "for $format:\n$body")
+
+            compiles(members, body, format, "AsyncApiStubReset${format.name}")
+        }
+    }
+
+    @Test
+    fun testNoStubIsWrittenWhenMockingIsOff() {
+
+        startWith(VARIANTS) { FakeAsyncApiDriver.fireAndForget() }
+        val evaluated = evaluate("tell")
+        answeredBySupplier(evaluated, 201)
+
+        val body = bodyOf(evaluated)
+
+        assertFalse(body.contains("stubFor"), body)
+        assertTrue(body.contains(KafkaTestClientEmitter.HELPER_NAME), body)
     }
 }

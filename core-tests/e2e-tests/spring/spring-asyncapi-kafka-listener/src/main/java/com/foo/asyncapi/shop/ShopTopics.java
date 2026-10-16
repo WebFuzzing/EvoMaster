@@ -30,6 +30,8 @@ public final class ShopTopics {
      */
     public static final String STOCK_CHANGES = "shop.stock.changes";
 
+    public static final String RESTOCK_REQUESTED = "shop.restock.requested";
+
     public static final String ORDERS_LISTENER = "shop-orders";
 
     public static final String INVOICES_LISTENER = "shop-invoices";
@@ -38,11 +40,14 @@ public final class ShopTopics {
 
     public static final String RETURNS_LISTENER = "shop-returns";
 
+    public static final String RESTOCK_LISTENER = "shop-restock";
+
     /**
      * Every topic above, for whoever has to create them before the service starts.
      */
     public static final List<String> ALL = Collections.unmodifiableList(Arrays.asList(
-            ORDERS_PLACED, INVOICES_REQUESTED, STOCK_ADJUSTED, RETURNS_REQUESTED, ORDERS_CONFIRMED, STOCK_CHANGES));
+            ORDERS_PLACED, INVOICES_REQUESTED, STOCK_ADJUSTED, RETURNS_REQUESTED, ORDERS_CONFIRMED, STOCK_CHANGES,
+            RESTOCK_REQUESTED));
 
     private ShopTopics() {
     }
