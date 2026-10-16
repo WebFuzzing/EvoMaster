@@ -349,5 +349,105 @@ public class MongoCollectionClassReplacementTest {
 
     }
 
+    private BsonDocument assertSingleRecordedCommand(boolean expectedSuccess) {
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+        Set<MongoFindCommand> mongoFindCommands = additionalInfoList.get(0).getMongoInfoData();
+        assertEquals(1, mongoFindCommands.size());
 
+        MongoFindCommand mongoFindCommand = mongoFindCommands.iterator().next();
+        assertEquals(COLLECTION_NAME, mongoFindCommand.getCollectionName());
+        assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
+        assertEquals(expectedSuccess, mongoFindCommand.isSuccessfullyExecuted());
+        assertNotNull(mongoFindCommand.getQuery());
+        return (BsonDocument) mongoFindCommand.getQuery();
+    }
+
+    private void insertPerson(String name, int age) {
+        getMongoCollection().insertOne(new Document("name", name).append("age", age));
+    }
+
+    @Test
+    public void testCountDocumentsWithFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        long count = MongoCollectionClassReplacement.countDocuments(collection, new Document("age", 30));
+
+        assertEquals(1, count);
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testCountDocumentsWithFilterNoMatch() {
+        final MongoCollection<Document> collection = getMongoCollection();
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        long count = MongoCollectionClassReplacement.countDocuments(collection, new Document("age", 99));
+
+        assertEquals(0, count);
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(99, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testCountDocumentsWithFilterAndOptions() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 30);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        long count = MongoCollectionClassReplacement.countDocuments(collection, new Document("age", 30), new com.mongodb.client.model.CountOptions().limit(1));
+
+        assertEquals(1, count);
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testCountDocumentsWithClientSessionAndFilter() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 23);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            long count = MongoCollectionClassReplacement.countDocuments_EM_0(collection, clientSession, new Document("age", 23));
+
+            assertEquals(1, count);
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testCountDocumentsWithClientSessionFilterAndOptions() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 23);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            long count = MongoCollectionClassReplacement.countDocuments(collection, clientSession, new Document("age", 23), new com.mongodb.client.model.CountOptions().limit(1));
+
+            assertEquals(1, count);
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testCountDocumentsWithInvalidFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        Document invalidFilter = new Document("tags", new Document("$size", -1));
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.countDocuments(collection, invalidFilter));
+
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
+        assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
+    }
 }
