@@ -57,25 +57,60 @@ public class ClassToSchema {
          */
 
     /**
-     * Key -> DTO class
+     * Key -> DTO class, along with the converters used to derive its schema
      * Value -> its UNNAMED schema representation, as OpenAPI JSON object
      * WARNING: this is a mutable static state, but, being just a cache, should not hopefully
      * have any nasty negative side-effects.
      */
-    private static final Map<Type, String> cacheSchema = new ConcurrentHashMap<>();
+    private static final Map<CacheKey, String> cacheSchema = new ConcurrentHashMap<>();
 
     /**
-     * Key -> DTO class
+     * Key -> DTO class, along with the converters used to derive its schema
      * Value -> the schema representations of the DTO class and its ref DTO class
      */
-    private static final Map<Type, String> cacheSchemaWithItsRef = new ConcurrentHashMap<>();
+    private static final Map<CacheKey, String> cacheSchemaWithItsRef = new ConcurrentHashMap<>();
 
     /**
-     * Key -> DTO class
+     * Key -> DTO class, along with the converters used to derive its schema
      * Value -> the schema representations of the DTO class and its ref DTO class
      */
-    private static final Map<Type, Map<String, String>> cacheMapOfDtoAndItsRefToSchemas = new ConcurrentHashMap<>();
+    private static final Map<CacheKey, Map<String, String>> cacheMapOfDtoAndItsRefToSchemas = new ConcurrentHashMap<>();
 
+
+    /**
+     * A schema depends on the type and on the converters used to derive it, so both identify an
+     * entry of the schema caches: the same class derived with different converters must not share
+     * one. With no converters, only the type matters.
+     */
+    private static final class CacheKey {
+
+        private final Type type;
+        private final List<String> converterIds;
+
+        CacheKey(Type type, List<CustomTypeToOasConverter> converters) {
+            this.type = type;
+            this.converterIds = converters == null
+                    ? Collections.emptyList()
+                    : converters.stream().map(CustomTypeToOasConverter::cacheId).collect(Collectors.toList());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof CacheKey)) return false;
+            CacheKey that = (CacheKey) o;
+            return type.equals(that.type) && converterIds.equals(that.converterIds);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, converterIds);
+        }
+    }
+
+    private static CacheKey cacheKey(Type type, List<CustomTypeToOasConverter> converters) {
+        return new CacheKey(type, converters);
+    }
 
     private static final String fieldRefPrefix = "{\"$ref\":\"";
 
@@ -148,7 +183,7 @@ public class ClassToSchema {
     }
 
     public static String getOrDeriveSchemaWithItsRef(Class<?> klass, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
-        if (!cacheSchemaWithItsRef.containsKey(klass)) {
+        if (!cacheSchemaWithItsRef.containsKey(cacheKey(klass, converters))) {
             StringBuilder sb = new StringBuilder();
             Map<String, String> map = getOrDeriveSchemaAndNestedClasses(klass, objectFieldsRequired, converters);
             sb.append("{");
@@ -157,10 +192,10 @@ public class ClassToSchema {
                     sb.append(",").append(map.get(s)));
 
             sb.append("}");
-            cacheSchemaWithItsRef.put(klass, named(klass.getName(), sb.toString()));
+            cacheSchemaWithItsRef.put(cacheKey(klass, converters), named(klass.getName(), sb.toString()));
         }
 
-        return cacheSchemaWithItsRef.get(klass);
+        return cacheSchemaWithItsRef.get(cacheKey(klass, converters));
     }
 
     public static String getOrDeriveNonNestedSchema(Class<?> klass, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
@@ -185,18 +220,18 @@ public class ClassToSchema {
     }
 
     public static String getOrDeriveNamedSchema(Class<?> klass, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
-        if (!cacheSchema.containsKey(klass)) {
-            cacheSchema.put(klass, getOrDeriveSchema(klass, false, nested, objectFieldsRequired, converters));
+        if (!cacheSchema.containsKey(cacheKey(klass, converters))) {
+            cacheSchema.put(cacheKey(klass, converters), getOrDeriveSchema(klass, false, nested, objectFieldsRequired, converters));
         }
         String name = klass.getName();
-        return named(name, cacheSchema.get(klass));
+        return named(name, cacheSchema.get(cacheKey(klass, converters)));
     }
 
     private static String getOrDeriveSchema(Type type, Boolean useRefObject, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
 
         // TODO might handle collection and map in the cache later
-        if (cacheSchema.containsKey(type) && !useRefObject && !isCollectionOrMap(type)) {
-            return cacheSchema.get(type);
+        if (cacheSchema.containsKey(cacheKey(type, converters)) && !useRefObject && !isCollectionOrMap(type)) {
+            return cacheSchema.get(cacheKey(type, converters));
         }
 
 
@@ -206,7 +241,7 @@ public class ClassToSchema {
             we put the complete schema into cacheSchema
          */
         if (!schema.startsWith(fieldRefPrefix) && !isCollectionOrMap(type))
-            cacheSchema.put(type, schema);
+            cacheSchema.put(cacheKey(type, converters), schema);
 
         return schema;
     }
@@ -219,7 +254,7 @@ public class ClassToSchema {
 
 
     public static Map<String, String> getOrDeriveSchemaAndNestedClasses(Class<?> klass, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
-        if (!cacheMapOfDtoAndItsRefToSchemas.containsKey(klass)) {
+        if (!cacheMapOfDtoAndItsRefToSchemas.containsKey(cacheKey(klass, converters))) {
             List<Class<?>> nested = new ArrayList<>();
             registerSchemaIfNeeded(klass, objectFieldsRequired, converters);
             findAllNestedClassAndRegisterThemIfNeeded(klass, nested, objectFieldsRequired, converters);
@@ -228,9 +263,9 @@ public class ClassToSchema {
                 map.putIfAbsent(nkclass.getName(), getOrDeriveNonNestedSchema(nkclass, objectFieldsRequired, converters));
             }
 
-            cacheMapOfDtoAndItsRefToSchemas.put(klass, map);
+            cacheMapOfDtoAndItsRefToSchemas.put(cacheKey(klass, converters), map);
         }
-        return cacheMapOfDtoAndItsRefToSchemas.get(klass);
+        return cacheMapOfDtoAndItsRefToSchemas.get(cacheKey(klass, converters));
     }
 
     private static void findAllNestedClassAndRegisterThemIfNeeded(Class<?> klass, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
@@ -267,6 +302,13 @@ public class ClassToSchema {
         }
 
         if (klass != null) {
+            // custom converters take precedence, so that a caller can override how a built-in type is represented
+            for (CustomTypeToOasConverter converter : converters) {
+                if (converter.isInstanceOf(klass)) {
+                    return converter.convert();
+                }
+            }
+
             if (klass.isEnum()) {
                 String[] items = Arrays.stream(klass.getEnumConstants()).map(e -> getNameEnumConstant(e)).toArray(String[]::new);
                 return fieldEnumSchema(items);
@@ -315,11 +357,6 @@ public class ClassToSchema {
             }
             if (LocalTime.class.isAssignableFrom(klass)) {
                 return fieldSchema("string", "local-time");
-            }
-            for (CustomTypeToOasConverter converter : converters) {
-                if (converter.isInstanceOf(klass)) {
-                    return converter.convert();
-                }
             }
         }
 

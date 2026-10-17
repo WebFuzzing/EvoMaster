@@ -479,6 +479,12 @@ public class ExecutionTracer {
         }
     }
 
+    public static void addRedisHashType(RedisHashSchema redisHashSchema){
+        if (!executingInitRedis) {
+            getCurrentAdditionalInfo().addRedisHashType(redisHashSchema);
+        }
+    }
+
     public static void addCassandraTableMetadata(CassandraTableMetadata cassandraTableMetadata){
         if (!executingInitCassandra) {
             getCurrentAdditionalInfo().addCassandraTableMetadata(cassandraTableMetadata);
