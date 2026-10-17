@@ -23,6 +23,7 @@
         <module>spring-rest-h2-z3solver</module>
         <module>spring-web</module>
         <module>spring-rest-mongo</module>
+        <module>spring-rest-mongo-legacy</module>
         <module>spring-rest-bb</module>
         <module>spring-graphql-bb</module>
         <module>spring-rest-multidb</module>
@@ -75,6 +76,11 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-data-mongodb</artifactId>
+                <version>${springboot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-neo4j</artifactId>
                 <version>${springboot.version}</version>
             </dependency>
             <dependency>
