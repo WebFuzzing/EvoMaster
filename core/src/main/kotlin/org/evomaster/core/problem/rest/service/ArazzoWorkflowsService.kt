@@ -35,7 +35,7 @@ class ArazzoWorkflowsService {
     enum class PathWay {
         SUCCESS,
         FAILURE,
-        COTINUE
+        CONTINUE
     }
 
     /**
@@ -240,7 +240,7 @@ class ArazzoWorkflowsService {
      */
     private fun choosePathway(successActions: List<SuccessAction>, failureActions: List<FailureAction>) : PathWay {
         return when {
-            successActions.isEmpty() && failureActions.isEmpty() -> PathWay.COTINUE
+            successActions.isEmpty() && failureActions.isEmpty() -> PathWay.CONTINUE
 
             successActions.isEmpty() -> PathWay.FAILURE
 
