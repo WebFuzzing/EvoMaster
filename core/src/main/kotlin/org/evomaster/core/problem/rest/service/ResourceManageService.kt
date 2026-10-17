@@ -351,7 +351,8 @@ class ResourceManageService {
      * @return a resource node based on the specified [key]
      */
     fun getResourceNodeFromCluster(key : String) : RestResourceNode =
-        cluster.getResourceNode(key)?: excludedCluster[key]?: throw IllegalArgumentException("cannot find the resource with a key $key")
+        cluster.getResourceNode(key)?: excludedCluster[key]?:
+            throw IllegalArgumentException("cannot find the resource with a key $key")
 
     /**
      * @return table info
