@@ -5,6 +5,7 @@ import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.utils.RegexFlags
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import java.lang.AssertionError
 import java.lang.IllegalStateException
 import java.util.regex.Pattern
@@ -84,5 +85,22 @@ abstract class RegexTestTemplate {
         }
 
         throw AssertionError("Cannot sample $value")
+    }
+
+    /**
+     * For regex that can only match a fixed set of values, checks that every
+     * sampled value is one of [expected], and that all of them do get sampled.
+     */
+    protected fun checkSamplesExactly(regex: String, vararg expected: String, tries: Int = 500) {
+        val randomness = Randomness().apply { updateSeed(42) }
+        val gene = createGene(regex)
+        val sampled = mutableSetOf<String>()
+
+        repeat(tries) {
+            gene.randomize(randomness, false)
+            sampled.add(gene.getValueAsRawString())
+        }
+
+        assertEquals(expected.toSet(), sampled, "Wrong values sampled for: $regex")
     }
 }
