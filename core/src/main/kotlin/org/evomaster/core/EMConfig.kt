@@ -3119,7 +3119,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify whether to use an unbounded time budget for flakiness detection.")
-    var unboundBudgetForFlakiness = true
+    var unboundBudgetForFlakiness = false
 
     @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +
