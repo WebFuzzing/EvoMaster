@@ -45,7 +45,7 @@ public class ThirdPartyClassVisitor extends ClassVisitor {
             return mv;
         }
 
-        mv = new ScheduledMethodVisitor(mv);
+        mv = new ScheduledMethodVisitor(mv, bytecodeClassName, name, descriptor);
         // This creates way too many problems, as it needs to create testing targets :(
         //mv = new CheckCastMethodVisitor(mv, bytecodeClassName, name);
         mv = new MethodReplacementMethodVisitor(false, false, mv, bytecodeClassName, name, descriptor);

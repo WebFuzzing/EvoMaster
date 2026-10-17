@@ -77,7 +77,7 @@ public class CoverageClassVisitor extends ClassVisitor {
 
         ObjectiveRecorder.registerTarget(ObjectiveNaming.classObjectiveName(bytecodeClassName));
 
-        mv = new ScheduledMethodVisitor(mv);
+        mv = new ScheduledMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new LineCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new BranchCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new SuccessCallMethodVisitor(mv, bytecodeClassName, name, descriptor);
