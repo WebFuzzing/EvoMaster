@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.RxGeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -117,19 +118,7 @@ class AssertionRxGene(
      * True if there is a capture group somewhere inside [innerGene].
      */
     private val hasCaptureGroups: Boolean by lazy {
-        innerGene?.let { containsCaptureGroup(it) } ?: false
-    }
-
-    /**
-     * Looks for a capture group (i.e., a [DisjunctionListRxGene] with non-null captureGroupIndex) in the tree.
-     * The templates of quantifier genes have to be looked into separately, as they are not among the children
-     * of the quantifier so [flatView] would miss capture groups there.
-     */
-    private fun containsCaptureGroup(gene: Gene): Boolean {
-        return gene.flatView().any {
-            (it is DisjunctionListRxGene && it.captureGroupIndex != null)
-                    || (it is QuantifierRxGene && containsCaptureGroup(it.template))
-        }
+        innerGene?.let { RxGeneUtils.captureGroupIndexesIn(it).isNotEmpty() } ?: false
     }
 
     /**
