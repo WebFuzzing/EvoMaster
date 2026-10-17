@@ -76,6 +76,17 @@ public class UnitsInfoRecorder implements Serializable {
      */
     private Set<String> methodReplacements;
 
+    /** Spring scheduled methods discovered during instrumentation, identified by class#method and JVM descriptor. */
+    private final Set<String> scheduledMethods = new CopyOnWriteArraySet<>();
+
+    public static void registerScheduledMethod(String methodId) {
+        singleton.scheduledMethods.add(methodId);
+    }
+
+    public Set<String> getScheduledMethods() {
+        return Collections.unmodifiableSet(scheduledMethods);
+    }
+
 
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();

@@ -2372,6 +2372,11 @@ class EMConfig {
     @Experimental
     var instrumentMR_NET = false
 
+    @Cfg("Preserve scheduling annotations during JVM instrumentation, allowing the SUT framework to run scheduled tasks." +
+            " Must be configured before SUT classes are loaded.")
+    @Experimental
+    var instrumentMR_SCHEDULE = false
+
     @Cfg("Execute instrumentation for method replace with category NEO4J." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
@@ -3628,6 +3633,7 @@ class EMConfig {
         if (instrumentMR_SQL) categories.add(ReplacementCategory.SQL.toString())
         if (instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if (instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
+        if (instrumentMR_SCHEDULE) categories.add(ReplacementCategory.SCHEDULE.toString())
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
         if (instrumentMR_CASSANDRA) categories.add(ReplacementCategory.CASSANDRA.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
