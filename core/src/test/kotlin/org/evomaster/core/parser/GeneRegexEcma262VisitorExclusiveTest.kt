@@ -172,4 +172,20 @@ class GeneRegexEcma262VisitorExclusiveTest : RegexTestTemplate() {
     fun testCaptureGroupNumbers(){
         checkSamplesExactly("""^(?:(a)(?:b)((c)(?:d))|(e))\1\2\3\4$""", "abcdacdc", "ee")
     }
+
+    @Test
+    fun testCapturesAreResetInEachRepetition() {
+        checkSamplesExactly("""^(?:(a)|b){1,2}\1c$""", "aac", "bc", "aaac", "abc", "baac", "bbc")
+        checkSamplesExactly("""^(?:\1x|(a)){2}$""", "xx", "xa", "ax", "aa")
+        checkSamplesExactly("""^(?:(?:(a)|b)c){2}\1$""", "acaca", "bcaca", "acbc", "bcbc")
+        checkSamplesExactly("""^(?:(?:(a))?b){2}\1$""", "ababa", "baba", "abb", "bb")
+    }
+
+    @Test
+    fun testForwardAndNestedReferencesInRepetition(){
+        // the groups are reset in each repetition, so a forward reference and a nested one are always empty
+        // (so the second repetition does not see the value of the first one)
+        checkSamplesExactly("""^(\2two|(one)){2}$""", "twotwo", "twoone", "onetwo", "oneone")
+        checkSamplesExactly("""^(\1two|(one)){2}$""", "twotwo", "twoone", "onetwo", "oneone")
+    }
 }
