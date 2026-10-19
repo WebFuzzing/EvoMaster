@@ -743,4 +743,14 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         assertThrows<IllegalStateException> { checkSameAsJava("""^(?:([^\s\S])|a)\1$""") }
         checkSamplesExactly("""^(a)?\1$""", "aa")
     }
+
+    @Test
+    fun testTermThatCannotMatchAfterFlagScopeMakesAlternativeUnsatisfiable(){
+        assertThrows<IllegalStateException> { createGene("""(?i)[a&&b]+(a)""") }
+        assertThrows<IllegalStateException> { createGene("""(?i)a[a&&b]+""") }
+        // but it can be skipped when it is optional
+        checkSamplesExactly("""(?i)[a&&b]*a""", "a", "A")
+        // and a term that can match after the flag scope is still there
+        checkSamplesExactly("""^(?i)a[b-c]$""", "ab", "Ab", "ac", "Ac", "aB", "AB", "aC", "AC")
+    }
 }

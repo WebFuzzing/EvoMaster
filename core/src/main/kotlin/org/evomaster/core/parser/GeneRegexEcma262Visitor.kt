@@ -94,6 +94,13 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
+        // we can use the lexer for a total capture group count check, we compare visitor and lexer counts
+        val lexer = ctx.start.tokenSource as? RegexEcma262Lexer
+        if (lexer != null) {
+            assert(captureGroupCount == lexer.totalCaptureGroups)
+        }
+
+
         val satisfiableDisjunctions = res.genes
             .map { it as DisjunctionRxGene }
             .filter { !it.isUnsatisfiable() }
@@ -145,6 +152,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         var caret = false
         var dollar = false
+        var satisfiable = true
 
         for(i in 0 until ctx.term().size){
 
@@ -155,11 +163,15 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                 res.genes.add(gene)
             } else {
 
-                // no gene and no assertion, term and alternative are unsatisfiable
                 val assertion = resTerm.data as? String
-                    ?: return VisitResult()
 
-                if(i==0 && assertion == "^"){
+                if(assertion == null){
+                    // no gene and no assertion, term and alternative are unsatisfiable. But the rest of the terms are
+                    // still visited so capture group numbers do not get shifted
+                    satisfiable = false
+                } else if(!satisfiable){
+                    // the alternative cannot match anyway, nothing to check
+                } else if(i==0 && assertion == "^"){
                     caret = true
                 } else if(i==ctx.term().size-1 && assertion== "$"){
                     dollar = true
@@ -172,6 +184,10 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                     throw IllegalStateException("Cannot support $assertion at position $i")
                 }
             }
+        }
+
+        if(!satisfiable){
+            return VisitResult()
         }
 
         res.data = Pair(caret, dollar)

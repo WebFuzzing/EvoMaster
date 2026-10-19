@@ -458,4 +458,13 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         checkSamplesExactly("""^[(?:]$""", "(", "?", ":")
         checkCanSample("""^[(?:-z]$""", listOf("(", "?", ":", ">", "z"), 5000) // :-z is a range
     }
+
+    @Test
+    fun testCaptureGroupsAreNumberedEvenWhenAnAlternativeCannotMatch(){
+        // The first alternative can never match, as [^\s\S] never does, but the groups in it should be numbered anyway.
+        checkSamplesExactly("""^(?:[^\s\S]+(a)|(b))\2$""", "bb")
+        checkSamplesExactly("""^(?:([^\s\S])x(a)|(b))\3$""", "bb")
+        checkSamplesExactly("""^(?:[^\s\S]+(a)(b)|(c))\3$""", "cc")
+        checkSamplesExactly("""^(?:[^\s\S]+[^\d\D](a)|(b))(c)\3$""", "bcc")
+    }
 }
