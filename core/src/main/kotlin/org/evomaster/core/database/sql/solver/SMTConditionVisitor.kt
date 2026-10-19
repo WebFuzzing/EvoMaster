@@ -130,8 +130,8 @@ class SMTConditionVisitor(
         if (condition.leftOperand is SqlNullLiteralValue || condition.rightOperand is SqlNullLiteralValue) {
             return EmptySMTNode() // TODO: Change this when we add support for nullable columns in the db schema
         }
-        val left = operandAgainst(condition.leftOperand, condition.rightOperand)
-        val right = operandAgainst(condition.rightOperand, condition.leftOperand)
+        val left = comparisonOperand(condition.leftOperand, condition.rightOperand)
+        val right = comparisonOperand(condition.rightOperand, condition.leftOperand)
 
         return when (val comparator = getSMTComparator(condition.sqlComparisonOperator.toString())) {
             "=" -> AssertSMTNode(EqualsAssertion(listOf(left, right)))
@@ -249,19 +249,7 @@ class SMTConditionVisitor(
         operand.equals("true", ignoreCase = true) || operand.equals("false", ignoreCase = true)
 
     /**
-     * Whether any table in the schema declares a column with this name.
-     *
-     * Deliberately broader than the resolution rules for an unqualified column, which would look only
-     * at the tables in scope. The two possible mistakes are not symmetric: treating a real column as a
-     * boolean literal yields data that is silently wrong, while declining to treat a genuine literal as
-     * one yields a formula Z3 rejects — visible, counted, and no worse than the behaviour before the
-     * literal was recognised at all. The broad check errs towards the second.
-     *
-     * It also avoids comparing a folded table name against the schema's own spelling, which is how the
-     * scoped version would have to identify the tables in scope.
-     */
-    /**
-     * Translates one side of a comparison, given the other side.
+     * Translates one operand of a comparison (`a op b`), given the operand it is compared with.
      *
      * A DATE or TIMESTAMP column is encoded as epoch seconds (an SMT Int), and a typed literal such as
      * `DATE '2024-01-01'` already arrives as one. A plain string literal, `'2024-01-01'`, does not:
@@ -269,7 +257,7 @@ class SMTConditionVisitor(
      * query got no data. It is read as a date or timestamp instead; if it is neither, the
      * DateTimeParseException drops the condition like any other untranslatable one.
      */
-    private fun operandAgainst(operand: SqlCondition, other: SqlCondition): String =
+    private fun comparisonOperand(operand: SqlCondition, other: SqlCondition): String =
         if (operand is SqlStringLiteralValue && other is SqlColumn && isTemporalColumn(other)) {
             temporalLiteral(operand)
         } else {
@@ -296,6 +284,18 @@ class SMTConditionVisitor(
             type.equals(SmtLibGenerator.TIMESTAMP_TYPE, ignoreCase = true)
     }
 
+    /**
+     * Whether any table in the schema declares a column with this name.
+     *
+     * Deliberately broader than the resolution rules for an unqualified column, which would look only
+     * at the tables in scope. The two possible mistakes are not symmetric: treating a real column as a
+     * boolean literal yields data that is silently wrong, while declining to treat a genuine literal as
+     * one yields a formula Z3 rejects — visible, counted, and no worse than the behaviour before the
+     * literal was recognised at all. The broad check errs towards the second.
+     *
+     * It also avoids comparing a folded table name against the schema's own spelling, which is how the
+     * scoped version would have to identify the tables in scope.
+     */
     private fun isAColumn(operand: String): Boolean {
         return tables.any { table ->
             table.columns.any { column -> column.name.equals(operand, ignoreCase = true) }
