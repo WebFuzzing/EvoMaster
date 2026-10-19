@@ -254,6 +254,21 @@ public class SMTResultParserTest {
     }
 
     @Test
+    public void testParseComposedTypeWithExtraWhitespace() {
+        // Z3 does not print these spaces, but SMT-LIB allows whitespace between any two tokens
+        String response = "sat\n(  (   doc__1   (  ( as   id-body   DocRow )   (- 2)   \"x\" )  ) )\n"
+                + "( ( note__1\n   (  id-body 1\n \"a b\" ) ) )";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue doc1 = (StructValue) result.get("doc__1");
+        assertEquals(-2, ((LongValue) doc1.getField("ID")).getValue());
+        assertEquals("x", ((StringValue) doc1.getField("BODY")).getValue());
+        StructValue note1 = (StructValue) result.get("note__1");
+        assertEquals(1, ((LongValue) note1.getField("ID")).getValue());
+        assertEquals("a b", ((StringValue) note1.getField("BODY")).getValue());
+    }
+
+    @Test
     public void testParseComposedTypeWithRationalValue() {
         // Z3 prints a Real that is not an integer as a division, e.g. for PRICE = 19.99
         String response = "sat\n((p__1 (id-price 0 (/ 1999.0 100.0))))";

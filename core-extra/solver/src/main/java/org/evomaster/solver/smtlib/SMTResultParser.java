@@ -42,7 +42,11 @@ public class SMTResultParser {
         // The constructor name starts with a letter, which tells it apart from a value such as (- 4).
         // When two datatypes share a constructor name, Z3 qualifies it with its sort:
         // ((variableName ((as field1-field2-... SortName) value1 value2 ...)))
-        Pattern composedTypePattern = Pattern.compile("\\(\\((\\w+\\d+) \\((?=[A-Za-z_]|\\(as )");
+        // Z3 writes no space after an opening parenthesis and one space between tokens, but SMT-LIB allows
+        // any whitespace there, so the pattern accepts it. A line break also ends up as a single space,
+        // since lines are trimmed and joined with one space below.
+        Pattern composedTypePattern = Pattern.compile(
+                "\\(\\s*\\(\\s*(\\w+\\d+)\\s+\\((?=\\s*(?:[A-Za-z_]|\\(\\s*as\\s))");
 
         // Buffer for multiline values
         StringBuilder buffer = new StringBuilder();
@@ -180,11 +184,12 @@ public class SMTResultParser {
      * for every value of either table.
      */
     private static String constructorName(String token) {
-        if (token.startsWith("(as ")) {
-            return token.substring("(as ".length()).trim().split("\\s+")[0];
-        }
-        return token;
+        Matcher qualified = QUALIFIED_CONSTRUCTOR.matcher(token);
+        return qualified.lookingAt() ? qualified.group(1) : token;
     }
+
+    /** A qualified constructor, {@code (as name Sort)}, with any whitespace SMT-LIB allows between its parts. */
+    private static final Pattern QUALIFIED_CONSTRUCTOR = Pattern.compile("\\(\\s*as\\s+([^\\s()]+)");
 
     /**
      * Evaluates a numeric term as Z3 prints it in a model: a literal ({@code 6}, {@code 20.0}), a
