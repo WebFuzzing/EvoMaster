@@ -58,7 +58,10 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         txt[1] == 'c' -> interpretControlEscapeLetterSequence(txt, inCharClass)
         txt[1] in escapeMap -> escapeMap[txt[1]]!!
         txt[1] in hexEscapePrefixes -> Character.toString(txt.substring(2).toInt(16))
+        // we use 0 to 7 here as those are octal digits
         txt[1] in '0'..'7' -> Character.toString(txt.substring(1).toInt(8)) // legacy octal
+        // if at this point the escape sequence is not an octal escape
+        // then it can only be an identity escape (like \8, \{, etc.)
         else -> txt.substring(1) // identity escape
     }
 
