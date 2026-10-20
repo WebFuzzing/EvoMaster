@@ -28,19 +28,22 @@ object Neo4jInsertBuilder {
      * @param existingInsertionKeys keys of the insertions already in the individual
      * @param schema what the SUT's entities declare about each label; with it, a node also gets the
      *               properties the query did not fix, with free genes
+     * @param uniqueKeys the keys the inserted nodes must not repeat, handed to each action so that it
+     *                   can be repaired when it does
      * @return one action per failed query not already represented by [existingInsertionKeys]
      */
     fun buildInsertActions(
         failedQueries: List<Neo4jFailedQueryDto>,
         existingInsertionKeys: Set<String>,
-        schema: Neo4jSchema? = null
+        schema: Neo4jSchema? = null,
+        uniqueKeys: Neo4jUniqueKeys? = null
     ): List<Neo4jDbAction> = failedQueries
-        .mapNotNull { toActionOrNull(it, schema) }
+        .mapNotNull { toActionOrNull(it, schema, uniqueKeys) }
         .filterNot { it.insertionKey() in existingInsertionKeys }
         .distinctBy { it.insertionKey() }
 
     /** Converts one failed query into an action, or returns null when it cannot be inserted as reported. */
-    private fun toActionOrNull(query: Neo4jFailedQueryDto, schema: Neo4jSchema?): Neo4jDbAction? {
+    private fun toActionOrNull(query: Neo4jFailedQueryDto, schema: Neo4jSchema?, uniqueKeys: Neo4jUniqueKeys?): Neo4jDbAction? {
         val nodes = query.nodes ?: emptyList()
         if (nodes.isEmpty()) return null
 
@@ -53,7 +56,7 @@ object Neo4jInsertBuilder {
         val edgeTemplates = (query.edges ?: emptyList()).map { edge ->
             toEdgeOrNull(edge, indexById) ?: return null
         }
-        return Neo4jDbAction(nodeTemplates, edgeTemplates, query.query ?: "")
+        return Neo4jDbAction(nodeTemplates, edgeTemplates, query.query ?: "", uniqueKeys)
     }
 
     private fun toEdgeOrNull(edge: Neo4jEdgeInsertionDto, indexById: Map<Long?, Int>): Neo4jEdgeTemplate? {

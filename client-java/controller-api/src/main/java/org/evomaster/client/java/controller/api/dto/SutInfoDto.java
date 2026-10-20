@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jDbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
@@ -87,6 +88,12 @@ public class SutInfoDto {
      * know its schema to be able to do operations on it.
      */
     public DbInfoDto sqlSchemaDto;
+
+    /**
+     * If the application is using a Neo4j database, the keys its nodes must not repeat and the values
+     * of those keys already in the database.
+     */
+    public Neo4jDbInfoDto neo4jDbInfoDto;
 
 
     /**

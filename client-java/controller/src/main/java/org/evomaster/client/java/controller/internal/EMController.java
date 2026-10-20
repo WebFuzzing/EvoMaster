@@ -267,6 +267,12 @@ public class EMController {
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
 
+        try {
+            dto.neo4jDbInfoDto = noKillSwitch(() -> sutController.getNeo4jDbInfo(dto.unitsInfoDto.neo4jEntities));
+        } catch (RuntimeException e) {
+            // without it the search still runs, it just cannot keep inserted nodes from repeating keys
+            SimpleLogger.warn("Failed to read the unique keys of Neo4j: " + e.getMessage());
+        }
 
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
