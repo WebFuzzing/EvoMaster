@@ -1,11 +1,14 @@
 package org.evomaster.core.database.neo4j
 
 import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityDto
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityPropertyDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jEdgeInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jNodeInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -31,6 +34,30 @@ class Neo4jInsertBuilderTest {
             }
 
         fun entry(key: String, type: Neo4jPropertyTypeDto, value: String) = Neo4jInsertionEntryDto(key, type, value)
+
+        fun property(name: String, type: Neo4jPropertyTypeDto, id: Boolean = false, generated: Boolean = false,
+                     min: Long? = null, max: Long? = null, enumValues: List<String> = emptyList()) =
+            Neo4jEntityPropertyDto().also {
+                it.name = name; it.type = type; it.isId = id; it.isGenerated = generated
+                it.minValue = min; it.maxValue = max; it.enumValues = enumValues.toMutableList()
+            }
+
+        fun entity(vararg labels: String, properties: List<Neo4jEntityPropertyDto>) =
+            Neo4jEntityDto().also { it.className = "com.foo." + labels[0]; it.labels = labels.toMutableList(); it.properties = properties.toMutableList() }
+
+        /** What arimaa declares for Player and User. */
+        fun arimaaSchema() = Neo4jSchema(listOf(
+            entity("Player", properties = listOf(
+                property("id", Neo4jPropertyTypeDto.INTEGER, id = true),
+                property("rating", Neo4jPropertyTypeDto.INTEGER),
+                property("gamesPlayed", Neo4jPropertyTypeDto.INTEGER))),
+            entity("User", "Account", properties = listOf(
+                property("id", Neo4jPropertyTypeDto.INTEGER, id = true, generated = true),
+                property("username", Neo4jPropertyTypeDto.STRING),
+                property("email", Neo4jPropertyTypeDto.STRING),
+                property("active", Neo4jPropertyTypeDto.BOOLEAN),
+                property("score", Neo4jPropertyTypeDto.FLOAT)))
+        ))
 
         /** MATCH (p:Player)-[:HAS_USER]->(u:User {username: 'ana'}) that found nothing. */
         fun playerWithUser(): Neo4jFailedQueryDto = Neo4jFailedQueryDto(
@@ -98,5 +125,66 @@ class Neo4jInsertBuilderTest {
         val actions = Neo4jInsertBuilder.buildInsertActions(listOf(playerWithUser()), setOf(existing.insertionKey()))
 
         assertTrue(actions.isEmpty())
+    }
+
+    @Test
+    fun completesTheNodesWithThePropertiesTheSchemaDeclares() {
+        val action = Neo4jInsertBuilder.buildInsertActions(listOf(playerWithUser()), emptySet(), arimaaSchema()).single()
+
+        val player = action.nodes[0].properties
+        assertEquals(listOf("id", "rating", "gamesPlayed"), player.map { it.key })
+        assertTrue(player.all { !it.fromQuery && it.gene is LongGene })
+
+        val user = action.nodes[1].properties
+        assertEquals(listOf("username", "email", "active", "score"), user.map { it.key })
+        assertTrue(user[0].fromQuery)
+        assertEquals("ana", (user[0].gene as StringGene).value)
+        assertTrue(user.drop(1).all { !it.fromQuery })
+        assertTrue(user[1].gene is StringGene)
+        assertTrue(user[2].gene is BooleanGene)
+        assertTrue(user[3].gene is DoubleGene)
+
+        assertEquals(1, action.edges.single().properties.size)
+        assertEquals(8, action.seeTopGenes().size)
+        assertEquals(6, action.seeSchemaGenes().size)
+    }
+
+    @Test
+    fun schemaPropertiesDoNotChangeTheInsertionKey() {
+        val bare = Neo4jInsertBuilder.buildInsertActions(listOf(playerWithUser()), emptySet()).single()
+        val completed = Neo4jInsertBuilder.buildInsertActions(listOf(playerWithUser()), emptySet(), arimaaSchema()).single()
+
+        assertEquals(bare.insertionKey(), completed.insertionKey())
+        assertTrue(Neo4jInsertBuilder.buildInsertActions(listOf(playerWithUser()), setOf(completed.insertionKey()), arimaaSchema()).isEmpty())
+    }
+
+    @Test
+    fun labelsUnknownToTheSchemaAreLeftAsTheQuerySaysAndLabelsAreMerged() {
+        val query = Neo4jFailedQueryDto("q", listOf(node(0, "Ghost"), node(1, "Account", "Player")), emptyList())
+        val action = Neo4jInsertBuilder.buildInsertActions(listOf(query), emptySet(), arimaaSchema()).single()
+
+        assertTrue(action.nodes[0].properties.isEmpty())
+        assertEquals(listOf("username", "email", "active", "score", "id", "rating", "gamesPlayed"),
+            action.nodes[1].properties.map { it.key })
+    }
+
+    @Test
+    fun schemaBoundsAndEnumsShapeTheFreeGenes() {
+        val schema = Neo4jSchema(listOf(entity("Adopter", properties = listOf(
+            property("id", Neo4jPropertyTypeDto.STRING, id = true),
+            property("budget", Neo4jPropertyTypeDto.INTEGER, min = Int.MIN_VALUE.toLong(), max = Int.MAX_VALUE.toLong()),
+            property("level", Neo4jPropertyTypeDto.STRING, enumValues = listOf("BRONZE", "GOLD"))))))
+        val query = Neo4jFailedQueryDto("q", listOf(node(0, "Adopter", properties = listOf(entry("id", Neo4jPropertyTypeDto.STRING, "a1")))), emptyList())
+
+        val props = Neo4jInsertBuilder.buildInsertActions(listOf(query), emptySet(), schema).single().nodes.single().properties
+        assertEquals(listOf("id", "budget", "level"), props.map { it.key })
+
+        val budget = props[1].gene as LongGene
+        assertEquals(Int.MIN_VALUE.toLong(), budget.min)
+        assertEquals(Int.MAX_VALUE.toLong(), budget.max)
+
+        val level = props[2].gene as EnumGene<*>
+        assertEquals(listOf("BRONZE", "GOLD"), level.values)
+        assertEquals("BRONZE", props[2].valueAsText())
     }
 }

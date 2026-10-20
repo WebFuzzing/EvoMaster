@@ -18,9 +18,9 @@ import java.sql.DriverManager
 /**
  * Covers the memo of queries that cannot be translated.
  *
- * The solver's result cache deliberately stores only `SAT` and `UNSAT`: an `UNKNOWN` or an `ERROR`
- * from Z3 may be a timeout or a transient container fault, and caching one would turn a passing
- * problem into a permanent one. A *translation* failure is different in kind — the same SQL against
+ * The solver's result cache deliberately stores only `SAT`, `UNSAT` and the `ERROR`s the same formula
+ * always reproduces: an `UNKNOWN` or any other `ERROR` from Z3 may be a timeout or a transient
+ * container fault, and caching one would turn a passing problem into a permanent one. A *translation* failure is different in kind — the same SQL against
  * the same schema fails the same way every time — so remembering it is safe, and not remembering it
  * is expensive: the search keeps producing the same untranslatable queries, and each encounter pays
  * the parse and the generation attempt again.
@@ -36,11 +36,8 @@ class UntranslatableQueryCacheTest {
         private lateinit var schemaDto: DbInfoDto
 
         /**
-         * A second schema, identical but for one column of a type the generator does not map.
-         *
-         * It has to be a separate schema: table declarations are emitted for *every* table before any
-         * query-specific work, so a single unmapped column makes generation fail for every query
-         * against that schema, not only for queries touching the offending table.
+         * A second schema, with one column of a type the generator does not map. A query reading that
+         * table fails while generating SMT-LIB; queries on other tables are unaffected.
          */
         private lateinit var schemaWithUnsupportedType: DbInfoDto
         private lateinit var unsupportedConnection: Connection
@@ -55,7 +52,7 @@ class UntranslatableQueryCacheTest {
         private const val CACHE_BOUND = 128
 
         /** Valid SQL, run against [schemaWithUnsupportedType] so it fails while generating SMT-LIB. */
-        private const val UNSUPPORTED_TYPE = "SELECT * FROM blobs WHERE id = 1"
+        private const val UNSUPPORTED_TYPE = "SELECT * FROM periods WHERE id = 1"
 
         @JvmStatic
         @BeforeAll
@@ -71,7 +68,7 @@ class UntranslatableQueryCacheTest {
                 DriverManager.getConnection("jdbc:h2:mem:untranslatable_unsupported", "sa", "")
             SqlScriptRunner.execCommand(
                 unsupportedConnection,
-                "CREATE TABLE blobs(id bigint primary key, payload blob);\n"
+                "CREATE TABLE periods(id bigint primary key, length interval year);\n"
             )
             schemaWithUnsupportedType = DbInfoExtractor.extract(unsupportedConnection)
             // No injector here, so the caches have to be allocated explicitly. The Z3 executor is

@@ -16,13 +16,17 @@ import org.evomaster.solver.smtlib.assertion.*
  * @param tables A list of table definitions, used to determine if an operand is a column.
  * @param rowIndex The index of the row to be used in SMT-LIB variable declarations.
  * @param columnScope Decides whether a column reference belongs to a derived table. See [ColumnScope].
+ * @param queryTables The schema tables the query reads from, by original name, mapped to their SMT-LIB
+ *                    names. An unqualified column is resolved to the one of them that has it, falling
+ *                    back to [defaultTableName] when none or several do.
  */
 class SMTConditionVisitor(
     private val defaultTableName: String,
     private val tableAliases: Map<String, String>,
     private val tables: List<TableDto>,
     private val rowIndex: Int,
-    private val columnScope: ColumnScope = ColumnScope.UNRESOLVED
+    private val columnScope: ColumnScope = ColumnScope.UNRESOLVED,
+    private val queryTables: Map<String, String> = emptyMap()
 ) : SqlConditionVisitor<SMTNode, Void> {
 
     /**
@@ -63,6 +67,21 @@ class SMTConditionVisitor(
      * @param columnName The name of the column.
      * @return The SMT-LIB column reference string.
      */
+    /**
+     * The query table that declares an unqualified column. In a JOIN, an unqualified column can belong
+     * to any of the joined tables; resolving it to a fixed default would constrain a column of the
+     * wrong row, or one that table does not even have.
+     *
+     * @return the SMT-LIB name of the table, or null when no query table or more than one declares it
+     */
+    private fun tableOwningColumn(columnName: String): String? =
+        queryTables.filterKeys { queryTable ->
+            tables.any { table ->
+                table.id.name.equals(queryTable, ignoreCase = true) &&
+                    table.columns.any { it.name.equals(columnName, ignoreCase = true) }
+            }
+        }.values.toSet().singleOrNull()
+
     private fun getColumnReference(tableName: String, columnName: String): String {
         val rowConstant = SmtLibGenerator.rowConstantName(convertToAscii(tableName).lowercase(), rowIndex)
         return "(${convertToAscii(columnName).uppercase()} $rowConstant)"
@@ -155,7 +174,7 @@ class SMTConditionVisitor(
 
                 val tableName = sqlCondition.tableName?.let {
                     tableAliases[it] ?: it
-                } ?: defaultTableName
+                } ?: tableOwningColumn(name) ?: defaultTableName
 
                 /*
                     A column of a derived table — a sub-select in FROM or JOIN, a CTE, a lateral
