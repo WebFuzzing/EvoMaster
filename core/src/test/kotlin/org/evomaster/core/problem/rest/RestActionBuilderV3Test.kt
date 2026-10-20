@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.time.format.DateTimeFormatter
+import org.evomaster.core.search.gene.interfaces.UserExamplesGene
 
 class RestActionBuilderV3Test{
 
@@ -282,6 +283,40 @@ class RestActionBuilderV3Test{
             else
                 assertEquals(1, fields.size)
         }
+    }
+
+    @Test
+    fun testExamplesPassedBesideADtoSchema() {
+
+        RestActionBuilderV3.cleanCache()
+
+        val name = "Note"
+        val dtoSchema = """
+            "$name": {
+                "$name": {
+                    "type": "object",
+                    "required": ["text"],
+                    "properties": { "text": { "type": "string" } }
+                }
+            }
+        """.trimIndent()
+        val example = ObjectMapper().readTree("""{"text": "hello"}""")
+        val options = RestActionBuilderV3.Options(probUseExamples = 0.5)
+
+        val withExample = RestActionBuilderV3.createGeneForDTO(name, dtoSchema, options, listOf(Pair(example, "greeting")))
+        assertTrue(withExample is ChoiceGene<*>, withExample::class.simpleName)
+        val named = withExample.flatView()
+            .filterIsInstance<UserExamplesGene>()
+            .filter { it.isUsedForExamples() }
+            .flatMap { it.getAvailableExampleNames() }
+        assertEquals(listOf("greeting"), named)
+
+        //the cache is keyed on the schema alone, so neither call may be handed the other's gene
+        val without = RestActionBuilderV3.createGeneForDTO(name, dtoSchema, options)
+        assertTrue(without is ObjectGene, without::class.simpleName)
+
+        val again = RestActionBuilderV3.createGeneForDTO(name, dtoSchema, options, listOf(Pair(example, "greeting")))
+        assertTrue(again is ChoiceGene<*>, again::class.simpleName)
     }
 
     @ParameterizedTest
