@@ -23,6 +23,9 @@ public class DynamoDbExpressionParserTest extends DynamoDbTestBase {
     @Test
     public void testAttributeTypeRequiresAValidStringPlaceholder() {
         for (DynamoDbAttributeType expectedType : DynamoDbAttributeType.values()) {
+            if (expectedType == DynamoDbAttributeType.UNSET) {
+                continue;
+            }
             TypeOperation operation = castAs(parser.parse(
                     "attribute_type(profile, :expectedType)",
                     Collections.emptyMap(),
@@ -37,6 +40,8 @@ public class DynamoDbExpressionParserTest extends DynamoDbTestBase {
         assertInvalidExpression("attribute_type(profile, :expectedType)", ":expectedType", 10L);
         assertInvalidExpression("attribute_type(profile, :expectedType)", ":expectedType", "s");
         assertInvalidExpression("attribute_type(profile, :expectedType)", ":expectedType", "PLAYER");
+        assertInvalidExpression("attribute_type(profile, :expectedType)", ":expectedType", "UNSET");
+        assertThrows(IllegalArgumentException.class, () -> DynamoDbAttributeType.fromToken(null));
     }
 
     @Test

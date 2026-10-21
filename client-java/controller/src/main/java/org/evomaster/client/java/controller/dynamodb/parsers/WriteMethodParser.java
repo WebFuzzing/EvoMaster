@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.dynamodb.parsers;
 
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
+import org.evomaster.client.java.instrumentation.DynamoDbRequestSnapshot;
 
 import java.util.Collections;
 import java.util.Map;
@@ -22,7 +23,7 @@ abstract class WriteMethodParser extends DynamoDbBaseApiMethodParser {
      * {@inheritDoc}
      */
     @Override
-    public final Map<String, ParsedDynamoDbRequest> parseRequest(Object ddbRequest) {
+    public final Map<String, ParsedDynamoDbRequest> parseRequest(DynamoDbRequestSnapshot ddbRequest) {
         String tableName = readValidTableName(ddbRequest);
         if (tableName == null) {
             return Collections.emptyMap();
@@ -30,7 +31,7 @@ abstract class WriteMethodParser extends DynamoDbBaseApiMethodParser {
 
         QueryOperation keyCondition = requiresKeyCondition() ? parseKeyCondition(ddbRequest) : null;
         QueryOperation filterExpression = parseExpression(
-                readString(ddbRequest, METHOD_CONDITION_EXPRESSION),
+                ddbRequest.filterExpression(),
                 readNameMap(ddbRequest),
                 readValueMap(ddbRequest)
         );

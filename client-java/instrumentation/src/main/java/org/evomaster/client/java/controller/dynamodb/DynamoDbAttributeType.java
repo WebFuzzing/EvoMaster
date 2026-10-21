@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * DynamoDB attribute types accepted by the {@code attribute_type} expression function.
+ * DynamoDB attribute types captured in snapshots and accepted by the {@code attribute_type} expression function.
  */
 public enum DynamoDbAttributeType {
 
@@ -17,13 +17,16 @@ public enum DynamoDbAttributeType {
     BOOLEAN("BOOL", ValueFamily.NONE, false),
     NULL("NULL", ValueFamily.NONE, false),
     LIST("L", ValueFamily.NONE, false),
-    MAP("M", ValueFamily.NONE, false);
+    MAP("M", ValueFamily.NONE, false),
+    UNSET(null, ValueFamily.NONE, false);
 
     private static final Map<String, DynamoDbAttributeType> BY_TOKEN = new HashMap<>();
 
     static {
         for (DynamoDbAttributeType type : values()) {
-            BY_TOKEN.put(type.token, type);
+            if (type.token != null) {
+                BY_TOKEN.put(type.token, type);
+            }
         }
     }
 
@@ -60,7 +63,7 @@ public enum DynamoDbAttributeType {
     }
 
     /**
-     * @return DynamoDB type token used in expression attribute values
+     * @return DynamoDB type token used in expression attribute values, or {@code null} for {@link #UNSET}
      */
     public String getToken() {
         return token;

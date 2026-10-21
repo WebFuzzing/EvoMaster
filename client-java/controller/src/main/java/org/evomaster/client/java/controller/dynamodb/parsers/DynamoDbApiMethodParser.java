@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.dynamodb.parsers;
 
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.DynamoDbRequestSnapshot;
 
 import java.util.Map;
 
@@ -23,5 +24,5 @@ public interface DynamoDbApiMethodParser {
      * @param ddbRequest DynamoDB request object
      * @return a map of parsed requests by table name
      */
-    Map<String, ParsedDynamoDbRequest> parseRequest(Object ddbRequest);
+    Map<String, ParsedDynamoDbRequest> parseRequest(DynamoDbRequestSnapshot ddbRequest);
 }

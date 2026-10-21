@@ -5,11 +5,12 @@ import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.OrOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.DynamoDbRequestSnapshot;
+import org.evomaster.client.java.instrumentation.DynamoDbValueSnapshot;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 
-import static org.evomaster.client.java.controller.dynamodb.DynamoDbReflectionHelper.invokeNoArg;
 
 /**
  * Parser for DynamoDB {@code BatchGetItem} requests.
@@ -28,32 +29,29 @@ public class BatchGetItemApiMethodParser extends DynamoDbBaseApiMethodParser {
      * {@inheritDoc}
      */
     @Override
-    @SuppressWarnings("unchecked")
-    public Map<String, ParsedDynamoDbRequest> parseRequest(Object ddbRequest) {
-        Object requestItemsObj = invokeNoArg(ddbRequest, METHOD_REQUEST_ITEMS);
-        if (!(requestItemsObj instanceof Map<?, ?>)) {
+    public Map<String, ParsedDynamoDbRequest> parseRequest(DynamoDbRequestSnapshot ddbRequest) {
+        Map<String, DynamoDbRequestSnapshot.KeysAndAttributesSnapshot> batchRequestItems = ddbRequest.batchRequestItems();
+        if (batchRequestItems == null) {
             SimpleLogger.uniqueWarn("Unexpected object type from requestItems in a BatchGetItem DynamoDB query");
             return Collections.emptyMap();
         }
 
         Map<String, ParsedDynamoDbRequest> result = new LinkedHashMap<>();
-        Map<?, ?> requestItems = (Map<?, ?>) requestItemsObj;
-        for (Map.Entry<?, ?> entry : requestItems.entrySet()) {
-            String tableName = entry.getKey() == null ? null : String.valueOf(entry.getKey());
+        for (Map.Entry<String, DynamoDbRequestSnapshot.KeysAndAttributesSnapshot> entry : batchRequestItems.entrySet()) {
+            String tableName = entry.getKey() == null ? null : entry.getKey();
             if (tableName == null || tableName.trim().isEmpty()) {
                 SimpleLogger.uniqueWarn("Failed to parse tablename for BatchGetItem");
                 continue;
             }
 
-            Object keysAndAttributes = entry.getValue();
-            Object keysObj = invokeNoArg(keysAndAttributes, METHOD_KEYS);
-            if (!(keysObj instanceof Collection<?>)) {
+            List<Map<String, DynamoDbValueSnapshot>> keys = entry.getValue() == null ? null : entry.getValue().keys();
+            if (keys == null) {
                 SimpleLogger.uniqueWarn("Failed to parse keys for BatchGetItem for table: " + tableName);
                 continue;
             }
 
             List<QueryOperation> keyConditions = new ArrayList<>();
-            for (Object rawKey : (Collection<Object>) keysObj) {
+            for (Map<String, DynamoDbValueSnapshot> rawKey : keys) {
                 QueryOperation keyCondition = buildEqualsFromMap(DynamoDbAttributeValueHelper.toPlainMap(rawKey));
                 if (keyCondition != null) {
                     keyConditions.add(keyCondition);

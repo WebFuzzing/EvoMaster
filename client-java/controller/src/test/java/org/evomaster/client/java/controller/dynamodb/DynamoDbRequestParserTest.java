@@ -2,7 +2,9 @@ package org.evomaster.client.java.controller.dynamodb;
 
 import org.evomaster.client.java.controller.dynamodb.operations.*;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.*;
+import org.evomaster.client.java.instrumentation.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.DynamoDbRequestSnapshot;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.SdkBytes;
 
@@ -17,7 +19,19 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class DynamoDbRequestParserTest extends DynamoDbTestBase {
 
-    private final DynamoDbRequestParser parser = new DynamoDbRequestParser();
+    private final TestParser parser = new TestParser();
+
+    private static final class TestParser {
+
+        private final DynamoDbRequestParser delegate = new DynamoDbRequestParser();
+
+        private Map<String, ParsedDynamoDbRequest> parseByTable(Object request, DynamoDbOperationNames operationName) {
+            DynamoDbRequestSnapshot snapshot = request instanceof DynamoDbRequestSnapshot
+                    ? (DynamoDbRequestSnapshot) request
+                    : DynamoDbRequestSnapshot.from(request);
+            return delegate.parseByTable(snapshot, operationName);
+        }
+    }
 
     @Test
     public void testParseByTableGuards() {
@@ -77,6 +91,35 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
         ExistsOperation notExists = castAs(filterOr.getConditions().get(1), ExistsOperation.class);
         assertEquals("deletedAt", notExists.getFieldName());
         assertFalse(notExists.isExists());
+    }
+
+    @Test
+    public void testQueryParsesSerializableRequestSnapshot() {
+        QueryRequest request = QueryRequest.builder()
+                .tableName("players")
+                .keyConditionExpression("#player = :player AND #data = :data")
+                .expressionAttributeNames(names("#player", "playerName", "#data", "data"))
+                .expressionAttributeValues(attributeValues(
+                        ":player", stringValue("Messi"),
+                        ":data", AttributeValue.builder().b(SdkBytes.fromByteArray(new byte[]{10, 7, 86})).build()))
+                .build();
+        DynamoDbCommand command = new DynamoDbCommand(
+                Collections.singletonList("players"),
+                DynamoDbOperationNames.QUERY,
+                request,
+                true,
+                1L);
+
+        ParsedDynamoDbRequest parsedRequest = parser.parseByTable(
+                command.getDdbRequest(), command.getOperationName()).get("players");
+
+        AndOperation keyCondition = castAs(parsedRequest.getKeyCondition(), AndOperation.class);
+        assertEquals(2, keyCondition.getConditions().size());
+        assertComparison(keyCondition.getConditions().get(0), EqualsOperation.class, "playerName", "Messi");
+        EqualsOperation<?> binaryCondition = castAs(keyCondition.getConditions().get(1), EqualsOperation.class);
+        assertEquals("data", binaryCondition.getFieldName());
+        assertArrayEquals(new byte[]{10, 7, 86}, (byte[]) binaryCondition.getValue());
+        assertNull(parsedRequest.getFilterExpression());
     }
 
     @Test
@@ -247,8 +290,8 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
         assertComparison(parsedRequest.getKeyCondition(), EqualsOperation.class, "id", "messi-10");
         BetweenOperation between = castAs(parsedRequest.getFilterExpression(), BetweenOperation.class);
         assertEquals("profilePhoto", between.getFieldName());
-        assertArrayEquals(lowerBound.asByteArray(), ((SdkBytes) between.getLowerBound()).asByteArray());
-        assertArrayEquals(upperBound.asByteArray(), ((SdkBytes) between.getUpperBound()).asByteArray());
+        assertArrayEquals(lowerBound.asByteArray(), (byte[]) between.getLowerBound());
+        assertArrayEquals(upperBound.asByteArray(), (byte[]) between.getUpperBound());
     }
 
     @Test
@@ -299,9 +342,15 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
         BatchGetItemRequest request = BatchGetItemRequest.builder()
                 .requestItems(requestItems)
                 .build();
+        DynamoDbCommand command = new DynamoDbCommand(
+                Arrays.asList("players", "matches"),
+                DynamoDbOperationNames.BATCH_GET_ITEM,
+                request,
+                true,
+                1L);
 
         Map<String, ParsedDynamoDbRequest> parsed =
-                parser.parseByTable(request, DynamoDbOperationNames.BATCH_GET_ITEM);
+                parser.parseByTable(command.getDdbRequest(), command.getOperationName());
         assertEquals(2, parsed.size());
 
         OrOperation players = castAs(parsed.get("players").getKeyCondition(), OrOperation.class);
@@ -333,6 +382,17 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
     public void testBatchGetSkipsInvalidRequestItemsShapes() {
         assertTrue(parser.parseByTable(new RequestWithNonMapRequestItems(), DynamoDbOperationNames.BATCH_GET_ITEM).isEmpty());
         assertTrue(parser.parseByTable(new RequestWithNonCollectionKeys(), DynamoDbOperationNames.BATCH_GET_ITEM).isEmpty());
+        assertNull(DynamoDbRequestSnapshot.from(new RequestWithNonCollectionKeys())
+                .batchRequestItems().get("players").keys());
+    }
+
+    /** Verifies that an invalid batch-get key does not hide a valid key for the same table. */
+    @Test
+    public void testBatchGetSkipsMalformedKeyEntries() {
+        DynamoDbRequestSnapshot snapshot = DynamoDbRequestSnapshot.from(new RequestWithMalformedKeyEntry());
+        assertEquals(1, snapshot.batchRequestItems().get("players").keys().size());
+        ParsedDynamoDbRequest parsed = parser.parseByTable(snapshot, DynamoDbOperationNames.BATCH_GET_ITEM).get("players");
+        assertComparison(parsed.getKeyCondition(), EqualsOperation.class, "id", "messi-10");
     }
 
     @Test
@@ -377,8 +437,8 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
         }
     }
 
-    //Reflection will invoke fake class, method
-    private static class RequestWithNonCollectionKeys {
+    /** Supplies request items whose keys accessor has an invalid shape. */
+    public static final class RequestWithNonCollectionKeys {
         @SuppressWarnings("unused") // will be invoked by reflection
         public Map<String, Object> requestItems() {
             Map<String, Object> map = new LinkedHashMap<>();
@@ -387,11 +447,29 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
         }
     }
 
-    //Reflection will invoke fake class, method
-    private static class NonCollectionKeysHolder {
+    /** Supplies a non-collection keys result. */
+    public static final class NonCollectionKeysHolder {
         @SuppressWarnings("unused") // will be invoked by reflection
         public Object keys() {
             return "not-a-collection";
+        }
+    }
+
+    /** Supplies a batch-get request containing one valid and one malformed key. */
+    public static final class RequestWithMalformedKeyEntry {
+
+        /** Returns request items for the players table. */
+        public Map<String, Object> requestItems() {
+            return Collections.singletonMap("players", new KeysWithMalformedEntry());
+        }
+    }
+
+    /** Supplies one valid key map followed by an invalid scalar. */
+    public static final class KeysWithMalformedEntry {
+
+        /** Returns the mixed key list. */
+        public Object keys() {
+            return Arrays.asList(Collections.singletonMap("id", AttributeValue.builder().s("messi-10").build()), "invalid");
         }
     }
 }

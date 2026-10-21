@@ -52,6 +52,7 @@ public final class DynamoDbCommandWithDistance {
      * @return stable identifier used in the extra-heuristic DTO
      */
     public String getHeuristicId() {
-        return command.getOperationName() + ":" + tableName + ":" + String.valueOf(command.getDdbRequest());
+        return command.getOperationName() + ":" + tableName + ":"
+                + (command.getDdbRequest() == null ? null : command.getDdbRequest().toString(tableName));
     }
 }

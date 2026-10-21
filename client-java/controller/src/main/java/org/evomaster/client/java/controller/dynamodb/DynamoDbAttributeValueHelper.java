@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.dynamodb;
 
+import org.evomaster.client.java.instrumentation.DynamoDbValueSnapshot;
+
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -102,6 +104,10 @@ public final class DynamoDbAttributeValueHelper {
             return null;
         }
 
+        if (value instanceof DynamoDbValueSnapshot) {
+            return toPlainSnapshotValue((DynamoDbValueSnapshot) value);
+        }
+
         if (value instanceof Map<?, ?>) {
             return toPlainMap(value);
         }
@@ -165,6 +171,35 @@ public final class DynamoDbAttributeValueHelper {
         return value;
     }
 
+    private static Object toPlainSnapshotValue(DynamoDbValueSnapshot snapshot) {
+        Object payload = snapshot.value();
+        switch (snapshot.type()) {
+            case UNSET:
+                return snapshot;
+            case NULL:
+                return null;
+            case STRING:
+                return payload;
+            case NUMBER:
+                return payload instanceof String ? parseNumber((String) payload) : payload;
+            case BOOLEAN:
+            case BINARY:
+                return payload;
+            case STRING_SET:
+                return new LinkedHashSet<>((Collection<?>) payload);
+            case NUMBER_SET:
+                return toNumberSet((Collection<?>) payload);
+            case BINARY_SET:
+                return new LinkedHashSet<>((Collection<?>) payload);
+            case MAP:
+                return toPlainMap(payload);
+            case LIST:
+                return toPlainList((Collection<Object>) payload);
+            default:
+                throw new IllegalStateException("Unsupported DynamoDB value type: " + snapshot.type());
+        }
+    }
+
     /**
      * Resolves the DynamoDB attribute type represented by a normalized Java runtime value.
      * <p>
@@ -178,6 +213,9 @@ public final class DynamoDbAttributeValueHelper {
      * @return DynamoDB attribute type used by type predicates
      */
     public static DynamoDbAttributeType resolveAttributeType(Object value) {
+        if (value instanceof DynamoDbValueSnapshot) {
+            return ((DynamoDbValueSnapshot) value).type();
+        }
         if (value == null) {
             return DynamoDbAttributeType.NULL;
         }
