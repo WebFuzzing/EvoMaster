@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * DynamoDB attribute types captured in snapshots and accepted by the {@code attribute_type} expression function.
+ * DynamoDB attribute types captured in query values and accepted by the {@code attribute_type} expression function.
  */
 public enum DynamoDbAttributeType {
 
@@ -18,8 +18,10 @@ public enum DynamoDbAttributeType {
     NULL("NULL", ValueFamily.NONE, false),
     LIST("L", ValueFamily.NONE, false),
     MAP("M", ValueFamily.NONE, false),
+    /** No SDK attribute type was set or recognized; distinct from an explicit DynamoDB NULL value. */
     UNSET(null, ValueFamily.NONE, false);
 
+    /** Maps each DynamoDB type token to its corresponding enum value. */
     private static final Map<String, DynamoDbAttributeType> BY_TOKEN = new HashMap<>();
 
     static {

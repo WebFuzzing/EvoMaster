@@ -14,140 +14,140 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Serializable, canonical representation of one DynamoDB attribute value.
+ * Serializable, typed value copied from one DynamoDB request attribute.
  */
-public final class DynamoDbValueSnapshot implements Serializable {
+public final class DynamoDbQueryValue implements Serializable {
 
     private final DynamoDbAttributeType type;
     private final Serializable value;
 
-    private DynamoDbValueSnapshot(DynamoDbAttributeType type, Serializable value) {
+    private DynamoDbQueryValue(DynamoDbAttributeType type, Serializable value) {
         this.type = type;
         this.value = value;
     }
 
     /**
-     * Creates an unset value.
+     * Creates a value with no captured SDK type, distinct from an explicit DynamoDB null.
      *
-     * @return unset value snapshot
+     * @return unset query value
      */
-    public static DynamoDbValueSnapshot unset() {
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.UNSET, null);
+    public static DynamoDbQueryValue unset() {
+        return new DynamoDbQueryValue(DynamoDbAttributeType.UNSET, null);
     }
 
     /**
      * Creates a DynamoDB null value.
      *
-     * @return null value snapshot
+     * @return null query value
      */
-    public static DynamoDbValueSnapshot nullValue() {
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.NULL, null);
+    public static DynamoDbQueryValue nullValue() {
+        return new DynamoDbQueryValue(DynamoDbAttributeType.NULL, null);
     }
 
     /**
      * Creates a string value.
      *
      * @param value string value
-     * @return string snapshot
+     * @return string query value
      */
-    public static DynamoDbValueSnapshot string(String value) {
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.STRING, Objects.requireNonNull(value, "value"));
+    public static DynamoDbQueryValue string(String value) {
+        return new DynamoDbQueryValue(DynamoDbAttributeType.STRING, Objects.requireNonNull(value, "value"));
     }
 
     /**
      * Creates a number value while preserving its exact SDK string form.
      *
      * @param value number string
-     * @return number snapshot
+     * @return number query value
      */
-    public static DynamoDbValueSnapshot number(String value) {
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.NUMBER, Objects.requireNonNull(value, "value"));
+    public static DynamoDbQueryValue number(String value) {
+        return new DynamoDbQueryValue(DynamoDbAttributeType.NUMBER, Objects.requireNonNull(value, "value"));
     }
 
     /**
      * Creates a boolean value.
      *
      * @param value boolean value
-     * @return boolean snapshot
+     * @return boolean query value
      */
-    public static DynamoDbValueSnapshot bool(Boolean value) {
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.BOOLEAN, Objects.requireNonNull(value, "value"));
+    public static DynamoDbQueryValue bool(Boolean value) {
+        return new DynamoDbQueryValue(DynamoDbAttributeType.BOOLEAN, Objects.requireNonNull(value, "value"));
     }
 
     /**
      * Creates a binary value.
      *
      * @param value binary value
-     * @return binary snapshot
+     * @return binary query value
      */
-    public static DynamoDbValueSnapshot binary(byte[] value) {
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.BINARY, Objects.requireNonNull(value, "value").clone());
+    public static DynamoDbQueryValue binary(byte[] value) {
+        return new DynamoDbQueryValue(DynamoDbAttributeType.BINARY, Objects.requireNonNull(value, "value").clone());
     }
 
     /**
      * Creates a string set.
      *
      * @param values set values
-     * @return string-set snapshot
+     * @return string-set query value
      */
-    public static DynamoDbValueSnapshot stringSet(Collection<String> values) {
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.STRING_SET, (Serializable) immutableSet(values));
+    public static DynamoDbQueryValue stringSet(Collection<String> values) {
+        return new DynamoDbQueryValue(DynamoDbAttributeType.STRING_SET, (Serializable) immutableSet(values));
     }
 
     /**
      * Creates a number set while preserving each exact SDK string form.
      *
      * @param values set values
-     * @return number-set snapshot
+     * @return number-set query value
      */
-    public static DynamoDbValueSnapshot numberSet(Collection<String> values) {
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.NUMBER_SET, (Serializable) immutableSet(values));
+    public static DynamoDbQueryValue numberSet(Collection<String> values) {
+        return new DynamoDbQueryValue(DynamoDbAttributeType.NUMBER_SET, (Serializable) immutableSet(values));
     }
 
     /**
      * Creates a binary set.
      *
      * @param values binary set values
-     * @return binary-set snapshot
+     * @return binary-set query value
      */
-    public static DynamoDbValueSnapshot binarySet(Collection<byte[]> values) {
+    public static DynamoDbQueryValue binarySet(Collection<byte[]> values) {
         Objects.requireNonNull(values, "values");
         List<byte[]> copy = new ArrayList<>();
         for (byte[] element : values) {
             copy.add(Objects.requireNonNull(element, "binary set element").clone());
         }
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.BINARY_SET, (Serializable) Collections.unmodifiableList(copy));
+        return new DynamoDbQueryValue(DynamoDbAttributeType.BINARY_SET, (Serializable) Collections.unmodifiableList(copy));
     }
 
     /**
      * Creates a map value.
      *
-     * @param values map values
-     * @return map snapshot
+     * @param values attribute name to typed query value map
+     * @return map query value
      */
-    public static DynamoDbValueSnapshot map(Map<String, DynamoDbValueSnapshot> values) {
+    public static DynamoDbQueryValue map(Map<String, DynamoDbQueryValue> values) {
         Objects.requireNonNull(values, "values");
-        Map<String, DynamoDbValueSnapshot> copy = new LinkedHashMap<>();
-        for (Map.Entry<String, DynamoDbValueSnapshot> entry : values.entrySet()) {
+        Map<String, DynamoDbQueryValue> copy = new LinkedHashMap<>();
+        for (Map.Entry<String, DynamoDbQueryValue> entry : values.entrySet()) {
             copy.put(Objects.requireNonNull(entry.getKey(), "map key"),
                     Objects.requireNonNull(entry.getValue(), "map value"));
         }
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.MAP, (Serializable) Collections.unmodifiableMap(copy));
+        return new DynamoDbQueryValue(DynamoDbAttributeType.MAP, (Serializable) Collections.unmodifiableMap(copy));
     }
 
     /**
      * Creates a list value.
      *
      * @param values list values
-     * @return list snapshot
+     * @return list query value
      */
-    public static DynamoDbValueSnapshot list(Collection<DynamoDbValueSnapshot> values) {
+    public static DynamoDbQueryValue list(Collection<DynamoDbQueryValue> values) {
         Objects.requireNonNull(values, "values");
-        List<DynamoDbValueSnapshot> copy = new ArrayList<>();
-        for (DynamoDbValueSnapshot value : values) {
+        List<DynamoDbQueryValue> copy = new ArrayList<>();
+        for (DynamoDbQueryValue value : values) {
             copy.add(Objects.requireNonNull(value, "list value"));
         }
-        return new DynamoDbValueSnapshot(DynamoDbAttributeType.LIST, (Serializable) Collections.unmodifiableList(copy));
+        return new DynamoDbQueryValue(DynamoDbAttributeType.LIST, (Serializable) Collections.unmodifiableList(copy));
     }
 
     /**

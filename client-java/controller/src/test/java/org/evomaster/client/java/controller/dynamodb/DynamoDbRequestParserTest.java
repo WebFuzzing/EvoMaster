@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.dynamodb.operations.*;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.*;
 import org.evomaster.client.java.instrumentation.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
-import org.evomaster.client.java.instrumentation.DynamoDbRequestSnapshot;
+import org.evomaster.client.java.instrumentation.DynamoDbQuery;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.SdkBytes;
 
@@ -26,10 +26,10 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
         private final DynamoDbRequestParser delegate = new DynamoDbRequestParser();
 
         private Map<String, ParsedDynamoDbRequest> parseByTable(Object request, DynamoDbOperationNames operationName) {
-            DynamoDbRequestSnapshot snapshot = request instanceof DynamoDbRequestSnapshot
-                    ? (DynamoDbRequestSnapshot) request
-                    : DynamoDbRequestSnapshot.from(request);
-            return delegate.parseByTable(snapshot, operationName);
+            DynamoDbQuery query = request instanceof DynamoDbQuery
+                    ? (DynamoDbQuery) request
+                    : DynamoDbQuery.from(request);
+            return delegate.parseByTable(query, operationName);
         }
     }
 
@@ -382,14 +382,14 @@ public class DynamoDbRequestParserTest extends DynamoDbTestBase {
     public void testBatchGetSkipsInvalidRequestItemsShapes() {
         assertTrue(parser.parseByTable(new RequestWithNonMapRequestItems(), DynamoDbOperationNames.BATCH_GET_ITEM).isEmpty());
         assertTrue(parser.parseByTable(new RequestWithNonCollectionKeys(), DynamoDbOperationNames.BATCH_GET_ITEM).isEmpty());
-        assertNull(DynamoDbRequestSnapshot.from(new RequestWithNonCollectionKeys())
+        assertNull(DynamoDbQuery.from(new RequestWithNonCollectionKeys())
                 .batchRequestItems().get("players").keys());
     }
 
     /** Verifies that an invalid batch-get key does not hide a valid key for the same table. */
     @Test
     public void testBatchGetSkipsMalformedKeyEntries() {
-        DynamoDbRequestSnapshot snapshot = DynamoDbRequestSnapshot.from(new RequestWithMalformedKeyEntry());
+        DynamoDbQuery snapshot = DynamoDbQuery.from(new RequestWithMalformedKeyEntry());
         assertEquals(1, snapshot.batchRequestItems().get("players").keys().size());
         ParsedDynamoDbRequest parsed = parser.parseByTable(snapshot, DynamoDbOperationNames.BATCH_GET_ITEM).get("players");
         assertComparison(parsed.getKeyCondition(), EqualsOperation.class, "id", "messi-10");

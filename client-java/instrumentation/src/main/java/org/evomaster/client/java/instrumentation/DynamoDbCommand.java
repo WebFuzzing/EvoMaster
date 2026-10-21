@@ -21,9 +21,9 @@ public class DynamoDbCommand implements Serializable {
      */
     private final DynamoDbOperationNames operationName;
     /**
-     * Actual executed operation
+     * Serializable query data copied from the executed SDK request
      */
-    private final DynamoDbRequestSnapshot ddbRequest;
+    private final DynamoDbQuery ddbRequest;
     /**
      * If the operation was successfully executed
      */
@@ -38,7 +38,7 @@ public class DynamoDbCommand implements Serializable {
                 ? Collections.emptyList()
                 : Collections.unmodifiableList(new ArrayList<>(tableNames));
         this.operationName = Objects.requireNonNull(operationName, "operationName cannot be null");
-        this.ddbRequest = DynamoDbRequestSnapshot.from(ddbRequest);
+        this.ddbRequest = DynamoDbQuery.from(ddbRequest);
         this.successfullyExecuted = successfullyExecuted;
         this.executionTime = executionTime;
     }
@@ -51,7 +51,7 @@ public class DynamoDbCommand implements Serializable {
         return operationName;
     }
 
-    public DynamoDbRequestSnapshot getDdbRequest() {
+    public DynamoDbQuery getDdbRequest() {
         return ddbRequest;
     }
 

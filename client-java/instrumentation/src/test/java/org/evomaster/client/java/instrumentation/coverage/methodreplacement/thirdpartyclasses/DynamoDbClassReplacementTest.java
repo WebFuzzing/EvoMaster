@@ -3,7 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
-import org.evomaster.client.java.instrumentation.DynamoDbRequestSnapshot;
+import org.evomaster.client.java.instrumentation.DynamoDbQuery;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -357,7 +357,7 @@ public class DynamoDbClassReplacementTest {
         assertEquals(expectedTableNames, command.getTableNames());
         assertEquals(expectedOperationName, command.getOperationName());
         assertNotNull(command.getDdbRequest());
-        DynamoDbRequestSnapshot requestSnapshot = command.getDdbRequest();
+        DynamoDbQuery requestSnapshot = command.getDdbRequest();
         if (expectedOperationName == DynamoDbOperationNames.BATCH_GET_ITEM) {
             assertEquals(expectedTableNames, new ArrayList<>(requestSnapshot.batchRequestItems().keySet()));
         } else {

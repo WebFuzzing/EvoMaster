@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.dynamodb;
 
 import org.evomaster.client.java.controller.dynamodb.parsers.*;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
-import org.evomaster.client.java.instrumentation.DynamoDbRequestSnapshot;
+import org.evomaster.client.java.instrumentation.DynamoDbQuery;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -31,15 +31,15 @@ public class DynamoDbRequestParser {
     }
 
     /**
-     * Parses a serializable DynamoDB request snapshot.
-     * @param ddbRequest DynamoDB request snapshot
+     * Parses serializable DynamoDB query data.
+     * @param ddbQuery DynamoDB query data
      * @param apiMethodName DynamoDB API method name from enum type
      *
      * @return a map of parsed requests by table name.
      * Unsupported operations intentionally yield an empty map.
      */
-    public Map<String, ParsedDynamoDbRequest> parseByTable(DynamoDbRequestSnapshot ddbRequest, DynamoDbOperationNames apiMethodName) {
-        if (ddbRequest == null || apiMethodName == null) {
+    public Map<String, ParsedDynamoDbRequest> parseByTable(DynamoDbQuery ddbQuery, DynamoDbOperationNames apiMethodName) {
+        if (ddbQuery == null || apiMethodName == null) {
             return Collections.emptyMap();
         }
 
@@ -48,7 +48,7 @@ public class DynamoDbRequestParser {
             return Collections.emptyMap();
         }
 
-        Map<String, ParsedDynamoDbRequest> parsed = parser.parseRequest(ddbRequest);
+        Map<String, ParsedDynamoDbRequest> parsed = parser.parseRequest(ddbQuery);
         return parsed == null ? Collections.emptyMap() : parsed;
     }
 

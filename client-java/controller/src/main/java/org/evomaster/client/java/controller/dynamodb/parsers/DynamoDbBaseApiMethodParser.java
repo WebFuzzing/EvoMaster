@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.dynamodb.DynamoDbExpressionParser;
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
-import org.evomaster.client.java.instrumentation.DynamoDbRequestSnapshot;
+import org.evomaster.client.java.instrumentation.DynamoDbQuery;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.EqualsOperation;
 
 import java.util.*;
@@ -13,7 +13,7 @@ import java.util.function.Function;
 
 
 /**
- * Base class for parsing DynamoDB request snapshots. Contains shared utilities.
+ * Base class for parsing DynamoDB query data. Contains shared utilities.
  */
 abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
 
@@ -35,11 +35,11 @@ abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
     /**
      * Parses key equality conditions from DynamoDB request key fields.
      *
-     * @param ddbRequest DynamoDB request snapshot
+     * @param ddbQuery DynamoDB query data
      * @return parsed key condition operation
      */
-    protected QueryOperation parseKeyCondition(DynamoDbRequestSnapshot ddbRequest) {
-        return buildEqualsFromMap(DynamoDbAttributeValueHelper.toPlainMap(ddbRequest.key()));
+    protected QueryOperation parseKeyCondition(DynamoDbQuery ddbQuery) {
+        return buildEqualsFromMap(DynamoDbAttributeValueHelper.toPlainMap(ddbQuery.key()));
     }
 
     /**
@@ -93,34 +93,34 @@ abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
     }
 
     /**
-     * Reads and normalizes expression attribute names from a DynamoDB request snapshot.
+     * Reads and normalizes expression attribute names from DynamoDB query data.
      *
-     * @param ddbRequest DynamoDB request snapshot
+     * @param ddbQuery DynamoDB query data
      * @return normalized name map
      */
-    protected Map<String, String> readNameMap(DynamoDbRequestSnapshot ddbRequest) {
-        Map<String, String> names = ddbRequest.expressionAttributeNames();
+    protected Map<String, String> readNameMap(DynamoDbQuery ddbQuery) {
+        Map<String, String> names = ddbQuery.expressionAttributeNames();
         return names == null ? Collections.emptyMap() : names;
     }
 
     /**
-     * Reads and converts expression attribute values from a DynamoDB request snapshot.
+     * Reads and converts expression attribute values from DynamoDB query data.
      *
-     * @param ddbRequest DynamoDB request snapshot
+     * @param ddbQuery DynamoDB query data
      * @return normalized value map
      */
-    protected Map<String, Object> readValueMap(DynamoDbRequestSnapshot ddbRequest) {
-        return DynamoDbAttributeValueHelper.toPlainMap(ddbRequest.expressionAttributeValues());
+    protected Map<String, Object> readValueMap(DynamoDbQuery ddbQuery) {
+        return DynamoDbAttributeValueHelper.toPlainMap(ddbQuery.expressionAttributeValues());
     }
 
     /**
      * Reads and validates the table name from the request.
      *
-     * @param ddbRequest DynamoDB request snapshot
+     * @param ddbQuery DynamoDB query data
      * @return table name, or {@code null} if blank/absent
      */
-    protected String readValidTableName(DynamoDbRequestSnapshot ddbRequest) {
-        String tableName = ddbRequest.tableName();
+    protected String readValidTableName(DynamoDbQuery ddbQuery) {
+        String tableName = ddbQuery.tableName();
         if (tableName == null || tableName.trim().isEmpty()) {
             return null;
         }

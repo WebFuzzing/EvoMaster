@@ -15,19 +15,24 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * Stores a Serializable subset of DynamoDB SDK request fields consumed by EvoMaster's request parsers.
+ * Serializable query data copied from an intercepted DynamoDB SDK request.
+ * Includes reads, writes, and batch requests so their required fields can cross JVM boundaries.
  */
-public final class DynamoDbRequestSnapshot implements Serializable {
+public final class DynamoDbQuery implements Serializable {
 
     private final String tableName;
-    private final Map<String, DynamoDbValueSnapshot> key;
-    private final Map<String, KeysAndAttributesSnapshot> batchRequestItems;
+    /** Maps each key attribute name to its typed value. */
+    private final Map<String, DynamoDbQueryValue> key;
+    /** Maps each table name to its batch-get key collection. */
+    private final Map<String, BatchGetKeys> batchRequestItems;
     private final String keyConditionExpression;
     private final String filterExpression;
+    /** Maps each expression name placeholder to its attribute name. */
     private final Map<String, String> expressionAttributeNames;
-    private final Map<String, DynamoDbValueSnapshot> expressionAttributeValues;
+    /** Maps each expression value placeholder to its typed value. */
+    private final Map<String, DynamoDbQueryValue> expressionAttributeValues;
 
-    private DynamoDbRequestSnapshot(Object request) {
+    private DynamoDbQuery(Object request) {
         tableName = readString(request, "tableName");
         key = snapshotAttributeMap(read(request, "key"));
         batchRequestItems = snapshotRequestItems(read(request, "requestItems"));
@@ -41,13 +46,13 @@ public final class DynamoDbRequestSnapshot implements Serializable {
     }
 
     /**
-     * Creates a serializable snapshot containing the fields required by the supported request parsers.
+     * Copies the fields required by the supported request parsers into serializable query data.
      *
      * @param request original SDK request
-     * @return serializable snapshot, or {@code null} when the request is null
+     * @return serializable query data, or {@code null} when the request is null
      */
-    public static DynamoDbRequestSnapshot from(Object request) {
-        return request == null ? null : new DynamoDbRequestSnapshot(request);
+    public static DynamoDbQuery from(Object request) {
+        return request == null ? null : new DynamoDbQuery(request);
     }
 
     /**
@@ -62,18 +67,18 @@ public final class DynamoDbRequestSnapshot implements Serializable {
     /**
      * Returns the typed item key.
      *
-     * @return key map, or {@code null}
+     * @return attribute name to typed key value map, or {@code null}
      */
-    public Map<String, DynamoDbValueSnapshot> key() {
+    public Map<String, DynamoDbQueryValue> key() {
         return key;
     }
 
     /**
      * Returns batch request items by table.
      *
-     * @return request item map, or {@code null}
+     * @return table name to batch-get keys map, or {@code null}
      */
-    public Map<String, KeysAndAttributesSnapshot> batchRequestItems() {
+    public Map<String, BatchGetKeys> batchRequestItems() {
         return batchRequestItems;
     }
 
@@ -98,7 +103,7 @@ public final class DynamoDbRequestSnapshot implements Serializable {
     /**
      * Returns the expression attribute names.
      *
-     * @return normalized name map
+     * @return expression name placeholder to attribute name map
      */
     public Map<String, String> expressionAttributeNames() {
         return expressionAttributeNames;
@@ -107,9 +112,9 @@ public final class DynamoDbRequestSnapshot implements Serializable {
     /**
      * Returns the expression attribute values.
      *
-     * @return normalized value map
+     * @return expression value placeholder to typed value map
      */
-    public Map<String, DynamoDbValueSnapshot> expressionAttributeValues() {
+    public Map<String, DynamoDbQueryValue> expressionAttributeValues() {
         return expressionAttributeValues;
     }
 
@@ -120,15 +125,15 @@ public final class DynamoDbRequestSnapshot implements Serializable {
      * @param batchGetTableName table whose batch-get key fields should be included
      * @return predicate expressions, name aliases, and sorted key field names
      */
-    public String toString(String batchGetTableName) {
+    public String predicateSignatureForTable(String batchGetTableName) {
         Set<String> keyFields = new TreeSet<>();
         if (key != null) {
             keyFields.addAll(key.keySet());
         }
         if (batchRequestItems != null) {
-            KeysAndAttributesSnapshot tableItems = batchRequestItems.get(batchGetTableName);
+            BatchGetKeys tableItems = batchRequestItems.get(batchGetTableName);
             if (tableItems != null && tableItems.keys() != null) {
-                for (Map<String, DynamoDbValueSnapshot> batchKey : tableItems.keys()) {
+                for (Map<String, DynamoDbQueryValue> batchKey : tableItems.keys()) {
                     keyFields.addAll(batchKey.keySet());
                 }
             }
@@ -141,21 +146,22 @@ public final class DynamoDbRequestSnapshot implements Serializable {
                 ? null : new TreeMap<>(expressionAttributeNames));
     }
 
-    private static Map<String, KeysAndAttributesSnapshot> snapshotRequestItems(Object requestItems) {
+    /** Copies a map from table names to their batch-get key collections. */
+    private static Map<String, BatchGetKeys> snapshotRequestItems(Object requestItems) {
         if (!(requestItems instanceof Map<?, ?>)) {
             return null;
         }
 
-        Map<String, KeysAndAttributesSnapshot> result = new LinkedHashMap<>();
+        Map<String, BatchGetKeys> result = new LinkedHashMap<>();
         ((Map<?, ?>) requestItems).forEach((table, keysAndAttributes) -> {
             if (table != null) {
-                result.put(String.valueOf(table), new KeysAndAttributesSnapshot(keysAndAttributes));
+                result.put(String.valueOf(table), new BatchGetKeys(keysAndAttributes));
             }
         });
         return Collections.unmodifiableMap(result);
     }
 
-    /** Returns a serializable copy of non-null expression name aliases. */
+    /** Copies a map from expression name placeholders to attribute names. */
     private static Map<String, String> snapshotNameMap(Object source) {
         if (!(source instanceof Map<?, ?>)) {
             return null;
@@ -170,45 +176,45 @@ public final class DynamoDbRequestSnapshot implements Serializable {
         return Collections.unmodifiableMap(result);
     }
 
-    private static DynamoDbValueSnapshot snapshotAttributeValue(Object attributeValue) {
+    private static DynamoDbQueryValue snapshotAttributeValue(Object attributeValue) {
         Object nul = read(attributeValue, "nul");
         if (Boolean.TRUE.equals(nul)) {
-            return DynamoDbValueSnapshot.nullValue();
+            return DynamoDbQueryValue.nullValue();
         }
 
         Object stringValue = read(attributeValue, "s");
         if (stringValue instanceof String) {
-            return DynamoDbValueSnapshot.string((String) stringValue);
+            return DynamoDbQueryValue.string((String) stringValue);
         }
 
         Object numberValue = read(attributeValue, "n");
         if (numberValue instanceof String && !((String) numberValue).isEmpty()) {
-            return DynamoDbValueSnapshot.number((String) numberValue);
+            return DynamoDbQueryValue.number((String) numberValue);
         }
 
         Object booleanValue = read(attributeValue, "bool");
         if (booleanValue instanceof Boolean) {
-            return DynamoDbValueSnapshot.bool((Boolean) booleanValue);
+            return DynamoDbQueryValue.bool((Boolean) booleanValue);
         }
 
         Object mapValue = read(attributeValue, "m");
         if (isPresent(attributeValue, "hasM", mapValue) && mapValue instanceof Map<?, ?>) {
-            return DynamoDbValueSnapshot.map(snapshotAttributeMap(mapValue));
+            return DynamoDbQueryValue.map(snapshotAttributeMap(mapValue));
         }
 
         Object listValue = read(attributeValue, "l");
         if (isPresent(attributeValue, "hasL", listValue) && listValue instanceof Collection<?>) {
-            return DynamoDbValueSnapshot.list(snapshotAttributeValues((Collection<?>) listValue));
+            return DynamoDbQueryValue.list(snapshotAttributeValues((Collection<?>) listValue));
         }
 
         Object stringSet = read(attributeValue, "ss");
         if (isPresent(attributeValue, "hasSs", stringSet) && stringSet instanceof Collection<?>) {
-            return DynamoDbValueSnapshot.stringSet(toStrings((Collection<?>) stringSet));
+            return DynamoDbQueryValue.stringSet(toStrings((Collection<?>) stringSet));
         }
 
         Object numberSet = read(attributeValue, "ns");
         if (isPresent(attributeValue, "hasNs", numberSet) && numberSet instanceof Collection<?>) {
-            return DynamoDbValueSnapshot.numberSet(toStrings((Collection<?>) numberSet));
+            return DynamoDbQueryValue.numberSet(toStrings((Collection<?>) numberSet));
         }
 
         Object binarySet = read(attributeValue, "bs");
@@ -217,24 +223,24 @@ public final class DynamoDbRequestSnapshot implements Serializable {
             for (Object binary : (Collection<?>) binarySet) {
                 binaries.add(snapshotBinary(binary));
             }
-            return DynamoDbValueSnapshot.binarySet(binaries);
+            return DynamoDbQueryValue.binarySet(binaries);
         }
 
         Object binary = read(attributeValue, "b");
         if (binary != null) {
-            return DynamoDbValueSnapshot.binary(snapshotBinary(binary));
+            return DynamoDbQueryValue.binary(snapshotBinary(binary));
         }
-        return DynamoDbValueSnapshot.unset();
+        return DynamoDbQueryValue.unset();
     }
 
-    /** Captures valid batch-get key maps in source order, or null for a non-collection. */
-    private static List<Map<String, DynamoDbValueSnapshot>> snapshotBatchKeys(Object source) {
+    /** Captures key maps from attribute names to typed values in source order, or null for a non-collection. */
+    private static List<Map<String, DynamoDbQueryValue>> snapshotBatchKeys(Object source) {
         if (!(source instanceof Collection<?>)) {
             return null;
         }
-        List<Map<String, DynamoDbValueSnapshot>> result = new ArrayList<>();
+        List<Map<String, DynamoDbQueryValue>> result = new ArrayList<>();
         for (Object rawKey : (Collection<?>) source) {
-            Map<String, DynamoDbValueSnapshot> key = snapshotAttributeMap(rawKey);
+            Map<String, DynamoDbQueryValue> key = snapshotAttributeMap(rawKey);
             if (key != null) {
                 result.add(key);
             }
@@ -242,26 +248,26 @@ public final class DynamoDbRequestSnapshot implements Serializable {
         return Collections.unmodifiableList(result);
     }
 
-    /** Captures a typed attribute map, or null when the source is not a map. */
-    private static Map<String, DynamoDbValueSnapshot> snapshotAttributeMap(Object source) {
+    /** Captures a map from attribute names to typed values, or null when the source is not a map. */
+    private static Map<String, DynamoDbQueryValue> snapshotAttributeMap(Object source) {
         if (!(source instanceof Map<?, ?>)) {
             return null;
         }
-        Map<String, DynamoDbValueSnapshot> result = new LinkedHashMap<>();
+        Map<String, DynamoDbQueryValue> result = new LinkedHashMap<>();
         ((Map<?, ?>) source).forEach((key, value) -> {
             if (key != null) {
                 result.put(String.valueOf(key), value == null
-                        ? DynamoDbValueSnapshot.unset()
+                        ? DynamoDbQueryValue.unset()
                         : snapshotAttributeValue(value));
             }
         });
         return Collections.unmodifiableMap(result);
     }
 
-    private static List<DynamoDbValueSnapshot> snapshotAttributeValues(Collection<?> source) {
-        List<DynamoDbValueSnapshot> result = new ArrayList<>(source.size());
+    private static List<DynamoDbQueryValue> snapshotAttributeValues(Collection<?> source) {
+        List<DynamoDbQueryValue> result = new ArrayList<>(source.size());
         for (Object value : source) {
-            result.add(value == null ? DynamoDbValueSnapshot.unset() : snapshotAttributeValue(value));
+            result.add(value == null ? DynamoDbQueryValue.unset() : snapshotAttributeValue(value));
         }
         return result;
     }
@@ -320,20 +326,21 @@ public final class DynamoDbRequestSnapshot implements Serializable {
     /**
      * Serializable representation of the batch-get request keys consumed by the parser.
      */
-    public static final class KeysAndAttributesSnapshot implements Serializable {
+    public static final class BatchGetKeys implements Serializable {
 
-        private final List<Map<String, DynamoDbValueSnapshot>> keys;
+        /** Each list entry maps a key attribute name to its typed value. */
+        private final List<Map<String, DynamoDbQueryValue>> keys;
 
-        private KeysAndAttributesSnapshot(Object keysAndAttributes) {
+        private BatchGetKeys(Object keysAndAttributes) {
             keys = snapshotBatchKeys(read(keysAndAttributes, "keys"));
         }
 
         /**
          * Returns normalized batch-get keys.
          *
-         * @return key list, or {@code null}
+         * @return list of attribute name to typed key value maps, or {@code null}
          */
-        public List<Map<String, DynamoDbValueSnapshot>> keys() {
+        public List<Map<String, DynamoDbQueryValue>> keys() {
             return keys;
         }
     }

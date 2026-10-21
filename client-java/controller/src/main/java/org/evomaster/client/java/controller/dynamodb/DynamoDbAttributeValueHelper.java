@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.dynamodb;
 
-import org.evomaster.client.java.instrumentation.DynamoDbValueSnapshot;
+import org.evomaster.client.java.instrumentation.DynamoDbQueryValue;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -104,8 +104,8 @@ public final class DynamoDbAttributeValueHelper {
             return null;
         }
 
-        if (value instanceof DynamoDbValueSnapshot) {
-            return toPlainSnapshotValue((DynamoDbValueSnapshot) value);
+        if (value instanceof DynamoDbQueryValue) {
+            return toPlainQueryValue((DynamoDbQueryValue) value);
         }
 
         if (value instanceof Map<?, ?>) {
@@ -171,11 +171,11 @@ public final class DynamoDbAttributeValueHelper {
         return value;
     }
 
-    private static Object toPlainSnapshotValue(DynamoDbValueSnapshot snapshot) {
-        Object payload = snapshot.value();
-        switch (snapshot.type()) {
+    private static Object toPlainQueryValue(DynamoDbQueryValue queryValue) {
+        Object payload = queryValue.value();
+        switch (queryValue.type()) {
             case UNSET:
-                return snapshot;
+                return queryValue;
             case NULL:
                 return null;
             case STRING:
@@ -196,7 +196,7 @@ public final class DynamoDbAttributeValueHelper {
             case LIST:
                 return toPlainList((Collection<Object>) payload);
             default:
-                throw new IllegalStateException("Unsupported DynamoDB value type: " + snapshot.type());
+                throw new IllegalStateException("Unsupported DynamoDB value type: " + queryValue.type());
         }
     }
 
@@ -213,8 +213,8 @@ public final class DynamoDbAttributeValueHelper {
      * @return DynamoDB attribute type used by type predicates
      */
     public static DynamoDbAttributeType resolveAttributeType(Object value) {
-        if (value instanceof DynamoDbValueSnapshot) {
-            return ((DynamoDbValueSnapshot) value).type();
+        if (value instanceof DynamoDbQueryValue) {
+            return ((DynamoDbQueryValue) value).type();
         }
         if (value == null) {
             return DynamoDbAttributeType.NULL;

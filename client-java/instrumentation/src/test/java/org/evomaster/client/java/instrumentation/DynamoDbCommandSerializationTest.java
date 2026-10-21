@@ -52,11 +52,11 @@ public class DynamoDbCommandSerializationTest {
 
         try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
             AdditionalInfo roundTripped = (AdditionalInfo) input.readObject();
-            DynamoDbRequestSnapshot snapshot = roundTripped.getDynamoDbInfoData().iterator().next().getDdbRequest();
-            assertEquals("FIFAWorldCupPlayers", snapshot.tableName());
-            assertEquals("#id = :id", snapshot.filterExpression());
-            assertEquals(names, snapshot.expressionAttributeNames());
-            DynamoDbValueSnapshot id = snapshot.expressionAttributeValues().get(":id");
+            DynamoDbQuery query = roundTripped.getDynamoDbInfoData().iterator().next().getDdbRequest();
+            assertEquals("FIFAWorldCupPlayers", query.tableName());
+            assertEquals("#id = :id", query.filterExpression());
+            assertEquals(names, query.expressionAttributeNames());
+            DynamoDbQueryValue id = query.expressionAttributeValues().get(":id");
             assertEquals(DynamoDbAttributeType.BINARY, id.type());
             assertArrayEquals(new byte[]{10, 7, 86}, (byte[]) id.value());
         }
@@ -69,15 +69,31 @@ public class DynamoDbCommandSerializationTest {
         key.put("playerId", AttributeValue.builder().s("Messi").build());
         key.put("seasonYear", AttributeValue.builder().n("2022").build());
 
-        DynamoDbRequestSnapshot snapshot = DynamoDbRequestSnapshot.from(GetItemRequest.builder()
+        DynamoDbQuery query = DynamoDbQuery.from(GetItemRequest.builder()
                 .tableName("WorldCupPlayers")
                 .key(key)
                 .build());
 
-        assertEquals(DynamoDbAttributeType.STRING, snapshot.key().get("playerId").type());
-        assertEquals("Messi", snapshot.key().get("playerId").value());
-        assertEquals(DynamoDbAttributeType.NUMBER, snapshot.key().get("seasonYear").type());
-        assertEquals("2022", snapshot.key().get("seasonYear").value());
+        assertEquals(DynamoDbAttributeType.STRING, query.key().get("playerId").type());
+        assertEquals("Messi", query.key().get("playerId").value());
+        assertEquals(DynamoDbAttributeType.NUMBER, query.key().get("seasonYear").type());
+        assertEquals("2022", query.key().get("seasonYear").value());
+    }
+
+    /** An absent attribute type differs from an explicit DynamoDB null value. */
+    @Test
+    public void testGetItemDistinguishesUnsetAndExplicitNullKeyValues() {
+        Map<String, AttributeValue> key = new LinkedHashMap<>();
+        key.put("missingPlayer", AttributeValue.builder().build());
+        key.put("retiredPlayer", AttributeValue.builder().nul(true).build());
+
+        DynamoDbQuery query = DynamoDbQuery.from(GetItemRequest.builder()
+                .tableName("WorldCupPlayers")
+                .key(key)
+                .build());
+
+        assertEquals(DynamoDbAttributeType.UNSET, query.key().get("missingPlayer").type());
+        assertEquals(DynamoDbAttributeType.NULL, query.key().get("retiredPlayer").type());
     }
 
     /** Verifies that a batch read retains keys for each requested table. */
@@ -91,14 +107,14 @@ public class DynamoDbCommandSerializationTest {
                 .keys(Collections.singletonMap("teamId", AttributeValue.builder().n("10").build()))
                 .build());
 
-        DynamoDbRequestSnapshot snapshot = DynamoDbRequestSnapshot.from(BatchGetItemRequest.builder()
+        DynamoDbQuery query = DynamoDbQuery.from(BatchGetItemRequest.builder()
                 .requestItems(requestItems)
                 .build());
-        Map<String, DynamoDbRequestSnapshot.KeysAndAttributesSnapshot> captured = snapshot.batchRequestItems();
+        Map<String, DynamoDbQuery.BatchGetKeys> captured = query.batchRequestItems();
 
         assertEquals(requestItems.keySet(), captured.keySet());
         assertEquals("Messi", captured.get("WorldCupPlayers").keys().get(0).get("playerId").value());
-        DynamoDbValueSnapshot teamId = captured.get("WorldCupTeams").keys().get(0).get("teamId");
+        DynamoDbQueryValue teamId = captured.get("WorldCupTeams").keys().get(0).get("teamId");
         assertEquals(DynamoDbAttributeType.NUMBER, teamId.type());
         assertEquals("10", teamId.value());
     }

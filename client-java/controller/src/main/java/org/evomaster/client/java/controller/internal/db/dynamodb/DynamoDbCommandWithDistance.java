@@ -53,6 +53,6 @@ public final class DynamoDbCommandWithDistance {
      */
     public String getHeuristicId() {
         return command.getOperationName() + ":" + tableName + ":"
-                + (command.getDdbRequest() == null ? null : command.getDdbRequest().toString(tableName));
+                + (command.getDdbRequest() == null ? null : command.getDdbRequest().predicateSignatureForTable(tableName));
     }
 }
