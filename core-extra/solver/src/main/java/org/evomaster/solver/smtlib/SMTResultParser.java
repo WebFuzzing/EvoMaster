@@ -39,8 +39,14 @@ public class SMTResultParser {
 
         // Pattern for matching the start of a composed type (structure); its body is read by structTokens
         // example: ((variableName (field1-field2-... value1 value2 ...)))
-        // The constructor name starts with a letter, which tells it apart from a value such as (- 4)
-        Pattern composedTypePattern = Pattern.compile("\\(\\((\\w+\\d+) \\((?=[A-Za-z_])");
+        // The constructor name starts with a letter, which tells it apart from a value such as (- 4).
+        // When two datatypes share a constructor name, Z3 qualifies it with its sort:
+        // ((variableName ((as field1-field2-... SortName) value1 value2 ...)))
+        // Z3 writes no space after an opening parenthesis and one space between tokens, but SMT-LIB allows
+        // any whitespace there, so the pattern accepts it. A line break also ends up as a single space,
+        // since lines are trimmed and joined with one space below.
+        Pattern composedTypePattern = Pattern.compile(
+                "\\(\\s*\\(\\s*(\\w+\\d+)\\s+\\((?=\\s*(?:[A-Za-z_]|\\(\\s*as\\s))");
 
         // Buffer for multiline values
         StringBuilder buffer = new StringBuilder();
@@ -84,7 +90,7 @@ public class SMTResultParser {
                     continue; // the struct is not complete yet: keep buffering lines
                 }
                 String[] fields = structTokens.toArray(new String[0]);
-                String[] fieldNames = fields[0].split("-");
+                String[] fieldNames = constructorName(fields[0]).split("-");
 
                 Map<String, SMTLibValue> structValues = new HashMap<>();
                 // Iterate over fields to extract field names and values
@@ -187,6 +193,21 @@ public class SMTResultParser {
         m.appendTail(sb);
         return sb.toString();
     }
+
+    /**
+     * The name of a struct's constructor, from the first token of the struct.
+     *
+     * The generator names a table's constructor after its columns, so two tables with the same
+     * columns share it. Z3 then qualifies the name with its sort, as in {@code (as id-name UsersRow)},
+     * for every value of either table.
+     */
+    private static String constructorName(String token) {
+        Matcher qualified = QUALIFIED_CONSTRUCTOR.matcher(token);
+        return qualified.lookingAt() ? qualified.group(1) : token;
+    }
+
+    /** A qualified constructor, {@code (as name Sort)}, with any whitespace SMT-LIB allows between its parts. */
+    private static final Pattern QUALIFIED_CONSTRUCTOR = Pattern.compile("\\(\\s*as\\s+([^\\s()]+)");
 
     /**
      * Evaluates a numeric term as Z3 prints it in a model: a literal ({@code 6}, {@code 20.0}), a
