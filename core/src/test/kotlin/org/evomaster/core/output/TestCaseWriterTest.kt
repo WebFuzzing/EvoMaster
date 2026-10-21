@@ -56,6 +56,57 @@ class TestCaseWriterTest : WriterTestBase(){
     }
 
     @Test
+    fun testFlakyLongArraysCanBeWritten() {
+        val format = OutputFormat.JAVA_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+
+        val emptyArrayLines = Lines(format)
+        writer.handleJsonStringAssertion("[]", "[1]", emptyArrayLines, null, false)
+        assertEquals(
+            """
+                // Flaky size of : 0 vs. 1
+                // .body("size()", equalTo(0))
+            """.trimIndent(),
+            emptyArrayLines.toString().trimEnd()
+        )
+
+        val numberArrayLines = Lines(format)
+        writer.handleJsonStringAssertion("[1,2]", "[1,2,3]", numberArrayLines, null, false)
+        assertEquals(
+            """
+                // Flaky size of : 2 vs. 3
+                // .body("size()", equalTo(2))
+                .body("[0]", numberMatches(1))
+                .body("[1]", numberMatches(2))
+            """.trimIndent(),
+            numberArrayLines.toString().trimEnd()
+        )
+
+        val stringArrayLines = Lines(format)
+        writer.handleJsonStringAssertion("""["foo"]""", """["foo","bar"]""", stringArrayLines, null, false)
+        assertEquals(
+            """
+                // Flaky size of : 1 vs. 2
+                // .body("size()", equalTo(1))
+                // Flaky Body: "foo" vs. "foo", "bar"
+                // .body("", hasItems("foo"))
+            """.trimIndent(),
+            stringArrayLines.toString().trimEnd()
+        )
+
+        val nestedArrayLines = Lines(format)
+        writer.handleJsonStringAssertion("""{"items":[1]}""", """{"items":[1,2]}""", nestedArrayLines, null, false)
+        assertEquals(
+            """
+                // Flaky size of 'items': 1 vs. 2
+                // .body("'items'.size()", equalTo(1))
+                .body("'items'[0]", numberMatches(1))
+            """.trimIndent(),
+            nestedArrayLines.toString().trimEnd()
+        )
+    }
+
+    @Test
     fun testChangedElementIsFilteredAfterArrayShrinks() {
         val format = OutputFormat.JAVA_JUNIT_5
         val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
@@ -1728,7 +1779,7 @@ public void test() throws Exception {
         barResult.setStatusCode(500)
         barResult.setBody("""
            {
-                "p0":[1,2,3],
+                "p0":[1],
                 "p1":{},
                 "p2":{
                     "id":"foo",
@@ -1738,16 +1789,6 @@ public void test() throws Exception {
                           "name":"flaky1",
                           "type":"string",
                           "value":"flaky2"
-                        },
-                        {
-                          "name":"mapProperty2",
-                          "type":"string",
-                          "value":"two"
-                        },
-                        {
-                          "name":"flaky3",
-                          "type":"string",
-                          "value":"two"
                         }],
                     "empty":{
                         "flakyField4": 42
@@ -1786,7 +1827,7 @@ public void test() throws Exception {
         fooResult.setTimedout(false)
         fooResult.setStatusCode(200)
         fooResult.setBody("""
-           ["foo", "bar"]
+           ["foo", "bar", "baz"]
         """.trimIndent())
         fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
@@ -1795,7 +1836,7 @@ public void test() throws Exception {
         barResult.setTimedout(false)
         barResult.setStatusCode(500)
         barResult.setBody("""
-           ["foo", "abc", "bar"]
+           ["foo", "abc"]
         """.trimIndent())
         barResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
