@@ -335,6 +335,9 @@ class SMTConditionVisitor(
         value.codePoints().forEach { cp ->
             when {
                 cp == '"'.code -> escaped.append("\"\"")
+                // 0x20 (space) to 0x7E (~) is printable ASCII, the only range Z3 reads as is.
+                // Below 0x20 are control characters (e.g., tab, newline), and above 0x7E are DEL
+                // and every non-ASCII code point, so all of them are written as \u{X}
                 cp == '\\'.code || cp < 0x20 || cp > 0x7E -> escaped.append("\\u{").append(Integer.toHexString(cp)).append('}')
                 else -> escaped.appendCodePoint(cp)
             }
