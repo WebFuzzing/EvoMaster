@@ -373,9 +373,8 @@ abstract class TestCaseWriter {
     open fun addExtraInitStatement(lines: Lines) {}
 
     /**
-     * Members the test class needs, such as a helper the tests call. Unlike
-     * [addExtraStaticVariables] it is given the whole solution, so a member can be written only
-     * when something in the suite uses it.
+     * Members the test class needs that depend on the tests in it. Unlike
+     * [addExtraStaticVariables] it is given the whole solution.
      */
     open fun addExtraClassMembers(lines: Lines, solution: Solution<*>) {}
 

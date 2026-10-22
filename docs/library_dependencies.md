@@ -78,9 +78,9 @@ For white-box testing, you need as well to import the client controller library:
 as explained in the documentation for writing [white-box drivers](write_driver.md). 
 
 
-When fuzzing an **AsyncAPI** service, the generated tests publish with a client of the transport rather
-than through the _EvoMaster Driver_. That client is the one thing to add, since which one is needed
-depends on the transport the service speaks. For Kafka:
+When fuzzing an **AsyncAPI** service over Kafka, the generated tests publish through `KafkaEMUtils` in
+`evomaster-test-utils-java`, rather than through the _EvoMaster Driver_. That class needs `kafka-clients`,
+which is not brought in by `evomaster-client-java-dependencies`, so it has to be added:
 
 ```
 <dependency>

@@ -162,6 +162,12 @@ object TestWriterUtils {
         return safe
     }
 
+    /**
+     * [value] escaped and wrapped in double quotes, as a string literal of [format].
+     */
+    fun quotedEscaped(value: String, format: OutputFormat): String =
+        "\"" + GeneUtils.applyEscapes(value, GeneUtils.EscapeMode.TEXT, format) + "\""
+
     private const val START_QUOTE_PATTERN = "\" \\\""
     private const val END_QUOTE_PATTERN = "\\\" \""
     private const val REPLACEMENT_QUOTE = "\""

@@ -169,12 +169,8 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
     override fun shouldFailIfExceptionNotThrown(result: ActionResult) = false
 
     /**
-     * The helper the Kafka tests call, written once and only when something in the suite calls
-     * it: a suite publishing over another transport must not be made to carry a Kafka dependency
-     * it never uses.
-     *
-     * A variable per server goes here too, when there is a driver to ask where it is -- see
-     * [org.evomaster.client.java.controller.SutHandler.getAsyncApiServerAddress].
+     * A variable per Kafka server the suite publishes to, when there is a driver to ask where it
+     * is. See [org.evomaster.client.java.controller.SutHandler.getAsyncApiServerAddress].
      */
     override fun addExtraClassMembers(lines: Lines, solution: Solution<*>) {
 
@@ -190,8 +186,6 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         if (kafkaResults.isEmpty()) {
             return
         }
-
-        KafkaTestClientEmitter.emitHelper(lines, format)
 
         if (!canAskDriver()) {
             return
@@ -231,8 +225,8 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         servers.forEach { (name, declared) ->
             val variable = variableFor(name)
             val ask = "${TestSuiteWriter.controller}.getAsyncApiServerAddress(" +
-                    KafkaTestClientEmitter.brokerLiteral(name, format) + ")"
-            val fallback = KafkaTestClientEmitter.brokerLiteral(declared, format)
+                    TestWriterUtils.quotedEscaped(name, format) + ")"
+            val fallback = TestWriterUtils.quotedEscaped(declared, format)
 
             when {
                 /*
@@ -264,7 +258,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
             return variableFor(name)
         }
 
-        return KafkaTestClientEmitter.brokerLiteral(result.getBroker() ?: "", format)
+        return TestWriterUtils.quotedEscaped(result.getBroker() ?: "", format)
     }
 
     /**
