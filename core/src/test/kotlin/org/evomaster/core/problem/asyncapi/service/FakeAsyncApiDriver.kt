@@ -11,7 +11,8 @@ import org.evomaster.core.remote.service.RemoteController
 
 /**
  * A driver that publishes nothing: it records what it was asked to publish, and answers each
- * message with whatever [answer] decides. No instrumentation, so it reports no code targets.
+ * message with whatever [answer] decides. Unless told otherwise through [testResults], it is
+ * not instrumented, so it reports no code targets.
  */
 class FakeAsyncApiDriver(
     private val info: SutInfoDto,
@@ -22,6 +23,18 @@ class FakeAsyncApiDriver(
      * Everything this driver was asked to publish, in order.
      */
     val published: MutableList<AsyncApiActionDto> = mutableListOf()
+
+    /**
+     * What this driver answers when asked for the coverage of a test, as an instrumented one
+     * would: code targets, and what the SUT did with its inputs.
+     */
+    var testResults: () -> TestResultsDto = { TestResultsDto() }
+
+    /**
+     * How many times this driver was asked for the coverage of a test.
+     */
+    var testResultsRequests = 0
+        private set
 
     companion object {
 
@@ -72,5 +85,8 @@ class FakeAsyncApiDriver(
         ignoreKillSwitch: Boolean,
         fullyCovered: Boolean,
         descriptiveIds: Boolean
-    ) = TestResultsDto()
+    ): TestResultsDto {
+        testResultsRequests++
+        return testResults()
+    }
 }

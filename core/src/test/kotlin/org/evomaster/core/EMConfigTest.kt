@@ -795,6 +795,34 @@ internal class EMConfigTest{
     }
 
     @Test
+    fun testABlackBoxAsyncApiRunReadsNoCoverageOfTheService(){
+
+        fun configFor(vararg args: String) =
+            EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse(*args)) }
+
+        //the driver takes part, but only to reach the broker
+        val asyncApi = configFor("--$blackBox", "true", "--problemType", "ASYNCAPI", "--createTests", "false")
+        assertTrue(asyncApi.usesDriver())
+        assertFalse(asyncApi.readsSutCoverage())
+
+        //for every other problem type, the two say the same
+        val rest = configFor("--$blackBox", "true", "--problemType", "REST")
+        assertFalse(rest.usesDriver())
+        assertFalse(rest.readsSutCoverage())
+
+        val restExperiments = configFor("--$blackBox", "true", "--problemType", "REST", "--bbExperiments", "true")
+        assertTrue(restExperiments.usesDriver())
+        assertTrue(restExperiments.readsSutCoverage())
+
+        val asyncApiExperiments = configFor("--$blackBox", "true", "--problemType", "ASYNCAPI",
+            "--createTests", "false", "--bbExperiments", "true")
+        assertTrue(asyncApiExperiments.readsSutCoverage())
+
+        val whiteBox = configFor("--$blackBox", "false", "--problemType", "ASYNCAPI", "--createTests", "false")
+        assertTrue(whiteBox.readsSutCoverage())
+    }
+
+    @Test
     fun testAsyncApiWritesTestsOnlyInTheLanguagesItCanPublishFrom(){
 
         //a parser remembers what it last parsed, so each case gets its own
