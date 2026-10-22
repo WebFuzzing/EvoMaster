@@ -1,6 +1,7 @@
 package org.evomaster.core
 
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.EMConfig.AIResponseClassifierModel
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.output.OutputFormat
@@ -981,6 +982,47 @@ internal class EMConfigTest{
         val defaults = parse("--problemType", "ASYNCAPI")
         assertEquals(0, defaults.asyncApiSettleMs)
         assertEquals(EMConfig.AsyncApiCompletion.FIXED, defaults.asyncApiCompletion)
+    }
+
+    @Test
+    fun testHandlerReturnNeedsASettleWindowAndTheKafkaInstrumentation(){
+
+        //in white-box, as the settle options are ignored in black-box
+        fun parse(vararg args: String) =
+            EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse("--blackBox", "false", *args)) }
+
+        val noWindow = assertThrows<ConfigProblemException> {
+            parse("--problemType", "ASYNCAPI", "--asyncApiCompletion", "HANDLER_RETURN", "--instrumentMR_KAFKA", "true")
+        }
+        assertTrue(noWindow.message!!.contains("asyncApiSettleMs"), noWindow.message)
+
+        val noKafka = assertThrows<ConfigProblemException> {
+            parse("--problemType", "ASYNCAPI", "--asyncApiCompletion", "HANDLER_RETURN", "--asyncApiSettleMs", "2000")
+        }
+        assertTrue(noKafka.message!!.contains("instrumentMR_KAFKA"), noKafka.message)
+
+        val config = parse("--problemType", "ASYNCAPI", "--asyncApiCompletion", "HANDLER_RETURN",
+            "--asyncApiSettleMs", "2000", "--instrumentMR_KAFKA", "true")
+        assertEquals(EMConfig.AsyncApiCompletion.HANDLER_RETURN, config.asyncApiCompletion)
+
+        //and in black-box, where there is no settle window to end, neither is needed
+        val blackBoxRun = EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse(
+            "--blackBox", "true", "--problemType", "ASYNCAPI", "--createTests", "false",
+            "--asyncApiCompletion", "HANDLER_RETURN")) }
+        assertEquals(EMConfig.AsyncApiCompletion.FIXED, blackBoxRun.asyncApiCompletion)
+    }
+
+    @Test
+    fun testTheKafkaReplacementsAreOnlyAskedForWhenTurnedOn(){
+
+        val defaults = EMConfig()
+        assertFalse(defaults.instrumentMR_KAFKA)
+        assertFalse(defaults.methodReplacementCategories().split(",").contains(ReplacementCategory.KAFKA.name),
+            defaults.methodReplacementCategories())
+
+        val kafka = EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse("--instrumentMR_KAFKA", "true")) }
+        assertTrue(kafka.methodReplacementCategories().split(",").contains(ReplacementCategory.KAFKA.name),
+            kafka.methodReplacementCategories())
     }
 
     @Test

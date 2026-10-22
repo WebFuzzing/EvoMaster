@@ -157,6 +157,15 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final MessageHandlingState getMessageHandlingState(String address) {
+        //nothing to read without the agent, as for the objective update count
+        if (!isInstrumentationActivated()) {
+            return null;
+        }
+        return InstrumentationController.getMessageHandlingState(address);
+    }
+
+    @Override
     public final String getExecutableFullPath(){
         return null; //not needed for embedded
     }

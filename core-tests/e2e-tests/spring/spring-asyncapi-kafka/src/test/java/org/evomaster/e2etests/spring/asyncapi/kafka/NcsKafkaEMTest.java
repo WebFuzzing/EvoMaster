@@ -1,7 +1,9 @@
 package org.evomaster.e2etests.spring.asyncapi.kafka;
 
 import com.foo.asyncapi.ncs.NcsKafkaController;
+import org.evomaster.client.java.controller.api.dto.EmittedMessageDto;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
+import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome;
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory;
@@ -12,8 +14,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -25,9 +29,23 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
     private static final List<String> OPERATIONS =
             Arrays.asList("checkTriangle", "bessj", "expint", "fisher", "gammq", "remainder");
 
+    /**
+     * The suffix of the topics NCS answers on; the requests go to topics of their own.
+     */
+    private static final String REPLY_TOPIC_SUFFIX = ".reply";
+
     @BeforeAll
     public static void initClass() throws Exception {
-        AsyncApiTestBase.initClass(new NcsKafkaController());
+
+        /*
+            The service is instrumented once, when started here. The Kafka replacements are off
+            by default and the handler-return run needs them; the other runs ignore what they
+            record.
+         */
+        EMConfig config = new EMConfig();
+        config.setInstrumentMR_KAFKA(true);
+
+        AsyncApiTestBase.initClass(new NcsKafkaController(), config);
     }
 
     @Test
@@ -210,6 +228,59 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
                             "no wait ended on stable coverage");
                     assertEquals(0, countSettleEnd(solution, AsyncApiReplyDto.SettleEnd.INTERRUPTED),
                             "a wait was interrupted");
+                },
+                3);
+    }
+
+    /**
+     * The same, but each action ends once the service's consumer thread goes back to poll. NCS
+     * polls with KafkaConsumer and answers with KafkaProducer, which the Kafka instrumentation
+     * tracks, so every wait ends that way, and its replies are recorded on the action answered.
+     */
+    @Test
+    public void testRunEMWithHandlerReturn() throws Throwable {
+
+        runTestHandlingFlaky(
+                "NcsKafkaHandlerReturnEM",
+                "org.foo.asyncapi.NcsKafkaHandlerReturnEM",
+                40,
+                false,
+                (args) -> {
+
+                    setOption(args, "asyncApiReplyTimeoutMs", "3000");
+
+                    /*
+                        A window far longer than NCS ever needs: a wait that went to the deadline
+                        would mean the end of the handler was never seen.
+                     */
+                    setOption(args, "asyncApiSettleMs", "5000");
+                    setOption(args, "asyncApiCompletion", "HANDLER_RETURN");
+                    setOption(args, "instrumentMR_KAFKA", "true");
+
+                    Solution<AsyncApiIndividual> solution = initAndRun(args);
+
+                    assertTrue(countOutcome(solution, AsyncApiOutcome.REPLIED) > 0, "nothing was answered");
+                    assertEquals(0, countOutcome(solution, AsyncApiOutcome.NO_REPLY), "a promised reply never came");
+                    assertEquals(0, countOutcome(solution, AsyncApiOutcome.PUBLISH_FAILED), "a message never left");
+                    assertReplyReached(solution, "bessj", "doubleResult");
+                    assertReplyReached(solution, "checkTriangle", "intResult");
+                    assertEverySettled(solution);
+
+                    assertTrue(countSettleEnd(solution, AsyncApiReplyDto.SettleEnd.HANDLER_RETURN) > 0,
+                            "no wait ended on the handler returning");
+                    assertEquals(0, countSettleEnd(solution, AsyncApiReplyDto.SettleEnd.DEADLINE),
+                            "a wait went to the deadline, so the service was never seen done with a message");
+                    assertEquals(0, countSettleEnd(solution, AsyncApiReplyDto.SettleEnd.INTERRUPTED),
+                            "a wait was interrupted");
+
+                    //only its replies: the driver's publishes, made in this JVM, are not the service's
+                    List<EmittedMessageDto> emitted = emittedMessagesOf(solution);
+                    assertFalse(emitted.isEmpty(), "nothing the service emitted was recorded");
+                    List<String> notReplies = emitted.stream()
+                            .map(m -> m.address)
+                            .filter(a -> a == null || !a.endsWith(REPLY_TOPIC_SUFFIX))
+                            .collect(Collectors.toList());
+                    assertTrue(notReplies.isEmpty(), "recorded as emitted by the service: " + notReplies);
                 },
                 3);
     }

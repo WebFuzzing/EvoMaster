@@ -6,6 +6,8 @@ import com.google.inject.Inject
 import com.webfuzzing.asyncapi.models.AsyncApiChannel
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId
 import com.webfuzzing.asyncapi.models.AsyncApiReply
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.EmittedMessageDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
@@ -164,6 +166,8 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
                 ?: return null
             handleExtra(dto, fv)
 
+            recordEmittedMessages(dto.additionalInfoList, actionResults.filterIsInstance<AsyncApiCallResult>())
+
             if (epc.isInSearch() && config.isEnabledTaintAnalysis()) {
                 /*
                     A tainted string in a payload or a header reaches the service inside the
@@ -188,6 +192,23 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             index = time.evaluatedIndividuals,
             config = config
         )
+    }
+
+    /**
+     * Keep on the result of each action the messages the service emitted while it was being
+     * handled, as the instrumentation of the service's broker client recorded them.
+     *
+     * Entry i of [infos] is for the action with index i, the one [results] has at i too: the
+     * controller records one entry per action it is told about, in order. A test stopped by a
+     * message that could not be published has fewer entries than results, never more.
+     */
+    private fun recordEmittedMessages(infos: List<AdditionalInfoDto>, results: List<AsyncApiCallResult>) {
+        infos.zip(results).forEach { (info, result) ->
+            val emitted: List<EmittedMessageDto>? = info.emittedMessages
+            if (!emitted.isNullOrEmpty()) {
+                result.setEmittedMessages(emitted)
+            }
+        }
     }
 
     /**
@@ -455,6 +476,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
                     dto.stableMs = config.asyncApiStableMs.toLong()
                     AsyncApiActionDto.Completion.COVERAGE_STABLE
                 }
+                EMConfig.AsyncApiCompletion.HANDLER_RETURN -> AsyncApiActionDto.Completion.HANDLER_RETURN
             }
         }
 
