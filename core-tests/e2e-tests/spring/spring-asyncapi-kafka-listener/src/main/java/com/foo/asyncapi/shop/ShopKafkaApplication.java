@@ -12,15 +12,17 @@ import java.util.concurrent.Executors;
 
 /**
  * A shop back end that is driven only by Kafka messages, and never answers any of them: an order
- * placed, an invoice requested, a stock adjustment, a return requested. Each is consumed by a
- * {@code @KafkaListener}, with Spring Kafka's {@code JsonDeserializer} turning the record into a
- * typed object, as described by {@code asyncapi/shop-kafka.yaml}.
+ * placed, an invoice requested, a stock adjustment, a return requested, a restock requested. Each
+ * is consumed by a {@code @KafkaListener}, with Spring Kafka's {@code JsonDeserializer} turning the
+ * record into a typed object, as described by {@code asyncapi/shop-kafka.yaml}, and restocking by
+ * {@code asyncapi/shop-restock-kafka.yaml}.
  *
  * Written for the EvoMaster E2E tests. Each listener is there for one thing a search has to cope
  * with when nothing comes back from the service: {@link OrderListener} hides code behind string
  * values random data does not produce, {@link InvoiceListener} leaves its work to another thread,
- * {@link StockListener} keeps state in a database from one message to the next, and
- * {@link ReturnListener} reads a payload the document does not describe at all.
+ * {@link StockListener} keeps state in a database from one message to the next,
+ * {@link ReturnListener} reads a payload the document does not describe at all, and
+ * {@link RestockListener} calls an HTTP service that is not there.
  */
 /*
     Bean validation is excluded: this service validates nothing, and the validation API that the
