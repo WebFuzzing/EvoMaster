@@ -71,6 +71,7 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleCount("countDocumentsClientSessionBsonCountOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
     }
 
+
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "deleteOneBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.DeleteResult")
     public static Object deleteOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
         return handleDelete("deleteOneBson", mongoCollection, Arrays.asList(filter), filter);
@@ -111,6 +112,47 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleDelete("deleteManyClientSessionBsonDeleteOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
     }
 
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
+        return handleUpdate("updateOneBson", mongoCollection, Arrays.asList(filter, update), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateOneBsonUpdateOptions", mongoCollection, Arrays.asList(filter, update, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
+        return handleUpdate("updateOneClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter, update), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateOneClientSessionBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateOne(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateOneClientSessionBsonUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, update, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
+        return handleUpdate("updateManyBson", mongoCollection, Arrays.asList(filter, update), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateManyBsonUpdateOptions", mongoCollection, Arrays.asList(filter, update, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
+        return handleUpdate("updateManyClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter, update), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "updateManyClientSessionBsonUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.result.UpdateResult")
+    public static Object updateMany(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.UpdateOptions") Object options) {
+        return handleUpdate("updateManyClientSessionBsonUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, update, options), filter);
+    }
+
     /**
      * Processes the count handling based on the provided parameters.
      *
@@ -137,32 +179,25 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleEagerQuery(id, mongoCollection, args, filter);
     }
 
+      /**
+     * Handles the update of documents (updateOne/updateMany) in the provided collection.
+     *
+     * @param id The identifier of the replacement, used to retrieve the original update method.
+     * @param mongoCollection The collection in which the documents will be updated.
+     * @param args The arguments of the original update call.
+     * @param filter The filter conditions to locate the documents to update.
+     * @return The result of the update operation (an UpdateResult).
+     */
+    private static Object handleUpdate(String id, Object mongoCollection, List<Object> args, Object filter) {
+        return handleEagerQuery(id, mongoCollection, args, filter);
+    }
+
     /**
-     * Unlike find, operations like count and delete are executed eagerly,
+     * Unlike find, operations like count, delete and update are executed eagerly,
      * so we know right away whether the filter was valid
      */
     private static Object handleEagerQuery(String id, Object mongoCollection, List<Object> args, Object filter) {
-        long start = System.currentTimeMillis();
-        Method method = retrieveFindMethod(id, mongoCollection);
-        try {
-            Object result = method.invoke(mongoCollection, args.toArray());
-            long end = System.currentTimeMillis();
-            handleMongo(mongoCollection, filter, true, end - start);
-            return result;
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            long end = System.currentTimeMillis();
-            handleMongo(mongoCollection, filter, false, end - start);
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            }
-            if (cause instanceof Error) {
-                throw (Error) cause;
-            }
-            throw new RuntimeException(cause);
-        }
+        return handleEagerQuery(singleton, id, mongoCollection, args, filter);
     }
 
     /**
