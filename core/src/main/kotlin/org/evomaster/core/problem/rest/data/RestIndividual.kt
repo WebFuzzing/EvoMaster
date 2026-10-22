@@ -498,7 +498,9 @@ class RestIndividual(
             val locationId = seq[cur].usePreviousLocationId
             cur = (cur - 1 downTo 0).firstOrNull {
                 val candidate = seq[it]
-                candidate.isPotentialActionForCreation() && candidate.creationLocationId() == locationId
+                // TODO: the later refactoring may have impacts here, see RestCallAction.creationLocationId()
+                // candidate.isPotentialActionForCreation() &&
+                candidate.creationLocationId() == locationId
             } ?: throw IllegalStateException("No previous action with location id $locationId before action $cur")
 
             val source = seq[cur]
