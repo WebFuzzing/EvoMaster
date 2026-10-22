@@ -219,6 +219,8 @@ public interface SutHandler {
      * from that state is touched. It needs {@link #getNeo4jConnection()}, and it takes the place of
      * cleaning the graph by hand in {@link #resetStateOfSUT()}. The generated tests do the same, through
      * {@link #resetNeo4jDatabase()}.
+     * <p>
+     * TODO this will need to be refactored when we consolidate how all databases (SQL and NoSQL alike) are configured
      *
      * @return {@code true} to have the graph restored automatically before each test
      */
@@ -229,6 +231,9 @@ public interface SutHandler {
      * asks for it. The first call after a start only records that state, as nothing has run yet.
      * <p>
      * The generated tests call it before {@link #resetStateOfSUT()}.
+     * <p>
+     * Users do not implement it: {@code SutController} implements it (as a final method), the same way it
+     * implements {@link #resetDatabase(List)}. Drivers only override {@link #employSmartNeo4jClean()}.
      */
     default void resetNeo4jDatabase() {}
 

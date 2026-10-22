@@ -235,6 +235,8 @@ class TestSuiteWriter {
     /**
      * Whether the driver has the Neo4j graph put back as it was at startup before each test, which the
      * generated tests then have to do too, as they do not go through the driver's controller.
+     *
+     * TODO in future, this should also be based on `config.employSmartDbClean`
      */
     private fun employsSmartNeo4jClean(): Boolean =
         ::remoteController.isInitialized && remoteController.getCachedSutInfo()?.employSmartNeo4jClean == true
