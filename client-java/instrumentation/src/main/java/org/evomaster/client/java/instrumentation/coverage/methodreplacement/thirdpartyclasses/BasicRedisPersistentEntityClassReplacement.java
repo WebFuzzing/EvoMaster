@@ -82,12 +82,9 @@ public class BasicRedisPersistentEntityClassReplacement extends ThirdPartyMethod
      * that, the one named "id" (the same rule Spring applies). It cannot be asked to the persistent
      * entity itself, since its properties are only added after the constructor returns.
      *
-     * Package-private only so that it can be unit tested directly, with plain classes, instead of
-     * going through the replaced constructor.
-     *
      * @return the name of the field, or null if there is none
      */
-    static String findIdFieldName(Class<?> type) {
+    private static String findIdFieldName(Class<?> type) {
         String namedId = null;
         for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {
             for (Field f : c.getDeclaredFields()) {
