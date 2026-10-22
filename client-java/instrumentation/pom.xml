@@ -199,6 +199,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <!-- To check that the Jackson replacements apply inside its JsonDeserializer -->
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <!--  Old version on purpose, to check a specific bug -->

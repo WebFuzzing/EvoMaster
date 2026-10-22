@@ -50,6 +50,7 @@ public class ReplacementList {
                     new InetSocketAddressClassReplacement(),
                     new KotlinIntrinsicsClassReplacement(),
                     new JacksonObjectMapperClassReplacement(),
+                    new JacksonObjectReaderClassReplacement(),
                     new LocalDateClassReplacement(),
                     new LocalDateTimeClassReplacement(),
                     new LocalTimeClassReplacement(),
