@@ -60,7 +60,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         /**
          * Separator inside a JSON Pointer, whose last segment names the field.
          */
-        private const val PATH_SEPARATOR = "/"
+        private const val JSON_POINTER_SEPARATOR = "/"
 
         /**
          * What a correlation id's header is called when the document declares no field for it.
@@ -434,9 +434,9 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         val channel = document.channels[action.channelName]
         val server = channel?.let { document.serversOf(it).firstOrNull() }
 
-        result.setPublished(
+        result.setPublishDetails(
             serverName = server?.name,
-            broker = server?.host,
+            serverHost = server?.host,
             protocol = server?.protocol,
             address = call.address,
             replyAddress = call.replyAddress,
@@ -457,7 +457,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             return null
         }
 
-        return call.correlationPointer?.substringAfterLast(PATH_SEPARATOR)?.takeIf { it.isNotBlank() }
+        return call.correlationPointer?.substringAfterLast(JSON_POINTER_SEPARATOR)?.takeIf { it.isNotBlank() }
             ?: DEFAULT_CORRELATION_HEADER
     }
 

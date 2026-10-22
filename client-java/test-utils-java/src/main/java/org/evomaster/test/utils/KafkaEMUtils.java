@@ -61,10 +61,10 @@ public class KafkaEMUtils {
             if (replyTopic != null) {
                 consumer = new KafkaConsumer<>(props, new StringDeserializer(), new StringDeserializer());
                 List<TopicPartition> partitions = new ArrayList<>();
-                List<PartitionInfo> info = consumer.partitionsFor(replyTopic);
-                if (info != null) {
-                    for (PartitionInfo p : info) {
-                        partitions.add(new TopicPartition(p.topic(), p.partition()));
+                List<PartitionInfo> partitionInfos = consumer.partitionsFor(replyTopic);
+                if (partitionInfos != null) {
+                    for (PartitionInfo partitionInfo : partitionInfos) {
+                        partitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
                     }
                 }
                 if (partitions.isEmpty()) {
@@ -95,13 +95,14 @@ public class KafkaEMUtils {
 
             long deadline = System.currentTimeMillis() + timeoutMs;
             while (System.currentTimeMillis() < deadline) {
-                for (ConsumerRecord<String, String> r : consumer.poll(Duration.ofMillis(POLL_MS))) {
+                for (ConsumerRecord<String, String> consumed : consumer.poll(Duration.ofMillis(POLL_MS))) {
                     if (correlationHeader == null) {
-                        return r.value();
+                        return consumed.value();
                     }
-                    Header h = r.headers().lastHeader(correlationHeader);
-                    if (h != null && correlationId.equals(new String(h.value(), StandardCharsets.UTF_8))) {
-                        return r.value();
+                    Header correlation = consumed.headers().lastHeader(correlationHeader);
+                    if (correlation != null
+                            && correlationId.equals(new String(correlation.value(), StandardCharsets.UTF_8))) {
+                        return consumed.value();
                     }
                 }
             }

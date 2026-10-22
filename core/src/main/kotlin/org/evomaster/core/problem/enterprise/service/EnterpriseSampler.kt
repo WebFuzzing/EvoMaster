@@ -100,7 +100,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
                 throw SutProblemException("Failed to use test output format: " + infoDto.defaultOutputFormat)
             }
             //what the driver asked for still has to be a format a test can be written in
-            config.checkOutputFormatIsWritable()
+            config.checkAsyncApiOutputFormat()
         }
 
         // only check this configuration if DB exists

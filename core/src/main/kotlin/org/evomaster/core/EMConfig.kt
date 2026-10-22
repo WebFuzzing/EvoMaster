@@ -879,7 +879,7 @@ class EMConfig {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
 
-        checkOutputFormatIsWritable()
+        checkAsyncApiOutputFormat()
 
         if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
             throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
@@ -1115,12 +1115,12 @@ class EMConfig {
     fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
 
     /**
-     * Whether tests can be written in the chosen format.
+     * Check that, for AsyncAPI, tests are written in a supported format (Java or Kotlin).
      *
      * Called when options are validated, and again once a DEFAULT format has been resolved from
      * the driver.
      */
-    fun checkOutputFormatIsWritable() {
+    fun checkAsyncApiOutputFormat() {
 
         if (problemType == ProblemType.ASYNCAPI
                 && createTests

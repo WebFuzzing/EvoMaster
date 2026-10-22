@@ -124,13 +124,13 @@ object TestSuiteSplitter {
                         &&
                         ind.evaluatedMainActions().all { ac ->
                             //TODO generic per type
-                            when (val r = ac.result) {
-                                is HttpWsCallResult -> r.getStatusCode().let { it != null && it < 400 }
+                            when (val result = ac.result) {
+                                is HttpWsCallResult -> result.getStatusCode().let { it != null && it < 400 }
                                 /*
                                     A message that went out, and was answered when an answer was
                                     promised. There is no status code to read here.
                                  */
-                                is AsyncApiCallResult -> r.getOutcome().let {
+                                is AsyncApiCallResult -> result.getOutcome().let {
                                     it == AsyncApiOutcome.PUBLISHED || it == AsyncApiOutcome.REPLIED
                                 }
                                 else -> true

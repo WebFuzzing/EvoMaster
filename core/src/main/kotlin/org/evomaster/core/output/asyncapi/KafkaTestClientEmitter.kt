@@ -54,7 +54,7 @@ object KafkaTestClientEmitter {
      */
     fun canEmit(result: AsyncApiCallResult): Boolean =
         result.getProtocol()?.lowercase() in KAFKA_PROTOCOLS
-                && !result.getBroker().isNullOrBlank()
+                && !result.getServerHost().isNullOrBlank()
                 && !result.getAddress().isNullOrBlank()
                 && (result.getReplyAddress().isNullOrBlank() || result.getCorrelationHeader() != null)
 

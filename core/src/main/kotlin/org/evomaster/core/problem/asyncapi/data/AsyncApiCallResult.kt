@@ -20,7 +20,7 @@ class AsyncApiCallResult : EnterpriseActionResult {
             What was published, kept so that a generated test can publish the same thing without
             resolving the document a second time. Only recorded when tests are being written.
          */
-        const val BROKER = "BROKER"
+        const val SERVER_HOST = "SERVER_HOST"
         const val SERVER_NAME = "SERVER_NAME"
         const val PROTOCOL = "PROTOCOL"
         const val ADDRESS = "ADDRESS"
@@ -103,9 +103,9 @@ class AsyncApiCallResult : EnterpriseActionResult {
      * Everything a generated test needs to publish this message again, as the search resolved it
      * from the document. Headers are a JSON object, so that one string holds them all.
      */
-    fun setPublished(
+    fun setPublishDetails(
         serverName: String?,
-        broker: String?,
+        serverHost: String?,
         protocol: String?,
         address: String?,
         replyAddress: String?,
@@ -115,7 +115,7 @@ class AsyncApiCallResult : EnterpriseActionResult {
         replyTimeoutMs: Long?
     ) {
         serverName?.let { addResultValue(SERVER_NAME, it) }
-        broker?.let { addResultValue(BROKER, it) }
+        serverHost?.let { addResultValue(SERVER_HOST, it) }
         protocol?.let { addResultValue(PROTOCOL, it) }
         address?.let { addResultValue(ADDRESS, it) }
         replyAddress?.let { addResultValue(REPLY_ADDRESS, it) }
@@ -125,7 +125,10 @@ class AsyncApiCallResult : EnterpriseActionResult {
         replyTimeoutMs?.let { addResultValue(REPLY_TIMEOUT_MS, it.toString()) }
     }
 
-    fun getBroker(): String? = getResultValue(BROKER)
+    /**
+     * The server's `host` as declared in the document, eg "localhost:9092".
+     */
+    fun getServerHost(): String? = getResultValue(SERVER_HOST)
 
     /**
      * The key of the server in the document, which is what the driver is asked about when a

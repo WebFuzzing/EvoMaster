@@ -25,15 +25,14 @@ import java.nio.file.Path
 class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
     /**
-     * The Kafka servers this suite publishes to.
-     * Key: the server's name, ie its key under `servers` in the AsyncAPI document.
-     * Value: the server's `host` as declared in the document, eg "localhost:9092", used when
-     * the driver does not give an address.
+     * The Kafka servers this suite publishes to, from the server's name (its key under `servers`
+     * in the AsyncAPI document, eg "kafka") to its declared `host` (eg "localhost:9092"), used
+     * when the driver does not give an address.
      *
      * Filled in when the class members are written, and read when the init statements are,
      * which the suite writer does afterwards.
      */
-    private val servers = LinkedHashMap<String, String>()
+    private val declaredHostByServerName = LinkedHashMap<String, String>()
 
     /**
      * What the parsed reply is called in a generated test, before the index of the reply it
@@ -82,22 +81,24 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         testSuitePath: Path?,
         baseUrlOfSut: String
     ) {
-        val call = action as? AsyncApiAction
+        val asyncApiAction = action as? AsyncApiAction
             ?: throw IllegalArgumentException("Not an AsyncAPI action: ${action::class.java.simpleName}")
-        val res = result as? AsyncApiCallResult
+        val asyncApiResult = result as? AsyncApiCallResult
             ?: throw IllegalArgumentException("Not an AsyncAPI result: ${result::class.java.simpleName}")
 
-        lines.addSingleCommentLine("${call.operationId}: ${res.getOutcome() ?: "not executed"}")
+        lines.addSingleCommentLine("${asyncApiAction.operationId}: ${asyncApiResult.getOutcome() ?: "not executed"}")
 
-        val script = res.getTestScript()
-        val variable = res.getReplyVariableName()
+        val script = asyncApiResult.getTestScript()
+        val replyVariable = asyncApiResult.getReplyVariableName()
 
         when {
             //rendered by the driver, for transports not written from the contract
             script.any { it.isNotBlank() } -> script.forEach { lines.add(it) }
 
-            variable != null && KafkaTestClientEmitter.canEmit(res) ->
-                KafkaTestClientEmitter.emit(lines, res, variable, brokerOf(res), format)
+            replyVariable != null && KafkaTestClientEmitter.canEmit(asyncApiResult) ->
+                KafkaTestClientEmitter.emit(
+                    lines, asyncApiResult, replyVariable, serverAddressExpression(asyncApiResult), format
+                )
 
             else -> {
                 lines.addSingleCommentLine(
@@ -113,29 +114,29 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
             }
         }
 
-        addReplyAssertions(lines, res)
+        addReplyAssertions(lines, asyncApiResult)
     }
 
     /**
      * What the core can say about the reply, on top of whatever the driver's own lines assert.
      */
-    private fun addReplyAssertions(lines: Lines, res: AsyncApiCallResult) {
+    private fun addReplyAssertions(lines: Lines, asyncApiResult: AsyncApiCallResult) {
 
-        if (res.getOutcome() != AsyncApiOutcome.REPLIED) {
+        if (asyncApiResult.getOutcome() != AsyncApiOutcome.REPLIED) {
             return
         }
 
-        val variable = res.getReplyVariableName() ?: return
+        val replyVariable = asyncApiResult.getReplyVariableName() ?: return
 
-        lines.add("assertNotNull($variable)")
+        lines.add("assertNotNull($replyVariable)")
         lines.appendSemicolon()
 
-        res.getReplyMessage()?.let {
+        asyncApiResult.getReplyMessage()?.let {
             lines.addSingleCommentLine("recognised as the declared message '$it'")
         }
 
         AsyncApiReplyAssertions(config, format, ::isFieldToSkip, ::isSuitableToPrint)
-            .emit(lines, res.getReplyPayload(), variable, bodyVariableFor(variable))
+            .emit(lines, asyncApiResult.getReplyPayload(), replyVariable, bodyVariableFor(replyVariable))
     }
 
     /**
@@ -153,32 +154,32 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         val kafkaResults = KafkaTestClientEmitter.resultsIn(solution)
 
         //the same writer is used for every suite of a run, so clear what the previous one left
-        servers.clear()
+        declaredHostByServerName.clear()
 
         if (kafkaResults.isEmpty()) {
             return
         }
 
-        if (!canAskDriver()) {
+        if (!suiteHasDriver()) {
             return
         }
 
-        kafkaResults.forEach { r ->
-            val name = r.getServerName()
+        kafkaResults.forEach { kafkaResult ->
+            val name = kafkaResult.getServerName()
             if (name.isNullOrBlank()) {
                 return@forEach
             }
             //names like "a-b" and "a.b" map to the same variable: only the first gets one
-            if (servers.keys.any { it != name && variableFor(it) == variableFor(name) }) {
+            if (declaredHostByServerName.keys.any { it != name && serverVariableFor(it) == serverVariableFor(name) }) {
                 return@forEach
             }
-            servers.putIfAbsent(name, r.getBroker() ?: "")
+            declaredHostByServerName.putIfAbsent(name, kafkaResult.getServerHost() ?: "")
         }
 
-        servers.keys.forEach { name ->
+        declaredHostByServerName.keys.forEach { name ->
             when {
-                format.isJava() -> lines.add("private static String ${variableFor(name)};")
-                format.isKotlin() -> lines.add("private lateinit var ${variableFor(name)}: String")
+                format.isJava() -> lines.add("private static String ${serverVariableFor(name)};")
+                format.isKotlin() -> lines.add("private lateinit var ${serverVariableFor(name)}: String")
                 else -> throw IllegalArgumentException("Unsupported format: $format")
             }
         }
@@ -190,23 +191,23 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
      */
     override fun addExtraInitStatement(lines: Lines) {
 
-        servers.forEach { (name, declared) ->
-            val variable = variableFor(name)
-            val ask = "${TestSuiteWriter.controller}.getAsyncApiServerAddress(" +
+        declaredHostByServerName.forEach { (name, declaredHost) ->
+            val variable = serverVariableFor(name)
+            val askDriver = "${TestSuiteWriter.controller}.getAsyncApiServerAddress(" +
                     TestWriterUtils.quotedEscaped(name, format) + ")"
-            val fallback = TestWriterUtils.quotedEscaped(declared, format)
+            val fallback = TestWriterUtils.quotedEscaped(declaredHost, format)
 
             when {
                 //two statements, so the driver is asked only once
                 format.isJava() -> {
-                    lines.add("$variable = $ask;")
+                    lines.add("$variable = $askDriver;")
                     lines.add("if ($variable == null) {")
                     lines.indented {
                         lines.add("$variable = $fallback;")
                     }
                     lines.add("}")
                 }
-                format.isKotlin() -> lines.add("$variable = $ask ?: $fallback")
+                format.isKotlin() -> lines.add("$variable = $askDriver ?: $fallback")
                 else -> throw IllegalArgumentException("Unsupported format: $format")
             }
         }
@@ -216,15 +217,15 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
      * Where to publish: the variable filled in from the driver, or the document's address when
      * there is no driver.
      */
-    private fun brokerOf(result: AsyncApiCallResult): String {
+    private fun serverAddressExpression(asyncApiResult: AsyncApiCallResult): String {
 
-        val name = result.getServerName()
+        val name = asyncApiResult.getServerName()
 
-        if (canAskDriver() && name != null && servers.containsKey(name)) {
-            return variableFor(name)
+        if (suiteHasDriver() && name != null && declaredHostByServerName.containsKey(name)) {
+            return serverVariableFor(name)
         }
 
-        return TestWriterUtils.quotedEscaped(result.getBroker() ?: "", format)
+        return TestWriterUtils.quotedEscaped(asyncApiResult.getServerHost() ?: "", format)
     }
 
     /**
@@ -233,13 +234,13 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
     private fun bodyVariableFor(replyVariable: String) =
         bodyVariablePrefix + replyVariable.substringAfterLast('_')
 
-    private fun variableFor(serverName: String) =
+    private fun serverVariableFor(serverName: String) =
         KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX + TestWriterUtils.safeVariableName(serverName)
 
     /**
      * Whether the generated suite has a driver to ask where a server is.
      */
-    private fun canAskDriver() = (!config.blackBox || config.bbExperiments) && format.isJavaOrKotlin()
+    private fun suiteHasDriver() = (!config.blackBox || config.bbExperiments) && format.isJavaOrKotlin()
 
     override fun addTestCommentBlock(lines: Lines, test: TestCase) {
 
