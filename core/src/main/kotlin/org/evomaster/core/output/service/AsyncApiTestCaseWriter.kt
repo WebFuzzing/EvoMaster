@@ -18,21 +18,20 @@ import java.nio.file.Path
 /**
  * Writes a test for an AsyncAPI service.
  *
- * Unlike REST there is no universal client to call. For Kafka the contract names the server,
- * the topics and the header the correlation id rides in, so the lines that publish and await are
- * written here from it; for a transport it does not describe, the driver renders them while the
- * search runs and they are pasted verbatim, as RPC does. Either way the test needs no EvoMaster
- * driver at run time.
- *
- * What the core adds around them is what only it knows: the outcome, which declared message a
- * reply was recognised as, and that a promised reply arrived.
+ * For Kafka, the lines that publish and await a reply are written here from the contract. For
+ * other transports, the driver renders them during the search and they are copied as they are,
+ * as done for RPC. Either way, the test needs no EvoMaster driver at run time.
  */
 class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
     /**
-     * The servers this suite publishes to, each with the address the document declares. Filled
-     * in while the class members are written and read when the init statements are, which the
-     * suite writer runs after them.
+     * The Kafka servers this suite publishes to.
+     * Key: the server's name, ie its key under `servers` in the AsyncAPI document.
+     * Value: the server's `host` as declared in the document, eg "localhost:9092", used when
+     * the driver does not give an address.
+     *
+     * Filled in when the class members are written, and read when the init statements are,
+     * which the suite writer does afterwards.
      */
     private val servers = LinkedHashMap<String, String>()
 
@@ -58,6 +57,8 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
             return
         }
 
+        //TODO no database handling yet for AsyncAPI
+
         ind.evaluatedMainActions().forEachIndexed { index, evaluated ->
             lines.addEmpty()
             addActionLines(
@@ -82,9 +83,9 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         baseUrlOfSut: String
     ) {
         val call = action as? AsyncApiAction
-            ?: throw IllegalStateException("Not an AsyncAPI action: ${action::class.java.simpleName}")
+            ?: throw IllegalArgumentException("Not an AsyncAPI action: ${action::class.java.simpleName}")
         val res = result as? AsyncApiCallResult
-            ?: throw IllegalStateException("Not an AsyncAPI result: ${result::class.java.simpleName}")
+            ?: throw IllegalArgumentException("Not an AsyncAPI result: ${result::class.java.simpleName}")
 
         lines.addSingleCommentLine("${call.operationId}: ${res.getOutcome() ?: "not executed"}")
 
@@ -92,26 +93,13 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         val variable = res.getReplyVariableName()
 
         when {
-            /*
-                The driver rendered the lines itself, which is how a transport the contract does
-                not describe well enough gets written: one whose correlation id rides inside the
-                service's own message layout, or one nothing here knows at all.
-             */
+            //rendered by the driver, for transports not written from the contract
             script.any { it.isNotBlank() } -> script.forEach { lines.add(it) }
 
-            /*
-                Kafka is written from the contract, as REST writes its RestAssured calls: the
-                document named the broker, the topics and the header the id rides in, so nothing
-                else has to.
-             */
             variable != null && KafkaTestClientEmitter.canEmit(res) ->
                 KafkaTestClientEmitter.emit(lines, res, variable, brokerOf(res), format)
 
             else -> {
-                /*
-                    Nothing can be written that would reach the service. Said plainly rather than
-                    left to a reader wondering why a test does nothing.
-                 */
                 lines.addSingleCommentLine(
                     "No lines could be written to publish this message: the transport is not one"
                 )
@@ -146,19 +134,13 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
             lines.addSingleCommentLine("recognised as the declared message '$it'")
         }
 
-        /*
-            What came back, asserted the way REST asserts a response body: from what was actually
-            observed, not from what the contract promises. Which of the declared messages a reply
-            is turns on the fields it carries, so these assertions are also what keeps a test
-            honest about the variant its own name claims.
-         */
         AsyncApiReplyAssertions(config, format, ::isFieldToSkip, ::isSuitableToPrint)
             .emit(lines, res.getReplyPayload(), variable, bodyVariableFor(variable))
     }
 
     /**
-     * A message that could not be published stops the test, and the search already recorded why,
-     * so there is no exception for a generated test to expect.
+     * A message that could not be published is recorded during the search, so a generated test
+     * does not expect an exception.
      */
     override fun shouldFailIfExceptionNotThrown(result: ActionResult) = false
 
@@ -170,11 +152,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
         val kafkaResults = KafkaTestClientEmitter.resultsIn(solution)
 
-        /*
-            Before anything may return: one writer writes every suite of a run, so what the last
-            one found must not be left behind for the next, which would assign to a field it
-            never declared.
-         */
+        //the same writer is used for every suite of a run, so clear what the previous one left
         servers.clear()
 
         if (kafkaResults.isEmpty()) {
@@ -190,11 +168,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
             if (name.isNullOrBlank()) {
                 return@forEach
             }
-            /*
-                Two names that differ only where a variable cannot, say "a-b" and "a.b", would be
-                declared twice under one identifier. The first keeps the variable; the rest fall
-                back to the address the document gave them.
-             */
+            //names like "a-b" and "a.b" map to the same variable: only the first gets one
             if (servers.keys.any { it != name && variableFor(it) == variableFor(name) }) {
                 return@forEach
             }
@@ -205,14 +179,14 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
             when {
                 format.isJava() -> lines.add("private static String ${variableFor(name)};")
                 format.isKotlin() -> lines.add("private lateinit var ${variableFor(name)}: String")
+                else -> throw IllegalArgumentException("Unsupported format: $format")
             }
         }
         lines.addEmpty()
     }
 
     /**
-     * Ask the driver where each server is, falling back to the document when it does not say,
-     * which is what a driver that never overrode the method does.
+     * Ask the driver where each server is, falling back to the address in the document.
      */
     override fun addExtraInitStatement(lines: Lines) {
 
@@ -223,10 +197,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
             val fallback = TestWriterUtils.quotedEscaped(declared, format)
 
             when {
-                /*
-                    Written over two statements rather than a ternary, so that a driver which
-                    computes the address, rather than keeping one, is asked for it only once.
-                 */
+                //two statements, so the driver is asked only once
                 format.isJava() -> {
                     lines.add("$variable = $ask;")
                     lines.add("if ($variable == null) {")
@@ -236,13 +207,14 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
                     lines.add("}")
                 }
                 format.isKotlin() -> lines.add("$variable = $ask ?: $fallback")
+                else -> throw IllegalArgumentException("Unsupported format: $format")
             }
         }
     }
 
     /**
-     * Where a message goes, as the generated test sees it: the variable the suite filled in from
-     * the driver, or the document's own address when there is no driver to ask.
+     * Where to publish: the variable filled in from the driver, or the document's address when
+     * there is no driver.
      */
     private fun brokerOf(result: AsyncApiCallResult): String {
 
@@ -256,7 +228,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
     }
 
     /**
-     * What the parsed reply is called, beside the reply it was parsed from.
+     * Name of the variable holding the parsed reply.
      */
     private fun bodyVariableFor(replyVariable: String) =
         bodyVariablePrefix + replyVariable.substringAfterLast('_')
@@ -265,8 +237,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
         KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX + TestWriterUtils.safeVariableName(serverName)
 
     /**
-     * Whether the generated suite can ask a driver where a server is: it needs one in it, which
-     * a black-box suite has not, and the controller is only declared for Java and Kotlin.
+     * Whether the generated suite has a driver to ask where a server is.
      */
     private fun canAskDriver() = (!config.blackBox || config.bbExperiments) && format.isJavaOrKotlin()
 
@@ -274,11 +245,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
         val actions = test.test.evaluatedMainActions()
 
-        /*
-            What REST puts above a test, with the outcome where it puts the status code: there is
-            no code to report, and the outcome is the same kind of one-word summary of what came
-            back.
-         */
+        //as REST does, with the outcome in place of the status code
         if (actions.isNotEmpty()) {
             lines.addBlockCommentLine("Calls:")
             actions.forEachIndexed { index, evaluated ->

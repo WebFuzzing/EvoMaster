@@ -364,6 +364,8 @@ Note: must be able to do an _introspective query_ on such API to fetch its schem
 
 ## AsyncAPI Schema
 
+> **Note:** support for AsyncAPI is experimental and still a work in progress.
+
 To test an AsyncAPI service, in the `getProblemInfo()` you need to return an instance of the
 `AsyncApiProblem` class, built from the AsyncAPI document itself, either its text or where to find it.
 Only AsyncAPI 3.x is supported, as it is the first version able to declare the reply to an operation, and
