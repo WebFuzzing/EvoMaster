@@ -15,7 +15,11 @@ import org.evomaster.core.remote.service.RemoteController
  * not instrumented, so it reports no code targets.
  */
 class FakeAsyncApiDriver(
-    private val info: SutInfoDto,
+    /**
+     * What this driver says about the service, each time it is asked. A test may change it
+     * mid-search, as a real driver's answer changes once the service reads a class.
+     */
+    val info: SutInfoDto,
     private val answer: (AsyncApiActionDto) -> AsyncApiReplyDto?
 ) : RemoteController by DummyController() {
 
