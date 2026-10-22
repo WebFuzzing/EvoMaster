@@ -287,7 +287,5 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
                 lines.addBlockCommentLine("$prefix($outcome) ${evaluated.action.getName()}")
             }
         }
-
-        addFaultsCommentLine(lines, test)
     }
 }

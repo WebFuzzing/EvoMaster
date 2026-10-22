@@ -28,8 +28,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
     companion object{
         private val mapper = ObjectMapper()
-
-        private val HTML_ENTITY_REGEX = TestWriterUtils.HTML_ENTITY_REGEX
+        /*
+            HTML entities may be decoded differently by clients/servers, making exact string assertions flaky.
+            as this relates to asseration not sut, we fix it in the test generation instead of flakiness handling
+         */
+        private val HTML_ENTITY_REGEX = Regex("&(?:#[0-9]+|#x[0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]+);")
     }
 
     protected fun createUniqueResponseVariableName(): String {
@@ -833,6 +836,12 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
      *
      * FIXME need to refactor when dealing with escape refactoring / flaky handling
      */
-    protected fun isSuitableToPrint(printableContent: String) =
-        TestWriterUtils.isSuitableToPrint(printableContent)
+    protected fun isSuitableToPrint(printableContent: String): Boolean {
+        return (
+                printableContent != "null" //TODO not so sure about this one... need to double-check
+                        && !printableContent.contains("logged")
+                        && !HTML_ENTITY_REGEX.containsMatchIn(printableContent)
+                        // is this for IP host:port addresses?
+                        && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
+    }
 }
