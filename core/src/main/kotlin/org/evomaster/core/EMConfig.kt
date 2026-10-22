@@ -896,8 +896,30 @@ class EMConfig {
 
         checkOutputFormatIsWritable()
 
+        if (blackBox && (asyncApiSettleMs > 0 || asyncApiCompletion != AsyncApiCompletion.FIXED)) {
+            /*
+                A black-box run never asks the controller to keep an action open, so these options
+                do nothing. Reset to their defaults rather than failing on how they combine.
+             */
+            LoggingUtil.uniqueUserWarn("'asyncApiSettleMs' and 'asyncApiCompletion' only apply in white-box mode," +
+                    " so they are ignored in this black-box run")
+            asyncApiSettleMs = 0
+            asyncApiCompletion = AsyncApiCompletion.FIXED
+        }
+
+        if (asyncApiCompletion == AsyncApiCompletion.COVERAGE_STABLE
+                && asyncApiSettleMs > 0 && asyncApiStableMs >= asyncApiSettleMs) {
+            LoggingUtil.uniqueUserWarn("'asyncApiStableMs' ($asyncApiStableMs) is not shorter than 'asyncApiSettleMs'" +
+                    " ($asyncApiSettleMs), so ${AsyncApiCompletion.COVERAGE_STABLE} never ends a settle window early")
+        }
+
         if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
             throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
+        }
+
+        if (asyncApiCompletion == AsyncApiCompletion.COVERAGE_STABLE && asyncApiSettleMs <= 0) {
+            throw ConfigProblemException("'asyncApiCompletion' ${AsyncApiCompletion.COVERAGE_STABLE} ends a" +
+                    " settle window early, so it needs one: set 'asyncApiSettleMs' to the longest wait to allow")
         }
 
         if (problemType == ProblemType.RPC
@@ -3058,6 +3080,38 @@ class EMConfig {
             " The wait happens in the driver's controller. 0 means no wait.")
     @Min(0.0)
     var asyncApiSettleMs = 0
+
+    /**
+     * How the driver's controller decides, within the `asyncApiSettleMs` window, that a service
+     * is done with a message.
+     */
+    enum class AsyncApiCompletion {
+
+        /**
+         * Wait for the whole window.
+         */
+        FIXED,
+
+        /**
+         * Stop early once the service has gone `asyncApiStableMs` without reaching any coverage
+         * objective for the first time, or improving one.
+         */
+        COVERAGE_STABLE
+    }
+
+    @Experimental
+    @Cfg("When testing an AsyncAPI service in white-box mode with a settle window (asyncApiSettleMs), how the" +
+            " driver's controller decides the service is done with a message. FIXED waits for the whole window." +
+            " COVERAGE_STABLE ends it early once the service has gone asyncApiStableMs without reaching any new" +
+            " code, or improving on what it reached. That is a heuristic: a handler that only runs code already" +
+            " covered earlier in the same test looks done too.")
+    var asyncApiCompletion = AsyncApiCompletion.FIXED
+
+    @Experimental
+    @Cfg("When testing an AsyncAPI service with asyncApiCompletion COVERAGE_STABLE, how long the service has" +
+            " to go without improving its coverage, in milliseconds, for the settle window to end early.")
+    @Min(1.0)
+    var asyncApiStableMs = 200
 
     @Experimental
     @Cfg("When testing an AsyncAPI service, the probability of publishing a message's declared example as it is," +

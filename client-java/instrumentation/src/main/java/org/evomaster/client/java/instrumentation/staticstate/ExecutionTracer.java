@@ -9,6 +9,7 @@ import org.evomaster.client.java.instrumentation.shared.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP;
@@ -63,6 +64,18 @@ public class ExecutionTracer {
      */
     private static final Map<String, TargetInfo> objectiveCoverage =
             new ConcurrentHashMap<>(65536);
+
+    /**
+     * How many times, in the current test, an objective was reached for the first time or got a
+     * better value than it had. Reset with {@link #objectiveCoverage}.
+     *
+     * Improvements rather than executions, as it is read to tell whether the SUT is still doing
+     * something new: a service polling a broker runs the same lines forever. As a consequence, a
+     * handler re-running only paths already covered in the same test does not move it either.
+     *
+     * Declared before the static block that calls {@link #reset()}.
+     */
+    private static final AtomicLong objectiveUpdates = new AtomicLong(0);
 
     /**
      * A test case can be composed by 1 or more actions, eg HTTP calls.
@@ -134,6 +147,7 @@ public class ExecutionTracer {
     public static void reset() {
         synchronized (lock) {
             objectiveCoverage.clear();
+            objectiveUpdates.set(0);
             actionIndex = 0;
             actionName = null;
             additionalInfoList.clear();
@@ -550,6 +564,14 @@ public class ExecutionTracer {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * @return how many times, since the last {@link #reset()}, an objective was reached for the
+     * first time or improved on its best value. Only grows between resets.
+     */
+    public static long getObjectiveUpdateCount() {
+        return objectiveUpdates.get();
+    }
+
     public static Double getValue(String id) {
         return objectiveCoverage.get(id).value;
     }
@@ -568,9 +590,11 @@ public class ExecutionTracer {
                 double previous = objectiveCoverage.get(id).value;
                 if (value > previous) {
                     objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));
+                    objectiveUpdates.incrementAndGet();
                 }
             } else {
                 objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));
+                objectiveUpdates.incrementAndGet();
             }
         }
 
