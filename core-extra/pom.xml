@@ -19,5 +19,6 @@
         <module>solver</module>
         <module>arazzo-parser</module>
         <module>asyncapi-parser</module>
+        <module>log-collector</module>
     </modules>
 </project>
