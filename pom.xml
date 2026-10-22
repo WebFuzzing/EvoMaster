@@ -429,6 +429,11 @@
             </dependency>
             <dependency>
                 <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-kafka</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
                 <artifactId>solver</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -967,11 +972,9 @@
             </dependency>
             <dependency>
                 <!--
-                    Only used by the artificial SUTs of the AsyncAPI E2E tests, their drivers,
-                    the suites those tests generate and compile, and (through spring-kafka, in
-                    test scope) the tests of client-java/instrumentation. Not shipped with
-                    EvoMaster: no module under client-java, core or core-extra depends on it
-                    outside test scope.
+                    Not shipped with EvoMaster: only in test or provided scope, for the AsyncAPI
+                    E2E SUTs, their drivers and generated suites, the client-java/instrumentation
+                    tests (through spring-kafka), and client-java/kafka.
                 -->
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>

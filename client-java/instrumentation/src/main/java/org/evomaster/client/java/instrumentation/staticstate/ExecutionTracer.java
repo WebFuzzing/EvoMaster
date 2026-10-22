@@ -51,21 +51,15 @@ public class ExecutionTracer {
     private static boolean executingAction = false;
 
     /**
-     * Whether the current thread is running the driver's code that publishes an AsyncAPI action,
-     * set by the controller around it. Per thread, as the SUT's own threads keep running in the
-     * meantime, and what they do is exactly what is to be recorded.
+     * Whether the current thread is running the driver's executeAsyncApiAction or
+     * areAsyncApiConsumersCaughtUp, set by the controller around them. Per thread, as the SUT's
+     * own threads keep running meanwhile.
      *
-     * This matters when the driver and the SUT share the JVM and the driver's classes get the
-     * method replacements too. That happens to a driver class loaded once the agent is in place
-     * and the replacement categories are set, eg in a JVM where an earlier test already started a
-     * SUT, as can happen with EvoMaster's own E2E tests. The broker client calls the driver makes
-     * to publish, and to wait for the reply, would otherwise be recorded as messages the SUT
-     * emitted and consumed. A package filter cannot tell the two apart, as they can share a
-     * package prefix. Not reset in {@link #reset()}: whoever sets it on a thread clears it.
-     *
-     * Only the thread running executeAsyncApiAction is covered, and only while it runs. Broker
-     * client calls the driver makes on threads it starts itself (eg a consumer it keeps polling in
-     * the background) are recorded as the SUT's when the driver's classes get the replacements.
+     * Needed when the driver's classes get the method replacements too, eg a driver class loaded
+     * in a JVM where an earlier test already started a SUT, as in EvoMaster's own E2E tests. Its
+     * broker client calls would otherwise be recorded as the SUT's; a package filter cannot tell
+     * them apart. Calls the driver makes on threads it starts itself (eg a background consumer)
+     * are still recorded as the SUT's. Not reset in {@link #reset()}: whoever sets it clears it.
      */
     private static final ThreadLocal<Boolean> executingDriverAction = ThreadLocal.withInitial(() -> false);
 
@@ -277,17 +271,16 @@ public class ExecutionTracer {
     }
 
     /**
-     * @return whether the current thread is running the driver's code that publishes an AsyncAPI
-     * action, whose broker client calls are not the SUT's and must not be recorded as such. Calls
-     * on any other thread are not covered, see {@link #executingDriverAction}
+     * @return whether the current thread is running driver code whose broker client calls must
+     * not be recorded as the SUT's, see {@link #executingDriverAction}
      */
     public static boolean isExecutingDriverAction() {
         return executingDriverAction.get();
     }
 
     /**
-     * Mark the current thread as running, or no longer running, the driver's code that publishes
-     * an AsyncAPI action. Only that thread is affected.
+     * Mark the current thread as running, or no longer running, driver code, see
+     * {@link #executingDriverAction}.
      */
     public static void setExecutingDriverAction(boolean executing) {
         if (executing) {

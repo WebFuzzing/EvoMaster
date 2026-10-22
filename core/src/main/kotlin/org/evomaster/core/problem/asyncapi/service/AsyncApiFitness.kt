@@ -92,6 +92,18 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         private const val PATH_SEPARATOR = "/"
 
         /**
+         * How a JSON Pointer writes a [PATH_SEPARATOR] that is part of a name.
+         */
+        private const val ESCAPED_SLASH = "~1"
+
+        /**
+         * How a JSON Pointer writes a [TILDE] that is part of a name.
+         */
+        private const val ESCAPED_TILDE = "~0"
+
+        private const val TILDE = "~"
+
+        /**
          * What a correlation id's header is called when the document declares no field for it.
          */
         private const val DEFAULT_CORRELATION_HEADER = "correlationId"
@@ -662,6 +674,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
                     AsyncApiActionDto.Completion.COVERAGE_STABLE
                 }
                 EMConfig.AsyncApiCompletion.HANDLER_RETURN -> AsyncApiActionDto.Completion.HANDLER_RETURN
+                EMConfig.AsyncApiCompletion.CONSUMER_LAG -> AsyncApiActionDto.Completion.CONSUMER_LAG
             }
         }
 
@@ -696,7 +709,9 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
     /**
      * The header a correlation id rides in, when it rides in one. The document names the field
-     * with a pointer, and its last segment is the header's name.
+     * with a pointer, and its last segment is the header's name, unescaped as JSON Pointer
+     * says (`~1` then `~0`). The Kafka driver helper reads it the same way, so a generated test
+     * looks for the reply under the same header the search did.
      */
     private fun correlationHeaderOf(call: AsyncApiActionDto): String? {
 
@@ -705,6 +720,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         }
 
         return call.correlationPointer?.substringAfterLast(PATH_SEPARATOR)?.takeIf { it.isNotBlank() }
+            ?.replace(ESCAPED_SLASH, PATH_SEPARATOR)?.replace(ESCAPED_TILDE, TILDE)
             ?: DEFAULT_CORRELATION_HEADER
     }
 
