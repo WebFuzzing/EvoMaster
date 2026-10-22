@@ -8,46 +8,53 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
 
 /**
- * Writes assertions over the reply a message drew, from the reply the search actually saw.
+ * Writes regression assertions on the reply a message received, from the reply seen during the
+ * search, as the REST writer does on a response body.
  *
- * These are regression assertions, the same kind the REST writer makes on a response body: they
- * say what came back, not what should, and they honour the same rules about what is too unstable
- * to assert on, because a flaky test is flaky whatever the protocol.
+ * The reply is text, so the assertions are made on the JSON tree it is parsed into.
  *
- * The reply is text rather than a response object, so there is no fluent client to hang them
- * off. They are made against the tree it parses into.
+ * @param isFieldToSkip     whether a field's value must not be asserted on, eg because it changes
+ *                          between runs. The REST writer's rule is passed here.
+ * @param isSuitableToPrint whether a value can be asserted on without making the test flaky.
+ *                          The REST writer's rule is passed here.
  */
-object AsyncApiReplyAssertions {
+class AsyncApiReplyAssertions(
+    private val config: EMConfig,
+    private val format: OutputFormat,
+    private val isFieldToSkip: (String) -> Boolean,
+    private val isSuitableToPrint: (String) -> Boolean
+) {
 
-    private val mapper = ObjectMapper()
+    companion object {
+        private val mapper = ObjectMapper()
+
+        /**
+         * Tolerance when comparing doubles, as the same value can differ slightly once
+         * serialized to text.
+         */
+        private const val DELTA = 0.001
+    }
+
+    init {
+        if (!format.isJavaOrKotlin()) {
+            throw IllegalArgumentException("Reply assertions are written only for Java and Kotlin, not $format")
+        }
+    }
 
     /**
-     * The fields REST skips, for the same reason: their value usually differs on the next run.
+     * @param payload      the reply seen during the search
+     * @param variable     the variable holding the reply in the test
+     * @param bodyVariable the variable to hold the parsed reply, if one is needed
      */
-    private val ALWAYS_SKIPPED = listOf("id", "timestamp", "self")
+    fun emit(lines: Lines, payload: String?, variable: String, bodyVariable: String) {
 
-    /**
-     * Write what can be said about [payload], into [variable] as the test holds it.
-     *
-     * @param bodyVariable what the parsed reply is called, when one is needed
-     */
-    fun emit(
-        lines: Lines,
-        payload: String?,
-        variable: String,
-        bodyVariable: String,
-        config: EMConfig,
-        format: OutputFormat
-    ) {
         if (!config.enableBasicAssertions) {
             return
         }
 
         if (payload.isNullOrBlank()) {
             //an acknowledgement, or a transport that answers in metadata
-            val java = "$variable == null || $variable.isEmpty()"
-            val kotlin = "$variable.isNullOrEmpty()"
-            assertion(lines, kotlin, java, format)
+            assertion(lines, "$variable == null || $variable.isEmpty()")
             return
         }
 
@@ -66,91 +73,64 @@ object AsyncApiReplyAssertions {
         }
 
         if (tree == null || tree.isMissingNode) {
-            //not JSON: all that can be said is what it contained
-            if (printable(payload)) {
-                contains(lines, variable, payload.trim(), format)
+            //not JSON, so the reply can only be checked as text
+            if (isSuitableToPrint(payload)) {
+                contains(lines, variable, payload.trim())
             } else {
                 lines.addSingleCommentLine(
-                    "the reply is not asserted on, as its value is not stable between runs"
+                    "the reply is not JSON, and its text is not asserted on as it might differ between runs"
                 )
             }
             return
         }
 
-        parse(lines, variable, bodyVariable, format)
-        onNode(lines, tree, bodyVariable, "", config, format)
+        parse(lines, variable, bodyVariable)
+        onNode(lines, tree, bodyVariable, "")
     }
 
-    private fun parse(lines: Lines, variable: String, bodyVariable: String, format: OutputFormat) {
+    private fun parse(lines: Lines, variable: String, bodyVariable: String) {
         val read = "com.fasterxml.jackson.databind.ObjectMapper().readTree($variable)"
         when {
-            format.isJava() -> lines.add(
-                "com.fasterxml.jackson.databind.JsonNode $bodyVariable = " +
-                        "new com.fasterxml.jackson.databind.ObjectMapper().readTree($variable);"
-            )
+            format.isJava() -> lines.add("com.fasterxml.jackson.databind.JsonNode $bodyVariable = new $read;")
             format.isKotlin() -> lines.add("val $bodyVariable = $read")
+            else -> throw IllegalArgumentException("Unsupported format: $format")
         }
     }
 
-    /**
-     * Everything that can be said about one node, and about what is under it.
-     */
-    private fun onNode(
-        lines: Lines,
-        node: JsonNode,
-        path: String,
-        fieldPath: String,
-        config: EMConfig,
-        format: OutputFormat
-    ) {
+    private fun onNode(lines: Lines, node: JsonNode, path: String, fieldPath: String) {
         when {
-            node.isObject -> onObject(lines, node, path, fieldPath, config, format)
-            node.isArray -> onArray(lines, node, path, fieldPath, config, format)
-            else -> onValue(lines, node, path, fieldPath, config, format)
+            node.isObject -> onObject(lines, node, path, fieldPath)
+            node.isArray -> onArray(lines, node, path, fieldPath)
+            else -> onValue(lines, node, path, fieldPath)
         }
     }
 
-    private fun onObject(
-        lines: Lines,
-        node: JsonNode,
-        path: String,
-        fieldPath: String,
-        config: EMConfig,
-        format: OutputFormat
-    ) {
+    private fun onObject(lines: Lines, node: JsonNode, path: String, fieldPath: String) {
+
         if (node.isEmpty) {
-            val java = "$path.isEmpty()"
-            assertion(lines, if (format.isKotlin()) "$path.isEmpty" else java, java, format)
+            assertion(lines, "$path.isEmpty()")
             return
         }
 
-        node.fieldNames().asSequence().toList().forEach { name ->
+        node.fieldNames().forEach { name ->
 
-            val child = node.get(name)
             val here = if (fieldPath.isEmpty()) name else "$fieldPath.$name"
 
-            //that the field is there is stable, and is what tells one declared message from
-            //another; only its value changes between runs
-            has(lines, path, name, format)
+            //the field being there is stable even when its value is not
+            has(lines, path, name)
 
-            if (skip(name, config)) {
+            if (isFieldToSkip(name)) {
                 lines.addSingleCommentLine("$here is not asserted on, as its value changes between runs")
                 return@forEach
             }
 
-            onNode(lines, child, child(path, name, format), here, config, format)
+            onNode(lines, node.get(name), child(path, name), here)
         }
     }
 
-    private fun onArray(
-        lines: Lines,
-        node: JsonNode,
-        path: String,
-        fieldPath: String,
-        config: EMConfig,
-        format: OutputFormat
-    ) {
-        equals(lines, node.size().toString(), "$path.size()", format)
+    private fun onArray(lines: Lines, node: JsonNode, path: String, fieldPath: String) {
+
+        equals(lines, node.size().toString(), "$path.size()")
 
         val limit = if (config.maxAssertionForDataInCollection >= 0) {
             config.maxAssertionForDataInCollection
@@ -159,7 +139,7 @@ object AsyncApiReplyAssertions {
         }
 
         node.take(limit).forEachIndexed { i, child ->
-            onNode(lines, child, index(path, i), "$fieldPath[$i]", config, format)
+            onNode(lines, child, "$path.get($i)", "$fieldPath[$i]")
         }
 
         if (node.size() > limit) {
@@ -170,39 +150,23 @@ object AsyncApiReplyAssertions {
         }
     }
 
-    private fun onValue(
-        lines: Lines,
-        node: JsonNode,
-        path: String,
-        fieldPath: String,
-        config: EMConfig,
-        format: OutputFormat
-    ) {
+    private fun onValue(lines: Lines, node: JsonNode, path: String, fieldPath: String) {
         when {
-            node.isNull -> {
-                val java = "$path.isNull()"
-                assertion(lines, if (format.isKotlin()) "$path.isNull" else java, java, format)
-            }
+            node.isNull -> assertion(lines, "$path.isNull()")
 
-            node.isBoolean -> equals(
-                lines,
-                node.asBoolean().toString(),
-                value(path, "asBoolean()"),
-                format
-            )
+            node.isBoolean -> equals(lines, node.asBoolean().toString(), "$path.asBoolean()")
 
             node.isIntegralNumber -> {
                 val v = node.asLong()
                 val suffix = if (format.isJava() && (v > Int.MAX_VALUE || v < Int.MIN_VALUE)) "L" else ""
-                equals(lines, "$v$suffix", value(path, "asLong()"), format)
+                equals(lines, "$v$suffix", "$path.asLong()")
             }
 
-            //within a tolerance, as REST does: the same computation lands a bit apart through text
             node.isNumber -> {
                 val v = node.asDouble()
-                //out of range it parses as an infinity, which no target language writes as one
+                //out of range it parses as an infinity, which has no literal
                 if (v.isFinite()) {
-                    delta(lines, v.toString(), value(path, "asDouble()"), format)
+                    delta(lines, v.toString(), "$path.asDouble()")
                 } else {
                     lines.addSingleCommentLine(
                         "$fieldPath is not asserted on, as it is outside the range of a double"
@@ -212,87 +176,56 @@ object AsyncApiReplyAssertions {
 
             node.isTextual -> {
                 val text = node.asText()
-                if (printable(text)) {
-                    equals(lines, quoted(text, format), value(path, "asText()"), format)
+                if (isSuitableToPrint(text)) {
+                    equals(lines, TestWriterUtils.quotedEscaped(text, format), "$path.asText()")
                 } else {
                     lines.addSingleCommentLine(
-                        "$fieldPath is not asserted on, as its value is not stable between runs"
+                        "$fieldPath is not asserted on, as its value might differ between runs"
                     )
                 }
             }
         }
     }
 
+    private fun has(lines: Lines, path: String, field: String) =
+        assertion(lines, "$path.has(${TestWriterUtils.quotedEscaped(field, format)})")
+
+    private fun child(path: String, name: String) =
+        "$path.get(${TestWriterUtils.quotedEscaped(name, format)})"
+
     /**
-     * Whether a value can be asserted on without making the test flaky: REST's rule, shared
-     * rather than restated, since a copy of it here had already drifted from it.
+     * [expression] is valid in both Java and Kotlin.
      */
-    private fun printable(content: String) = TestWriterUtils.isSuitableToPrint(content)
-
-    private fun skip(fieldName: String, config: EMConfig): Boolean {
-
-        val field = fieldName.lowercase()
-
-        val configured = config.fieldsToSkipInAssertions
-            .split(",")
-            .map { it.trim().lowercase() }
-            .filter { it.isNotEmpty() }
-
-        return ALWAYS_SKIPPED.contains(field) || configured.contains(field)
-    }
-
-    private fun has(lines: Lines, path: String, field: String, format: OutputFormat) {
-        val name = quoted(field, format)
-        val expr = "$path.has($name)"
-        assertion(lines, expr, expr, format)
-    }
-
-    //a field name is a literal too, and JSON allows ones holding a quote, or starting with '$',
-    //which Kotlin would otherwise read as the start of a template
-    private fun child(path: String, name: String, format: OutputFormat) =
-        "$path.get(${quoted(name, format)})"
-
-    private fun index(path: String, i: Int) = "$path.get($i)"
-
-    private fun value(path: String, asType: String) = "$path.$asType"
-
-    private fun assertion(lines: Lines, kotlin: String, java: String, format: OutputFormat) {
+    private fun assertion(lines: Lines, expression: String) {
         when {
-            format.isJava() -> lines.add("assertTrue($java);")
-            format.isKotlin() -> lines.add("assertTrue($kotlin)")
+            format.isJava() -> lines.add("assertTrue($expression);")
+            format.isKotlin() -> lines.add("assertTrue($expression)")
+            else -> throw IllegalArgumentException("Unsupported format: $format")
         }
     }
 
-    private fun equals(lines: Lines, expected: String, actual: String, format: OutputFormat) {
+    private fun equals(lines: Lines, expected: String, actual: String) {
         when {
             format.isJava() -> lines.add("assertEquals($expected, $actual);")
             format.isKotlin() -> lines.add("assertEquals($expected, $actual)")
+            else -> throw IllegalArgumentException("Unsupported format: $format")
         }
     }
 
-    private fun delta(lines: Lines, expected: String, actual: String, format: OutputFormat) {
+    private fun delta(lines: Lines, expected: String, actual: String) {
         when {
-            format.isJava() -> lines.add("assertEquals($expected, $actual, 0.001);")
-            format.isKotlin() -> lines.add("assertEquals($expected, $actual, 0.001)")
+            format.isJava() -> lines.add("assertEquals($expected, $actual, $DELTA);")
+            format.isKotlin() -> lines.add("assertEquals($expected, $actual, $DELTA)")
+            else -> throw IllegalArgumentException("Unsupported format: $format")
         }
     }
 
-    private fun contains(lines: Lines, variable: String, text: String, format: OutputFormat) {
-        val expected = quoted(text, format)
+    private fun contains(lines: Lines, variable: String, text: String) {
+        val expected = TestWriterUtils.quotedEscaped(text, format)
         when {
             format.isJava() -> lines.add("assertTrue($variable.contains($expected));")
             format.isKotlin() -> lines.add("assertTrue($variable!!.contains($expected))")
+            else -> throw IllegalArgumentException("Unsupported format: $format")
         }
-    }
-
-    private fun quoted(value: String, format: OutputFormat): String {
-        val escaped = value
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
-            .let { if (format.isKotlin()) it.replace("$", "\\$") else it }
-        return "\"$escaped\""
     }
 }

@@ -15,9 +15,18 @@ class AsyncApiReplyAssertionsTest {
 
     private val body = "body_0"
 
-    private fun emit(payload: String?, format: OutputFormat, config: EMConfig = EMConfig()): String {
+    private val unstable = "unstable"
+
+    private fun emit(
+        payload: String?,
+        format: OutputFormat,
+        config: EMConfig = EMConfig(),
+        isFieldToSkip: (String) -> Boolean = { it == "id" },
+        isSuitableToPrint: (String) -> Boolean = { !it.contains(unstable) }
+    ): String {
         val lines = Lines(format)
-        AsyncApiReplyAssertions.emit(lines, payload, variable, body, config, format)
+        AsyncApiReplyAssertions(config, format, isFieldToSkip, isSuitableToPrint)
+            .emit(lines, payload, variable, body)
         return lines.toString()
     }
 
@@ -34,7 +43,7 @@ class AsyncApiReplyAssertionsTest {
     @Test
     fun testAnEmptyReplyIsAssertedEmpty() {
 
-        assertTrue(emit("", OutputFormat.KOTLIN_JUNIT_5).contains("assertTrue(res_0.isNullOrEmpty())"))
+        assertTrue(emit("", OutputFormat.KOTLIN_JUNIT_5).contains("assertTrue(res_0 == null || res_0.isEmpty())"))
         assertTrue(emit("", OutputFormat.JAVA_JUNIT_5).contains("assertTrue(res_0 == null || res_0.isEmpty());"))
     }
 
@@ -97,36 +106,29 @@ class AsyncApiReplyAssertionsTest {
         assertTrue(emit("""{"xs": []}""", OutputFormat.KOTLIN_JUNIT_5).contains("""assertEquals(0, body_0.get("xs").size())"""))
 
         //an empty object is asked whether it is empty, which each language spells its own way
-        assertTrue(emit("""{"o": {}}""", OutputFormat.KOTLIN_JUNIT_5).contains("""assertTrue(body_0.get("o").isEmpty)"""))
+        assertTrue(emit("""{"o": {}}""", OutputFormat.KOTLIN_JUNIT_5).contains("""assertTrue(body_0.get("o").isEmpty())"""))
         assertTrue(emit("""{"o": {}}""", OutputFormat.JAVA_JUNIT_5).contains("""assertTrue(body_0.get("o").isEmpty());"""))
     }
 
     @Test
-    fun testTheFieldsThatChangeBetweenRunsAreSkipped() {
+    fun testAFieldToSkipHasOnlyItsPresenceAsserted() {
 
-        val emitted = emit("""{"id": 7, "timestamp": 1, "self": "x", "kept": 2}""", OutputFormat.KOTLIN_JUNIT_5)
+        val emitted = emit("""{"id": 7, "kept": 2}""", OutputFormat.KOTLIN_JUNIT_5)
 
-        /*
-            That the field is there is stable and is asserted; what it holds is not, so only the
-            value is left alone. This is what the REST writer does with the same three names.
-         */
         assertTrue(emitted.contains("""assertTrue(body_0.has("id"))"""), emitted)
-        listOf("id", "timestamp", "self").forEach {
-            assertFalse(emitted.contains("""body_0.get("$it")"""), emitted)
-            assertTrue(emitted.contains("$it is not asserted on"), emitted)
-        }
+        assertFalse(emitted.contains("""body_0.get("id")"""), emitted)
+        assertTrue(emitted.contains("id is not asserted on"), emitted)
 
         assertTrue(emitted.contains("""assertEquals(2, body_0.get("kept").asLong())"""), emitted)
     }
 
     @Test
-    fun testAValueThatIsNotStableBetweenRunsBecomesAComment() {
+    fun testAValueNotSuitableToPrintBecomesAComment() {
 
-        //an address with a port is the REST writer's own example of what not to assert on
-        val emitted = emit("""{"where": "localhost:12345"}""", OutputFormat.KOTLIN_JUNIT_5)
+        val emitted = emit("""{"where": "$unstable"}""", OutputFormat.KOTLIN_JUNIT_5)
 
-        assertFalse(emitted.contains("localhost:12345"), emitted)
-        assertTrue(emitted.contains("not stable between runs"), emitted)
+        assertFalse(emitted.contains("asText()"), emitted)
+        assertTrue(emitted.contains("where is not asserted on"), emitted)
     }
 
     @Test
@@ -142,28 +144,12 @@ class AsyncApiReplyAssertionsTest {
     }
 
     @Test
-    fun testAnHtmlEntityIsNotAssertedOnInAnyOfItsSpellings() {
+    fun testAReplyThatIsNotJsonNorSuitableToPrintBecomesAComment() {
 
-        /*
-            Whether the value reaches the test as the entity or as the character it stands for
-            depends on who decoded it on the way, so asserting the text would be flaky. The rule
-            is REST's; a copy of it here once missed the hex and the digit-bearing spellings.
-         */
-        listOf("&amp;", "&#39;", "&#x27;", "&frac12;", "&sup2;").forEach { entity ->
-            val emitted = emit("""{"text": "a $entity b"}""", OutputFormat.KOTLIN_JUNIT_5)
-            assertFalse(emitted.contains(entity), "$entity was asserted on:\n$emitted")
-            assertTrue(emitted.contains("not asserted on"), "$entity:\n$emitted")
-        }
-    }
+        val emitted = emit("listening on $unstable", OutputFormat.KOTLIN_JUNIT_5)
 
-    @Test
-    fun testAReplyThatCannotBePrintedSaysSoRatherThanAssertingNothing() {
-
-        //an address with a port is the REST writer's own example of what is not stable
-        val emitted = emit("listening on localhost:12345", OutputFormat.KOTLIN_JUNIT_5)
-
-        assertFalse(emitted.contains("localhost:12345"), emitted)
-        assertTrue(emitted.contains("not asserted on"), emitted)
+        assertFalse(emitted.contains("contains("), emitted)
+        assertTrue(emitted.contains("the reply is not JSON"), emitted)
     }
 
     @Test
@@ -212,7 +198,7 @@ class AsyncApiReplyAssertionsTest {
 
         val payload = """{"ok": true, "none": null}"""
 
-        assertTrue(emit(payload, OutputFormat.KOTLIN_JUNIT_5).contains("assertTrue(body_0.get(\"none\").isNull)"))
+        assertTrue(emit(payload, OutputFormat.KOTLIN_JUNIT_5).contains("assertTrue(body_0.get(\"none\").isNull())"))
         assertTrue(emit(payload, OutputFormat.JAVA_JUNIT_5).contains("assertTrue(body_0.get(\"none\").isNull());"))
         assertTrue(emit(payload, OutputFormat.KOTLIN_JUNIT_5).contains("assertEquals(true, body_0.get(\"ok\").asBoolean())"))
     }
@@ -227,5 +213,13 @@ class AsyncApiReplyAssertionsTest {
         assertFalse(emitted.contains("assertTrue"), emitted)
         assertFalse(emitted.contains("assertEquals"), emitted)
         assertFalse(emitted.contains("readTree"), emitted)
+    }
+
+    @Test
+    fun testAnUnsupportedFormatIsRejected() {
+
+        assertThrows(IllegalArgumentException::class.java) {
+            emit("""{"a": 1}""", OutputFormat.PYTHON_UNITTEST)
+        }
     }
 }

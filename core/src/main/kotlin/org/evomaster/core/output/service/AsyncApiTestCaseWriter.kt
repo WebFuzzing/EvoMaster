@@ -152,14 +152,8 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
             is turns on the fields it carries, so these assertions are also what keeps a test
             honest about the variant its own name claims.
          */
-        AsyncApiReplyAssertions.emit(
-            lines,
-            res.getReplyPayload(),
-            variable,
-            bodyVariableFor(variable),
-            config,
-            format
-        )
+        AsyncApiReplyAssertions(config, format, ::isFieldToSkip, ::isSuitableToPrint)
+            .emit(lines, res.getReplyPayload(), variable, bodyVariableFor(variable))
     }
 
     /**
