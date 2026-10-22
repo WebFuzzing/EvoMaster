@@ -33,3 +33,8 @@ are listed here:
 * _asyncapi/sut/scalar.yaml_: AsyncAPI description from
   [Scalar](https://github.com/scalar/scalar), used unmodified as a test resource of `core`.
   Released under MIT license.
+
+* _com/foo/asyncapi/ncs/imp/*.java_: the numerical routines of the NCS case study of
+  [EMB](https://github.com/WebFuzzing/EMB) (`jdk_8_maven/cs/rest/artificial/ncs`,
+  `org.restncs.imp`), ported unchanged apart from the package into the artificial SUT of the
+  AsyncAPI E2E tests. The routines there follow Numerical Recipes.
