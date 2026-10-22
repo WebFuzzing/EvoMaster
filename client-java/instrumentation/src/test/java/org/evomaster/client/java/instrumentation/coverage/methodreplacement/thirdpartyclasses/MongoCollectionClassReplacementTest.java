@@ -21,70 +21,15 @@ import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.object.CustomTypeToOasConverter;
 import org.evomaster.client.java.instrumentation.object.GeoJsonPointToOasConverter;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MongoCollectionClassReplacementTest {
-
-    private static MongoClient mongoClient;
-    private static final int MONGODB_PORT = 27017;
-    private static final GenericContainer<?> mongodb = new GenericContainer<>("mongo:6.0")
-            .withExposedPorts(MONGODB_PORT);
-
-    @BeforeAll
-    public static void initMongoClient() {
-        mongodb.start();
-        int port = mongodb.getMappedPort(MONGODB_PORT);
-
-        CodecRegistry codecRegistry = fromRegistries(
-                MongoClientSettings.getDefaultCodecRegistry(),
-                fromProviders(PojoCodecProvider.builder().automatic(true).build()),
-                CodecRegistries.fromCodecs(new MongoCollectionTestDtoCodec())
-        );
-
-        MongoClientSettings.Builder builder = MongoClientSettings.builder();
-        builder.codecRegistry(codecRegistry);
-        builder.applyConnectionString(new ConnectionString("mongodb://localhost:" + port + "/" + "aDatabase"));
-        MongoClientSettings settings = builder
-                .build();
-
-        mongoClient = MongoClients.create(settings);
-
-        ExecutionTracer.reset();
-    }
-
-    @AfterAll
-    public static void resetExecutionTracer() {
-        ExecutionTracer.reset();
-    }
-
-    private final static String DATABASE_NAME = "myDatabase";
-    private final static String COLLECTION_NAME = "myCollection";
-
-    @BeforeEach
-    public void clearDatabase() {
-
-        final MongoCollection<Document> collection = getMongoCollection();
-
-        // delete all documents in collection (if any)
-        collection.deleteMany(new Document());
-
-        ExecutionTracer.reset();
-    }
-
+public class MongoCollectionClassReplacementTest extends MongoCollectionClassReplacementTestBase {
 
     @Test
     public void testFindOnly() {
@@ -204,12 +149,6 @@ public class MongoCollectionClassReplacementTest {
         List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
         String bsonDocumentSchema = ClassToSchema.getOrDeriveSchemaWithItsRef(Document.class, true, converters);
         assertEquals(bsonDocumentSchema, documentType);
-    }
-
-    private static @NotNull MongoCollection<Document> getMongoCollection() {
-        MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
-        MongoCollection<Document> collection = database.getCollection(COLLECTION_NAME);
-        return collection;
     }
 
     @Test
@@ -349,24 +288,6 @@ public class MongoCollectionClassReplacementTest {
 
         assertEquals(false, mongoFindCommand.isSuccessfullyExecuted());
 
-    }
-
-    private BsonDocument assertSingleRecordedCommand(boolean expectedSuccess) {
-        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
-        assertEquals(1, additionalInfoList.size());
-        Set<MongoFindCommand> mongoFindCommands = additionalInfoList.get(0).getMongoInfoData();
-        assertEquals(1, mongoFindCommands.size());
-
-        MongoFindCommand mongoFindCommand = mongoFindCommands.iterator().next();
-        assertEquals(COLLECTION_NAME, mongoFindCommand.getCollectionName());
-        assertEquals(DATABASE_NAME, mongoFindCommand.getDatabaseName());
-        assertEquals(expectedSuccess, mongoFindCommand.isSuccessfullyExecuted());
-        assertNotNull(mongoFindCommand.getQuery());
-        return (BsonDocument) mongoFindCommand.getQuery();
-    }
-
-    private void insertPerson(String name, int age) {
-        getMongoCollection().insertOne(new Document("name", name).append("age", age));
     }
 
     @Test
