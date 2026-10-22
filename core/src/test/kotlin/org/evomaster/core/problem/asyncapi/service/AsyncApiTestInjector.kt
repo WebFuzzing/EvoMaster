@@ -15,26 +15,47 @@ import org.evomaster.core.remote.service.RemoteController
 object AsyncApiTestInjector {
 
     /**
-     * The NCS document, the corpus fixture these suites drive most of their cases from.
+     * The document most tests here drive a search from.
      */
     const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
 
     /**
-     * The operations NCS declares, all of them publishable.
+     * Every operation NCS declares.
      */
     val NCS_OPERATIONS = setOf("checkTriangle", "bessj", "expint", "fisher", "gammq", "remainder")
 
     /**
-     * What a driver declares for a service whose document it hands over as text.
+     * What a driver says about the service it started. The format it declares matters: for this
+     * problem type that is usually where the output format comes from.
      */
-    fun sutInfo(schemaText: String): SutInfoDto = SutInfoDto().apply {
+    fun sutInfo(
+        schemaText: String,
+        declaredFormat: SutInfoDto.OutputFormat = SutInfoDto.OutputFormat.KOTLIN_JUNIT_5
+    ): SutInfoDto = SutInfoDto().apply {
         asyncApiProblem = AsyncApiProblemDto().apply { this.schemaText = schemaText }
-        defaultOutputFormat = SutInfoDto.OutputFormat.KOTLIN_JUNIT_5
+        defaultOutputFormat = declaredFormat
     }
 
+    /**
+     * The options these tests run under. One a caller passes replaces the default of that name,
+     * in either spelling, since EMConfig refuses an option given twice.
+     */
+    fun argsWith(vararg options: String): Array<String> {
+
+        val named = options.map { it.removePrefix("--").substringBefore('=') }.toSet()
+
+        val defaults = listOf("--seed=42", "--problemType=ASYNCAPI", "--createTests=false")
+            .filterNot { it.removePrefix("--").substringBefore('=') in named }
+
+        return (defaults + options).toTypedArray()
+    }
+
+    /**
+     * The real module, with [driver] bound in place of the controller.
+     */
     fun create(driver: FakeAsyncApiDriver, vararg options: String): Injector {
 
-        val args = arrayOf("--seed=42", "--problemType=ASYNCAPI", "--createTests=false") + options
+        val args = argsWith(*options)
 
         val fake = object : AbstractModule() {
             override fun configure() {
