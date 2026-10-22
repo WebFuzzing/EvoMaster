@@ -31,6 +31,7 @@ import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbHandler
 import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbCommandWithDistance;
 import org.evomaster.client.java.controller.cassandra.insertions.CassandraScriptRunner;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
+import org.evomaster.client.java.controller.neo4j.Neo4jEntityDtoBuilder;
 import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
@@ -1984,6 +1985,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     jpa.constraints = ec;
                     return jpa;
                 }).collect(Collectors.toList());
+        dto.neo4jEntities = Neo4jEntityDtoBuilder.build(recorder.getNeo4jEntities());
 
         return dto;
     }
