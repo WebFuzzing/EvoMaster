@@ -3,6 +3,7 @@ package org.evomaster.core.problem.enterprise
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.neo4j.Neo4jDbAction
+import org.evomaster.core.database.neo4j.Neo4jActionUtils
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
@@ -427,6 +428,15 @@ abstract class EnterpriseIndividual(
 
             Lazy.assert{isValidInitializationActions()}
         }
+
+        /*
+            Repaired whether or not the database enforces the keys, as an id the SUT assumes unique
+            may have no constraint behind it.
+         */
+        val brokenNeo4j = Neo4jActionUtils.repairUniqueKeys(seeNeo4jDbActions(), randomness)
+        if (brokenNeo4j.isNotEmpty()) {
+            removeInitNeo4jDbActions(brokenNeo4j)
+        }
     }
 
     override fun hasAnyAction(): Boolean {
@@ -636,6 +646,13 @@ abstract class EnterpriseIndividual(
      */
     fun removeInitDbActions(actions: List<SqlAction>) {
         killChildren { it is SqlAction && actions.contains(it)}
+    }
+
+    /**
+     * remove specified [actions] from the Neo4j initializing actions
+     */
+    fun removeInitNeo4jDbActions(actions: List<Neo4jDbAction>) {
+        killChildren { it is Neo4jDbAction && actions.any { a -> a === it } }
     }
 
     /***

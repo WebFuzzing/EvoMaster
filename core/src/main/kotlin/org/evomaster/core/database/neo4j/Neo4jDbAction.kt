@@ -84,11 +84,13 @@ data class Neo4jEdgeTemplate(
  * @property nodes nodes to insert
  * @property edges relationships to insert, referring to [nodes] by index
  * @property query the Cypher text of the query this action was inferred from
+ * @property uniqueKeys the keys the inserted nodes must not repeat, shared by every action of the search
  */
 class Neo4jDbAction(
     val nodes: List<Neo4jNodeTemplate>,
     val edges: List<Neo4jEdgeTemplate>,
-    val query: String
+    val query: String,
+    val uniqueKeys: Neo4jUniqueKeys? = null
 ) : EnvironmentAction(listOf()) {
 
     init {
@@ -105,7 +107,8 @@ class Neo4jDbAction(
      */
     fun seeSchemaGenes(): List<Gene> = allProperties().filter { !it.fromQuery }.map { it.gene }
 
-    override fun copyContent(): Action = Neo4jDbAction(nodes.map { it.copy() }, edges.map { it.copy() }, query)
+    override fun copyContent(): Action =
+        Neo4jDbAction(nodes.map { it.copy() }, edges.map { it.copy() }, query, uniqueKeys)
 
     override fun getName(): String =
         "Neo4j_INSERT_" + nodes.joinToString("_") { if (it.labels.isEmpty()) "node" else it.labels.joinToString(":") }
