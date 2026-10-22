@@ -89,9 +89,13 @@ class ResourceDepManageService {
         val removedMap = mutableMapOf<String, MutableSet<TableId>>()
 
         restIndividual.seeMainExecutableActions().forEachIndexed { index, action ->
+
             val path = if (action.isDirectLocationAction())
                 restIndividual.getSourcePathOfLocationFollowUpAction(index)
             else null
+
+            //synthetic actions from post-search oracles might not be in the cluster
+            if (rm.findResourceNodeFromCluster(path?.toString()?:action.path.toString()) == null) return@forEachIndexed
 
             if (config.doesApplyNameMatching) updateParamInfo(action as RestCallAction, path, tables)
             // size of extraHeuristics might be less than size of action due to failure of handling rest action

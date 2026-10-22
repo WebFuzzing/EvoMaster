@@ -123,7 +123,8 @@ class ResourceRestFitness : AbstractRestFitness() {
             val path = if (action.isDirectLocationAction())
                 individual.getSourcePathOfLocationFollowUpAction(index)
             else action.path
-            val node = rm.getResourceNodeFromCluster(path.toString())
+            //synthetic actions from post-search oracles might not be in the cluster
+            val node = rm.findResourceNodeFromCluster(path.toString()) ?: return@forEachIndexed
             node.updateActionsWithAdditionalParams(action)
         }
 

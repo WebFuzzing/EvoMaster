@@ -351,8 +351,15 @@ class ResourceManageService {
      * @return a resource node based on the specified [key]
      */
     fun getResourceNodeFromCluster(key : String) : RestResourceNode =
-        cluster.getResourceNode(key)?: excludedCluster[key]?:
-            throw IllegalArgumentException("cannot find the resource with a key $key")
+        findResourceNodeFromCluster(key) ?: throw IllegalArgumentException("cannot find the resource with a key $key")
+
+    /**
+     * @return a resource node based on the specified [key], or null if there is none.
+     * Synthetic actions built in post-search phases (eg, HTTP semantics oracles) can have
+     * paths that are not in the schema, and so not in the cluster.
+     */
+    fun findResourceNodeFromCluster(key : String) : RestResourceNode? =
+        cluster.getResourceNode(key) ?: excludedCluster[key]
 
     /**
      * @return table info

@@ -727,4 +727,30 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkCanSample("(?s)^\\Z.*", listOf("", "\n", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 1000)
         checkCanSample("(?s)^\\Z(.?){5}", listOf("", "\n", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 1000)
     }
+
+    @Test
+    fun testCapturesAreNotResetInEachRepetition(){
+        // in Java, a group keeps the value of the last repetition in which it took part (so "abac" matches),
+        // and a group that never took part makes the backreference fail (so no "bc")
+        checkSamplesExactly("""^(?:(a)|b){1,2}\1c$""", "aac", "aaac", "abac", "baac")
+        checkSameAsJava("""^(?:(a)|b){1,2}\1c$""")
+    }
+
+    @Test
+    fun testBackreferenceToGroupThatDidNotTakePart(){
+        // in Java a backreference to a group that did not take part fails to match
+        assertThrows<IllegalStateException> { checkSameAsJava("""^([^\s\S])*\1$""") }
+        assertThrows<IllegalStateException> { checkSameAsJava("""^(?:([^\s\S])|a)\1$""") }
+        checkSamplesExactly("""^(a)?\1$""", "aa")
+    }
+
+    @Test
+    fun testTermThatCannotMatchAfterFlagScopeMakesAlternativeUnsatisfiable(){
+        assertThrows<IllegalStateException> { createGene("""(?i)[a&&b]+(a)""") }
+        assertThrows<IllegalStateException> { createGene("""(?i)a[a&&b]+""") }
+        // but it can be skipped when it is optional
+        checkSamplesExactly("""^(?i)[a&&b]*a$""", "a", "A")
+        // and a term that can match after the flag scope is still there
+        checkSamplesExactly("""^(?i)a[b-c]$""", "ab", "Ab", "ac", "Ac", "aB", "AB", "aC", "AC")
+    }
 }
