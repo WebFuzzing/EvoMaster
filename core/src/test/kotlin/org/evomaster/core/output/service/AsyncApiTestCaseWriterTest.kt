@@ -717,6 +717,70 @@ class AsyncApiTestCaseWriterTest {
     }
 
     @Test
+    fun testAMessageNothingAnswersIsGivenTheSettleWindowAndCompiles() {
+
+        OutputFormat.values().filter { it.isJavaOrKotlin() && it.isJUnit5() }.forEach { format ->
+
+            //the search ended the window early, and the test still waits all of it
+            startWith(VARIANTS, "--outputFormat=${format.name}", "--asyncApiSettleMs=1500") {
+                FakeAsyncApiDriver.fireAndForget().apply { settledMs = 300L }
+            }
+
+            val (members, body) = membersAndBodyOf(evaluate("tell", "tell"))
+
+            val publish = body.indexOf(KafkaTestClientEmitter.HELPER_NAME)
+            val wait = body.indexOf("Thread.sleep(1500)")
+            assertTrue(publish >= 0, "for $format:\n$body")
+            assertTrue(wait > publish, "for $format:\n$body")
+            //once per message, before the next one is published
+            assertTrue(body.indexOf(KafkaTestClientEmitter.HELPER_NAME, publish + 1) > wait, "for $format:\n$body")
+            assertEquals(2, Regex("Thread\\.sleep\\(1500\\)").findAll(body).count(), "for $format:\n$body")
+
+            compiles(members, body, format, "AsyncApiSettleWait${format.name}")
+        }
+    }
+
+    @Test
+    fun testAMessageWithAReplyIsGivenTheSettleWindowTooAndCompiles() {
+
+        //the handler may still be running after it answered, or after the search stopped waiting
+        val answers = listOf(
+            FakeAsyncApiDriver.replied("""{"answer": 2}"""),
+            FakeAsyncApiDriver.silence()
+        )
+
+        OutputFormat.values().filter { it.isJavaOrKotlin() && it.isJUnit5() }.forEach { format ->
+            answers.forEach { answer ->
+
+                startWith(VARIANTS, "--outputFormat=${format.name}", "--asyncApiSettleMs=1500") {
+                    answer.apply { settledMs = 1500L }
+                }
+
+                val (members, body) = membersAndBodyOf(evaluate("ask"))
+
+                val publish = body.indexOf(KafkaTestClientEmitter.HELPER_NAME)
+                val wait = body.indexOf("Thread.sleep(1500)")
+                assertTrue(publish >= 0, "for $format:\n$body")
+                assertTrue(wait > publish, "for $format:\n$body")
+
+                compiles(members, body, format, "AsyncApiSettleAfterReply${format.name}")
+            }
+        }
+    }
+
+    @Test
+    fun testNoSettleWaitIsWrittenWhereTheSearchKeptNoMessageOpen() {
+
+        //no window asked for, so the controller reported no wait
+        startWith(VARIANTS) { FakeAsyncApiDriver.fireAndForget() }
+        assertFalse(bodyOf(evaluate("tell")).contains("Thread.sleep"))
+
+        //a message that was never published is not waited on either
+        startWith(VARIANTS, "--asyncApiSettleMs=1500") { FakeAsyncApiDriver.fireAndForget().apply { published = false } }
+        assertFalse(bodyOf(evaluate("tell")).contains("Thread.sleep"))
+    }
+
+    @Test
     fun testWhatOneSuiteFoundIsNotLeftBehindForTheNext() {
 
         /*

@@ -249,6 +249,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         result.setOutcome(outcome)
         reply.waitedMs?.let { result.setWaitedMs(it) }
+        reply.settledMs?.let { result.setSettledMs(it) }
 
         //what the generated test will publish with, when the driver rendered it
         //lines that are all blank are no script: the writer would publish nothing and assert on it
@@ -438,6 +439,14 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             if (dto.replyAddress != null) {
                 dto.replyTimeoutMs = config.asyncApiReplyTimeoutMs.toLong()
             }
+        }
+
+        if (!config.blackBox && config.asyncApiSettleMs > 0) {
+            /*
+                Only in white-box mode: the window exists so that the code a message reaches is
+                credited to it, and a black-box run collects no code coverage to credit.
+             */
+            dto.settleMs = config.asyncApiSettleMs.toLong()
         }
 
         return dto
