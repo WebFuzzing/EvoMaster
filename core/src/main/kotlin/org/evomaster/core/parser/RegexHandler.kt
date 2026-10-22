@@ -179,7 +179,7 @@ object RegexHandler {
 
         val stream = CharStreams.fromString(regex)
         val lexer = RegexEcma262Lexer(stream)
-        val tokenStream = prepareLexer(lexer)
+        val tokenStream = prepareEcma262Lexer(lexer)
         val parser = RegexEcma262Parser(tokenStream)
         prepareParser(parser)
 
@@ -251,6 +251,30 @@ object RegexHandler {
     private fun prepareLexer(lexer: Lexer) : CommonTokenStream{
         lexer.removeErrorListeners()
         lexer.addErrorListener(ThrowingErrorListener())
+        return CommonTokenStream(lexer)
+    }
+
+    /**
+     * Similar to [prepareLexer], but lexes the regex once beforehand to count capture groups.
+     * That total from the first pass is saved and used by the lexer behind the returned stream to correctly
+     * identify ECMA back references, and the octal and identity escapes they fall back to.
+     * @throws ParseCancellationException on lexical errors during the first pass
+     */
+    private fun prepareEcma262Lexer(lexer: RegexEcma262Lexer) : CommonTokenStream {
+        lexer.removeErrorListeners()
+        lexer.addErrorListener(ThrowingErrorListener())
+
+        // 1st pass: lex everything just so the lexer counts the capture groups
+        // this first pass may throw if there are lexer errors, this is why this method can throw
+        do {
+            val token = lexer.nextToken()
+        } while (token.type != Token.EOF)
+
+        // we save the capture group count and reset the lexer
+        val total = lexer.captureGroups
+        lexer.reset()
+        lexer.totalCaptureGroups = total
+        // 2nd pass happens later, when the parser reads the tokens from this stream, with totalCaptureGroups set
         return CommonTokenStream(lexer)
     }
 

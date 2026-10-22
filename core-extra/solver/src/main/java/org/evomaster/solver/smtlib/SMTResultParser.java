@@ -39,8 +39,14 @@ public class SMTResultParser {
 
         // Pattern for matching the start of a composed type (structure); its body is read by structTokens
         // example: ((variableName (field1-field2-... value1 value2 ...)))
-        // The constructor name starts with a letter, which tells it apart from a value such as (- 4)
-        Pattern composedTypePattern = Pattern.compile("\\(\\((\\w+\\d+) \\((?=[A-Za-z_])");
+        // The constructor name starts with a letter, which tells it apart from a value such as (- 4).
+        // When two datatypes share a constructor name, Z3 qualifies it with its sort:
+        // ((variableName ((as field1-field2-... SortName) value1 value2 ...)))
+        // Z3 writes no space after an opening parenthesis and one space between tokens, but SMT-LIB allows
+        // any whitespace there, so the pattern accepts it. A line break also ends up as a single space,
+        // since lines are trimmed and joined with one space below.
+        Pattern composedTypePattern = Pattern.compile(
+                "\\(\\s*\\(\\s*(\\w+\\d+)\\s+\\((?=\\s*(?:[A-Za-z_]|\\(\\s*as\\s))");
 
         // Buffer for multiline values
         StringBuilder buffer = new StringBuilder();
@@ -84,7 +90,7 @@ public class SMTResultParser {
                     continue; // the struct is not complete yet: keep buffering lines
                 }
                 String[] fields = structTokens.toArray(new String[0]);
-                String[] fieldNames = fields[0].split("-");
+                String[] fieldNames = constructorName(fields[0]).split("-");
 
                 Map<String, SMTLibValue> structValues = new HashMap<>();
                 // Iterate over fields to extract field names and values
@@ -170,6 +176,93 @@ public class SMTResultParser {
         return null;
     }
 
+    private static final Pattern UNICODE_ESCAPE = Pattern.compile("\\\\u\\{([0-9a-fA-F]{1,6})\\}");
+
+    /**
+     * Undoes the escapes of an SMT-LIB string literal: a double quote written as two, and a character
+     * written as \\u{X}, with X its code point in hex. Z3 writes every character outside printable
+     * ASCII that way, so without decoding, a value such as "ORDIN\\u{c6}R" was used as is.
+     */
+    static String unescapeString(String text) {
+        String unquoted = text.replace("\"\"", "\"");
+        Matcher m = UNICODE_ESCAPE.matcher(unquoted);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            m.appendReplacement(sb, Matcher.quoteReplacement(new String(Character.toChars(Integer.parseInt(m.group(1), 16)))));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    /**
+     * The name of a struct's constructor, from the first token of the struct.
+     *
+     * The generator names a table's constructor after its columns, so two tables with the same
+     * columns share it. Z3 then qualifies the name with its sort, as in {@code (as id-name UsersRow)},
+     * for every value of either table.
+     */
+    private static String constructorName(String token) {
+        Matcher qualified = QUALIFIED_CONSTRUCTOR.matcher(token);
+        return qualified.lookingAt() ? qualified.group(1) : token;
+    }
+
+    /** A qualified constructor, {@code (as name Sort)}, with any whitespace SMT-LIB allows between its parts. */
+    private static final Pattern QUALIFIED_CONSTRUCTOR = Pattern.compile("\\(\\s*as\\s+([^\\s()]+)");
+
+    /**
+     * Evaluates a numeric term as Z3 prints it in a model: a literal ({@code 6}, {@code 20.0}), a
+     * negation ({@code (- 6)}, {@code (-6)}, {@code (- 20.0)}) or, for a Real that is not an integer,
+     * a division of two literals ({@code (/ 1999.0 100.0)}, {@code (- (/ 7.0 2.0))}).
+     *
+     * @param term the trimmed value token
+     * @return the value, or null when the term is not numeric
+     */
+    private static SMTLibValue parseNumericTerm(String term) {
+        if (term.startsWith("(") && term.endsWith(")")) {
+            String inner = term.substring(1, term.length() - 1).trim();
+            if (inner.startsWith("-")) {
+                SMTLibValue operand = parseNumericTerm(inner.substring(1).trim());
+                if (operand instanceof LongValue) {
+                    return new LongValue(-((LongValue) operand).getValue());
+                }
+                if (operand instanceof RealValue) {
+                    return new RealValue(-((RealValue) operand).getValue());
+                }
+                return null;
+            }
+            if (inner.startsWith("/")) {
+                String[] operands = inner.substring(1).trim().split("\\s+");
+                if (operands.length != 2) {
+                    return null;
+                }
+                SMTLibValue numerator = parseNumericTerm(operands[0]);
+                SMTLibValue denominator = parseNumericTerm(operands[1]);
+                if (numerator == null || denominator == null) {
+                    return null;
+                }
+                return new RealValue(toDouble(numerator) / toDouble(denominator));
+            }
+            return null;
+        }
+        if (term.matches("\\d+")) {
+            try {
+                return new LongValue(Long.parseLong(term));
+            } catch (NumberFormatException e) {
+                return new RealValue(Double.parseDouble(term)); // too large for a Long
+            }
+        }
+        if (term.matches("\\d+\\.\\d+")) {
+            return new RealValue(Double.parseDouble(term));
+        }
+        return null;
+    }
+
+    private static double toDouble(SMTLibValue number) {
+        return number instanceof LongValue
+                ? ((LongValue) number).getValue()
+                : ((RealValue) number).getValue();
+    }
+
     /**
      * Parses a value string into an appropriate SMTLibValue object.
      *
@@ -177,6 +270,10 @@ public class SMTResultParser {
      * @return an SMTLibValue representing the parsed value
      */
     private static SMTLibValue parseValue(String value) {
+        SMTLibValue number = parseNumericTerm(value.trim());
+        if (number != null) {
+            return number;
+        }
         if (value.startsWith("(")) {
             // If it is a negative number in parentheses
             value = value.substring(1).trim(); // Remove parentheses
@@ -186,8 +283,8 @@ public class SMTResultParser {
             value = value.substring(0, value.length() - 1).trim(); // Remove parentheses
         }
         if (value.startsWith("\"") && value.endsWith("\"")) {
-            // If it is a string
-            return new StringValue(value.substring(1, value.length() - 1)); // Remove quotes
+            // If it is a string: remove the quotes and undo the SMT-LIB escapes
+            return new StringValue(unescapeString(value.substring(1, value.length() - 1)));
         }
         try {
             if (value.matches("- \\d+")) {

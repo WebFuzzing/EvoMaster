@@ -88,6 +88,8 @@ class ResourceDepManageService {
         val removedMap = mutableMapOf<String, MutableSet<TableId>>()
 
         restIndividual.seeMainExecutableActions().forEachIndexed { index, action ->
+            //synthetic actions from post-search oracles might not be in the cluster
+            if (rm.findResourceNodeFromCluster(action.path.toString()) == null) return@forEachIndexed
             if (config.doesApplyNameMatching) updateParamInfo(action as RestCallAction, tables)
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
             if (index < dto.extraHeuristics.size) {

@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayDeque;
@@ -173,8 +174,8 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(DateValue dateValue) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+        // JDBC escape {d 'yyyy-MM-dd'}: the same encoding as DATE 'yyyy-MM-dd'
+        pushDate(dateValue.getValue().toLocalDate());
     }
 
     @Override
@@ -740,16 +741,44 @@ public class JSqlVisitor implements ExpressionVisitor {
             if (value.startsWith(SINGLE_QUOTE_CHAR) && value.endsWith(SINGLE_QUOTE_CHAR)) {
                 value = value.substring(1, value.length() - 1);
             }
-            TemporalAccessor parsed = TIMESTAMP_PARSER.parse(value);
-            // An explicit offset is honoured; without one, treat the literal as UTC to match the
-            // UTC-based decoder in SMTLibZ3DbConstraintSolver (LocalDateTime.ofInstant(..., UTC)).
-            long epochSeconds = parsed.isSupported(ChronoField.OFFSET_SECONDS)
-                    ? OffsetDateTime.from(parsed).toEpochSecond()
-                    : LocalDateTime.from(parsed).toEpochSecond(ZoneOffset.UTC);
-            stack.push(new SqlBigIntegerLiteralValue(BigInteger.valueOf(epochSeconds)));
+            stack.push(new SqlBigIntegerLiteralValue(BigInteger.valueOf(toEpochSeconds(value))));
+            return;
+        }
+        if (dateTimeLiteralExpression.getType() == DateTimeLiteralExpression.DateTime.DATE) {
+            String value = dateTimeLiteralExpression.getValue();
+            if (value.startsWith(SINGLE_QUOTE_CHAR) && value.endsWith(SINGLE_QUOTE_CHAR)) {
+                value = value.substring(1, value.length() - 1);
+            }
+            pushDate(LocalDate.parse(value));
             return;
         }
         throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    /**
+     * Reads a date or timestamp, in any of the layouts {@link #TIMESTAMP_PARSER} accepts, as epoch
+     * seconds. A date on its own is read as its midnight. Public so that a plain string literal
+     * compared against a DATE or TIMESTAMP column can be encoded the same way as a typed literal.
+     *
+     * @throws java.time.format.DateTimeParseException if the text is not one of those layouts
+     */
+    public static long toEpochSeconds(String value) {
+        TemporalAccessor parsed = TIMESTAMP_PARSER.parse(value);
+        // An explicit offset is honoured; without one, treat the literal as UTC to match the
+        // UTC-based decoder in SMTLibZ3DbConstraintSolver (LocalDateTime.ofInstant(..., UTC)).
+        return parsed.isSupported(ChronoField.OFFSET_SECONDS)
+                ? OffsetDateTime.from(parsed).toEpochSecond()
+                : LocalDateTime.from(parsed).toEpochSecond(ZoneOffset.UTC);
+    }
+
+    /**
+     * A DATE is encoded like a TIMESTAMP, in epoch seconds, at midnight UTC. Sharing the unit lets a
+     * DATE column be compared with a TIMESTAMP literal, and matches the decoder in
+     * SMTLibZ3DbConstraintSolver.
+     */
+    private void pushDate(LocalDate date) {
+        long epochSeconds = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
+        stack.push(new SqlBigIntegerLiteralValue(BigInteger.valueOf(epochSeconds)));
     }
 
     @Override

@@ -4,6 +4,8 @@ import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoQueryException;
 import com.mongodb.client.*;
+import com.mongodb.client.model.DeleteOptions;
+import com.mongodb.client.result.DeleteResult;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentWriter;
 import org.bson.BsonWriter;
@@ -19,70 +21,15 @@ import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.object.CustomTypeToOasConverter;
 import org.evomaster.client.java.instrumentation.object.GeoJsonPointToOasConverter;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MongoCollectionClassReplacementTest {
-
-    private static MongoClient mongoClient;
-    private static final int MONGODB_PORT = 27017;
-    private static final GenericContainer<?> mongodb = new GenericContainer<>("mongo:6.0")
-            .withExposedPorts(MONGODB_PORT);
-
-    @BeforeAll
-    public static void initMongoClient() {
-        mongodb.start();
-        int port = mongodb.getMappedPort(MONGODB_PORT);
-
-        CodecRegistry codecRegistry = fromRegistries(
-                MongoClientSettings.getDefaultCodecRegistry(),
-                fromProviders(PojoCodecProvider.builder().automatic(true).build()),
-                CodecRegistries.fromCodecs(new MongoCollectionTestDtoCodec())
-        );
-
-        MongoClientSettings.Builder builder = MongoClientSettings.builder();
-        builder.codecRegistry(codecRegistry);
-        builder.applyConnectionString(new ConnectionString("mongodb://localhost:" + port + "/" + "aDatabase"));
-        MongoClientSettings settings = builder
-                .build();
-
-        mongoClient = MongoClients.create(settings);
-
-        ExecutionTracer.reset();
-    }
-
-    @AfterAll
-    public static void resetExecutionTracer() {
-        ExecutionTracer.reset();
-    }
-
-    private final static String DATABASE_NAME = "myDatabase";
-    private final static String COLLECTION_NAME = "myCollection";
-
-    @BeforeEach
-    public void clearDatabase() {
-
-        final MongoCollection<Document> collection = getMongoCollection();
-
-        // delete all documents in collection (if any)
-        collection.deleteMany(new Document());
-
-        ExecutionTracer.reset();
-    }
-
+public class MongoCollectionClassReplacementTest extends MongoCollectionClassReplacementTestBase {
 
     @Test
     public void testFindOnly() {
@@ -202,12 +149,6 @@ public class MongoCollectionClassReplacementTest {
         List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
         String bsonDocumentSchema = ClassToSchema.getOrDeriveSchemaWithItsRef(Document.class, true, converters);
         assertEquals(bsonDocumentSchema, documentType);
-    }
-
-    private static @NotNull MongoCollection<Document> getMongoCollection() {
-        MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
-        MongoCollection<Document> collection = database.getCollection(COLLECTION_NAME);
-        return collection;
     }
 
     @Test
@@ -349,5 +290,255 @@ public class MongoCollectionClassReplacementTest {
 
     }
 
+    @Test
+    public void testCountDocumentsWithFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 25);
 
+        ExecutionTracer.setExecutingInitMongo(false);
+        long count = MongoCollectionClassReplacement.countDocuments(collection, new Document("age", 30));
+
+        assertEquals(1, count);
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testCountDocumentsWithFilterNoMatch() {
+        final MongoCollection<Document> collection = getMongoCollection();
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        long count = MongoCollectionClassReplacement.countDocuments(collection, new Document("age", 99));
+
+        assertEquals(0, count);
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(99, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testCountDocumentsWithFilterAndOptions() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 30);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        long count = MongoCollectionClassReplacement.countDocuments(collection, new Document("age", 30), new com.mongodb.client.model.CountOptions().limit(1));
+
+        assertEquals(1, count);
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testCountDocumentsWithClientSessionAndFilter() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 23);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            long count = MongoCollectionClassReplacement.countDocuments_EM_0(collection, clientSession, new Document("age", 23));
+
+            assertEquals(1, count);
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testCountDocumentsWithClientSessionFilterAndOptions() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 23);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            long count = MongoCollectionClassReplacement.countDocuments(collection, clientSession, new Document("age", 23), new com.mongodb.client.model.CountOptions().limit(1));
+
+            assertEquals(1, count);
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testCountDocumentsWithInvalidFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        Document invalidFilter = new Document("tags", new Document("$size", -1));
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.countDocuments(collection, invalidFilter));
+
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
+        assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
+    }
+
+    @Test
+    public void testDeleteOneWithFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        DeleteResult result = (DeleteResult) MongoCollectionClassReplacement.deleteOne(collection, new Document("age", 30));
+
+        assertEquals(1, result.getDeletedCount());
+        assertEquals(1, collection.countDocuments());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testDeleteOneWithFilterNoMatch() {
+        final MongoCollection<Document> collection = getMongoCollection();
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        DeleteResult result = (DeleteResult) MongoCollectionClassReplacement.deleteOne(collection, new Document("age", 99));
+
+        assertEquals(0, result.getDeletedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(99, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testDeleteOneWithFilterAndOptions() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        DeleteResult result = (DeleteResult) MongoCollectionClassReplacement.deleteOne(collection, new Document("age", 30), new DeleteOptions());
+
+        assertEquals(1, result.getDeletedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testDeleteOneWithClientSessionAndFilter() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 23);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            DeleteResult result = (DeleteResult) MongoCollectionClassReplacement.deleteOne_EM_0(collection, clientSession, new Document("age", 23));
+
+            assertEquals(1, result.getDeletedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testDeleteOneWithClientSessionFilterAndOptions() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 23);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            DeleteResult result = (DeleteResult) MongoCollectionClassReplacement.deleteOne(collection, clientSession, new Document("age", 23), new DeleteOptions());
+
+            assertEquals(1, result.getDeletedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testDeleteOneWithInvalidFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        Document invalidFilter = new Document("tags", new Document("$size", -1));
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.deleteOne(collection, invalidFilter));
+
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
+        assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
+    }
+
+    @Test
+    public void testDeleteManyWithFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+        insertPerson("Jane Doe", 25);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        DeleteResult result = (DeleteResult) MongoCollectionClassReplacement.deleteMany(collection, new Document("age", 30));
+
+        assertEquals(1, result.getDeletedCount());
+        assertEquals(1, collection.countDocuments());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testDeleteManyWithFilterNoMatch() {
+        final MongoCollection<Document> collection = getMongoCollection();
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        DeleteResult result = (DeleteResult) MongoCollectionClassReplacement.deleteMany(collection, new Document("age", 99));
+
+        assertEquals(0, result.getDeletedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(99, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testDeleteManyWithFilterAndOptions() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        DeleteResult result = (DeleteResult) MongoCollectionClassReplacement.deleteMany(collection, new Document("age", 30), new DeleteOptions());
+
+        assertEquals(1, result.getDeletedCount());
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+        assertEquals(30, retrievedQuery.getInt32("age").getValue());
+    }
+
+    @Test
+    public void testDeleteManyWithClientSessionAndFilter() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 23);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            DeleteResult result = (DeleteResult) MongoCollectionClassReplacement.deleteMany_EM_0(collection, clientSession, new Document("age", 23));
+
+            assertEquals(1, result.getDeletedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testDeleteManyWithClientSessionFilterAndOptions() {
+        try (ClientSession clientSession = mongoClient.startSession()) {
+            final MongoCollection<Document> collection = getMongoCollection();
+            insertPerson("John Doe", 23);
+
+            ExecutionTracer.setExecutingInitMongo(false);
+            DeleteResult result = (DeleteResult) MongoCollectionClassReplacement.deleteMany(collection, clientSession, new Document("age", 23), new DeleteOptions());
+
+            assertEquals(1, result.getDeletedCount());
+            BsonDocument retrievedQuery = assertSingleRecordedCommand(true);
+            assertEquals(23, retrievedQuery.getInt32("age").getValue());
+        }
+    }
+
+    @Test
+    public void testDeleteManyWithInvalidFilter() {
+        final MongoCollection<Document> collection = getMongoCollection();
+        insertPerson("John Doe", 30);
+
+        Document invalidFilter = new Document("tags", new Document("$size", -1));
+
+        ExecutionTracer.setExecutingInitMongo(false);
+        assertThrows(com.mongodb.MongoException.class, () -> MongoCollectionClassReplacement.deleteMany(collection, invalidFilter));
+
+        BsonDocument retrievedQuery = assertSingleRecordedCommand(false);
+        assertEquals(-1, retrievedQuery.getDocument("tags").getInt32("$size").getValue());
+    }
 }

@@ -80,6 +80,7 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
         handleMessages(document.warnings + messages)
 
         initSqlInfo(infoDto)
+        initNeo4jInfo(infoDto)
 
         initAdHocInitialIndividuals()
 
