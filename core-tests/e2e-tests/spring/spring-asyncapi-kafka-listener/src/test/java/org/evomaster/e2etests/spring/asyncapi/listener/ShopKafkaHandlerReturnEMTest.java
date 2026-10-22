@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.asyncapi.listener;
 
 import com.foo.asyncapi.ShopKafkaController;
+import com.foo.asyncapi.shop.ShopTopics;
 import com.google.inject.Injector;
 import kotlin.Pair;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,6 +38,11 @@ public class ShopKafkaHandlerReturnEMTest extends AsyncApiTestBase {
     private static final String URGENT_ESCALATION = SUT_PACKAGE + "UrgentEscalation";
 
     private static final List<String> OPERATIONS = Arrays.asList("placeOrder", "requestInvoice", "adjustStock");
+
+    /**
+     * The topics the service publishes to.
+     */
+    private static final List<String> SERVICE_TOPICS = Arrays.asList(ShopTopics.ORDERS_CONFIRMED, ShopTopics.STOCK_CHANGES);
 
     @BeforeAll
     public static void initClass() throws Exception {
@@ -96,8 +103,13 @@ public class ShopKafkaHandlerReturnEMTest extends AsyncApiTestBase {
                     assertClassCovered(run, EXPRESS_DISPATCH);
                     assertClassCovered(run, URGENT_ESCALATION);
 
-                    //the service publishes nothing, so nothing is recorded as emitted
-                    assertTrue(emittedMessagesOf(solution).isEmpty(), "emitted: " + emittedMessagesOf(solution));
+                    //its confirmations and stock changes; the driver's publishes, made in this JVM, are not the service's
+                    List<String> emitted = emittedMessagesOf(solution).stream()
+                            .map(m -> m.address)
+                            .distinct()
+                            .collect(Collectors.toList());
+                    assertTrue(emitted.contains(ShopTopics.ORDERS_CONFIRMED), "emitted: " + emitted);
+                    assertTrue(SERVICE_TOPICS.containsAll(emitted), "recorded as emitted by the service: " + emitted);
                 },
                 5);
     }

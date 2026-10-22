@@ -7,9 +7,10 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.stereotype.Component;
 
 /**
- * Consumes {@link OrderPlaced}. Two things it does are behind a string value that the contract
- * does not list, so that a search drawing random strings does not get there, but one that sees
- * what the service compares the value with does: express shipping, and an urgent priority.
+ * Consumes {@link OrderPlaced}. Express shipping and an urgent priority are behind string values
+ * the contract does not list: random strings do not get there, but a search that sees what the
+ * service compares the value with does.
+ * Every order is then confirmed, through {@link ShopEvents}.
  */
 @Component
 public class OrderListener {
@@ -28,6 +29,12 @@ public class OrderListener {
     private static final String VALUE_TYPE =
             JsonDeserializer.VALUE_DEFAULT_TYPE + "=com.foo.asyncapi.shop.OrderPlaced";
 
+    private final ShopEvents events;
+
+    public OrderListener(ShopEvents events) {
+        this.events = events;
+    }
+
     @KafkaListener(id = ShopTopics.ORDERS_LISTENER, topics = ShopTopics.ORDERS_PLACED, properties = VALUE_TYPE)
     public void onOrderPlaced(OrderPlaced order) {
 
@@ -39,6 +46,8 @@ public class OrderListener {
         if (priority == Priority.URGENT) {
             UrgentEscalation.escalate(order);
         }
+
+        events.orderConfirmed(order);
 
         log.debug("Order {} placed", order.getOrderId());
     }
