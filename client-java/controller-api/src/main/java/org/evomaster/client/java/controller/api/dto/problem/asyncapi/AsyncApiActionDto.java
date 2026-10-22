@@ -97,8 +97,7 @@ public class AsyncApiActionDto {
      * The language to render {@link AsyncApiReplyDto#testScript} in. Only Java and Kotlin are
      * ever asked for.
      *
-     * Null when no script is wanted: either the core is not generating tests, or it is
-     * generating a format this enum cannot name, which is what a Python run is.
+     * Null when no script is wanted, ie the core is not generating tests.
      */
     public SutInfoDto.OutputFormat outputFormat;
 

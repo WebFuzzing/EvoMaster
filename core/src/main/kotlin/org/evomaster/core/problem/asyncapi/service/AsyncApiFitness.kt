@@ -393,10 +393,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
                 A transport the contract cannot describe is published by lines the driver renders
                 while the search runs, so it is told which language to render them in. Not asked
                 for when no test will be written, so a driver need not spend time on it.
-
-                SutInfoDto.OutputFormat is the driver's own enum and has no Python, so a Python
-                run asks for no script at all. The reply variable is named here either way: the
-                core owns that name, whoever writes the lines that assign to it.
+                The reply variable is named by the core, whoever writes the lines that assign to it.
              */
             dto.outputFormat = SutInfoDto.OutputFormat.values()
                 .firstOrNull { it.name == config.outputFormat.name }

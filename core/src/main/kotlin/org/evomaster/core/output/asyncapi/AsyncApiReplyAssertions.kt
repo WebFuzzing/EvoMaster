@@ -46,7 +46,7 @@ object AsyncApiReplyAssertions {
         if (payload.isNullOrBlank()) {
             //an acknowledgement, or a transport that answers in metadata
             val java = "$variable == null || $variable.isEmpty()"
-            val kotlin = if (format.isPython()) "$variable is None or len($variable) == 0" else "$variable.isNullOrEmpty()"
+            val kotlin = "$variable.isNullOrEmpty()"
             assertion(lines, kotlin, java, format)
             return
         }
@@ -89,7 +89,6 @@ object AsyncApiReplyAssertions {
                         "new com.fasterxml.jackson.databind.ObjectMapper().readTree($variable);"
             )
             format.isKotlin() -> lines.add("val $bodyVariable = $read")
-            format.isPython() -> lines.add("$bodyVariable = json.loads($variable)")
         }
     }
 
@@ -120,7 +119,7 @@ object AsyncApiReplyAssertions {
         format: OutputFormat
     ) {
         if (node.isEmpty) {
-            val java = if (format.isPython()) "len($path) == 0" else "$path.isEmpty()"
+            val java = "$path.isEmpty()"
             assertion(lines, if (format.isKotlin()) "$path.isEmpty" else java, java, format)
             return
         }
@@ -151,7 +150,7 @@ object AsyncApiReplyAssertions {
         config: EMConfig,
         format: OutputFormat
     ) {
-        equals(lines, node.size().toString(), if (format.isPython()) "len($path)" else "$path.size()", format)
+        equals(lines, node.size().toString(), "$path.size()", format)
 
         val limit = if (config.maxAssertionForDataInCollection >= 0) {
             config.maxAssertionForDataInCollection
@@ -160,7 +159,7 @@ object AsyncApiReplyAssertions {
         }
 
         node.take(limit).forEachIndexed { i, child ->
-            onNode(lines, child, index(path, i, format), "$fieldPath[$i]", config, format)
+            onNode(lines, child, index(path, i), "$fieldPath[$i]", config, format)
         }
 
         if (node.size() > limit) {
@@ -181,22 +180,21 @@ object AsyncApiReplyAssertions {
     ) {
         when {
             node.isNull -> {
-                val java = if (format.isPython()) "$path is None" else "$path.isNull()"
+                val java = "$path.isNull()"
                 assertion(lines, if (format.isKotlin()) "$path.isNull" else java, java, format)
             }
 
             node.isBoolean -> equals(
                 lines,
-                if (format.isPython()) node.asBoolean().toString().replaceFirstChar { it.uppercase() }
-                else node.asBoolean().toString(),
-                value(path, "asBoolean()", format),
+                node.asBoolean().toString(),
+                value(path, "asBoolean()"),
                 format
             )
 
             node.isIntegralNumber -> {
                 val v = node.asLong()
                 val suffix = if (format.isJava() && (v > Int.MAX_VALUE || v < Int.MIN_VALUE)) "L" else ""
-                equals(lines, "$v$suffix", value(path, "asLong()", format), format)
+                equals(lines, "$v$suffix", value(path, "asLong()"), format)
             }
 
             //within a tolerance, as REST does: the same computation lands a bit apart through text
@@ -204,7 +202,7 @@ object AsyncApiReplyAssertions {
                 val v = node.asDouble()
                 //out of range it parses as an infinity, which no target language writes as one
                 if (v.isFinite()) {
-                    delta(lines, v.toString(), value(path, "asDouble()", format), format)
+                    delta(lines, v.toString(), value(path, "asDouble()"), format)
                 } else {
                     lines.addSingleCommentLine(
                         "$fieldPath is not asserted on, as it is outside the range of a double"
@@ -215,7 +213,7 @@ object AsyncApiReplyAssertions {
             node.isTextual -> {
                 val text = node.asText()
                 if (printable(text)) {
-                    equals(lines, quoted(text, format), value(path, "asText()", format), format)
+                    equals(lines, quoted(text, format), value(path, "asText()"), format)
                 } else {
                     lines.addSingleCommentLine(
                         "$fieldPath is not asserted on, as its value is not stable between runs"
@@ -245,30 +243,23 @@ object AsyncApiReplyAssertions {
 
     private fun has(lines: Lines, path: String, field: String, format: OutputFormat) {
         val name = quoted(field, format)
-        val expr = if (format.isPython()) "$name in $path" else "$path.has($name)"
+        val expr = "$path.has($name)"
         assertion(lines, expr, expr, format)
     }
 
     //a field name is a literal too, and JSON allows ones holding a quote, or starting with '$',
     //which Kotlin would otherwise read as the start of a template
     private fun child(path: String, name: String, format: OutputFormat) =
-        if (format.isPython()) "$path[${quoted(name, format)}]" else "$path.get(${quoted(name, format)})"
+        "$path.get(${quoted(name, format)})"
 
-    private fun index(path: String, i: Int, format: OutputFormat) =
-        if (format.isPython()) "$path[$i]" else "$path.get($i)"
+    private fun index(path: String, i: Int) = "$path.get($i)"
 
-    /**
-     * Reading a value out: on the JVM the tree is asked for it as a type, in Python it is the
-     * value already.
-     */
-    private fun value(path: String, asType: String, format: OutputFormat) =
-        if (format.isPython()) path else "$path.$asType"
+    private fun value(path: String, asType: String) = "$path.$asType"
 
     private fun assertion(lines: Lines, kotlin: String, java: String, format: OutputFormat) {
         when {
             format.isJava() -> lines.add("assertTrue($java);")
             format.isKotlin() -> lines.add("assertTrue($kotlin)")
-            format.isPython() -> lines.add("assert $kotlin")
         }
     }
 
@@ -276,7 +267,6 @@ object AsyncApiReplyAssertions {
         when {
             format.isJava() -> lines.add("assertEquals($expected, $actual);")
             format.isKotlin() -> lines.add("assertEquals($expected, $actual)")
-            format.isPython() -> lines.add("assert $actual == $expected")
         }
     }
 
@@ -284,7 +274,6 @@ object AsyncApiReplyAssertions {
         when {
             format.isJava() -> lines.add("assertEquals($expected, $actual, 0.001);")
             format.isKotlin() -> lines.add("assertEquals($expected, $actual, 0.001)")
-            format.isPython() -> lines.add("assert abs($actual - $expected) < 0.001")
         }
     }
 
@@ -293,7 +282,6 @@ object AsyncApiReplyAssertions {
         when {
             format.isJava() -> lines.add("assertTrue($variable.contains($expected));")
             format.isKotlin() -> lines.add("assertTrue($variable!!.contains($expected))")
-            format.isPython() -> lines.add("assert $expected in $variable")
         }
     }
 

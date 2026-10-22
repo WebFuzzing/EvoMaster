@@ -25,8 +25,7 @@ import org.slf4j.LoggerFactory
  * suite, which is how the REST writer reaches the one method RestAssured does not expose. The
  * suite's imports are decided before it is known whether anything will publish over Kafka, and
  * adding them unconditionally would make every AsyncAPI suite need the dependency, including one
- * that only ever talks to a socket through a driver. Python has no such spelling, so its import
- * is written with the helper instead, by [TestSuiteWriter], under the same condition.
+ * that only ever talks to a socket through a driver.
  */
 object KafkaTestClientEmitter {
 
@@ -59,7 +58,7 @@ object KafkaTestClientEmitter {
     /**
      * What stands for an absent value in the target language.
      */
-    private fun nothing(format: OutputFormat) = if (format.isPython()) "None" else "null"
+    private fun nothing(format: OutputFormat) = "null"
 
     /**
      * A name or an address out of the document, as a literal of the target language.
@@ -115,7 +114,7 @@ object KafkaTestClientEmitter {
             result.getReplyAddress()?.let { quoted(it, format) } ?: nothing(format),
             result.getPayload()?.let { quoted(it, format) } ?: nothing(format),
             result.getCorrelationHeader()?.let { quoted(it, format) } ?: nothing(format),
-            (result.getReplyTimeoutMs() ?: 0L).toString() + if (format.isPython()) "" else "L"
+            (result.getReplyTimeoutMs() ?: 0L).toString() + "L"
         )
 
         //the message's own headers, flattened so that one call still fits on one line
@@ -129,7 +128,6 @@ object KafkaTestClientEmitter {
         when {
             format.isJava() -> lines.add("String $variable = $call;")
             format.isKotlin() -> lines.add("val $variable = $call")
-            format.isPython() -> lines.add("$variable = self.$call")
             else -> throw IllegalStateException("No Kafka client is written for $format")
         }
     }
@@ -144,7 +142,6 @@ object KafkaTestClientEmitter {
     fun emitHelper(lines: Lines, format: OutputFormat) {
         val body = when {
             format.isJava() -> javaHelper()
-            format.isPython() -> pythonHelper()
             format.isKotlin() -> kotlinHelper()
             else -> throw IllegalStateException("No Kafka client is written for $format")
         }
@@ -232,73 +229,6 @@ object KafkaTestClientEmitter {
         "        }",
         "    }",
         "}"
-    )
-
-    /**
-     * The Python form, against kafka-python. A Python suite has no driver to ask, since the
-     * controller is Java, so it always publishes to the address the document declares.
-     */
-    private fun pythonHelper(): List<String> = listOf(
-        "@staticmethod",
-        "def $HELPER_NAME(broker, topic, reply_topic, payload, correlation_header, timeout_ms, *header_pairs):",
-        "    \"\"\"",
-        "    Publish one message and, when a reply is declared, wait for the one that answers it.",
-        "",
-        "    The consumer seeks to the end of the reply topic before anything is published, so a",
-        "    reply left over from an earlier run is never taken for an answer to this one, and a",
-        "    fresh correlation id is minted per call for the same reason.",
-        "    \"\"\"",
-        "    correlation_id = str(uuid.uuid4())",
-        "    consumer = None",
-        "    producer = None",
-        "    try:",
-        "        if reply_topic is not None:",
-        "            consumer = kafka.KafkaConsumer(bootstrap_servers=broker,",
-        "                    auto_offset_reset='latest', enable_auto_commit=False)",
-        "            partitions = [kafka.TopicPartition(reply_topic, p)",
-        "                    for p in (consumer.partitions_for_topic(reply_topic) or [])]",
-        "            if not partitions:",
-        "                #the reply destination does not exist yet, so nothing can be waiting on it",
-        "                consumer.close()",
-        "                consumer = None",
-        "            else:",
-        "                consumer.assign(partitions)",
-        "                consumer.seek_to_end()",
-        "                #seek_to_end is lazy: asking for the position is what makes it take effect",
-        "                #now, rather than on the first poll, by when the reply would be behind it",
-        "                consumer.position(partitions[0])",
-        "        producer = kafka.KafkaProducer(bootstrap_servers=broker)",
-        "        headers = []",
-        "        i = 0",
-        "        while i + 1 < len(header_pairs):",
-        "            headers.append((header_pairs[i], header_pairs[i + 1].encode('utf-8')))",
-        "            i += 2",
-        "        if correlation_header is not None:",
-        "            headers.append((correlation_header, correlation_id.encode('utf-8')))",
-        "        #a message with no payload of its own publishes an empty body",
-        "        body = (payload if payload is not None else '').encode('utf-8')",
-        "        producer.send(topic, value=body, headers=headers)",
-        "        producer.flush()",
-        "        if consumer is None:",
-        "            return None",
-        "        reply = None",
-        "        deadline = time.time() + (timeout_ms / 1000.0)",
-        "        while reply is None and time.time() < deadline:",
-        "            for _, records in consumer.poll(timeout_ms=$DEFAULT_POLL_MS).items():",
-        "                for r in records:",
-        "                    if correlation_header is None:",
-        "                        reply = r.value.decode('utf-8')",
-        "                        continue",
-        "                    for key, value in (r.headers or []):",
-        "                        if key == correlation_header and value.decode('utf-8') == correlation_id:",
-        "                            reply = r.value.decode('utf-8')",
-        "        return reply",
-        "    finally:",
-        "        #a suite runs many of these, so a client left open would outlive every one of them",
-        "        if producer is not None:",
-        "            producer.close()",
-        "        if consumer is not None:",
-        "            consumer.close()"
     )
 
     private fun kotlinHelper(): List<String> = listOf(

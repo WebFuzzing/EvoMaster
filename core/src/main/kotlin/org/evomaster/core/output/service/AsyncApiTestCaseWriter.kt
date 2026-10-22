@@ -139,12 +139,8 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter() {
 
         val variable = res.getReplyVariableName() ?: return
 
-        if (format.isPython()) {
-            lines.add("assert $variable is not None")
-        } else {
-            lines.add("assertNotNull($variable)")
-            lines.appendSemicolon()
-        }
+        lines.add("assertNotNull($variable)")
+        lines.appendSemicolon()
 
         res.getReplyMessage()?.let {
             lines.addSingleCommentLine("recognised as the declared message '$it'")
