@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.dynamodb;
 
 import org.evomaster.client.java.controller.dynamodb.parsers.*;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.DynamoDbQuery;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -30,15 +31,15 @@ public class DynamoDbRequestParser {
     }
 
     /**
-     * Entry-point parser used by a future handler.
-     * @param ddbRequest DynamoDB SDK ddbRequest object (see comment on DynamoDbBaseApiMethodParser)
+     * Parses serializable DynamoDB query data.
+     * @param ddbQuery DynamoDB query data
      * @param apiMethodName DynamoDB API method name from enum type
      *
      * @return a map of parsed requests by table name.
      * Unsupported operations intentionally yield an empty map.
      */
-    public Map<String, ParsedDynamoDbRequest> parseByTable(Object ddbRequest, DynamoDbOperationNames apiMethodName) {
-        if (ddbRequest == null || apiMethodName == null) {
+    public Map<String, ParsedDynamoDbRequest> parseByTable(DynamoDbQuery ddbQuery, DynamoDbOperationNames apiMethodName) {
+        if (ddbQuery == null || apiMethodName == null) {
             return Collections.emptyMap();
         }
 
@@ -47,7 +48,7 @@ public class DynamoDbRequestParser {
             return Collections.emptyMap();
         }
 
-        Map<String, ParsedDynamoDbRequest> parsed = parser.parseRequest(ddbRequest);
+        Map<String, ParsedDynamoDbRequest> parsed = parser.parseRequest(ddbQuery);
         return parsed == null ? Collections.emptyMap() : parsed;
     }
 

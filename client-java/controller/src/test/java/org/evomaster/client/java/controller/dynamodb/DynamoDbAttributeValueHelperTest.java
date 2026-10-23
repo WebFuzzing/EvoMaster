@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.dynamodb;
 
+import org.evomaster.client.java.instrumentation.DynamoDbQueryValue;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -103,6 +104,28 @@ public class DynamoDbAttributeValueHelperTest {
         assertInstanceOf(Set.class, bs);
         assertEquals(1, ((Set<?>) bs).size());
         assertEquals(bsBinary, ((Set<?>) bs).iterator().next());
+    }
+
+    @Test
+    public void testToPlainValueWithCanonicalSnapshots() {
+        Map<String, DynamoDbQueryValue> nested = new LinkedHashMap<>();
+        nested.put("country", DynamoDbQueryValue.string("Argentina"));
+        nested.put("goals", DynamoDbQueryValue.number("10"));
+
+        Map<String, Object> converted = DynamoDbAttributeValueHelper.toPlainMap(
+                Collections.singletonMap("player", DynamoDbQueryValue.map(nested)));
+
+        Map<?, ?> player = (Map<?, ?>) converted.get("player");
+        assertEquals("Argentina", player.get("country"));
+        assertEquals(10L, player.get("goals"));
+        assertEquals(Arrays.asList("Argentina", 10L), DynamoDbAttributeValueHelper.toPlainValue(DynamoDbQueryValue.list(Arrays.asList(
+                DynamoDbQueryValue.string("Argentina"),
+                DynamoDbQueryValue.number("10")))));
+        assertEquals(Collections.singleton("Messi"), DynamoDbAttributeValueHelper.toPlainValue(
+                DynamoDbQueryValue.stringSet(Collections.singleton("Messi"))));
+        assertArrayEquals(new byte[]{1, 2}, (byte[]) DynamoDbAttributeValueHelper.toPlainValue(
+                DynamoDbQueryValue.binary(new byte[]{1, 2})));
+        assertNull(DynamoDbAttributeValueHelper.toPlainValue(DynamoDbQueryValue.nullValue()));
     }
 
     @Test
@@ -270,6 +293,19 @@ public class DynamoDbAttributeValueHelperTest {
         assertEquals(DynamoDbAttributeType.BINARY_SET,
                 DynamoDbAttributeValueHelper.resolveAttributeType(
                         new LinkedHashSet<Object>(Collections.singletonList(new byte[]{1}))));
+    }
+
+    /** Verifies that captured types remain available when plain collections cannot identify them. */
+    @Test
+    public void testResolveAttributeTypeForSnapshots() {
+        assertEquals(DynamoDbAttributeType.STRING_SET,
+                DynamoDbAttributeValueHelper.resolveAttributeType(DynamoDbQueryValue.stringSet(Collections.emptySet())));
+        assertEquals(DynamoDbAttributeType.NUMBER_SET,
+                DynamoDbAttributeValueHelper.resolveAttributeType(DynamoDbQueryValue.numberSet(Collections.emptySet())));
+        assertEquals(DynamoDbAttributeType.BINARY_SET,
+                DynamoDbAttributeValueHelper.resolveAttributeType(DynamoDbQueryValue.binarySet(Collections.emptyList())));
+        assertEquals(DynamoDbAttributeType.UNSET,
+                DynamoDbAttributeValueHelper.resolveAttributeType(DynamoDbQueryValue.unset()));
     }
 
     @Test

@@ -1,9 +1,10 @@
 package org.evomaster.client.java.controller.dynamodb;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Shared reflection helpers used by DynamoDB parser utilities.
+ * Shared reflection helpers used by DynamoDB parser utilities and request snapshots.
  */
 public final class DynamoDbReflectionHelper {
 
@@ -21,13 +22,28 @@ public final class DynamoDbReflectionHelper {
      * @return invocation result or {@code null} on errors
      */
     public static Object invokeNoArg(Object target, String methodName) {
+        try {
+            return invokeNoArgPropagatingRuntimeExceptions(target, methodName);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Invokes a no-argument method while allowing runtime reflection failures to propagate.
+     *
+     * @param target target object
+     * @param methodName method name to invoke
+     * @return invocation result or {@code null} when the target, method, or invocation is unavailable
+     */
+    public static Object invokeNoArgPropagatingRuntimeExceptions(Object target, String methodName) {
         if (target == null) {
             return null;
         }
         try {
             Method method = target.getClass().getMethod(methodName);
             return method.invoke(target);
-        } catch (Exception ignored) {
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
             return null;
         }
     }

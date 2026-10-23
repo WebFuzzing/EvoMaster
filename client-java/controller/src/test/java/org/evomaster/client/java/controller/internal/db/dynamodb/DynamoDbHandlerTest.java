@@ -50,6 +50,20 @@ public class DynamoDbHandlerTest {
         }
     }
 
+    /** Equivalent query predicates produce one diagnostic ID despite different player values. */
+    @Test
+    public void testHeuristicIdGroupsEquivalentQueries() {
+        DynamoDbDistanceWithMetrics distance = new DynamoDbDistanceWithMetrics(0.0d, 0, false);
+        String messiId = new DynamoDbCommandWithDistance(queryCommand("Lionel Messi"), TABLE, distance)
+                .getHeuristicId();
+        String maradonaId = new DynamoDbCommandWithDistance(queryCommand("Diego Maradona"), TABLE, distance)
+                .getHeuristicId();
+
+        assertEquals(messiId, maradonaId);
+        assertTrue(messiId.startsWith("Query:" + TABLE + ":"));
+        assertFalse(messiId.contains("Lionel Messi"));
+    }
+
     @Test
     public void testAsyncClient() {
         AsyncDynamoDbClient client = new AsyncDynamoDbClient();

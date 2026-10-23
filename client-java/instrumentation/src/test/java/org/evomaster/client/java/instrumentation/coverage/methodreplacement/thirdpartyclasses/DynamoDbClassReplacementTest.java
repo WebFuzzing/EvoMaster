@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.DynamoDbQuery;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,6 +21,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -157,7 +159,8 @@ public class DynamoDbClassReplacementTest {
         assertEquals(1, commands.size());
         DynamoDbCommand command = commands.iterator().next();
         assertEquals(DynamoDbOperationNames.PUT_ITEM, command.getOperationName());
-        assertEquals(request, command.getDdbRequest());
+        assertEquals(request.tableName(), command.getDdbRequest().tableName());
+        assertEquals(request.conditionExpression(), command.getDdbRequest().filterExpression());
         assertFalse(command.isSuccessfullyExecuted());
     }
 
@@ -380,6 +383,12 @@ public class DynamoDbClassReplacementTest {
         DynamoDbCommand command = dynamoDbCommands.iterator().next();
         assertEquals(expectedTableNames, command.getTableNames());
         assertEquals(expectedOperationName, command.getOperationName());
-        assertEquals(expectedRequest, command.getDdbRequest());
+        assertNotNull(command.getDdbRequest());
+        DynamoDbQuery requestSnapshot = command.getDdbRequest();
+        if (expectedOperationName == DynamoDbOperationNames.BATCH_GET_ITEM) {
+            assertEquals(expectedTableNames, new ArrayList<>(requestSnapshot.batchRequestItems().keySet()));
+        } else {
+            assertEquals(expectedTableNames.get(0), requestSnapshot.tableName());
+        }
     }
 }

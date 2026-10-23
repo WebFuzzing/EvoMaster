@@ -5,32 +5,17 @@ import org.evomaster.client.java.controller.dynamodb.DynamoDbExpressionParser;
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
+import org.evomaster.client.java.instrumentation.DynamoDbQuery;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.EqualsOperation;
 
 import java.util.*;
 import java.util.function.Function;
 
-import static org.evomaster.client.java.controller.dynamodb.DynamoDbReflectionHelper.invokeNoArg;
 
 /**
- * Base class for DynamoDB SDK requests parser. Contains shared utilities.
- * DynamoDB requests are kept and parsed as the original SDK request objects because the typed request
- * already preserves operation-specific fields and {@code AttributeValue} types, including binary data.
- * Parsing that object directly avoids a lossy intermediate representation (like a string query) while
- * still extracting only the table names and predicates needed by EvoMaster. @aschenzle
+ * Base class for parsing DynamoDB query data. Contains shared utilities.
  */
 abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
-
-    // All these constants are used to invoke DDB API methods by reflection, do not change.
-    protected static final String METHOD_TABLE_NAME = "tableName";
-    protected static final String METHOD_KEY_CONDITION_EXPRESSION = "keyConditionExpression";
-    protected static final String METHOD_FILTER_EXPRESSION = "filterExpression";
-    protected static final String METHOD_KEY = "key";
-    protected static final String METHOD_REQUEST_ITEMS = "requestItems";
-    protected static final String METHOD_KEYS = "keys";
-    protected static final String METHOD_CONDITION_EXPRESSION = "conditionExpression";
-    protected static final String METHOD_EXPRESSION_ATTRIBUTE_NAMES = "expressionAttributeNames";
-    protected static final String METHOD_EXPRESSION_ATTRIBUTE_VALUES = "expressionAttributeValues";
 
     /**
      * Parses a DynamoDB expression string into a query operation.
@@ -50,12 +35,11 @@ abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
     /**
      * Parses key equality conditions from DynamoDB request key fields.
      *
-     * @param ddbRequest DynamoDB request object
+     * @param ddbQuery DynamoDB query data
      * @return parsed key condition operation
      */
-    protected QueryOperation parseKeyCondition(Object ddbRequest) {
-        Object keyObj = invokeNoArg(ddbRequest, METHOD_KEY);
-        return buildEqualsFromMap(DynamoDbAttributeValueHelper.toPlainMap(keyObj));
+    protected QueryOperation parseKeyCondition(DynamoDbQuery ddbQuery) {
+        return buildEqualsFromMap(DynamoDbAttributeValueHelper.toPlainMap(ddbQuery.key()));
     }
 
     /**
@@ -109,57 +93,34 @@ abstract class DynamoDbBaseApiMethodParser implements DynamoDbApiMethodParser {
     }
 
     /**
-     * Reads and normalizes expression attribute names from DynamoDB request object.
+     * Reads and normalizes expression attribute names from DynamoDB query data.
      *
-     * @param ddbRequest DynamoDB request object
+     * @param ddbQuery DynamoDB query data
      * @return normalized name map
      */
-    protected Map<String, String> readNameMap(Object ddbRequest) {
-        Object raw = invokeNoArg(ddbRequest, METHOD_EXPRESSION_ATTRIBUTE_NAMES);
-        if (!(raw instanceof Map<?, ?>)) {
-            return Collections.emptyMap();
-        }
-
-        Map<String, String> result = new LinkedHashMap<>();
-        ((Map<?, ?>) raw).forEach((k, v) -> {
-            if (k != null && v != null) {
-                result.put(String.valueOf(k), String.valueOf(v));
-            }
-        });
-        return result;
+    protected Map<String, String> readNameMap(DynamoDbQuery ddbQuery) {
+        Map<String, String> names = ddbQuery.expressionAttributeNames();
+        return names == null ? Collections.emptyMap() : names;
     }
 
     /**
-     * Reads and converts expression attribute values from DynamoDB request object.
+     * Reads and converts expression attribute values from DynamoDB query data.
      *
-     * @param ddbRequest DynamoDB request object
+     * @param ddbQuery DynamoDB query data
      * @return normalized value map
      */
-    protected Map<String, Object> readValueMap(Object ddbRequest) {
-        Object raw = invokeNoArg(ddbRequest, METHOD_EXPRESSION_ATTRIBUTE_VALUES);
-        return DynamoDbAttributeValueHelper.toPlainMap(raw);
-    }
-
-    /**
-     * Reads a string-like value from a DDB request object via reflection.
-     *
-     * @param ddbRequest DynamoDB request object
-     * @param methodName accessor method name
-     * @return string value, or {@code null}
-     */
-    protected String readString(Object ddbRequest, String methodName) {
-        Object value = invokeNoArg(ddbRequest, methodName);
-        return value == null ? null : String.valueOf(value);
+    protected Map<String, Object> readValueMap(DynamoDbQuery ddbQuery) {
+        return DynamoDbAttributeValueHelper.toPlainMap(ddbQuery.expressionAttributeValues());
     }
 
     /**
      * Reads and validates the table name from the request.
      *
-     * @param ddbRequest DynamoDB request object
+     * @param ddbQuery DynamoDB query data
      * @return table name, or {@code null} if blank/absent
      */
-    protected String readValidTableName(Object ddbRequest) {
-        String tableName = readString(ddbRequest, METHOD_TABLE_NAME);
+    protected String readValidTableName(DynamoDbQuery ddbQuery) {
+        String tableName = ddbQuery.tableName();
         if (tableName == null || tableName.trim().isEmpty()) {
             return null;
         }
