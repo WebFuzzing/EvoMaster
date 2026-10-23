@@ -149,8 +149,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
         val replyVariable = asyncApiResult.getReplyVariableName() ?: return
 
-        lines.add("assertNotNull($replyVariable)")
-        lines.appendSemicolon()
+        lines.addStatement("assertNotNull($replyVariable)")
 
         asyncApiResult.getReplyMessage()?.let {
             lines.addSingleCommentLine("recognised as the declared message '$it'")
@@ -169,6 +168,11 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
      * @param bodyVariable  the variable to hold the parsed reply, if one is needed
      */
     internal fun writeReplyAssertions(lines: Lines, payload: String?, replyVariable: String, bodyVariable: String) {
+
+        //the assertions below are written for Java and Kotlin only
+        if (!format.isJavaOrKotlin()) {
+            throw IllegalArgumentException("Unsupported format: $format")
+        }
 
         if (!config.enableBasicAssertions) {
             return
@@ -318,37 +322,19 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
     /**
      * [expression] is valid in both Java and Kotlin.
      */
-    private fun writeAssertTrue(lines: Lines, expression: String) {
-        when {
-            format.isJava() -> lines.add("assertTrue($expression);")
-            format.isKotlin() -> lines.add("assertTrue($expression)")
-            else -> throw IllegalArgumentException("Unsupported format: $format")
-        }
-    }
+    private fun writeAssertTrue(lines: Lines, expression: String) =
+        lines.addStatement("assertTrue($expression)")
 
-    private fun writeAssertEquals(lines: Lines, expected: String, actual: String) {
-        when {
-            format.isJava() -> lines.add("assertEquals($expected, $actual);")
-            format.isKotlin() -> lines.add("assertEquals($expected, $actual)")
-            else -> throw IllegalArgumentException("Unsupported format: $format")
-        }
-    }
+    private fun writeAssertEquals(lines: Lines, expected: String, actual: String) =
+        lines.addStatement("assertEquals($expected, $actual)")
 
-    private fun writeAssertEqualsWithDelta(lines: Lines, expected: String, actual: String) {
-        when {
-            format.isJava() -> lines.add("assertEquals($expected, $actual, $DELTA);")
-            format.isKotlin() -> lines.add("assertEquals($expected, $actual, $DELTA)")
-            else -> throw IllegalArgumentException("Unsupported format: $format")
-        }
-    }
+    private fun writeAssertEqualsWithDelta(lines: Lines, expected: String, actual: String) =
+        lines.addStatement("assertEquals($expected, $actual, $DELTA)")
 
     private fun writeAssertContains(lines: Lines, replyVariable: String, text: String) {
-        val expected = TestWriterUtils.quotedEscaped(text, format)
-        when {
-            format.isJava() -> lines.add("assertTrue($replyVariable.contains($expected));")
-            format.isKotlin() -> lines.add("assertTrue($replyVariable!!.contains($expected))")
-            else -> throw IllegalArgumentException("Unsupported format: $format")
-        }
+        //in Kotlin the reply may be declared nullable by a script the driver rendered
+        val reply = if (format.isKotlin()) "$replyVariable!!" else replyVariable
+        writeAssertTrue(lines, "$reply.contains(${TestWriterUtils.quotedEscaped(text, format)})")
     }
 
     /**

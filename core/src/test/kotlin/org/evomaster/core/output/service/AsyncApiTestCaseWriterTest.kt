@@ -99,4 +99,12 @@ class AsyncApiTestCaseWriterTest {
 
         assertTrue(emitted.contains("5000000000L"), emitted)
     }
+
+    @Test
+    fun testAnUnsupportedFormatIsRejected() {
+
+        assertThrows(IllegalArgumentException::class.java) {
+            emit("""{"a": 1}""") { outputFormat = OutputFormat.PYTHON_UNITTEST }
+        }
+    }
 }
