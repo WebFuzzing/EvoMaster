@@ -791,8 +791,6 @@ class TestSuiteWriter {
 
         testCaseWriter.addExtraStaticVariables(lines)
 
-        testCaseWriter.addExtraClassMembers(lines, solution)
-
 //        if (config.expectationsActive) {
 //            if (config.outputFormat.isJavaOrKotlin()) {
 //                //TODO JS and C#

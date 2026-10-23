@@ -2,6 +2,7 @@ package org.evomaster.core.output.service
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.asyncapi.KafkaTestClientEmitter
 import org.evomaster.core.output.Lines
@@ -11,8 +12,8 @@ import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome
+import org.evomaster.core.problem.asyncapi.service.AsyncApiSampler
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import java.nio.file.Path
@@ -45,15 +46,28 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
         this.config = config
     }
 
+    @Inject
+    private lateinit var sampler: AsyncApiSampler
+
     /**
-     * The Kafka servers this suite publishes to, from the server's name (its key under `servers`
-     * in the AsyncAPI document, eg "kafka") to its declared `host` (eg "localhost:9092"), used
-     * when the driver does not give an address.
-     *
-     * Filled in when the class members are written, and read when the init statements are,
-     * which the suite writer does afterwards.
+     * The Kafka servers the schema's channels publish to, from the server's name (its key under
+     * `servers`, eg "kafka") to its declared `host` (eg "localhost:9092"), used when the driver
+     * does not give an address. A channel publishes to its first server, as in the search.
      */
-    private val declaredHostByServerName = LinkedHashMap<String, String>()
+    private val declaredHostByServerName: Map<String, String> by lazy {
+        val document = sampler.document
+        val hosts = LinkedHashMap<String, String>()
+        document.channels.values
+            .mapNotNull { document.serversOf(it).firstOrNull() }
+            .filter { KafkaTestClientEmitter.isKafka(it.protocol) && !it.name.isNullOrBlank() }
+            .forEach { server ->
+                //names like "a-b" and "a.b" map to the same variable: only the first gets one
+                if (hosts.keys.none { serverVariableFor(it) == serverVariableFor(server.name) }) {
+                    hosts[server.name] = server.host ?: ""
+                }
+            }
+        hosts
+    }
 
     /**
      * Prefix of the variable holding a parsed reply, followed by the index of its action.
@@ -344,34 +358,13 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
     override fun shouldFailIfExceptionNotThrown(result: ActionResult) = false
 
     /**
-     * A variable per Kafka server the suite publishes to, when there is a driver to ask where it
-     * is. See [org.evomaster.client.java.controller.SutHandler.getAsyncApiServerAddress].
+     * A variable per Kafka server, when there is a driver to ask where it is. See
+     * [org.evomaster.client.java.controller.SutHandler.getAsyncApiServerAddress].
      */
-    override fun addExtraClassMembers(lines: Lines, solution: Solution<*>) {
+    override fun addExtraStaticVariables(lines: Lines) {
 
-        val kafkaResults = KafkaTestClientEmitter.resultsIn(solution)
-
-        //the same writer is used for every suite of a run, so clear what the previous one left
-        declaredHostByServerName.clear()
-
-        if (kafkaResults.isEmpty()) {
+        if (!suiteHasDriver() || declaredHostByServerName.isEmpty()) {
             return
-        }
-
-        if (!suiteHasDriver()) {
-            return
-        }
-
-        kafkaResults.forEach { kafkaResult ->
-            val name = kafkaResult.getServerName()
-            if (name.isNullOrBlank()) {
-                return@forEach
-            }
-            //names like "a-b" and "a.b" map to the same variable: only the first gets one
-            if (declaredHostByServerName.keys.any { it != name && serverVariableFor(it) == serverVariableFor(name) }) {
-                return@forEach
-            }
-            declaredHostByServerName.putIfAbsent(name, kafkaResult.getServerHost() ?: "")
         }
 
         declaredHostByServerName.keys.forEach { name ->
@@ -388,6 +381,10 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
      * Ask the driver where each server is, falling back to the address in the document.
      */
     override fun addExtraInitStatement(lines: Lines) {
+
+        if (!suiteHasDriver()) {
+            return
+        }
 
         declaredHostByServerName.forEach { (name, declaredHost) ->
             val variable = serverVariableFor(name)

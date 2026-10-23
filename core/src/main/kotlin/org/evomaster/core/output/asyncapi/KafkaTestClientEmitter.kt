@@ -54,10 +54,15 @@ object KafkaTestClientEmitter {
      * one the search composed, without the id, so the generated test could not match the reply.
      * The driver renders those instead.
      */
+    /**
+     * Whether a server's protocol is one a Kafka call is written for.
+     */
+    fun isKafka(protocol: String?) = protocol?.lowercase() in KAFKA_PROTOCOLS
+
     fun isEmitted(result: AsyncApiCallResult): Boolean =
         result.getTestScript().isEmpty()
                 && result.getReplyVariableName() != null
-                && result.getProtocol()?.lowercase() in KAFKA_PROTOCOLS
+                && isKafka(result.getProtocol())
                 && !result.getServerHost().isNullOrBlank()
                 && !result.getAddress().isNullOrBlank()
                 && (result.getReplyAddress().isNullOrBlank() || result.getCorrelationHeader() != null)
