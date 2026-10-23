@@ -38,7 +38,7 @@ class AsyncApiSamplerTest {
     }
 
     companion object {
-        private const val NCS = "/asyncapi/sut/ncs-kafka.yaml"
+        private const val NCS = AsyncApiTestInjector.NCS
 
         private val NCS_OPERATIONS = setOf("checkTriangle", "bessj", "expint", "fisher", "gammq", "remainder")
     }

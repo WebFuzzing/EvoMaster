@@ -1,21 +1,14 @@
 package org.evomaster.core.output.sorting
 
-import com.google.inject.Key
-import com.google.inject.TypeLiteral
-import com.webfuzzing.asyncapi.access.AsyncApiAccess
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
-import org.evomaster.core.problem.asyncapi.service.AsyncApiSampler
 import org.evomaster.core.problem.asyncapi.service.AsyncApiTestInjector
+import org.evomaster.core.problem.asyncapi.service.AsyncApiTestInjector.DOUBLE_RESULT
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver
-import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchGlobalState
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -29,8 +22,6 @@ import org.junit.jupiter.api.Test
 class AsyncApiSortingTest {
 
     companion object {
-        private const val DOUBLE_RESULT = """{"resultAsDouble": 1.5}"""
-
         //as the document declares it: the fields sit under "error", not at the top level
         private const val ERROR = """{"error": {"code": 400, "message": "no"}}"""
     }
@@ -89,21 +80,8 @@ class AsyncApiSortingTest {
         answer: (AsyncApiActionDto) -> AsyncApiReplyDto?
     ): EvaluatedIndividual<AsyncApiIndividual> {
 
-        val driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(AsyncApiTestInjector.NCS)), answer)
-        val injector = AsyncApiTestInjector.create(driver, "--blackBox=false")
+        val injector = AsyncApiTestInjector.create(AsyncApiTestInjector.ncsDriver(answer), "--blackBox=false")
 
-        val sampler = injector.getInstance(AsyncApiSampler::class.java)
-        val fitness = injector.getInstance(Key.get(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {}))
-        val randomness = injector.getInstance(Randomness::class.java)
-
-        val template = sampler.seeAvailableActions().first { it.getName() == operation }
-        val action = (template.copy() as AsyncApiAction).apply { doInitialize(randomness) }
-
-        val individual = AsyncApiIndividual(SampleType.RANDOM, mutableListOf(action)).apply {
-            doGlobalInitialize(injector.getInstance(SearchGlobalState::class.java))
-        }
-
-        return fitness.calculateCoverage(individual, modifiedSpec = null)
-            ?: throw IllegalStateException("the fitness gave up on the individual")
+        return AsyncApiTestInjector.evaluate(injector, operation)
     }
 }

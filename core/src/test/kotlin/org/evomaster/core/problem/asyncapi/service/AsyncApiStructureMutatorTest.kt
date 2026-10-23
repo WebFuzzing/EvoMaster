@@ -2,7 +2,6 @@ package org.evomaster.core.problem.asyncapi.service
 
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
-import com.webfuzzing.asyncapi.access.AsyncApiAccess
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.replied
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Test
 class AsyncApiStructureMutatorTest {
 
     companion object {
-        private const val NCS = AsyncApiTestInjector.NCS
 
         private val NCS_OPERATIONS = AsyncApiTestInjector.NCS_OPERATIONS
     }
@@ -33,9 +31,7 @@ class AsyncApiStructureMutatorTest {
 
     private fun start(maxTestSize: Int) {
 
-        val driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(AsyncApiAccess.readFromResource(NCS))) {
-            replied("""{"resultAsDouble": 1.0}""")
-        }
+        val driver = AsyncApiTestInjector.ncsDriver { replied(AsyncApiTestInjector.DOUBLE_RESULT) }
         val injector = AsyncApiTestInjector.create(driver, "--blackBox=false", "--maxTestSize=$maxTestSize")
 
         sampler = injector.getInstance(AsyncApiSampler::class.java)
