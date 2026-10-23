@@ -88,6 +88,21 @@ object RestActionBuilderV3 {
 
     private val mapper = ObjectMapper()
 
+    private fun buildOpenApiSchema(
+        schemas: JsonNode,
+        openApiVersion: String
+    ): Pair<SchemaOpenAPI, RestSchema> {
+        val root = mapper.createObjectNode()
+        root.put("openapi", openApiVersion)
+        root.putObject(OPENAPI_COMPONENT_NAME)
+            .set<JsonNode>(OPENAPI_SCHEMA_NAME, schemas.deepCopy())
+
+        val schemaText = mapper.writeValueAsString(root)
+        val parsed = OpenAPIParser().readContents(schemaText, null, null)
+        val currentSchema = SchemaOpenAPI(schemaText, parsed.openAPI, SchemaLocation.MEMORY)
+        return currentSchema to RestSchema(currentSchema)
+    }
+
     class Options(
         /**
          * presents whether apply name/text analysis on description and summary of rest action
@@ -328,20 +343,10 @@ object RestActionBuilderV3 {
             return dtoCache[dtoSchema]!!.copy()
         }
 
-        val schema = """
-            {
-                "openapi": "3.0.0",
-                "$OPENAPI_COMPONENT_NAME": {
-                    "$OPENAPI_SCHEMA_NAME": $allSchemasValue
-                }
-            }          
-        """.trimIndent()
-
         //FIXME here we are swallowing all error messages in schema
         //FIXME duplicated code
-        val swagger = OpenAPIParser().readContents(schema,null,null)
-        val currentSchema = SchemaOpenAPI(schema,swagger.openAPI, SchemaLocation.MEMORY)
-        val schemaHolder = RestSchema(currentSchema)
+        val (currentSchema, schemaHolder) = buildOpenApiSchema(mapper.readTree(allSchemasValue), "3.0.0")
+        val swagger = currentSchema.schemaParsed
 
         var wanted: Gene? = null
 
@@ -389,22 +394,12 @@ object RestActionBuilderV3 {
         }
 
         //Note to simplify code, we just create a whole OpenAPI schema
-        val schema = """
-            {
-                "openapi": "3.0.0",
-                "$OPENAPI_COMPONENT_NAME": {
-                    "$OPENAPI_SCHEMA_NAME": {
-                        $dtoSchema
-                    }
-                }
-            }          
-        """.trimIndent()
+        val schemas = mapper.createObjectNode()
+        schemas.set<JsonNode>(name, mapper.readTree(dtoSchema))
 
         //FIXME here we are swallowing all error messages in schema
         //FIXME duplicated code
-        val swagger = OpenAPIParser().readContents(schema,null,null)
-        val currentSchema = SchemaOpenAPI(schema,swagger.openAPI, SchemaLocation.MEMORY)
-        val schemaHolder = RestSchema(currentSchema)
+        val (currentSchema, schemaHolder) = buildOpenApiSchema(schemas, "3.0.0")
         val gene = createObjectGene(
             name,
             currentSchema.schemaParsed.components.schemas[name]!!,
@@ -475,7 +470,7 @@ object RestActionBuilderV3 {
      * @return the Gene for [rootName]
      * @throws IllegalArgumentException if [rootName] is not present in [schemasByName]
      */
-    fun createGeneForDTOs(
+    fun createGeneForDTO(
         rootName: String,
         schemasByName: Map<String, JsonNode>,
         options: Options
@@ -485,18 +480,12 @@ object RestActionBuilderV3 {
             throw IllegalArgumentException("Root schema '$rootName' not present among provided schemas")
         }
 
-        val root = mapper.createObjectNode()
-        root.put("openapi", "3.1.0")
-        val schemasNode = root.putObject(OPENAPI_COMPONENT_NAME).putObject(OPENAPI_SCHEMA_NAME)
-        schemasByName.forEach { (name, node) -> schemasNode.set<JsonNode>(name, node) }
+        val schemas = mapper.createObjectNode()
+        schemasByName.forEach { (name, node) -> schemas.set<JsonNode>(name, node) }
+        val (currentSchema, schemaHolder) = buildOpenApiSchema(schemas, "3.1.0")
+        val parsed = currentSchema.schemaParsed
 
-        val schemaText = mapper.writeValueAsString(root)
-
-        val parsed = OpenAPIParser().readContents(schemaText, null, null)
-        val currentSchema = SchemaOpenAPI(schemaText, parsed.openAPI, SchemaLocation.MEMORY)
-        val schemaHolder = RestSchema(currentSchema)
-
-        val schema = parsed.openAPI.components.schemas[rootName]
+        val schema = parsed.components.schemas[rootName]
             ?: throw IllegalStateException("Cannot find schema '$rootName' after parsing")
 
         return getGene(
