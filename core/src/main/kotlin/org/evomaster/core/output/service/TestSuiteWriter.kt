@@ -232,6 +232,15 @@ class TestSuiteWriter {
         containsDtos = dtoWriter.containsDtos()
     }
 
+    /**
+     * Whether the driver has the Neo4j graph put back as it was at startup before each test, which the
+     * generated tests then have to do too, as they do not go through the driver's controller.
+     *
+     * TODO in future, this should also be based on `config.employSmartDbClean`
+     */
+    private fun employsSmartNeo4jClean(): Boolean =
+        ::remoteController.isInitialized && remoteController.getCachedSutInfo()?.employSmartNeo4jClean == true
+
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
         if(sampler !is EnterpriseSampler<*>){
             throw IllegalArgumentException("Not dealing with an enterprise application")
@@ -1079,6 +1088,9 @@ class TestSuiteWriter {
             } else if (format.isJavaOrKotlin()) {
                 if (config.employSmartDbClean == true) {
                     addStatement("$controller.resetDatabase(${handleResetDatabaseInput(solution)})", lines)
+                }
+                if (employsSmartNeo4jClean()) {
+                    addStatement("$controller.resetNeo4jDatabase()", lines)
                 }
                 addStatement("$controller.resetStateOfSUT()", lines)
 

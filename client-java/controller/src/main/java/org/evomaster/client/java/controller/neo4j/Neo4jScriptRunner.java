@@ -189,7 +189,7 @@ public class Neo4jScriptRunner {
      * Quotes a label or a relationship type with backticks, doubling any backtick inside it, so that
      * whatever the name holds is read as a name and never as Cypher.
      */
-    private static String escapeName(String name) {
+    public static String escapeName(String name) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Label or relationship type with no name");
         }

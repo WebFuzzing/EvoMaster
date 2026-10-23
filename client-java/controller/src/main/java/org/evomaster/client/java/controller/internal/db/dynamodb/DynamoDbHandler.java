@@ -17,7 +17,6 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -141,9 +140,9 @@ public class DynamoDbHandler {
             return Collections.emptyList();
         }
 
-        Map<String, List<Map<String, Object>>> itemsByTable = new HashMap<>();
+        DynamoDbTableItemsCache itemsCache = new DynamoDbTableItemsCache(tableDataAccessor, dynamoDbClient);
         for (DynamoDbCommand command : commands) {
-            evaluateCommand(command, itemsByTable);
+            evaluateCommand(command, itemsCache);
         }
         commands.clear();
         return new ArrayList<>(evaluatedCommands);
@@ -159,16 +158,14 @@ public class DynamoDbHandler {
     }
 
     /**
-     * Evaluates one successfully executed command and reuses table scans within the current batch.
+     * Evaluates one command and reuses table scans within the current batch.
+     * Failed conditional writes are evaluated because their predicates provide the
+     * distance needed to guide subsequent candidates toward a successful write.
      *
      * @param command command to evaluate
-     * @param itemsByTable cached table contents
+     * @param itemsCache cached table contents
      */
-    private void evaluateCommand(DynamoDbCommand command, Map<String, List<Map<String, Object>>> itemsByTable) {
-        if (!command.isSuccessfullyExecuted()) {
-            return;
-        }
-
+    private void evaluateCommand(DynamoDbCommand command, DynamoDbTableItemsCache itemsCache) {
         Map<String, ParsedDynamoDbRequest> parsedByTable;
         try {
             parsedByTable = requestParser.parseByTable(command.getDdbRequest(), command.getOperationName());
@@ -182,14 +179,13 @@ public class DynamoDbHandler {
             if (parsed == null || (parsed.getKeyCondition() == null && parsed.getFilterExpression() == null)) {
                 continue;
             }
+            if (!command.isSuccessfullyExecuted() && parsed.getFilterExpression() == null) {
+                continue;
+            }
 
             String tableName = entry.getKey();
             try {
-                List<Map<String, Object>> items = itemsByTable.get(tableName);
-                if (items == null) {
-                    items = tableDataAccessor.getItems(dynamoDbClient, tableName);
-                    itemsByTable.put(tableName, items);
-                }
+                List<Map<String, Object>> items = itemsCache.getItems(tableName);
                 double distance = calculator.computeDistance(
                         parsed.getKeyCondition(), parsed.getFilterExpression(), items);
                 DynamoDbDistanceWithMetrics metrics = new DynamoDbDistanceWithMetrics(distance, items.size(), false);
