@@ -339,8 +339,9 @@ There are 3 types of options:
 |`jdkEnvVarName`| __String__. Specify name of the environment variable that provides the JDK installation path. Note that the executable path will be resolved by appending 'bin/java'. *Default value*: `""`.|
 |`llm`| __Boolean__. Enable the use of LLMs. *Default value*: `false`.|
 |`llmApiKey`| __String__. API KEY needed to authenticated toward the chosen LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|
+|`llmListModels`| __Boolean__. List the models advertised by the selected LLM provider and exit. Currently only the OrcaRouter provider supports model discovery. *Depends on*: `llm=true`. *Default value*: `false`.|
 |`llmName`| __String__. LLM name. If not specified, default will be based on the LLM provider. *Depends on*: `llm=true`. *Default value*: `null`.|
-|`llmProvider`| __Enum__. Provider for the LLM. This could be a local one (e.g., run through Ollama), or a remote one like OpenAI. *Depends on*: `llm=true`. *Valid values*: `OPENAI, DEEPSEEK, OLLAMA, AZURE_OPENAI, MOCK`. *Default value*: `OLLAMA`.|
+|`llmProvider`| __Enum__. Provider for the LLM. This could be a local one (e.g., run through Ollama), or a remote one like OpenAI. *Depends on*: `llm=true`. *Valid values*: `OPENAI, DEEPSEEK, ORCAROUTER, OLLAMA, AZURE_OPENAI, MOCK`. *Default value*: `OLLAMA`.|
 |`llmTemperature`| __Double__. Temperature parameter for LLM. *Constraints*: `min=0.0, max=2.0`. *Depends on*: `llm=true`. *Default value*: `0.6`.|
 |`llmThreads`| __Int__. The number of threads to use when making calls towards an LLM, in configured. If connecting to Ollama, this value is ignored, and only 1 thread is used. *Depends on*: `llm=true`. *Default value*: `4`.|
 |`llmTimeoutSeconds`| __Long__. How long to wait for LLM's responses. *Constraints*: `min=0.0`. *Depends on*: `llm=true`. *Default value*: `60`.|

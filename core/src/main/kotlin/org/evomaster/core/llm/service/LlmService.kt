@@ -10,6 +10,13 @@ import org.evomaster.core.llm.FieldInfo
 import org.evomaster.core.llm.LlmProvider
 import org.evomaster.core.llm.LlmSupport
 import org.evomaster.core.llm.Prompts
+import org.evomaster.core.llm.orcarouter.OrcaRouterCatalogClient
+import org.evomaster.core.llm.orcarouter.OrcaRouterCatalogSource
+import org.evomaster.core.llm.orcarouter.OrcaRouterCredentials
+import org.evomaster.core.llm.orcarouter.OrcaRouterDefaults
+import org.evomaster.core.llm.orcarouter.OrcaRouterModel
+import org.evomaster.core.llm.orcarouter.OrcaRouterModelSelector
+import org.evomaster.core.llm.orcarouter.OrcaRouterOrigins
 import org.evomaster.core.logging.LoggingUtil
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -42,26 +49,40 @@ class LlmService {
             return
         }
 
+        val apiKey = if (config.llmProvider == LlmProvider.ORCAROUTER) {
+            OrcaRouterCredentials.resolve(config.llmApiKey)
+                ?: throw ConfigProblemException(
+                    "OrcaRouter requires an API key: pass --llmApiKey <sk-orca-…>, " +
+                            "set ORCA_API_KEY, or create one at ${OrcaRouterOrigins.PUBLIC_AUTH_ORIGIN}/console"
+                )
+        } else {
+            config.llmApiKey
+        }
+
+        val modelName = resolveModelName(apiKey)
+
         try {
             syncModel = LlmSupport.createModel(
                 config.llmProvider,
-                config.llmApiKey,
+                apiKey,
                 config.llmURL,
-                config.llmName,
+                modelName,
                 config.llmTimeoutSeconds,
                 config.llmTemperature
             )
 
             streamingModel = LlmSupport.createStreamingModel(
                 config.llmProvider,
-                config.llmApiKey,
+                apiKey,
                 config.llmURL,
-                config.llmName,
+                modelName,
                 config.llmTimeoutSeconds,
                 config.llmTemperature
             )
         }catch (e: Exception){
-            throw ConfigProblemException("Failed to connect and initialize the chosen LLM: ${e.message}")
+            throw ConfigProblemException(
+                "Failed to connect and initialize the chosen LLM: ${redactSecret(e.message, apiKey)}"
+            )
         }
 
         /*
@@ -70,12 +91,90 @@ class LlmService {
         val response = try{
             chat(Prompts.GREETINGS)
         }catch (e: Exception){
-            throw ConfigProblemException("Failed to connect to LLM: ${e.message}")
+            if (config.llmProvider == LlmProvider.ORCAROUTER &&
+                OrcaRouterCredentials.isModelAccessDenied(e)) {
+                throw ConfigProblemException(
+                    "The OrcaRouter key cannot use model '$modelName'. " +
+                            "Choose an accessible model with --llmName (see --llmListModels true), " +
+                            "or manage this key's model access at ${OrcaRouterOrigins.PUBLIC_AUTH_ORIGIN}/console. " +
+                            "Provider said: ${redactSecret(e.message, apiKey)}"
+                )
+            }
+            if (config.llmProvider == LlmProvider.ORCAROUTER &&
+                OrcaRouterCredentials.isAuthenticationFailure(e)) {
+                throw ConfigProblemException(
+                    OrcaRouterCredentials.authenticationFailureHint(redactSecret(e.message, apiKey))
+                )
+            }
+            throw ConfigProblemException(
+                "Failed to connect to LLM: ${redactSecret(e.message, apiKey)}"
+            )
         }
         LoggingUtil.getInfoLogger().info("Connected LLM replies with: $response")
 
         val n = if(config.llmProvider == LlmProvider.OLLAMA) 1 else config.llmThreads
         executor = Executors.newFixedThreadPool(n)
+    }
+
+    /**
+     * For OrcaRouter, the model must come from the compatible chat catalog (live, or the
+     * verified fallback when discovery is unavailable). A free-text name that is not in that
+     * list is rejected here rather than silently failing on the first request.
+     */
+    private fun resolveModelName(apiKey: String?): String? {
+
+        if (config.llmProvider != LlmProvider.ORCAROUTER) {
+            return config.llmName
+        }
+
+        val baseUrl = try {
+            OrcaRouterOrigins.resolveApiBase(config.llmURL)
+        } catch (e: IllegalArgumentException) {
+            throw ConfigProblemException("Invalid OrcaRouter URL: ${e.message}")
+        }
+
+        val catalog = OrcaRouterCatalogClient(
+            baseUrl = baseUrl,
+            timeoutSeconds = config.llmTimeoutSeconds.coerceIn(1, 30)
+        ).fetchChat(apiKey)
+
+        if (catalog.degraded) {
+            LoggingUtil.getInfoLogger().warn(
+                "OrcaRouter model discovery is degraded (${catalog.note}); " +
+                        "using the verified fallback catalog"
+            )
+        }
+
+        val selected: OrcaRouterModel = try {
+            OrcaRouterModelSelector.selectChatModel(catalog, config.llmName)
+        } catch (e: IllegalArgumentException) {
+            throw ConfigProblemException(e.message ?: "Invalid OrcaRouter model")
+        }
+
+        LoggingUtil.getInfoLogger().info(
+            "OrcaRouter model '${selected.id}' selected from " +
+                    if (catalog.source == OrcaRouterCatalogSource.LIVE) "the live catalog" else "the verified fallback catalog"
+        )
+        if (selected.id != OrcaRouterDefaults.DEFAULT_MODEL && config.llmName == null) {
+            LoggingUtil.getInfoLogger().info(
+                "The OrcaRouter cyber-tuned model '${OrcaRouterDefaults.DEFAULT_MODEL}' is not available " +
+                        "for this account; using '${selected.id}'"
+            )
+        }
+        return selected.id
+    }
+
+    /**
+     * Removes the credential from any provider message before it reaches logs or exceptions.
+     */
+    private fun redactSecret(message: String?, secret: String?): String? {
+        if (message == null) {
+            return null
+        }
+        if (secret.isNullOrBlank()) {
+            return message
+        }
+        return message.replace(secret, OrcaRouterCredentials.redact(secret))
     }
 
     fun shutdown() {

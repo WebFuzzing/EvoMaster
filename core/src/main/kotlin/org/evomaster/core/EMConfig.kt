@@ -3384,6 +3384,12 @@ class EMConfig {
     @Cfg("Provider for the LLM. This could be a local one (e.g., run through Ollama), or a remote one like OpenAI")
     var llmProvider = LlmProvider.OLLAMA
 
+    @Experimental
+    @DependsOnTrueFor("llm")
+    @Cfg("List the models advertised by the selected LLM provider and exit. " +
+            "Currently only the OrcaRouter provider supports model discovery.")
+    var llmListModels = false
+
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
             " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
             " created.")
