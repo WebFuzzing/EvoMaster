@@ -58,16 +58,6 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         private const val CORRELATION_SEPARATOR = "-"
 
         /**
-         * Separator inside a JSON Pointer, whose last segment names the field.
-         */
-        private const val JSON_POINTER_SEPARATOR = "/"
-
-        /**
-         * What a correlation id's header is called when the document declares no field for it.
-         */
-        private const val DEFAULT_CORRELATION_HEADER = "correlationId"
-
-        /**
          * What the variable holding a reply is called, before the action's index. The same
          * `res_0` every other problem type writes.
          *
@@ -442,23 +432,26 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             replyAddress = call.replyAddress,
             payload = call.payload,
             headersAsJson = mapper.writeValueAsString(call.headers ?: emptyMap<String, String>()),
-            correlationHeader = correlationHeaderOf(call),
+            correlationHeader = correlationHeaderOf(action),
             replyTimeoutMs = call.replyTimeoutMs
         )
     }
 
     /**
-     * The header a correlation id rides in, when it rides in one. The document names the field
-     * with a pointer, and its last segment is the header's name.
+     * The header the correlation id goes in, when the document puts it in one. Null when it goes
+     * in the payload, or in a nested header field, which a generated Kafka call cannot set.
      */
-    private fun correlationHeaderOf(call: AsyncApiActionDto): String? {
+    private fun correlationHeaderOf(action: AsyncApiAction): String? {
 
-        if (call.correlationLocation != AsyncApiActionDto.CorrelationLocation.HEADER) {
+        val correlation = asyncApiSampler.document.messages[action.messageId]?.correlationId
+            ?: return null
+
+        if (correlation.source != AsyncApiCorrelationId.Source.HEADER) {
             return null
         }
 
-        return call.correlationPointer?.substringAfterLast(JSON_POINTER_SEPARATOR)?.takeIf { it.isNotBlank() }
-            ?: DEFAULT_CORRELATION_HEADER
+        //the same field the gene builder leaves out of the headers the search varies
+        return correlation.fieldName
     }
 
     /**

@@ -372,6 +372,30 @@ class AsyncApiFitnessTest {
     }
 
     @Test
+    fun testTheCorrelationHeaderIsKeptForTheGeneratedTest() {
+
+        //what a generated test needs is only kept when tests are written
+        startNcs("--createTests=true") { replied(DOUBLE_RESULT) }
+
+        val result = results(evaluate("bessj")).single()
+
+        //the field the pointer names, which is also the header the search does not vary
+        assertEquals("correlationId", result.getCorrelationHeader())
+    }
+
+    @Test
+    fun testNoCorrelationHeaderIsKeptWhenTheIdGoesInThePayload() {
+
+        start(AsyncApiAccess.readFromResource("/asyncapi/artificial/websocket-reply.yaml"), "--createTests=true") {
+            replied("""{"request_id": "r", "legs": []}""")
+        }
+
+        val result = results(evaluate("recv_list_legs")).single()
+
+        assertNull(result.getCorrelationHeader())
+    }
+
+    @Test
     fun testAReplyAddressAnnouncedAtRunTimeIsNotWaitedForYet() {
 
         start(DYNAMIC_REPLY) { fireAndForget() }
