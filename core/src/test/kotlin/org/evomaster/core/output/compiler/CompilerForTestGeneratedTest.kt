@@ -21,6 +21,39 @@ class CompilerForTestGeneratedTest{
 
 
     @Test
+    fun testCompileJavaCode(){
+
+        val name = "FooCompileJavaCodeClass"
+        val msg = "Hello World!"
+        val code = "public class $name { public String exe() { return \"$msg\"; } }"
+
+        CompilerForTestGenerated.compile(
+                OutputFormat.JAVA_JUNIT_5,
+                code,
+                name
+        )
+
+        val klass = this.javaClass.classLoader.loadClass(name)
+        val obj = klass.newInstance()
+        val res = klass.getDeclaredMethod("exe").invoke(obj) as String
+
+        assertEquals(msg, res)
+    }
+
+    @Test
+    fun testJavaThatDoesNotCompileSaysWhy(){
+
+        val name = "FooBrokenJavaClass"
+        val code = "public class $name { this is not Java }"
+
+        val error = assertThrows(RuntimeException::class.java) {
+            CompilerForTestGenerated.compile(OutputFormat.JAVA_JUNIT_5, code, name)
+        }
+
+        assertTrue(error.message!!.contains("Failed to compile"), error.message)
+    }
+
+    @Test
     fun testCompileCode(){
 
         val name = "FooCompileCodeClass"
