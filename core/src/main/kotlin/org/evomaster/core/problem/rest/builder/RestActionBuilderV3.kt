@@ -353,7 +353,7 @@ object RestActionBuilderV3 {
         schemas.forEach { (t, u) ->
             val forThisOne = if (t == dtoSchemaName) offered else listOf()
             val gene = getGene(t,
-                swagger.openAPI.components.schemas[t]!!,
+                swagger.components.schemas[t]!!,
                 schemaHolder,
                 currentSchema,
                 ArrayDeque(),
