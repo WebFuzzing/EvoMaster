@@ -4,6 +4,7 @@ import org.evomaster.core.output.TestWriterUtils.safeVariableName
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.EvaluatedAction
@@ -63,23 +64,17 @@ open class AsyncApiActionTestCaseNamingStrategy(
                 if (message != null) {
                     mutableListOf(returns, safeVariableName(message))
                 } else {
-                    /*
-                        A reply arrived that matches none of the declared messages. Worded to
-                        match the fault's own label, for the same reason as below: with the
-                        experimental oracles off this names the test, with them on the fault
-                        does, and the two must read alike.
-                     */
-                    mutableListOf("replies", "with", "undeclared", "message")
+                    //a reply matching none of the declared messages, named as its fault is
+                    mutableListOf(ExperimentalFaultCategory.ASYNCAPI_UNDECLARED_REPLY.testCaseLabel)
                 }
             }
             //nothing is declared to come back, so reaching the broker is the whole outcome
             AsyncApiOutcome.PUBLISHED -> mutableListOf(returns, "nothing")
             /*
-                Worded to match the fault's own label, since a detected fault names the test
-                instead of this. With the experimental oracles off there is no fault and this is
-                what names it, and a name must not change with a flag that is about reporting.
+                Named as its fault is, so that a test's name does not change with whether the
+                experimental oracles that report the fault are on.
              */
-            AsyncApiOutcome.NO_REPLY -> mutableListOf("gets", "no", "reply")
+            AsyncApiOutcome.NO_REPLY -> mutableListOf(ExperimentalFaultCategory.ASYNCAPI_NO_REPLY.testCaseLabel)
             AsyncApiOutcome.PUBLISH_FAILED, null -> mutableListOf(error)
         }
 
