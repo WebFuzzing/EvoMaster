@@ -40,6 +40,7 @@ public class ReplacementList {
                     new DoubleClassReplacement(),
                     new DynamoDbClassReplacement.Sync(),
                     new DynamoDbClassReplacement.Async(),
+                    new DynamoDbFunctionClassReplacement(),
                     new EnumClassReplacement(),
                     new FloatClassReplacement(),
                     new GsonClassReplacement(),

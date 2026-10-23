@@ -149,8 +149,7 @@ public class DynamoDbClassReplacement {
             Object result = method.invoke(client, ddbRequest);
             recordDynamoDbTraceInfo(ddbRequest, start, operationName, true);
             return result;
-            }
-        catch (IllegalAccessException e) {
+        } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
             recordDynamoDbTraceInfo(ddbRequest, start, operationName, false);
@@ -167,7 +166,7 @@ public class DynamoDbClassReplacement {
       * @param operationName the name of the DynamoDB operation being performed (e.g., "GetItem", "PutItem")
       * @param successfullyExecuted a boolean indicating if the operation was executed successfully
       */
-     private static void recordDynamoDbTraceInfo(Object ddbRequest, long start, DynamoDbOperationNames operationName, boolean successfullyExecuted) {
+     public static void recordDynamoDbTraceInfo(Object ddbRequest, long start, DynamoDbOperationNames operationName, boolean successfullyExecuted) {
         long end = System.currentTimeMillis();
         List<String> tableNames = extractTableNames(ddbRequest);
         long executionTime = end - start;
