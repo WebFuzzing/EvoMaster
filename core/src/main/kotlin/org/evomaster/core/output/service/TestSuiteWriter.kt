@@ -7,6 +7,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.*
+import org.evomaster.core.output.asyncapi.KafkaTestClientEmitter
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter
@@ -478,6 +479,11 @@ class TestSuiteWriter {
             addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
 
+            if (config.problemType == EMConfig.ProblemType.ASYNCAPI
+                    && KafkaTestClientEmitter.resultsIn(solution).isNotEmpty()) {
+                addImport(KafkaTestClientEmitter.UTILS_CLASS + ".*", lines, true)
+            }
+
             // BigInteger and BigDecimal
             addImport("java.math.BigDecimal", lines)
             addImport("java.math.BigInteger", lines)
@@ -793,6 +799,8 @@ class TestSuiteWriter {
         }
 
         testCaseWriter.addExtraStaticVariables(lines)
+
+        testCaseWriter.addExtraClassMembers(lines, solution)
 
 //        if (config.expectationsActive) {
 //            if (config.outputFormat.isJavaOrKotlin()) {
