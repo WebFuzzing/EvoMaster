@@ -121,6 +121,27 @@ public class DynamoDbOperationsRest {
     }
 
     /**
+     * Replaces the synchronous PutItem fixture when the supplied FIFA ID matches.
+     *
+     * @param fifaId candidate FIFA ID
+     * @return operation outcome
+     */
+    @PostMapping("/sync/put-item-heuristic/{fifaId}")
+    public ResponseEntity<String> putItemWithHeuristic(@PathVariable int fifaId) {
+        Map<String, AttributeValue> values = valueMap(":fifaId", fifaId);
+        PutItemRequest request = PutItemRequest.builder()
+                .tableName(DynamoDbOperationsData.TABLE_NAME)
+                .item(DynamoDbOperationsData.item(ClientMode.SYNC, Operation.PUT_ITEM))
+                .conditionExpression("#field = :fifaId")
+                .expressionAttributeNames(nameMap(DynamoDbOperationsData.FIFA_ID_ATTRIBUTE))
+                .expressionAttributeValues(values)
+                .build();
+        return conditionalWrite(ClientMode.SYNC, Operation.PUT_ITEM, 201,
+                () -> syncClient.putItem(request),
+                () -> asyncClient.putItem(request));
+    }
+
+    /**
      * Executes synchronous UpdateItem.
      *
      * @param existingPlayer whether the canonical player should be requested
