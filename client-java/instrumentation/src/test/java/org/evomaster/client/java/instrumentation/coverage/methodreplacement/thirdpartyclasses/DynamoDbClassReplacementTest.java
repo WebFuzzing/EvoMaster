@@ -159,7 +159,8 @@ public class DynamoDbClassReplacementTest {
         assertEquals(1, commands.size());
         DynamoDbCommand command = commands.iterator().next();
         assertEquals(DynamoDbOperationNames.PUT_ITEM, command.getOperationName());
-        assertEquals(request, command.getDdbRequest());
+        assertEquals(request.tableName(), command.getDdbRequest().tableName());
+        assertEquals(request.conditionExpression(), command.getDdbRequest().filterExpression());
         assertFalse(command.isSuccessfullyExecuted());
     }
 
