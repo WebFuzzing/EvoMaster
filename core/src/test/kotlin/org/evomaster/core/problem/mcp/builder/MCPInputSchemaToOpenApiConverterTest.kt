@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class JsonSchemaToOpenApiConverterTest {
+class MCPInputSchemaToOpenApiConverterTest {
 
     private val mapper = ObjectMapper()
 
     private fun convert(json: String, root: String = "root"): Pair<Map<String, com.fasterxml.jackson.databind.JsonNode>, MutableList<String>> {
         val messages = mutableListOf<String>()
-        val schemas = JsonSchemaToOpenApiConverter.convert(root, mapper.readTree(json), messages)
+        val schemas = MCPInputSchemaToOpenApiConverter.convert(root, mapper.readTree(json), messages)
         return schemas to messages
     }
 
@@ -172,7 +172,7 @@ class JsonSchemaToOpenApiConverterTest {
     fun `caller node is not mutated`() {
         val original = """{ "type":"object", "properties": { "a": {"type":["string","null"]} } }"""
         val node = mapper.readTree(original)
-        JsonSchemaToOpenApiConverter.convert("root", node, mutableListOf())
+        MCPInputSchemaToOpenApiConverter.convert("root", node, mutableListOf())
         // the original node still has the array type untouched
         assertTrue(node.get("properties").get("a").get("type").isArray)
     }

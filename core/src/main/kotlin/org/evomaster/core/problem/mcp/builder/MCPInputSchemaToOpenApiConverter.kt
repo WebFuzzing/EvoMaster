@@ -8,11 +8,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 /**
  * Converts an MCP tool `inputSchema` (JSON Schema 2020-12) into OpenAPI 3.1 Schema
  * Objects for the parser used by [org.evomaster.core.problem.rest.builder.RestActionBuilderV3].
+ * MCP input schemas describe tool arguments, but the existing gene builder consumes OpenAPI
+ * schemas. Converting them lets MCP tools reuse the same gene construction and mutation logic
+ * as REST request bodies, including support for properties and references.
  *
  * The result is a flat map of schema-name -> node: the root schema is keyed by [rootName], and every
  * `$defs` entry is lifted to a sibling entry so refs resolve across the set.
  */
-object JsonSchemaToOpenApiConverter {
+object MCPInputSchemaToOpenApiConverter {
 
     private val mapper = ObjectMapper()
 
