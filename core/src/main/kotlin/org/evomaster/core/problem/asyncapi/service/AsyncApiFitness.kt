@@ -420,9 +420,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         call: AsyncApiActionDto,
         result: AsyncApiCallResult
     ) {
-        val document = asyncApiSampler.document
-        val channel = document.channels[action.channelName]
-        val server = channel?.let { document.serversOf(it).firstOrNull() }
+        val server = asyncApiSampler.document.channels[action.channelName]?.let { serverOf(it) }
 
         result.setPublishDetails(
             serverName = server?.name,
@@ -528,13 +526,19 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
      * Publishing to the wrong destination is silent -- the messages simply reach nobody -- so it
      * is worth taking the binding into account rather than assuming the address is the whole story.
      */
+    /**
+     * The server a channel is published to: the first the document lists for it.
+     */
+    private fun serverOf(channel: AsyncApiChannel) =
+        asyncApiSampler.document.serversOf(channel).firstOrNull()
+
     private fun getAddress(channel: AsyncApiChannel?, channelName: String): String {
 
         if (channel == null) {
             return channelName
         }
 
-        val protocol = asyncApiSampler.document.serversOf(channel).firstOrNull()?.protocol
+        val protocol = serverOf(channel)?.protocol
 
         /*
             A channel that declares no address of its own is normal for Kafka, where the topic

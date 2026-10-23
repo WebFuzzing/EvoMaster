@@ -1,6 +1,7 @@
 package org.evomaster.core.output.asyncapi
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.webfuzzing.asyncapi.models.AsyncApiChannel
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
@@ -27,7 +28,7 @@ object KafkaTestClientEmitter {
     /**
      * The protocols this can write, as named on the server in the document.
      */
-    private val KAFKA_PROTOCOLS = setOf("kafka", "kafka-secure")
+    private val KAFKA_PROTOCOLS = setOf(AsyncApiChannel.KAFKA, "kafka-secure")
 
     /**
      * Class in test-utils-java holding the helper. Named as a string, as core does not depend on
@@ -46,26 +47,29 @@ object KafkaTestClientEmitter {
     private val mapper = ObjectMapper()
 
     /**
-     * Whether this result carries enough, and the right transport, to be written as Kafka code.
+     * Whether this result is written as a Kafka call: the driver rendered no lines for it, and it
+     * carries enough, over the right transport, to write one.
      *
      * Not the case when the correlation id goes inside the payload: the recorded payload is the
      * one the search composed, without the id, so the generated test could not match the reply.
      * The driver renders those instead.
      */
-    fun canEmit(result: AsyncApiCallResult): Boolean =
-        result.getProtocol()?.lowercase() in KAFKA_PROTOCOLS
+    fun isEmitted(result: AsyncApiCallResult): Boolean =
+        result.getTestScript().isEmpty()
+                && result.getReplyVariableName() != null
+                && result.getProtocol()?.lowercase() in KAFKA_PROTOCOLS
                 && !result.getServerHost().isNullOrBlank()
                 && !result.getAddress().isNullOrBlank()
                 && (result.getReplyAddress().isNullOrBlank() || result.getCorrelationHeader() != null)
 
     /**
-     * The results of a solution written as Kafka calls: those the driver rendered no lines for.
+     * The results of a solution written as Kafka calls.
      */
     fun resultsIn(solution: Solution<*>): List<AsyncApiCallResult> =
         solution.individuals
             .flatMap { it.evaluatedMainActions() }
             .mapNotNull { it.result as? AsyncApiCallResult }
-            .filter { r -> r.getTestScript().none { it.isNotBlank() } && canEmit(r) }
+            .filter { isEmitted(it) }
 
     /**
      * @param variable where the reply payload is stored

@@ -56,8 +56,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
     private val declaredHostByServerName = LinkedHashMap<String, String>()
 
     /**
-     * What the parsed reply is called in a generated test, before the index of the reply it
-     * was parsed from.
+     * Prefix of the variable holding a parsed reply, followed by the index of its action.
      */
     private val bodyVariablePrefix = "body_"
 
@@ -114,11 +113,12 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
         when {
             //rendered by the driver, for transports not written from the contract
-            script.any { it.isNotBlank() } -> script.forEach { lines.add(it) }
+            script.isNotEmpty() -> script.forEach { lines.add(it) }
 
-            replyVariable != null && KafkaTestClientEmitter.canEmit(asyncApiResult) ->
+            //isEmitted already requires a reply variable
+            KafkaTestClientEmitter.isEmitted(asyncApiResult) ->
                 KafkaTestClientEmitter.emit(
-                    lines, asyncApiResult, replyVariable, serverAddressExpression(asyncApiResult), format
+                    lines, asyncApiResult, replyVariable!!, serverAddressExpression(asyncApiResult), format
                 )
 
             else -> {
@@ -135,13 +135,13 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
             }
         }
 
-        addReplyAssertions(lines, asyncApiResult)
+        addReplyAssertions(lines, asyncApiResult, index)
     }
 
     /**
      * What the core can say about the reply, on top of whatever the driver's own lines assert.
      */
-    private fun addReplyAssertions(lines: Lines, asyncApiResult: AsyncApiCallResult) {
+    private fun addReplyAssertions(lines: Lines, asyncApiResult: AsyncApiCallResult, index: Int) {
 
         if (asyncApiResult.getOutcome() != AsyncApiOutcome.REPLIED) {
             return
@@ -155,7 +155,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
             lines.addSingleCommentLine("recognised as the declared message '$it'")
         }
 
-        writeReplyAssertions(lines, asyncApiResult.getReplyPayload(), replyVariable, bodyVariableFor(replyVariable))
+        writeReplyAssertions(lines, asyncApiResult.getReplyPayload(), replyVariable, bodyVariablePrefix + index)
     }
 
     /**
@@ -425,12 +425,6 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
         return TestWriterUtils.quotedEscaped(asyncApiResult.getServerHost() ?: "", format)
     }
-
-    /**
-     * Name of the variable holding the parsed reply.
-     */
-    private fun bodyVariableFor(replyVariable: String) =
-        bodyVariablePrefix + replyVariable.substringAfterLast('_')
 
     private fun serverVariableFor(serverName: String) =
         KafkaTestClientEmitter.SERVER_VARIABLE_PREFIX + TestWriterUtils.safeVariableName(serverName)
