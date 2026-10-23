@@ -11,7 +11,6 @@ import org.evomaster.client.java.sql.DbSpecification;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
-import org.neo4j.driver.Session;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.testcontainers.containers.GenericContainer;
@@ -54,7 +53,6 @@ public abstract class Neo4jController extends EmbeddedSutController {
         SpringApplicationBuilder app = new SpringApplicationBuilder(neo4jAppClass);
         app.properties("--server.port=0");
         ctx = app.run();
-        resetStateOfSUT();
 
         return "http://localhost:" + getSutPort();
     }
@@ -69,9 +67,12 @@ public abstract class Neo4jController extends EmbeddedSutController {
 
     @Override
     public void resetStateOfSUT() {
-        try (Session session = driver.session()) {
-            session.run("MATCH (n) DETACH DELETE n").consume();
-        }
+        // the graph is put back as it was at startup by employSmartNeo4jClean()
+    }
+
+    @Override
+    public boolean employSmartNeo4jClean() {
+        return true;
     }
 
     @Override
