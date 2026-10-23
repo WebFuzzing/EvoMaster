@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallAction.Companion.HTTP_CALL_LOCATION_FOLLOWUP_KEY
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.data.RestPath
@@ -868,7 +869,7 @@ class HttpSemanticsService : TimeBoxedPhase{
             // (relative/absolute, possibly with query params). We do not bind to a schema
             // The path here is a structural placeholder; the real URL comes from chainState.
             val followUp = RestCallAction(
-                id = "$verb:LOCATION-FOLLOWUP",
+                id = "$verb:$HTTP_CALL_LOCATION_FOLLOWUP_KEY",
                 verb = verb,
                 path = RestPath("/"),
                 parameters = mutableListOf(),
