@@ -430,7 +430,12 @@ class HttpSemanticsService : TimeBoxedPhase{
         ind.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getBefore)
 
         val getAfter = builder.createBoundActionFor(getDef, last)
-        DynamicPathUtils.forceSameQueryParams(getAfter, last)
+        /*
+            Need to make sure 'getAfter' is query-forced directly to 'getBefore', and not simply 'last',
+            because the GET might have required query params, which would be ignored and not aligned
+            otherwise (this issue actually happened in jasper)
+         */
+        DynamicPathUtils.forceSameQueryParams(getAfter, getBefore)
         ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
         prepareEvaluateAndSave(ind)
