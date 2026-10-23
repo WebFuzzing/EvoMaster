@@ -7,10 +7,10 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 /**
- * Only the decisions made when writing reply assertions (what is asserted, what is skipped),
- * not the exact code written for them.
+ * Checks the decisions made when writing a test (eg what is asserted on a reply, and what is
+ * skipped), not the exact code written for them, which would break on any change of naming.
  */
-class AsyncApiReplyAssertionsTest {
+class AsyncApiTestCaseWriterTest {
 
     private fun emit(payload: String?, configure: EMConfig.() -> Unit = {}): String {
         val config = EMConfig().apply {
