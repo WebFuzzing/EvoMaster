@@ -92,6 +92,15 @@ class RegexGene(
     private val capturedValues = mutableMapOf<Int, String>()
 
     /**
+     * Whether the capture groups inside a repeated part are reset when each repetition starts, as if they had not
+     * taken part yet. ECMA262 does it, and then a backreference to one of those groups is empty, and so is a forward
+     * reference (to a group that comes later) or a nested one (inside the group it refers to) in the repeated part.
+     * In Java the groups keep the value of the last repetition in which they took part.
+     * For example, `^(?:(a)|b)+\1c$` in ECMA matches `abc` while in Java `abac` matches instead.
+     */
+    internal val resetsCapturesInEachRepetition: Boolean = regexType == RegexType.ECMA_262
+
+    /**
      * Called by the capture group with the given number when it is rendered. Groups are rendered in the order
      * they appear in the regex, so the last value recorded is the one of the last repetition in which
      * the group took part. This is what a backreference sees.
@@ -105,6 +114,13 @@ class RegexGene(
      * tree was last rendered from the top, for example because it is in a branch of a disjunction that is not active.
      */
     internal fun getCapturedValue(groupIndex: Int): String? = capturedValues[groupIndex]
+
+    /**
+     * Removes the values of the capture groups with these numbers, as if they had not taken part yet.
+     * A quantifier calls it when a repetition of what it repeats starts, with the numbers of the groups inside of it,
+     * but only if [resetsCapturesInEachRepetition].
+     */
+    internal fun clearCapturedValues(groupIndexes: Set<Int>) { capturedValues.keys.removeAll(groupIndexes) }
 
     override fun copyContent(): Gene {
         val copy = RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags)

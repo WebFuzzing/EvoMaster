@@ -2985,6 +2985,13 @@ class EMConfig {
     @Min(1.0)
     var asyncApiReplyTimeoutMs = 5000
 
+    @Experimental
+    @Cfg("When testing an AsyncAPI service, the probability of publishing a message's declared example as it is," +
+            " rather than a value sampled from its schema. A service that silently drops what it does not recognise" +
+            " may never reply to sampled values, and the examples are what its author knows it accepts.")
+    @Probability(true)
+    var probAsyncApiExamples = 0.0
+
     @Cfg("Whether to enable customized responses indicating business logic")
     var enableRPCCustomizedResponseTargets = true
 
@@ -3116,6 +3123,10 @@ class EMConfig {
     @DependsOnTrueFor("handleFlakiness")
     @Cfg("Specify the number of re-executions for detecting flakiness in tests. Set to 0 to disable re-execution based flakiness detection.")
     var execNumForDetectFlakiness = 1
+
+    @Experimental
+    @Cfg("Specify whether to use an unbounded time budget for flakiness detection.")
+    var unboundBudgetForFlakiness = false
 
     @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +

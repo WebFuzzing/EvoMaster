@@ -354,6 +354,7 @@ There are 3 types of options:
 |`mutationTargetsSelectionStrategy`| __Enum__. Specify a strategy to select targets for evaluating mutation. *Valid values*: `FIRST_NOT_COVERED_TARGET, EXPANDED_UPDATED_NOT_COVERED_TARGET, UPDATED_NOT_COVERED_TARGET`. *Default value*: `FIRST_NOT_COVERED_TARGET`.|
 |`onePlusLambdaLambdaOffspringSize`| __Int__. 1+(λ,λ) GA: number of offspring (λ) per generation. *Constraints*: `min=1.0`. *Default value*: `4`.|
 |`prematureStopStrategy`| __Enum__. Specify how 'improvement' is defined: either any kind of improvement even if partial (ANY), or at least one new target is fully covered (NEW). *Valid values*: `ANY, NEW`. *Default value*: `NEW`.|
+|`probAsyncApiExamples`| __Double__. When testing an AsyncAPI service, the probability of publishing a message's declared example as it is, rather than a value sampled from its schema. A service that silently drops what it does not recognise may never reply to sampled values, and the examples are what its author knows it accepts. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfArazzoSampling`| __Double__. Probability of controlling the creation of Arazzo individuals. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`probOfHandlingLength`| __Double__. Specify a probability of applying length handling. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfHarvestingResponsesFromActualExternalServices`| __Double__. a probability of harvesting actual responses from external services as seeds. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
@@ -379,6 +380,7 @@ There are 3 types of options:
 |`taintForceSelectionOfGenesWithSpecialization`| __Boolean__. During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations, based on taint analysis. *Default value*: `false`.|
 |`targetHeuristicsFile`| __String__. Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `targets.csv`.|
 |`testResourcePathToSaveMockedResponse`| __String__. Specify test resource path where to save mocked responses as separated files. *Default value*: `""`.|
+|`unboundBudgetForFlakiness`| __Boolean__. Specify whether to use an unbounded time budget for flakiness detection. *Default value*: `false`.|
 |`useDictionaryDataPool`| __Boolean__. Specify if should use the pre-existing dictionary of values when sampling random string. If so, those will be added to the data pool. *Default value*: `false`.|
 |`useEnvVarsForPathInTests`| __Boolean__. Use environment variables to define the paths required by External Drivers. This is necessary when the generated tests are executed on the different machine. Note that this setting only affects the generated test cases. *Default value*: `false`.|
 |`useGlobalTaintInfoProbability`| __Double__. When sampling new individual, check whether to use already existing info on tainted values. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|

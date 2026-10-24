@@ -25,6 +25,11 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     }
 
     /**
+     * Number of capture groups that were found so far.
+     */
+    private var captureGroupCount = 0
+
+    /**
      * Interprets a \c<x> token text according to JS semantics.
      * [inCharClass] controls whether digits/underscore are valid control letters.
      * Returns either a single control char, or the literal chars.
@@ -53,7 +58,10 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         txt[1] == 'c' -> interpretControlEscapeLetterSequence(txt, inCharClass)
         txt[1] in escapeMap -> escapeMap[txt[1]]!!
         txt[1] in hexEscapePrefixes -> Character.toString(txt.substring(2).toInt(16))
-        txt[1].isDigit() -> Character.toString(txt.substring(1).toInt(8)) // legacy octal
+        // we use 0 to 7 here as those are octal digits
+        txt[1] in '0'..'7' -> Character.toString(txt.substring(1).toInt(8)) // legacy octal
+        // if at this point the escape sequence is not an octal escape
+        // then it can only be an identity escape (like \8, \{, etc.)
         else -> txt.substring(1) // identity escape
     }
 
@@ -89,7 +97,22 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
-        val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+        // we can use the lexer for a total capture group count check, we compare visitor and lexer counts
+        val lexer = ctx.start.tokenSource as? RegexEcma262Lexer
+        if (lexer != null) {
+            assert(captureGroupCount == lexer.totalCaptureGroups)
+        }
+
+
+        val satisfiableDisjunctions = res.genes
+            .map { it as DisjunctionRxGene }
+            .filter { !it.isUnsatisfiable() }
+
+        if (satisfiableDisjunctions.isEmpty()) {
+            throw IllegalStateException("Regex is unsatisfiable.")
+        }
+
+        val disjList = DisjunctionListRxGene(satisfiableDisjunctions)
 
         // we remove the <EOF> token from end of the string to store as sourceRegex
         val gene = RegexGene(
@@ -105,14 +128,18 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     override fun visitDisjunction(ctx: RegexEcma262Parser.DisjunctionContext): VisitResult {
 
         val altRes = ctx.alternative().accept(this)
-        val assertionMatches = altRes.data as Pair<Boolean, Boolean>
+        val assertionMatches = altRes.data as? Pair<Boolean, Boolean>
+        val res = VisitResult()
 
-        val matchStart = assertionMatches.first
-        val matchEnd = assertionMatches.second
+        if (assertionMatches != null) {
+            val matchStart = assertionMatches.first
+            val matchEnd = assertionMatches.second
 
-        val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart, matchEnd)
+            val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart, matchEnd)
 
-        val res = VisitResult(disj)
+            res.genes.add(disj)
+        }
+        // else: unsatisfiable, skip that alternative
 
         if(ctx.disjunction() != null){
             val disjRes = ctx.disjunction().accept(this)
@@ -128,6 +155,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         var caret = false
         var dollar = false
+        var satisfiable = true
 
         for(i in 0 until ctx.term().size){
 
@@ -138,8 +166,15 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                 res.genes.add(gene)
             } else {
 
-                val assertion = resTerm.data as String
-                if(i==0 && assertion == "^"){
+                val assertion = resTerm.data as? String
+
+                if(assertion == null){
+                    // no gene and no assertion, term and alternative are unsatisfiable. But the rest of the terms are
+                    // still visited so capture group numbers do not get shifted
+                    satisfiable = false
+                } else if(!satisfiable){
+                    // the alternative cannot match anyway, nothing to check
+                } else if(i==0 && assertion == "^"){
                     caret = true
                 } else if(i==ctx.term().size-1 && assertion== "$"){
                     dollar = true
@@ -152,6 +187,10 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                     throw IllegalStateException("Cannot support $assertion at position $i")
                 }
             }
+        }
+
+        if(!satisfiable){
+            return VisitResult()
         }
 
         res.data = Pair(caret, dollar)
@@ -170,18 +209,30 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val resAtom = ctx.atom().accept(this)
         val atom = resAtom.genes.firstOrNull()
-                ?: return res
 
         if(ctx.quantifier() != null){
 
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
+
+            // if quantified atom is unsatisfiable we must then check the limits
+            if(atom == null || (atom as? RxTerm)?.isUnsatisfiable() == true){
+                return if (limits.first == 0) {
+                    // if 0 appearances is allowed then the regex is satisfiable only with empty string
+                    VisitResult(PatternCharacterBlockGene("0_QuantifierOnEmptyRegex", ""))
+                } else {
+                    // if not then unsatisfiable, return with no genes
+                    res
+                }
+            }
+
             val q = QuantifierRxGene("q", atom, limits.first, limits.second)
 
             res.genes.add(q)
 
-        } else {
+        } else if (atom != null) {
             res.genes.add(atom)
         }
+        // else atom is unsatisfiable, return no genes
 
         return res
     }
@@ -253,9 +304,26 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         if(ctx.disjunction() != null){
 
+            val isCapturingGroup = !ctx.text.startsWith("(?:")
+            // to correctly handle group nesting order, we must record group index before visiting
+            val groupNumber = if (isCapturingGroup) {
+                ++captureGroupCount
+            } else {
+                null
+            }
+
             val res = ctx.disjunction().accept(this)
 
-            val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+            val satisfiableDisjunctions = res.genes
+                .map { it as DisjunctionRxGene }
+                .filter { !it.isUnsatisfiable() }
+
+            if (satisfiableDisjunctions.isEmpty()) {
+                // the group, and so the term, cannot match: no genes
+                return VisitResult()
+            }
+
+            val disjList = DisjunctionListRxGene(satisfiableDisjunctions, groupNumber)
 
             //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
             for(gene in disjList.disjunctions){
@@ -397,6 +465,11 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         if (ctx.CharacterClassEscape() != null) {
             return VisitResult(CharacterClassEscapeRxGene(txt.substring(1)))
+        }
+        if (ctx.BackReference() != null) {
+            // Back references in ECMA are never unsatisfiable, if the group did not capture input when the reference
+            // appears then the reference matches "". This happens even when the captured group is unsatisfiable.
+            return VisitResult(BackReferenceRxGene(txt.substring(1).toInt()))
         }
         // CharacterEscape
         val charEscapeResult = resolveCharacterEscapeString(txt, inCharClass = false)
