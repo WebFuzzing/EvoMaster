@@ -40,6 +40,8 @@ class ArazzoWorkflowsService {
 
     /**
      * Traversal state for one Arazzo workflow while [crossWorkflow] walks steps and nested workflows.
+     * When [pausedBranch] is true, this frame is resuming the current step after a nested workflow completed.
+     * The nested workflow must not be started again; execution continues with this step's success/failure handling.
      */
     data class Frame(
         val workflow: ArazzoWorkflow,
