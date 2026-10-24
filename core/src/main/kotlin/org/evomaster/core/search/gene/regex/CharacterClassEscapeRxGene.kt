@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.root.SimpleGene
@@ -109,7 +110,8 @@ private data class PosixMultiCharacterRanges(
  */
 class CharacterClassEscapeRxGene(
     val type: String,
-    val flags: RegexFlags = RegexFlags()
+    val flags: RegexFlags = RegexFlags(),
+    val regexType: RegexType = RegexType.JVM
 ) : RxAtom, SimpleGene("\\$type") {
 
     companion object{
@@ -127,6 +129,13 @@ class CharacterClassEscapeRxGene(
             CharacterRange(FIRST_UPPER_CASE_CHAR, LAST_UPPER_CASE_CHAR))
         private val wordSet = listOf(CharacterRange('_', '_')) + asciiLetterSet + digitSet
         private val spaceSet = listOf(SPACE_CHAR, '\t', '\r', '\n', '\u000b', '\u000c').map { CharacterRange(it) }
+        private val ecma262SpaceSet = spaceSet + listOf(
+            CharacterRange('\u00a0'), CharacterRange('\u1680'),
+            CharacterRange('\u2000', '\u200a'),
+            CharacterRange('\u2028', '\u2029'),
+            CharacterRange('\u202f'), CharacterRange('\u205f'),
+            CharacterRange('\u3000'), CharacterRange('\ufeff')
+        )
         private val horizontalSpaceSet = listOf(CharacterRange(0x2000, 0x200a)) +
                 listOf(
                     SPACE_CHAR, '\t',
@@ -147,12 +156,14 @@ class CharacterClassEscapeRxGene(
         private val digitMultiCharRange = MultiCharacterRange(false, digitSet)
         private val wordMultiCharRange = MultiCharacterRange(false, wordSet)
         private val spaceMultiCharRange = MultiCharacterRange(false, spaceSet)
+        private val ecma262SpaceMultiCharRange = MultiCharacterRange(false, ecma262SpaceSet)
         private val horizontalSpaceMultiCharRange = MultiCharacterRange(false, horizontalSpaceSet)
         private val verticalSpaceMultiCharRange = MultiCharacterRange(false, verticalSpaceSet)
 
         private val nonDigitMultiCharRange = MultiCharacterRange(true, digitSet)
         private val nonWordMultiCharRange = MultiCharacterRange(true, wordSet)
         private val nonSpaceMultiCharRange = MultiCharacterRange(true, spaceSet)
+        private val nonEcma262SpaceMultiCharRange = MultiCharacterRange(true, ecma262SpaceSet)
         private val nonHorizontalSpaceMultiCharRange = MultiCharacterRange(true, horizontalSpaceSet)
         private val nonVerticalSpaceMultiCharRange = MultiCharacterRange(true, verticalSpaceSet)
 
@@ -227,8 +238,8 @@ class CharacterClassEscapeRxGene(
                 NON_WORD -> nonWordMultiCharRange
                 DIGIT -> digitMultiCharRange
                 NON_DIGIT -> nonDigitMultiCharRange
-                SPACE -> spaceMultiCharRange
-                NON_SPACE -> nonSpaceMultiCharRange
+                SPACE -> if (regexType == RegexType.ECMA_262) ecma262SpaceMultiCharRange else spaceMultiCharRange
+                NON_SPACE -> if (regexType == RegexType.ECMA_262) nonEcma262SpaceMultiCharRange else nonSpaceMultiCharRange
                 VERTICAL_SPACE -> verticalSpaceMultiCharRange
                 NON_VERTICAL_SPACE -> nonVerticalSpaceMultiCharRange
                 HORIZONTAL_SPACE -> horizontalSpaceMultiCharRange
@@ -257,12 +268,17 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        if (regexType == RegexType.ECMA_262 && (type[0] == SPACE || type[0] == NON_SPACE)) {
+            // java.util.regex has a different set for \s, so we cannot use that here (same for \S)
+            return value.length == 1 && ecma262SpaceSet.any { value[0] in it } == (type[0] == SPACE)
+        }
+
         // we pass the same embedded flags to the regex to accurately match the expected behavior
         return value.matches(Regex("${flags.getScopeString()}\\$type"))
     }
 
     override fun copyContent(): Gene {
-        val copy = CharacterClassEscapeRxGene(type, flags)
+        val copy = CharacterClassEscapeRxGene(type, flags, regexType)
         copy.value = this.value
         copy.name = this.name //in case name is changed from its default
         copy.useUpperCase = this.useUpperCase //copy the current casing
