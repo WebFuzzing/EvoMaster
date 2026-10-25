@@ -12,6 +12,8 @@ import org.evomaster.core.database.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -1010,6 +1012,13 @@ class EvaluatedIndividual<T>(
             !results[it].matchedType(all[it])
         }
         return !invalid
+    }
+
+    /**
+     * @return if there exists any timeout action in the individual
+     */
+    fun hasActionTimeout() : Boolean{
+        return results.any { it is HttpWsCallResult && it.getTimedout() }
     }
 
     private fun initializingActionClasses(): List<KClass<*>> {
