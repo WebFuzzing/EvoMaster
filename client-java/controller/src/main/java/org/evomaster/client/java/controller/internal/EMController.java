@@ -187,6 +187,7 @@ public class EMController {
             dto.infoForAuthentication = noKillSwitch(() -> sutController.getInfoForAuthentication());
             dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
+            dto.employSmartNeo4jClean = noKillSwitch(() -> sutController.employSmartNeo4jClean());
             info = noKillSwitch(() -> sutController.getProblemInfo());
             dto.bootTimeInfoDto = noKillSwitch(() -> sutController.getBootTimeInfoDto());
         } catch (RuntimeException e) {
@@ -426,6 +427,7 @@ public class EMController {
                         try {
                             // clean db with accessed tables
                             noKillSwitchForceCheck(() -> sutController.cleanAccessedTables());
+                            noKillSwitchForceCheck(() -> sutController.resetNeo4jDatabase());
 
                             if (dto.resetCustomizedMethodForMockObject != null && dto.resetCustomizedMethodForMockObject){
                                 noKillSwitch(()-> sutController.resetCustomizedMethodForMockObject());

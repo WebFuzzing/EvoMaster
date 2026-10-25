@@ -90,6 +90,14 @@ public class SutInfoDto {
     public DbInfoDto sqlSchemaDto;
 
     /**
+     * Whether the driver has EvoMaster put the Neo4j graph back as it was at startup before each test,
+     * which the generated tests then have to do as well.
+     * <p>
+     * TODO this will need to be refactored when we consolidate how all databases (SQL and NoSQL alike) are configured
+     */
+    public Boolean employSmartNeo4jClean;
+
+    /**
      * If the application is using a Neo4j database, the keys its nodes must not repeat and the values
      * of those keys already in the database.
      */

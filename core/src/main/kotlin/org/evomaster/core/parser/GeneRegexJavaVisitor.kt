@@ -257,6 +257,7 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
     override fun visitAlternative(ctx: RegexJavaParser.AlternativeContext): VisitResult {
 
         val res = VisitResult()
+        var satisfiable = true
 
         for(i in 0 until ctx.term().size){
 
@@ -284,7 +285,13 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                         remainingGenes.addAll(resTerm.genes)
                     } else {
                         // term is not a back ref, hence there is at most one gene in its visit result.
-                        resTerm.genes.firstOrNull()?.let { remainingGenes.add(it) }
+                        val remaining = resTerm.genes.firstOrNull()
+                        if (remaining != null) {
+                            remainingGenes.add(remaining)
+                        } else if (ctx.term()[j].FLAG_SCOPE_OPEN() == null) {
+                            // no gene, and not a flag scope, so unsatisfiable.
+                            satisfiable = false
+                        }
                     }
                 }
 
@@ -306,9 +313,15 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 // if there is a gene, we add it to result
                 res.genes.add(gene)
             } else {
-                // unsatisfiable term, return with no genes
-                return VisitResult(data=Pair(false, false))
+                // unsatisfiable term and alternative. But the rest of the terms are
+                // still visited so capture group numbers do not get shifted
+                satisfiable = false
             }
+        }
+
+        if (!satisfiable) {
+            // unsatisfiable alternative, return with no genes
+            return VisitResult()
         }
 
         return res

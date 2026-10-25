@@ -32,6 +32,7 @@ import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbCommand
 import org.evomaster.client.java.controller.cassandra.insertions.CassandraScriptRunner;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
 import org.evomaster.client.java.controller.neo4j.Neo4jEntityDtoBuilder;
+import org.evomaster.client.java.controller.neo4j.Neo4jGraphRestorer;
 import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
@@ -105,6 +106,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private final MongoHandler mongoHandler = new MongoHandler();
 
     private final Neo4jHandler neo4jHandler = new Neo4jHandler();
+
+    /**
+     * The state of the Neo4j graph when the SUT started, to restore before each test.
+     */
+    private final Neo4jGraphRestorer neo4jGraphRestorer = new Neo4jGraphRestorer();
 
     private final OpenSearchHandler openSearchHandler = new OpenSearchHandler();
 
@@ -414,6 +420,27 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public final void initNeo4jHandler() {
         neo4jHandler.setNeo4jConnection(getNeo4jConnection());
+
+        // a started SUT may come with a new database, so its state is recorded again on the next reset
+        neo4jGraphRestorer.discardSnapshot();
+    }
+
+    @Override
+    public final void resetNeo4jDatabase() {
+        ReflectionBasedNeo4jClient connection = getNeo4jConnection();
+        if (connection == null || !employSmartNeo4jClean()) {
+            return;
+        }
+        try {
+            setExecutingInitNeo4j(true);
+            if (neo4jGraphRestorer.hasSnapshot()) {
+                neo4jGraphRestorer.restore(connection);
+            } else {
+                neo4jGraphRestorer.takeSnapshot(connection);
+            }
+        } finally {
+            setExecutingInitNeo4j(false);
+        }
     }
 
     // TODO: Refactor this initialization methods once Redis and OpenSearch implementations are done

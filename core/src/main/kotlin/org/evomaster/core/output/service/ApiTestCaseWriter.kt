@@ -619,6 +619,14 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         return toPrint
     }
 
+    /**
+     * Generates assertions for [list], commenting out assertions that differ from [flakyList].
+     *
+     * @param list the original response array used as the assertion baseline
+     * @param flakyList comparison values for the same array from flakiness observations, or null
+     * if no comparison is available. Elements correspond to [list] by index, and this list must
+     * not be longer than [list]. If it is shorter, indexed assertions stop at its end.
+     */
     protected fun handleAssertionsOnList(list: List<*>, flakyList: List<*>?, lines: Lines, fieldPath: String, responseVariableName: String?) {
 
         val checkSize = collectionSizeCheck(responseVariableName, fieldPath, list.size)
@@ -678,7 +686,10 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             if (i == limit) {
                 break
             }
-            if (flakyList != null && flakyList.size < i){
+
+            // The comparison response may contain fewer elements than the original list.
+            // Stop at its end to avoid out-of-bounds access and assertions without a matching observation.
+            if (flakyList != null && i >= flakyList.size){
                 break
             }
             val flakyItem = if (flakyList != null) flakyList[i] else null

@@ -166,7 +166,13 @@ class WFCReportWriter {
                 for(ea in test.evaluatedIndividual.evaluatedMainActions()){
                     val faultIds = (ea.result as EnterpriseActionResult)
                         .getFaults()
-                        .map { FaultCategoryId().apply { code = it.category.code; context = it.context} }
+                        .map {
+                            FaultCategoryId().apply {
+                                id = it.category.id
+                                code = it.category.code
+                                context = it.context
+                            }
+                        }
 
                     if(faultIds.isNotEmpty()) {
                         val ff = FoundFault()

@@ -5,6 +5,7 @@ import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.AssertionRepairWalk
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.RxGeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -44,6 +45,11 @@ class QuantifierRxGene(
     private val LIMIT = 2
 
     private val limitedMax: Int
+
+    /**
+     * The numbers of the capture groups inside the template, including the ones inside templates of quantifiers in it.
+     */
+    private val captureGroupsInside: Set<Int> by lazy { RxGeneUtils.captureGroupIndexesIn(this) }
 
     init {
         if (min < 0) {
@@ -184,8 +190,16 @@ class QuantifierRxGene(
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
-        return atoms.map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
-                .joinToString("")
+        // used to clear the captured values at the start of each repetition. only if there is a RegexGene, its dialect
+        // resets them for repetitions (like ECMA262), and there are capture groups inside what is repeated
+        val regexGene = getFirstParent(RegexGene::class.java)
+            ?.takeIf { it.resetsCapturesInEachRepetition && captureGroupsInside.isNotEmpty() }
+
+        return atoms.joinToString("") {
+            // each repetition starts with its groups reset if it needs to, see RegexGene.resetsCapturesInEachRepetition
+            regexGene?.clearCapturedValues(captureGroupsInside)
+            it.getValueAsPrintableString(previousGenes, mode, targetFormat)
+        }
     }
 
 
