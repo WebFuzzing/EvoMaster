@@ -153,6 +153,67 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
         return handleUpdate("updateManyClientSessionBsonUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, update, options), filter);
     }
 
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndDeleteBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndDelete(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
+        return handleDelete("findOneAndDeleteBson", mongoCollection, Arrays.asList(filter), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndDeleteBsonFindOneAndDeleteOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndDelete(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndDeleteOptions") Object options) {
+        return handleDelete("findOneAndDeleteBsonFindOneAndDeleteOptions", mongoCollection, Arrays.asList(filter, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndDeleteClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndDelete_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
+        return handleDelete("findOneAndDeleteClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndDeleteClientSessionBsonFindOneAndDeleteOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndDelete(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndDeleteOptions") Object options) {
+        return handleDelete("findOneAndDeleteClientSessionBsonFindOneAndDeleteOptions", mongoCollection, Arrays.asList(clientSession, filter, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
+        return handleUpdate("findOneAndUpdateBson", mongoCollection, Arrays.asList(filter, update), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateBsonFindOneAndUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndUpdateOptions") Object options) {
+        return handleUpdate("findOneAndUpdateBsonFindOneAndUpdateOptions", mongoCollection, Arrays.asList(filter, update, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndUpdate_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update) {
+        return handleUpdate("findOneAndUpdateClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter, update), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateClientSessionBsonFindOneAndUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object update, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndUpdateOptions") Object options) {
+        return handleUpdate("findOneAndUpdateClientSessionBsonFindOneAndUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, update, options), filter);
+    }
+
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndReplaceBsonTDocument", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndReplace(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Object replacement) {
+        return handleUpdate("findOneAndReplaceBsonTDocument", mongoCollection, Arrays.asList(filter, replacement), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndReplaceBsonTDocumentFindOneAndReplaceOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndReplace_EM_0(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Object replacement, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndReplaceOptions") Object options) {
+        return handleUpdate("findOneAndReplaceBsonTDocumentFindOneAndReplaceOptions", mongoCollection, Arrays.asList(filter, replacement, options), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndReplaceClientSessionBsonTDocument", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndReplace(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Object replacement) {
+        return handleUpdate("findOneAndReplaceClientSessionBsonTDocument", mongoCollection, Arrays.asList(clientSession, filter, replacement), filter);
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndReplaceClientSessionBsonTDocumentFindOneAndReplaceOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndReplace(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Object replacement, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndReplaceOptions") Object options) {
+        return handleUpdate("findOneAndReplaceClientSessionBsonTDocumentFindOneAndReplaceOptions", mongoCollection, Arrays.asList(clientSession, filter, replacement, options), filter);
+    }
+
     /**
      * Processes the count handling based on the provided parameters.
      *

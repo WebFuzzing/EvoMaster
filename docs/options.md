@@ -380,6 +380,7 @@ There are 3 types of options:
 |`taintForceSelectionOfGenesWithSpecialization`| __Boolean__. During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations, based on taint analysis. *Default value*: `false`.|
 |`targetHeuristicsFile`| __String__. Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `targets.csv`.|
 |`testResourcePathToSaveMockedResponse`| __String__. Specify test resource path where to save mocked responses as separated files. *Default value*: `""`.|
+|`unboundBudgetForFlakiness`| __Boolean__. Specify whether to use an unbounded time budget for flakiness detection. *Default value*: `false`.|
 |`useDictionaryDataPool`| __Boolean__. Specify if should use the pre-existing dictionary of values when sampling random string. If so, those will be added to the data pool. *Default value*: `false`.|
 |`useEnvVarsForPathInTests`| __Boolean__. Use environment variables to define the paths required by External Drivers. This is necessary when the generated tests are executed on the different machine. Note that this setting only affects the generated test cases. *Default value*: `false`.|
 |`useGlobalTaintInfoProbability`| __Double__. When sampling new individual, check whether to use already existing info on tainted values. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|

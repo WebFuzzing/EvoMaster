@@ -12,8 +12,7 @@ import java.util.Map;
  * This model only have SuccessAction, FailureAction and Parameter.
  * The references are expected to be resolved by {@link ArazzoReferenceResolver}.
  */
-//TODO to rename it to ArazzoStep
-public class Step {
+public class ArazzoStep {
     /**
      * A description of the step.
      */
@@ -69,7 +68,7 @@ public class Step {
      */
     private Map<String, String> outputs;
 
-    public Step(Builder builder) {
+    public ArazzoStep(Builder builder) {
         this.description = builder.description;
         this.stepId = builder.stepId;
         this.operationId = builder.operationId;
@@ -156,8 +155,8 @@ public class Step {
         public Builder onFailure(List<FailureAction> onFailure) { this.onFailure = onFailure; return this; }
         public Builder outputs(Map<String, String> outputs) { this.outputs = outputs; return this; }
 
-        public Step build() {
-            return new Step(this);
+        public ArazzoStep build() {
+            return new ArazzoStep(this);
         }
     }
 }
