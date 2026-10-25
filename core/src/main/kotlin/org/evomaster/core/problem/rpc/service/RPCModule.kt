@@ -24,6 +24,9 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class RPCModule : EnterpriseModule(){
 
     override fun configure() {
+
+        binder().requireExplicitBindings()
+
         bind(object : TypeLiteral<EnterpriseSampler<RPCIndividual>>() {})
             .to(RPCSampler::class.java)
             .asEagerSingleton()

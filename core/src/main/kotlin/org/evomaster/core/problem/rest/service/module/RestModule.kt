@@ -25,6 +25,8 @@ class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
 
         super.configure()
 
+        binder().requireExplicitBindings()
+
         if (bindRemote) {
             bind(RemoteController::class.java)
                 .to(RemoteControllerImplementation::class.java)

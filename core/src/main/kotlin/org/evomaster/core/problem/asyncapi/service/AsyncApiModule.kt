@@ -32,6 +32,8 @@ class AsyncApiModule : EnterpriseModule() {
 
     override fun configure() {
 
+        binder().requireExplicitBindings()
+
         /*
             No super.configure(): what EnterpriseModule binds there is REST-only, and the RPC,
             GraphQL and Web modules leave it out the same way.
