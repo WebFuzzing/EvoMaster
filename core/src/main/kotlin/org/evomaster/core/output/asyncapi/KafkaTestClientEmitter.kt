@@ -47,6 +47,11 @@ object KafkaTestClientEmitter {
     private val mapper = ObjectMapper()
 
     /**
+     * Whether a server's protocol is one a Kafka call is written for.
+     */
+    fun isKafka(protocol: String?) = protocol?.lowercase() in KAFKA_PROTOCOLS
+
+    /**
      * Whether this result is written as a Kafka call: the driver rendered no lines for it, and it
      * carries enough, over the right transport, to write one.
      *
@@ -54,11 +59,6 @@ object KafkaTestClientEmitter {
      * one the search composed, without the id, so the generated test could not match the reply.
      * The driver renders those instead.
      */
-    /**
-     * Whether a server's protocol is one a Kafka call is written for.
-     */
-    fun isKafka(protocol: String?) = protocol?.lowercase() in KAFKA_PROTOCOLS
-
     fun isEmitted(result: AsyncApiCallResult): Boolean =
         result.getTestScript().isEmpty()
                 && result.getReplyVariableName() != null
@@ -114,7 +114,8 @@ object KafkaTestClientEmitter {
     }
 
     /**
-     * The message's own headers, as the search sent them.
+     * The headers recorded during the search. Keys are header names; values are the
+     * corresponding header values as text.
      */
     private fun headersOf(result: AsyncApiCallResult): Map<String, String> {
 

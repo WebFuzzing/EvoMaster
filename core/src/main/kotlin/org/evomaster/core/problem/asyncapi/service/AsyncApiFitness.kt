@@ -516,6 +516,12 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
     }
 
     /**
+     * The server a channel is published to: the first the document lists for it.
+     */
+    private fun serverOf(channel: AsyncApiChannel) =
+        asyncApiSampler.document.serversOf(channel).firstOrNull()
+
+    /**
      * Where a message on [channel] actually goes on the wire.
      *
      * Usually the channel's address, but a protocol binding may override it: the Kafka binding
@@ -526,12 +532,6 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
      * Publishing to the wrong destination is silent -- the messages simply reach nobody -- so it
      * is worth taking the binding into account rather than assuming the address is the whole story.
      */
-    /**
-     * The server a channel is published to: the first the document lists for it.
-     */
-    private fun serverOf(channel: AsyncApiChannel) =
-        asyncApiSampler.document.serversOf(channel).firstOrNull()
-
     private fun getAddress(channel: AsyncApiChannel?, channelName: String): String {
 
         if (channel == null) {

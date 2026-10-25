@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
  * with, so the name carries the outcome itself, and the declared message a reply was recognised
  * as where there is one.
  */
-class AsyncApiActionNamingStrategyTest {
+class AsyncApiActionTestCaseNamingStrategyTest {
 
     companion object {
         private val outputFormat = OutputFormat.KOTLIN_JUNIT_5

@@ -23,7 +23,8 @@ import java.nio.file.Path
  *
  * For Kafka, the lines that publish and await a reply are written here from the contract. For
  * other transports, the driver renders them during the search and they are copied as they are,
- * as done for RPC. Either way, the test needs no EvoMaster driver at run time.
+ * as done for RPC. Publishing messages does not go through the EvoMaster driver. White-box
+ * and black-box experiment suites still use the driver for setup and server-address resolution.
  */
 class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
@@ -35,15 +36,6 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
          * serialized to text.
          */
         private const val DELTA = 0.001
-    }
-
-    constructor() : super()
-
-    /**
-     * ONLY for tests
-     */
-    constructor(config: EMConfig) : super() {
-        this.config = config
     }
 
     @Inject
@@ -73,6 +65,15 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
      * Prefix of the variable holding a parsed reply, followed by the index of its action.
      */
     private val bodyVariablePrefix = "body_"
+
+    constructor() : super()
+
+    /**
+     * ONLY for tests
+     */
+    constructor(config: EMConfig) : super() {
+        this.config = config
+    }
 
     override fun handleActionCalls(
         lines: Lines,

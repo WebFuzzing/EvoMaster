@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test
  * Sorting happens only when a suite is written, which is why no other test reaches this: the
  * comparator used to throw on an AsyncAPI individual, and nothing noticed until a whole run did.
  */
-class AsyncApiSortingTest {
+class SortingHelperTest {
 
     companion object {
         //as the document declares it: the fields sit under "error", not at the top level
