@@ -765,7 +765,7 @@ class AsyncApiFitnessTest {
 
         assertEquals(listOf(250L, 250L), driver.published.map { it.settleMs })
         //the whole window unless asked otherwise, and no stable window to go with it
-        assertEquals(AsyncApiActionDto.Completion.FIXED, driver.published.first().completion)
+        assertEquals(AsyncApiActionDto.MessageCompletionStrategy.FIXED, driver.published.first().completion)
         assertNull(driver.published.first().stableMs)
     }
 
@@ -780,7 +780,7 @@ class AsyncApiFitnessTest {
 
         val dto = driver.published.single()
         assertEquals(2000L, dto.settleMs)
-        assertEquals(AsyncApiActionDto.Completion.COVERAGE_STABLE, dto.completion)
+        assertEquals(AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE, dto.completion)
         assertEquals(150L, dto.stableMs)
     }
 
@@ -808,14 +808,14 @@ class AsyncApiFitnessTest {
         startNcs("--asyncApiSettleMs=2000", "--asyncApiCompletion=COVERAGE_STABLE") {
             fireAndForget().apply {
                 settledMs = 230
-                settleEndedBy = AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE
+                settleEndedBy = AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE
             }
         }
 
         val result = results(evaluate("bessj")).single()
 
         assertEquals(230L, result.getSettledMs())
-        assertEquals(AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE, result.getSettleEndedBy())
+        assertEquals(AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE, result.getSettleEndedBy())
     }
 
     @Test

@@ -27,5 +27,12 @@ public enum Command implements Serializable {
     BOOT_TIME_INFO,
     EXTRACT_JVM_DTO,
     BOOTING_SUT,
+    /**
+     * Request the agent's coverage-objective update count as a {@link Long}. The count
+     * increases when an objective is first encountered or its best value improves, and is
+     * reset by {@link org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer#reset()}.
+     * The controller polls it to detect stable coverage while waiting for an AsyncAPI action
+     * to finish; it counts updates, not distinct objectives or executions of covered code.
+     */
     OBJECTIVE_UPDATE_COUNT
 }

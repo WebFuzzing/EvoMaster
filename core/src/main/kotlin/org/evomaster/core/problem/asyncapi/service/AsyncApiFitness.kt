@@ -437,10 +437,10 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
              */
             dto.settleMs = config.asyncApiSettleMs.toLong()
             dto.completion = when (config.asyncApiCompletion) {
-                EMConfig.AsyncApiCompletion.FIXED -> AsyncApiActionDto.Completion.FIXED
+                EMConfig.AsyncApiCompletion.FIXED -> AsyncApiActionDto.MessageCompletionStrategy.FIXED
                 EMConfig.AsyncApiCompletion.COVERAGE_STABLE -> {
                     dto.stableMs = config.asyncApiStableMs.toLong()
-                    AsyncApiActionDto.Completion.COVERAGE_STABLE
+                    AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE
                 }
             }
         }

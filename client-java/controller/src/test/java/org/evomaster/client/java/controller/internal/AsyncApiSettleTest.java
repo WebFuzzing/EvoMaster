@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.internal;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.junit.jupiter.api.AfterEach;
@@ -59,6 +60,26 @@ public class AsyncApiSettleTest {
     }
 
     @Test
+    public void testCompletionStrategyKeepsItsJsonFieldAndValues() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        for (String value : new String[]{"FIXED", "COVERAGE_STABLE"}) {
+            AsyncApiActionDto action = mapper.readValue("{\"completion\":\"" + value + "\"}", AsyncApiActionDto.class);
+            assertNotNull(action.completion);
+            assertEquals(value, mapper.readTree(mapper.writeValueAsString(action)).get("completion").asText());
+        }
+    }
+
+    @Test
+    public void testSettleEndReasonKeepsItsJsonFieldAndValues() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        for (String value : new String[]{"DEADLINE", "COVERAGE_STABLE", "INTERRUPTED"}) {
+            AsyncApiReplyDto reply = mapper.readValue("{\"settleEndedBy\":\"" + value + "\"}", AsyncApiReplyDto.class);
+            assertNotNull(reply.settleEndedBy);
+            assertEquals(value, mapper.readTree(mapper.writeValueAsString(reply)).get("settleEndedBy").asText());
+        }
+    }
+
+    @Test
     public void testTheActionIsKeptOpenForAsLongAsAsked() {
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
@@ -68,7 +89,7 @@ public class AsyncApiSettleTest {
         assertEquals(1, sleeps.size());
         assertEquals(250L, sleeps.get(0));
         assertEquals(250L, reply.settledMs);
-        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
     }
 
     @Test
@@ -103,7 +124,7 @@ public class AsyncApiSettleTest {
 
         assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
         assertEquals(40L, reply.settledMs, "what was recorded is not the time actually waited");
-        assertEquals(AsyncApiReplyDto.SettleEnd.INTERRUPTED, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.INTERRUPTED, reply.settleEndedBy);
     }
 
     @Test
@@ -150,7 +171,7 @@ public class AsyncApiSettleTest {
 
     private static AsyncApiActionDto coverageStable(Long stableMs) {
         AsyncApiActionDto dto = asking(SETTLE_MS);
-        dto.completion = AsyncApiActionDto.Completion.COVERAGE_STABLE;
+        dto.completion = AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE;
         dto.stableMs = stableMs;
         return dto;
     }
@@ -162,7 +183,7 @@ public class AsyncApiSettleTest {
 
         settleThatSleeps().settle(coverageStable(STABLE_MS), reply, () -> 7L);
 
-        assertEquals(AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE, reply.settleEndedBy);
         assertEquals(STABLE_MS, reply.settledMs);
         assertTrue(sleeps.stream().allMatch(ms -> ms <= AsyncApiSettle.POLL_INTERVAL_MS),
                 "the coverage was not read often enough: " + sleeps);
@@ -186,7 +207,7 @@ public class AsyncApiSettleTest {
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
         settleThatSleeps().settle(coverageStable(STABLE_MS), reply, busyUntil300);
 
-        assertEquals(AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE, reply.settleEndedBy);
         assertEquals(300L + STABLE_MS, reply.settledMs);
     }
 
@@ -198,7 +219,7 @@ public class AsyncApiSettleTest {
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
         settleThatSleeps().settle(coverageStable(STABLE_MS), reply, () -> ++count[0]);
 
-        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
     }
 
@@ -208,7 +229,7 @@ public class AsyncApiSettleTest {
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
         settleThatSleeps().settle(coverageStable(STABLE_MS), reply, NO_COVERAGE);
 
-        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
     }
 
@@ -221,7 +242,7 @@ public class AsyncApiSettleTest {
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
         settleThatSleeps().settle(coverageStable(STABLE_MS), reply, lostAfter50);
 
-        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
     }
 
@@ -238,7 +259,7 @@ public class AsyncApiSettleTest {
             throw new IllegalStateException("agent gone");
         });
 
-        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
     }
 
@@ -255,7 +276,7 @@ public class AsyncApiSettleTest {
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
         settleThatSleeps().settle(coverageStable(STABLE_MS), reply, failingAfter50);
 
-        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
     }
 
@@ -265,7 +286,7 @@ public class AsyncApiSettleTest {
         for (Long none : new Long[]{null, 0L, -1L}) {
             AsyncApiReplyDto reply = new AsyncApiReplyDto();
             settleThatSleeps().settle(coverageStable(none), reply, () -> 7L);
-            assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy, "stableMs=" + none);
+            assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy, "stableMs=" + none);
         }
     }
 
@@ -273,13 +294,13 @@ public class AsyncApiSettleTest {
     public void testAFixedWaitNeverReadsTheCoverage() {
 
         AsyncApiActionDto dto = asking(SETTLE_MS);
-        dto.completion = AsyncApiActionDto.Completion.FIXED;
+        dto.completion = AsyncApiActionDto.MessageCompletionStrategy.FIXED;
         dto.stableMs = STABLE_MS;
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
         settleThatSleeps().settle(dto, reply, () -> fail("the coverage was read for a fixed wait"));
 
-        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
     }
 
@@ -298,7 +319,7 @@ public class AsyncApiSettleTest {
         settle.settle(coverageStable(STABLE_MS), reply, () -> ++count[0]);
 
         assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
-        assertEquals(AsyncApiReplyDto.SettleEnd.INTERRUPTED, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.INTERRUPTED, reply.settleEndedBy);
         assertEquals(50L, reply.settledMs);
     }
 }

@@ -26,7 +26,7 @@ public class AsyncApiActionDto {
      * How the controller decides that the service is done with a message, and the action can
      * be closed, within the {@link #settleMs} window.
      */
-    public enum Completion {
+    public enum MessageCompletionStrategy {
 
         /**
          * Wait for the whole window.
@@ -125,14 +125,14 @@ public class AsyncApiActionDto {
 
     /**
      * How the controller decides, within {@link #settleMs}, that the action can be closed. Null
-     * is read as {@link Completion#FIXED}. Meaningless without a {@link #settleMs}.
+     * is read as {@link MessageCompletionStrategy#FIXED}. Meaningless without a {@link #settleMs}.
      */
-    public Completion completion;
+    public MessageCompletionStrategy completion;
 
     /**
-     * For {@link Completion#COVERAGE_STABLE}: how long, in milliseconds, the SUT has to go
+     * For {@link MessageCompletionStrategy#COVERAGE_STABLE}: how long, in milliseconds, the SUT has to go
      * without improving any coverage objective to end the wait early. Null, zero or negative
-     * make it a {@link Completion#FIXED} wait. Null for any other completion.
+     * make it a {@link MessageCompletionStrategy#FIXED} wait. Null for any other completion.
      */
     public Long stableMs;
 

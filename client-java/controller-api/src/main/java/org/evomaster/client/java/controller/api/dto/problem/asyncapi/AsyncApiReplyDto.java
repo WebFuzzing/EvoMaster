@@ -17,11 +17,11 @@ public class AsyncApiReplyDto {
     /**
      * Why the controller stopped keeping the action open.
      */
-    public enum SettleEnd {
+    public enum SettleEndReason {
 
         /**
          * The whole {@link AsyncApiActionDto#settleMs} window went by. Also what a
-         * {@link AsyncApiActionDto.Completion#COVERAGE_STABLE} wait ends with when the SUT's
+         * {@link AsyncApiActionDto.MessageCompletionStrategy#COVERAGE_STABLE} wait ends with when the SUT's
          * coverage cannot be read.
          */
         DEADLINE,
@@ -102,7 +102,7 @@ public class AsyncApiReplyDto {
      * Why the controller stopped waiting, set together with {@link #settledMs}. Null exactly
      * when that is.
      */
-    public SettleEnd settleEndedBy;
+    public SettleEndReason settleEndedBy;
 
     /**
      * Why publishing failed, when it did.

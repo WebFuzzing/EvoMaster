@@ -109,7 +109,7 @@ public class EMControllerTest {
     private static AsyncApiActionDto untilCoverageStable() {
         AsyncApiActionDto call = new AsyncApiActionDto();
         call.settleMs = SETTLE_MS;
-        call.completion = AsyncApiActionDto.Completion.COVERAGE_STABLE;
+        call.completion = AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE;
         call.stableMs = STABLE_MS;
         return call;
     }
@@ -131,7 +131,7 @@ public class EMControllerTest {
         AsyncApiReplyDto reply = replyIn(response);
         assertTrue(reply.published);
         assertEquals(300L, reply.settledMs);
-        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
     }
 
     @Test
@@ -222,7 +222,7 @@ public class EMControllerTest {
         Response response = publishCall(untilCoverageStable());
 
         AsyncApiReplyDto reply = replyIn(response);
-        assertEquals(AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE, reply.settleEndedBy);
         assertEquals(STABLE_MS, reply.settledMs);
     }
 
@@ -238,7 +238,7 @@ public class EMControllerTest {
         Response response = publishCall(untilCoverageStable());
 
         AsyncApiReplyDto reply = replyIn(response);
-        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
     }
 
@@ -257,7 +257,7 @@ public class EMControllerTest {
         Response response = publishCall(untilCoverageStable());
 
         AsyncApiReplyDto reply = replyIn(response);
-        assertEquals(AsyncApiReplyDto.SettleEnd.DEADLINE, reply.settleEndedBy);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
     }
 

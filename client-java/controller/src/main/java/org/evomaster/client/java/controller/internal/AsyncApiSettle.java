@@ -70,7 +70,7 @@ public class AsyncApiSettle {
      * @param reply             what the driver reported about it, to which the wait is added
      * @param objectiveUpdates  reads how many times the SUT has reached or improved a coverage
      *                          objective in the current test, or null when that cannot be known.
-     *                          Only read for {@link AsyncApiActionDto.Completion#COVERAGE_STABLE}
+     *                          Only read for {@link AsyncApiActionDto.MessageCompletionStrategy#COVERAGE_STABLE}
      */
     public void settle(AsyncApiActionDto dto, AsyncApiReplyDto reply, Supplier<Long> objectiveUpdates) {
         Objects.requireNonNull(dto);
@@ -82,18 +82,18 @@ public class AsyncApiSettle {
             return;
         }
 
-        boolean coverageStable = dto.completion == AsyncApiActionDto.Completion.COVERAGE_STABLE
+        boolean coverageStable = dto.completion == AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE
                 && dto.stableMs != null && dto.stableMs > 0;
 
         long start = clock.nowMs();
-        AsyncApiReplyDto.SettleEnd end;
+        AsyncApiReplyDto.SettleEndReason end;
         try {
             end = coverageStable
                     ? waitForStableCoverage(start, settleMs, dto.stableMs, objectiveUpdates)
                     : waitUntil(start + settleMs);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            end = AsyncApiReplyDto.SettleEnd.INTERRUPTED;
+            end = AsyncApiReplyDto.SettleEndReason.INTERRUPTED;
         }
         reply.settledMs = clock.nowMs() - start;
         reply.settleEndedBy = end;
@@ -117,12 +117,12 @@ public class AsyncApiSettle {
         }
     }
 
-    private AsyncApiReplyDto.SettleEnd waitUntil(long deadline) throws InterruptedException {
+    private AsyncApiReplyDto.SettleEndReason waitUntil(long deadline) throws InterruptedException {
         long left = deadline - clock.nowMs();
         if (left > 0) {
             sleeper.sleep(left);
         }
-        return AsyncApiReplyDto.SettleEnd.DEADLINE;
+        return AsyncApiReplyDto.SettleEndReason.DEADLINE;
     }
 
     /**
@@ -131,7 +131,7 @@ public class AsyncApiSettle {
      * period is counted from the start of the wait, so a service that does nothing new after
      * the driver returned is let go after {@code stableMs}.
      */
-    private AsyncApiReplyDto.SettleEnd waitForStableCoverage(
+    private AsyncApiReplyDto.SettleEndReason waitForStableCoverage(
             long start,
             long settleMs,
             long stableMs,
@@ -151,10 +151,10 @@ public class AsyncApiSettle {
 
             long now = clock.nowMs();
             if (now >= deadline) {
-                return AsyncApiReplyDto.SettleEnd.DEADLINE;
+                return AsyncApiReplyDto.SettleEndReason.DEADLINE;
             }
             if (now - lastChange >= stableMs) {
-                return AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE;
+                return AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE;
             }
 
             long nap = Math.min(POLL_INTERVAL_MS, Math.min(deadline - now, lastChange + stableMs - now));

@@ -93,7 +93,7 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
     /**
      * How many published messages the controller stopped waiting on for {@code end}.
      */
-    protected long countSettleEnd(Solution<AsyncApiIndividual> solution, AsyncApiReplyDto.SettleEnd end) {
+    protected long countSettleEnd(Solution<AsyncApiIndividual> solution, AsyncApiReplyDto.SettleEndReason end) {
         return allResultsOf(solution).stream()
                 .filter(r -> r.getSettleEndedBy() == end)
                 .count();

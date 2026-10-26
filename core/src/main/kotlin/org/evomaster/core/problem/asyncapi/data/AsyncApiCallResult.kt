@@ -99,12 +99,12 @@ class AsyncApiCallResult : EnterpriseActionResult {
     /**
      * Why the controller stopped keeping the action open. Absent when no wait was asked for.
      */
-    fun setSettleEndedBy(end: AsyncApiReplyDto.SettleEnd) {
+    fun setSettleEndedBy(end: AsyncApiReplyDto.SettleEndReason) {
         addResultValue(SETTLE_ENDED_BY, end.name)
     }
 
-    fun getSettleEndedBy(): AsyncApiReplyDto.SettleEnd? =
-        getResultValue(SETTLE_ENDED_BY)?.let { AsyncApiReplyDto.SettleEnd.valueOf(it) }
+    fun getSettleEndedBy(): AsyncApiReplyDto.SettleEndReason? =
+        getResultValue(SETTLE_ENDED_BY)?.let { AsyncApiReplyDto.SettleEndReason.valueOf(it) }
 
     /**
      * The lines the driver rendered for a generated test, or empty when it rendered none.

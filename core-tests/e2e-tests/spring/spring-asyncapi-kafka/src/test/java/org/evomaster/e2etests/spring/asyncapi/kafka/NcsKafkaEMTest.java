@@ -178,9 +178,9 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
                     assertEquals(0, countOutcome(solution, AsyncApiOutcome.PUBLISH_FAILED), "a message never left");
                     assertEverySettled(solution);
 
-                    assertTrue(countSettleEnd(solution, AsyncApiReplyDto.SettleEnd.COVERAGE_STABLE) > 0,
+                    assertTrue(countSettleEnd(solution, AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE) > 0,
                             "no wait ended on stable coverage");
-                    assertEquals(0, countSettleEnd(solution, AsyncApiReplyDto.SettleEnd.INTERRUPTED),
+                    assertEquals(0, countSettleEnd(solution, AsyncApiReplyDto.SettleEndReason.INTERRUPTED),
                             "a wait was interrupted");
                 },
                 3);
