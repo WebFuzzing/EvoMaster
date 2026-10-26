@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.AssertionRepairResult
 import org.evomaster.core.search.gene.utils.AssertionRepairWalk
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.RxGeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionRxGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -83,7 +84,33 @@ class DisjunctionRxGene(
     }
 
     override fun isUnsatisfiable(): Boolean =
-        terms.isNotEmpty() && terms.any { (it as? RxTerm)?.isUnsatisfiable() == true }
+        terms.isNotEmpty() && (terms.any { (it as? RxTerm)?.isUnsatisfiable() == true }
+                || hasUnsatisfiableStrictAnchors())
+
+    /**
+     * Strict input anchors require that their position matches with an edge of the input (\A, non-multiline ^, etc.).
+     * For this to be possible all terms before/after (depending on the anchor direction) that assertion gene must be
+     * able to produce nothing ([canBeZeroWidth]). This method tells us if this has an unsatisfiable anchor within,
+     * meaning this part of the regex is unsatisfiable.
+     *
+     * @return true when the gene is unsatisfiable because of anchors; false if the gene may be satisfiable.
+     */
+    private fun hasUnsatisfiableStrictAnchors(
+        beforeCanBeEmpty: Boolean = true,
+        afterCanBeEmpty: Boolean = true
+    ): Boolean =
+        terms.withIndex().any { (idx, term) ->
+            val canBeEmptyBeforeTerm = beforeCanBeEmpty && RxGeneUtils.canAllBeZeroWidth(genesBefore(idx))
+            val canBeEmptyAfterTerm = afterCanBeEmpty && RxGeneUtils.canAllBeZeroWidth(genesAfter(idx))
+
+            when (term) {
+                is AssertionRxGene ->
+                    (term.requiresEmptyBefore && !canBeEmptyBeforeTerm) || (term.requiresEmptyAfter && !canBeEmptyAfterTerm)
+                is DisjunctionListRxGene ->
+                    term.disjunctions.all { it.hasUnsatisfiableStrictAnchors(canBeEmptyBeforeTerm, canBeEmptyAfterTerm) }
+                else -> false
+            }
+        }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
@@ -240,8 +267,7 @@ class DisjunctionRxGene(
      * the concatenation of all of them.
      * @see [RxAbsorbable.canBeZeroWidth]
      */
-    override val canBeZeroWidth: Boolean =
-        terms.all { (it as RxAbsorbable).canBeZeroWidth }
+    override val canBeZeroWidth: Boolean = RxGeneUtils.canAllBeZeroWidth(terms)
 
     /**
      * Delegates to a forward walk over [terms], mirroring [absorbableCount].

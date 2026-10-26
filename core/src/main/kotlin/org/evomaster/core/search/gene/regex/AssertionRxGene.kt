@@ -57,6 +57,20 @@ class AssertionRxGene(
     }
 
     /**
+     * Whether this assertion only holds if nothing at all is rendered before it, in the whole input.
+     * That is `\A`, and `^` without the multiline flag.
+     */
+    val requiresEmptyBefore: Boolean =
+        assertionType == AssertionType.START_OF_INPUT || (assertionType == AssertionType.CARET && !flags.multiline)
+
+    /**
+     * Whether this assertion only holds if nothing at all is rendered after it, in the whole input.
+     * That is `\z`, and `$` without the multiline flag.
+     */
+    val requiresEmptyAfter: Boolean =
+        assertionType == AssertionType.END_OF_INPUT || (assertionType == AssertionType.DOLLAR && !flags.multiline)
+
+    /**
      *  To handle null [innerGene], in which case the assertion is unsatisfiable.
      */
     override fun canBeChildless() = true

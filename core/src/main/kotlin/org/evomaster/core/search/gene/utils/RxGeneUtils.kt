@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.AssertionRxGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.QuantifierRxGene
+import org.evomaster.core.search.gene.regex.RxAbsorbable
 import org.evomaster.core.search.gene.regex.RxTerm
 
 object RxGeneUtils {
@@ -25,6 +26,13 @@ object RxGeneUtils {
     fun <T> containsAssertions(gene: T): Boolean where T : Gene, T : RxTerm =
         // for now normal flatView as we reject assertions nested inside quantifiers/assertions
         gene.flatView().any { it is AssertionRxGene }
+
+    /**
+     * Whether every one of [genes] can be zero width.
+     * @see RxAbsorbable.canBeZeroWidth
+     */
+    fun canAllBeZeroWidth(genes: List<Gene>): Boolean =
+        genes.all { (it as? RxAbsorbable)?.canBeZeroWidth == true }
 
     /**
      * The numbers of the capture groups that are in [gene], or that are [gene] itself, including the ones inside the

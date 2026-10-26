@@ -672,12 +672,13 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testStartAndEndOfInputNested() {
         checkSameAsJava("""a?(\Ab)c""")
         checkSameAsJava("""x?((^z)y)""")
-        assertThrows<AssertionError> { checkSameAsJava("""a(\Ab)c""") }
+        assertThrows<IllegalStateException> { createGene("""a(\Ab)c""") }
         checkSameAsJava("""a(b\z)c?""")
-        assertThrows<AssertionError> { checkSameAsJava("""a(b\z)c""") }
+        assertThrows<IllegalStateException> { createGene("""a(b\z)c""") }
         checkSameAsJava("""((y(z\z))w?)x?""")
         checkSameAsJava("""x?(c?(^z)y\z)w?""")
-        assertThrows<AssertionError> { checkSameAsJava("""x?(c(^z)y)""") }
+        assertThrows<IllegalStateException> { createGene("""x?(c(^z)y)""") }
+        assertThrows<IllegalStateException> { createGene("""x(a$)y""") }
     }
 
     @Test
