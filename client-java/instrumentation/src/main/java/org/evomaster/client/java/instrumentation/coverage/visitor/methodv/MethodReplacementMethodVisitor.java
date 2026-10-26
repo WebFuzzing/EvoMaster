@@ -20,12 +20,6 @@ import java.util.Optional;
 
 public class MethodReplacementMethodVisitor extends MethodVisitor {
 
-    private static final String FUNCTION = "java/util/function/Function";
-    private static final String ENHANCED_COMMON_OPERATION =
-            "software/amazon/awssdk/enhanced/dynamodb/internal/operations/CommonOperation";
-    private static final String ENHANCED_DATABASE_OPERATION =
-            "software/amazon/awssdk/enhanced/dynamodb/internal/operations/DatabaseOperation";
-
     private final String className;
     private final String methodName;
     private final boolean registerNewTargets;
@@ -103,14 +97,6 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             super.visitMethodInsn(opcode, owner, name, desc, itf);
             return;
         }
-
-        if (FUNCTION.equals(owner) && "apply".equals(name)
-                && !ENHANCED_COMMON_OPERATION.equals(className)
-                && !ENHANCED_DATABASE_OPERATION.equals(className)) {
-            super.visitMethodInsn(opcode, owner, name, desc, itf);
-            return;
-        }
-
 
         /*
          * This is a very special case. This can happen when we replace a method

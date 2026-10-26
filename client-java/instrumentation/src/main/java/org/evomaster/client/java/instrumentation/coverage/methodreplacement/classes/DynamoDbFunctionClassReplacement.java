@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementCallSites;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses.DynamoDbClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
@@ -33,6 +34,10 @@ public class DynamoDbFunctionClassReplacement implements MethodReplacementClass 
      * @param request final low-level request
      * @return the original function result
      */
+    @ReplacementCallSites({
+            "software.amazon.awssdk.enhanced.dynamodb.internal.operations.CommonOperation",
+            "software.amazon.awssdk.enhanced.dynamodb.internal.operations.DatabaseOperation"
+    })
     @Replacement(type = ReplacementType.TRACKER, category = ReplacementCategory.DYNAMODB,
             usageFilter = UsageFilter.ONLY_THIRD_PARTY, isPure = false)
     public static Object apply(Function caller, Object request) {
