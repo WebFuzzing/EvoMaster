@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.utils
 
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.regex.AssertionRxGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.QuantifierRxGene
 import org.evomaster.core.search.gene.regex.RxTerm
@@ -17,6 +18,13 @@ object RxGeneUtils {
      */
     fun <T> flatViewWithQuantifierTemplates(gene: T): List<Gene> where T : Gene, T : RxTerm =
         expand(gene)
+
+    /**
+     * Whether [gene] is, or has inside, an assertion.
+     */
+    fun <T> containsAssertions(gene: T): Boolean where T : Gene, T : RxTerm =
+        // for now normal flatView as we reject assertions nested inside quantifiers/assertions
+        gene.flatView().any { it is AssertionRxGene }
 
     /**
      * The numbers of the capture groups that are in [gene], or that are [gene] itself, including the ones inside the

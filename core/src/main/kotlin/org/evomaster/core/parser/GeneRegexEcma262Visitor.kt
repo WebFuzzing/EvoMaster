@@ -128,14 +128,12 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     override fun visitDisjunction(ctx: RegexEcma262Parser.DisjunctionContext): VisitResult {
 
         val altRes = ctx.alternative().accept(this)
-        val assertionMatches = altRes.data as? Pair<Boolean, Boolean>
         val res = VisitResult()
 
-        if (assertionMatches != null) {
-            val matchStart = assertionMatches.first
-            val matchEnd = assertionMatches.second
-
-            val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart, matchEnd)
+        // an alternative with no genes is satisfiable only if it has no terms (as in `a|` or in an empty regex),
+        // otherwise one of its terms cannot match
+        if (altRes.genes.isNotEmpty() || ctx.alternative().term().isEmpty()) {
+            val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, true, true)
 
             res.genes.add(disj)
         }
@@ -152,50 +150,23 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     override fun visitAlternative(ctx: RegexEcma262Parser.AlternativeContext): VisitResult {
 
         val res = VisitResult()
-
-        var caret = false
-        var dollar = false
         var satisfiable = true
 
-        for(i in 0 until ctx.term().size){
+        for(term in ctx.term()){
 
-            val resTerm = ctx.term()[i].accept(this)
-            val gene = resTerm.genes.firstOrNull()
+            // all the terms are visited even if one cannot match, as the capture groups are numbered when visited
+            val gene = term.accept(this).genes.firstOrNull()
 
             if(gene != null) {
                 res.genes.add(gene)
             } else {
-
-                val assertion = resTerm.data as? String
-
-                if(assertion == null){
-                    // no gene and no assertion, term and alternative are unsatisfiable. But the rest of the terms are
-                    // still visited so capture group numbers do not get shifted
-                    satisfiable = false
-                } else if(!satisfiable){
-                    // the alternative cannot match anyway, nothing to check
-                } else if(i==0 && assertion == "^"){
-                    caret = true
-                } else if(i==ctx.term().size-1 && assertion== "$"){
-                    dollar = true
-                } else {
-                    /*
-                        TODO in a regex, ^ and $ could be in any position, as representing
-                        beginning and end of a line, and a regex could be multiline with
-                        line terminator symbols
-                     */
-                    throw IllegalStateException("Cannot support $assertion at position $i")
-                }
+                // no gene, term and alternative are unsatisfiable. But the rest of the terms are
+                // still visited so capture group numbers do not get shifted
+                satisfiable = false
             }
         }
 
-        if(!satisfiable){
-            return VisitResult()
-        }
-
-        res.data = Pair(caret, dollar)
-
-        return res
+        return if (satisfiable) res else VisitResult()
     }
 
     override fun visitTerm(ctx: RegexEcma262Parser.TermContext): VisitResult {
@@ -203,8 +174,13 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         val res = VisitResult()
 
         if(ctx.assertion() != null){
-            res.data = ctx.assertion().text
-            return res
+            val assertion = ctx.assertion()
+            val type = when {
+                assertion.CARET() != null -> AssertionType.START_OF_INPUT
+                assertion.DOLLAR() != null -> AssertionType.END_OF_INPUT
+                else -> throw IllegalStateException("Unsupported assertion: ${assertion.text}")
+            }
+            return VisitResult(AssertionRxGene(null, type))
         }
 
         val resAtom = ctx.atom().accept(this)
@@ -223,6 +199,11 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
                     // if not then unsatisfiable, return with no genes
                     res
                 }
+            }
+
+            // reject assertions within quantifiers, like we do for Java
+            require(atom.flatView().none { it is AssertionRxGene }) {
+                "Anchors inside a quantified group are not supported: ${ctx.text}"
             }
 
             val q = QuantifierRxGene("q", atom, limits.first, limits.second)

@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.AssertionRepairResult
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.RxGeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -55,9 +56,15 @@ class RegexGene(
     }
 
     /**
-     * If regex requires its assertions to be repaired, currently only JVM regexes.
+     * Whether the dialect matches a part of the input (Java `find()`, JS `test()`), and so text can be rendered
+     * before and after the tree. Postgres LIKE and SIMILAR TO match all of it.
      */
-    private val requiresAssertionHandling: Boolean = regexType == RegexType.JVM
+    private val matchesPartOfInput: Boolean = regexType == RegexType.JVM || regexType == RegexType.ECMA_262
+
+    /**
+     * Whether there is an assertion in the tree, which is also whether repair has anything to do.
+     */
+    private val hasAssertions: Boolean by lazy { RxGeneUtils.containsAssertions(disjunctions) }
 
     /**
      * Pattern used for assertion repair verification, only on JVM regex.
@@ -70,14 +77,14 @@ class RegexGene(
         }
 
     /**
-     * Prefix to use with JVM regex, as they do not make use of [DisjunctionRxGene.extraPrefix], can be set on [randomize].
+     * Prefix to use with JVM/ECMA regex, as they do not make use of [DisjunctionRxGene.extraPrefix], can be set on [randomize].
      */
-    private var javaPrefix : String = ""
+    private var prefix : String = ""
 
     /**
-     * Postfix to use with JVM regex, as they do not make use of [DisjunctionRxGene.extraPostfix], can be set on [randomize].
+     * Postfix to use with JVM/ECMA regex, as they do not make use of [DisjunctionRxGene.extraPostfix], can be set on [randomize].
      */
-    private var javaPostfix : String = ""
+    private var postfix : String = ""
 
     /**
      * The value of each capture group (the key being its group number) as of the last time the tree was rendered.
@@ -124,8 +131,8 @@ class RegexGene(
 
     override fun copyContent(): Gene {
         val copy = RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType, fixedValue, usingFixedValue, externalRegexFlags)
-        copy.javaPrefix=javaPrefix
-        copy.javaPostfix=javaPostfix
+        copy.prefix=prefix
+        copy.postfix=postfix
         return copy
     }
 
@@ -136,22 +143,30 @@ class RegexGene(
             randomness.nextBoolean()
         }
 
-        if (!requiresAssertionHandling) {
-            disjunctions.randomize(randomness, tryToForceNewValue)
-            return
+        when (regexType) {
+            RegexType.JVM -> randomizeUntilRepaired(randomness, tryToForceNewValue) { repairJvm(it) }
+            RegexType.ECMA_262 -> randomizeUntilRepaired(randomness, tryToForceNewValue) { repairEcma262(it) }
+            else -> disjunctions.randomize(randomness, tryToForceNewValue)
         }
+    }
 
-        val matcher = pattern!!.matcher("")
-
-        repeat(MAX_TREE_REPAIR_ATTEMPTS) { _ ->
+    /**
+     * Samples the tree and calls [repair] on it, until [repair] says that the value is fine, at most
+     * [MAX_TREE_REPAIR_ATTEMPTS] times.
+     *
+     * @return whether a value that was accepted was found. If not, the gene is left with the last one tried.
+     * @see repairJvm
+     * @see repairEcma262
+     */
+    private fun randomizeUntilRepaired(
+        randomness: Randomness,
+        tryToForceNewValue: Boolean,
+        repair: (Randomness) -> Boolean
+    ): Boolean {
+        repeat(MAX_TREE_REPAIR_ATTEMPTS) {
             disjunctions.randomize(randomness, tryToForceNewValue)
-            if (matcher.reset(getValueAsRawString()).find()) {
-                return
-            }
-            val assertionRepairResult = disjunctions.attemptAssertionRepair(randomness)
-            setPrefixAndPostfix(assertionRepairResult, randomness)
-            if (matcher.reset(getValueAsRawString()).find()) {
-                return
+            if (repair(randomness)) {
+                return true
             }
         }
 
@@ -160,6 +175,34 @@ class RegexGene(
         val message = "Could not repair value for regex: \"$sourceRegex\", last tried: \"${getValueAsRawString()}\""
         assert(false) { message }
         log.warn(message)
+        return false
+    }
+
+    /**
+     * Performs and checks JVM regex repairs against Java Pattern.
+     */
+    private fun repairJvm(randomness: Randomness): Boolean {
+        val matcher = pattern!!.matcher("")
+        if (matcher.reset(getValueAsRawString()).find()) {
+            return true
+        }
+        setPrefixAndPostfix(disjunctions.attemptAssertionRepair(randomness), randomness)
+        return matcher.reset(getValueAsRawString()).find()
+    }
+
+    /**
+     * Performs and checks ECMA regex repairs.
+     */
+    private fun repairEcma262(randomness: Randomness): Boolean {
+        val result = if (hasAssertions) {
+            disjunctions.attemptAssertionRepair(randomness)
+        } else {
+            AssertionRepairResult.SUCCESS
+        }
+        if (result.success) {
+            setPrefixAndPostfix(result, randomness)
+        }
+        return result.success
     }
 
     /**
@@ -169,13 +212,13 @@ class RegexGene(
      */
     private fun setPrefixAndPostfix(repairResult: AssertionRepairResult, randomness: Randomness) {
         if (repairResult.success) {
-            javaPrefix = repairResult.neededPrefix
+            prefix = repairResult.neededPrefix
                 ?: if (randomness.nextBoolean()) {
                     ""
                 } else {
                     "prefix_"
                 }
-            javaPostfix = repairResult.neededPostfix
+            postfix = repairResult.neededPostfix
                 ?: if (randomness.nextBoolean()) {
                     ""
                 } else {
@@ -273,11 +316,13 @@ class RegexGene(
         // rendering from the regex gene tree root, so we clear the previous captured values
         capturedValues.clear()
 
-        return if(requiresAssertionHandling){
-            javaPrefix + disjunctions.getValueAsPrintableString(targetFormat = null) + javaPostfix
-        } else {
-            disjunctions.getValueAsPrintableString(targetFormat = null)
+        val value = disjunctions.getValueAsPrintableString(targetFormat = null)
+
+        if (!matchesPartOfInput) {
+            return value
         }
+
+        return prefix + value + postfix
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
@@ -329,6 +374,8 @@ class RegexGene(
         }
 
         usingFixedValue = false
+        prefix = other.prefix
+        postfix = other.postfix
         return this.disjunctions.unsafeCopyValueFrom(other.disjunctions)
     }
 }
