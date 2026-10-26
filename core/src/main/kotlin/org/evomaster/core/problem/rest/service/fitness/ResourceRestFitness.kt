@@ -114,7 +114,7 @@ class ResourceRestFitness : AbstractRestFitness() {
         /*
             harvest actual requests once all actions are executed
          */
-        harvestResponseHandler.addHttpRequests(allServedHttpRequests)
+        externalServiceFitnessHandler.harvestActualResponses(allServedHttpRequests)
 
         /*
             TODO: Man shall we update the action cluster based on expanded action?
@@ -187,7 +187,7 @@ class ResourceRestFitness : AbstractRestFitness() {
         allServedHttpRequests: MutableList<HttpExternalServiceRequest>,
         actionResults: MutableList<ActionResult>) : Boolean {
 
-        val externalServiceActions = handleExternalActionsBeforeMainActionExecution(enterpriseActionGroup)
+        val externalServiceActions = externalServiceFitnessHandler.prepareForMainAction(enterpriseActionGroup.getMainAction())
         val restCallAction = enterpriseActionGroup.getMainAction()
         val mainActions = (restCallAction.getRoot() as Individual).seeMainExecutableActions()  as List<RestCallAction>
 
@@ -207,12 +207,9 @@ class ResourceRestFitness : AbstractRestFitness() {
 
         restActionResult.stopping = !ok
 
-        // get visited wiremock instances
-        val requestedExternalServiceRequests = externalServiceHandler.getAllServedExternalServiceRequests()
-
-        allServedHttpRequests.addAll(requestedExternalServiceRequests)
-
-        handleVisitedExternalAction(fv, indexOfAction, externalServiceActions, requestedExternalServiceRequests)
+        allServedHttpRequests.addAll(
+            externalServiceFitnessHandler.registerServedRequests(fv, indexOfAction, externalServiceActions)
+        )
 
         return ok
 
@@ -269,69 +266,5 @@ class ResourceRestFitness : AbstractRestFitness() {
 
         return fv
     }
-
-    private fun handleExternalActionsBeforeMainActionExecution(actionGroup : EnterpriseActionGroup<*>) : List<ApiExternalServiceAction>{
-        // Note: [indexOfAction] is used to register the action in RemoteController
-        //  to map it to the ActionDto.
-
-        /*
-            Always need to reset WireMock.
-            Assume there no is External Action here. Still, the SUT could make a call to an external service
-            because new code is reached (eg due mutation of some genes).
-            We do not want such new call to re-use a mocking from a previous action which were left on.
-            So 2 options: (1) always reset before calling SUT, or (2) always reset after call in which external
-            setups were used.
-         */
-        externalServiceHandler.resetWireMockServersToDefaultState()
-
-        val externalServiceActions = actionGroup.getExternalServiceActions()
-
-        externalServiceActions.forEach { it.resetActive() }
-
-        externalServiceActions.filter { it.active }
-            .filterIsInstance<HttpExternalServiceAction>()
-            .forEach {
-                // TODO: Handling WireMock for ExternalServiceActions should be generalised
-                //  to facilitate other cases such as RPC and GraphQL
-                it.buildResponse()
-            }
-
-        return externalServiceActions
-    }
-
-    private fun handleVisitedExternalAction(
-        fv: FitnessValue,
-        indexOfAction: Int,
-        externalServiceActions: List<ApiExternalServiceAction>,
-        requestedExternalServiceRequests : List<HttpExternalServiceRequest>){
-        if (requestedExternalServiceRequests.isNotEmpty()) {
-            fv.registerExternalServiceRequest(indexOfAction, requestedExternalServiceRequests)
-        }
-
-        // Disabled default WM
-        // val employedDefault = requestedExternalServiceRequests.map { it.wireMockSignature }.distinct().filter {
-        //     externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
-        //         .none { a -> a.request.wireMockSignature == it }
-        // }.associate {
-        //     val es = externalServiceHandler.getExternalService(it)
-        //     es.getRemoteHostName() to es
-        // }
-       // fv.registerExternalRequestToDefaultWM(indexOfAction, employedDefault)
-
-        externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
-            .groupBy { it.request.absoluteURL }
-            .forEach { (url, actions) ->
-                // times of url has been accessed with this rest call
-                val count = requestedExternalServiceRequests.count { r-> r.absoluteURL == url}
-
-                actions.forEachIndexed { index, action ->
-                    if (index < count) {
-                        action.confirmUsed()
-                    } else {
-                        action.confirmNotUsed()
-                    }
-                }
-            }
-        }
 
 }

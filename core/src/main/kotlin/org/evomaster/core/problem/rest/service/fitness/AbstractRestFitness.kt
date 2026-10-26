@@ -14,6 +14,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceFitnessHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.auth.AuthUtils
@@ -80,6 +81,9 @@ import javax.ws.rs.core.NewCookie
 abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
+    @Inject
+    protected lateinit var externalServiceFitnessHandler: HttpWsExternalServiceFitnessHandler
+
     @Inject
     protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
@@ -1260,7 +1264,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         handleFurtherFitnessFunctions(fv)
 
-        val wmStarted = handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
+        val wmStarted = externalServiceFitnessHandler.handleExternalServiceInfo(individual, dto.additionalInfoList)
         if(wmStarted){
             /*
                 Quite tricky... if a WM instance was started as part of this test case evaluation,
@@ -1635,109 +1639,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
 
 
-    /**
-     * Based on info coming from SUT execution, register and start new WireMock instances.
-     *
-     * TODO push this thing up to hierarchy to EntepriseFitness
-     *
-     * @return whether there was side effect of starting new instance of WireMock
-     */
-    private fun handleExternalServiceInfo(
-        individual: RestIndividual,
-        fv: FitnessValue,
-        infoDto: List<AdditionalInfoDto>
-    ) : Boolean {
-
-        /*
-            Note: this info here is based from what connections / hostname resolving done in the SUT,
-            via instrumentation.
-
-            However, what is actually called on an already up and running WM instance from a previous call is
-            done on WM directly, and it must be done at SUT call (as WM get reset there)
-         */
-
-        var wmStarted = false
-
-        infoDto.forEachIndexed { index, info ->
-            info.hostnameResolutionInfoDtos.forEach { hn ->
-
-                val dns = HostnameResolutionInfo(
-                    hn.remoteHostname,
-                    hn.resolvedAddress
-                )
-                externalServiceHandler.addHostname(dns)
-
-                if (dns.isResolved()) {
-                    /*
-                        We need to ask, are we in that special case in which a hostname was resolved but there is
-                        no action for it?
-                        that would represent a real website resolution, which we cannot allow in the generated tests.
-                        for this reason, in instrumentation, we redirect toward a RESERVED IP address.
-                        to guarantee such behavior in generated tests, where there is instrumentation, we need to modify
-                        the genotype of this evaluated individual (without modifying its phenotype)
-                     */
-                    val actions = individual.seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
-                    if ((actions.isEmpty() || actions.none { it.hostname == hn.remoteHostname }) &&
-                        // To avoid adding action for the local WM address in case of InetAddress used
-                        // in the case study.
-                        !externalServiceHandler.isWireMockAddress(hn.remoteHostname)
-                    ) {
-                        // OK, we are in that special case
-                        val hra = HostnameResolutionAction(
-                            hn.remoteHostname,
-                            ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
-                        )
-                        individual.addChildToGroup(hra, GroupsOfChildren.INITIALIZATION_DNS)
-                        // TODO: Above line adds unnecessary tests at the end, which is
-                        //  causing the created tests to fail.
-                        //  Now handling in Mutator, removing existing actions with default IP address for the same hostname.
-
-                    }
-                }
-            }
-
-            info.externalServices.forEach { es ->
-
-                /*
-                    The info here is coming from SUT instrumentation
-                 */
-
-                val started = externalServiceHandler.addExternalService(
-                    HttpExternalServiceInfo(
-                        es.protocol,
-                        es.remoteHostname,
-                        es.remotePort
-                    )
-                )
-                wmStarted = wmStarted || started
-            }
-
-
-            // register the external service info which re-direct to the default WM
-//            fv.registerExternalRequestToDefaultWM(
-//                index,
-//                info.employedDefaultWM.associate { it ->
-//                    val signature = getWMDefaultSignature(it.protocol, it.remotePort)
-//                    it.remoteHostname to externalServiceHandler.getExternalService(signature)
-//                }
-//            )
-        }
-
-        return wmStarted
-    }
-
+    /** Add DNS and mocked-service mappings to the first action. */
     override fun getActionDto(action: Action, index: Int): ActionDto {
         val actionDto = super.getActionDto(action, index)
-        // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
-        if (index == 0) {
-            val individual = action.getRoot() as RestIndividual
-            actionDto.localAddressMapping = individual
-                .seeActions(ActionFilter.ONLY_DNS)
-                .filterIsInstance<HostnameResolutionAction>()
-                .associate { it.hostname to it.localIPAddress }
-            actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
-            actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
-        }
+        externalServiceFitnessHandler.addMappings(actionDto, index, action.getRoot() as RestIndividual)
         return actionDto
     }
 }

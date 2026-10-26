@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service.module
 import com.google.inject.TypeLiteral
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceFitnessHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.*
@@ -93,6 +94,8 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModu
         bind(ResourceDepManageService::class.java)
                 .asEagerSingleton()
 
+
+        bind(HttpWsExternalServiceFitnessHandler::class.java).asEagerSingleton()
 
         bind(HttpWsExternalServiceHandler::class.java)
                 .asEagerSingleton()
