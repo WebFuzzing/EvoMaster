@@ -21,6 +21,7 @@ import java.util.List;
  * only if a call with a pipeline is replaced, which can only happen with drivers having it.
  */
 public class MongoCollectionPipelineUpdateClassReplacement extends MongoOperationClassReplacement {
+
     private static final MongoCollectionPipelineUpdateClassReplacement singleton = new MongoCollectionPipelineUpdateClassReplacement();
 
     @Override
@@ -108,43 +109,30 @@ public class MongoCollectionPipelineUpdateClassReplacement extends MongoOperatio
         return handleEagerQuery(singleton, "updateManyClientSessionBsonPipelineUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, pipeline, options), filter);
     }
 
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateBsonPipeline", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
+    public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline) {
+        return handleEagerQuery(singleton,"findOneAndUpdateBsonPipeline", mongoCollection, Arrays.asList(filter, pipeline), filter);
+    }
+
     /**
      * Replacement for {@code MongoCollection.findOneAndUpdate(Bson, List<? extends Bson>)}.
      * <p>
      * Present in the MongoDB Java driver from 3.11.0 (not present in 3.10.2).
      */
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateBsonPipeline", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
-    public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline) {
-        return handleEagerQuery(singleton, "findOneAndUpdateBsonPipeline", mongoCollection, Arrays.asList(filter, pipeline), filter);
-    }
-
-    /**
-     * Replacement for {@code MongoCollection.findOneAndUpdate(Bson, List<? extends Bson>, FindOneAndUpdateOptions)}.
-     * <p>
-     * Present in the MongoDB Java driver from 3.11.0 (not present in 3.10.2).
-     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateBsonPipelineFindOneAndUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndUpdateOptions") Object options) {
-        return handleEagerQuery(singleton, "findOneAndUpdateBsonPipelineFindOneAndUpdateOptions", mongoCollection, Arrays.asList(filter, pipeline, options), filter);
+        return handleEagerQuery(singleton,"findOneAndUpdateBsonPipelineFindOneAndUpdateOptions", mongoCollection, Arrays.asList(filter, pipeline, options), filter);
     }
 
-    /**
-     * Replacement for {@code MongoCollection.findOneAndUpdate(ClientSession, Bson, List<? extends Bson>)}.
-     * <p>
-     * Present in the MongoDB Java driver from 3.11.0 (not present in 3.10.2).
-     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateClientSessionBsonPipeline", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline) {
-        return handleEagerQuery(singleton, "findOneAndUpdateClientSessionBsonPipeline", mongoCollection, Arrays.asList(clientSession, filter, pipeline), filter);
+        return handleEagerQuery(singleton,"findOneAndUpdateClientSessionBsonPipeline", mongoCollection, Arrays.asList(clientSession, filter, pipeline), filter);
     }
 
-    /**
-     * Replacement for {@code MongoCollection.findOneAndUpdate(ClientSession, Bson, List<? extends Bson>, FindOneAndUpdateOptions)}.
-     * <p>
-     * Present in the MongoDB Java driver from 3.11.0 (not present in 3.10.2).
-     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateClientSessionBsonPipelineFindOneAndUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndUpdateOptions") Object options) {
-        return handleEagerQuery(singleton, "findOneAndUpdateClientSessionBsonPipelineFindOneAndUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, pipeline, options), filter);
+        return handleEagerQuery(singleton,"findOneAndUpdateClientSessionBsonPipelineFindOneAndUpdateOptions", mongoCollection, Arrays.asList(clientSession, filter, pipeline, options), filter);
     }
+
+
 }

@@ -43,6 +43,105 @@ import javax.ws.rs.core.MediaType
 
 class TestCaseWriterTest : WriterTestBase(){
 
+    @Test
+    fun testFlakyShortArraysCanBeWritten() {
+        val format = OutputFormat.JAVA_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        for (shortArray in listOf("[]", "[1]")) {
+            val lines = Lines(format)
+            writer.handleJsonStringAssertion("[1,2]", shortArray, lines, null, false)
+            assertTrue(lines.toString().contains("Flaky size"))
+            assertFalse(lines.toString().lineSequence().any { it.trim().startsWith(".body") && it.contains("size()") })
+        }
+    }
+
+    @Test
+    fun testFlakyLongArraysCanBeWritten() {
+        val format = OutputFormat.JAVA_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+
+        val emptyArrayLines = Lines(format)
+        writer.handleJsonStringAssertion("[]", "[1]", emptyArrayLines, null, false)
+        assertEquals(
+            """
+                // Flaky size of : 0 vs. 1
+                // .body("size()", equalTo(0))
+            """.trimIndent(),
+            emptyArrayLines.toString().trimEnd()
+        )
+
+        val numberArrayLines = Lines(format)
+        writer.handleJsonStringAssertion("[1,2]", "[1,2,3]", numberArrayLines, null, false)
+        assertEquals(
+            """
+                // Flaky size of : 2 vs. 3
+                // .body("size()", equalTo(2))
+                .body("[0]", numberMatches(1))
+                .body("[1]", numberMatches(2))
+            """.trimIndent(),
+            numberArrayLines.toString().trimEnd()
+        )
+
+        val stringArrayLines = Lines(format)
+        writer.handleJsonStringAssertion("""["foo"]""", """["foo","bar"]""", stringArrayLines, null, false)
+        assertEquals(
+            """
+                // Flaky size of : 1 vs. 2
+                // .body("size()", equalTo(1))
+                // Flaky Body: "foo" vs. "foo", "bar"
+                // .body("", hasItems("foo"))
+            """.trimIndent(),
+            stringArrayLines.toString().trimEnd()
+        )
+
+        val nestedArrayLines = Lines(format)
+        writer.handleJsonStringAssertion("""{"items":[1]}""", """{"items":[1,2]}""", nestedArrayLines, null, false)
+        assertEquals(
+            """
+                // Flaky size of 'items': 1 vs. 2
+                // .body("'items'.size()", equalTo(1))
+                .body("'items'[0]", numberMatches(1))
+            """.trimIndent(),
+            nestedArrayLines.toString().trimEnd()
+        )
+    }
+
+    @Test
+    fun testChangedElementIsFilteredAfterArrayShrinks() {
+        val format = OutputFormat.JAVA_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        for (observations in listOf(listOf("[1]", "[9,2]"), listOf("[9,2]", "[1]"))) {
+            val original = RestCallResult("action", false).apply { setBody("[1,2]") }
+            observations.forEachIndexed { index, body ->
+                original.recordFlakyObservation(RestCallResult("action", false).apply { setBody(body) }, index + 1)
+            }
+            val lines = Lines(format)
+            writer.handleJsonStringAssertion("[1,2]", original.getMergedFlakyBody(), lines, null, false)
+            assertTrue(lines.toString().contains("Flaky size"))
+            assertFalse(lines.toString().lineSequence().any { it.trim().startsWith(".body") }, lines.toString())
+        }
+    }
+
+    @Test
+    fun testMergedFlakyNestedArraysCanBeWritten() {
+        val format = OutputFormat.JAVA_JUNIT_5
+        val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+        val body = """{"items":[{"values":[1,2]}],"stable":7}"""
+        val original = RestCallResult("action", false).apply { setBody(body) }
+        for ((index, value) in listOf("[]", "[1,3]").withIndex()) {
+            val observed = RestCallResult("action", false).apply {
+                setBody("""{"items":[{"values":$value}],"stable":7}""")
+            }
+            original.recordFlakyObservation(observed, index + 1)
+        }
+        val merged = original.getMergedFlakyBody()
+        assertEquals("""{"items":[{"values":[]}],"stable":7}""", merged)
+        val lines = Lines(format)
+        writer.handleJsonStringAssertion(body, merged, lines, null, false)
+        assertTrue(lines.toString().contains("Flaky size"))
+        assertTrue(lines.toString().lineSequence().any { it.trim().startsWith(".body") && it.contains("stable") })
+    }
+
 
 
     @Test
@@ -1680,7 +1779,7 @@ public void test() throws Exception {
         barResult.setStatusCode(500)
         barResult.setBody("""
            {
-                "p0":[1,2,3],
+                "p0":[1],
                 "p1":{},
                 "p2":{
                     "id":"foo",
@@ -1690,16 +1789,6 @@ public void test() throws Exception {
                           "name":"flaky1",
                           "type":"string",
                           "value":"flaky2"
-                        },
-                        {
-                          "name":"mapProperty2",
-                          "type":"string",
-                          "value":"two"
-                        },
-                        {
-                          "name":"flaky3",
-                          "type":"string",
-                          "value":"two"
                         }],
                     "empty":{
                         "flakyField4": 42
@@ -1738,7 +1827,7 @@ public void test() throws Exception {
         fooResult.setTimedout(false)
         fooResult.setStatusCode(200)
         fooResult.setBody("""
-           ["foo", "bar"]
+           ["foo", "bar", "baz"]
         """.trimIndent())
         fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
@@ -1747,7 +1836,7 @@ public void test() throws Exception {
         barResult.setTimedout(false)
         barResult.setStatusCode(500)
         barResult.setBody("""
-           ["foo", "abc", "bar"]
+           ["foo", "abc"]
         """.trimIndent())
         barResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
