@@ -8,6 +8,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.search.Solution
+import org.evomaster.test.utils.KafkaEMUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -30,11 +31,8 @@ object KafkaTestClientEmitter {
      */
     private val KAFKA_PROTOCOLS = setOf(AsyncApiChannel.KAFKA, "kafka-secure")
 
-    /**
-     * Class in test-utils-java holding the helper. Named as a string, as core does not depend on
-     * kafka-clients, which the class needs to be loaded.
-     */
-    const val UTILS_CLASS = "org.evomaster.test.utils.KafkaEMUtils"
+    /** Class in test-utils-java holding the helper used by generated JVM tests. */
+    val UTILS_CLASS = KafkaEMUtils::class.java.name
 
     const val HELPER_NAME = "publishAndAwaitReply"
 

@@ -3,6 +3,8 @@ package org.evomaster.core.output.service
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
+import org.evomaster.core.logging.LoggingUtil
+import org.slf4j.LoggerFactory
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.asyncapi.KafkaTestClientEmitter
 import org.evomaster.core.output.Lines
@@ -29,6 +31,7 @@ import java.nio.file.Path
 class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
     companion object {
+        private val log = LoggerFactory.getLogger(AsyncApiTestCaseWriter::class.java)
         private val replyMapper = ObjectMapper()
 
         /**
@@ -307,7 +310,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
                 val v = node.asDouble()
                 //out of range it parses as an infinity, which has no literal
                 if (v.isFinite()) {
-                    writeAssertEqualsWithDelta(lines, v.toString(), "$nodeExpression.asDouble()")
+                    writeAssertEqualsWithDelta(lines, v.toString(), "$nodeExpression.asDouble()", DELTA)
                 } else {
                     lines.addSingleCommentLine(
                         "$jsonPath is not asserted on, as it is outside the range of a double"
@@ -325,6 +328,8 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
                     )
                 }
             }
+
+            else -> LoggingUtil.uniqueWarn(log, "No reply assertion for JSON node type ${node.nodeType}")
         }
     }
 
@@ -333,24 +338,6 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
     private fun childExpression(nodeExpression: String, name: String) =
         "$nodeExpression.get(${TestWriterUtils.quotedEscaped(name, format)})"
-
-    /**
-     * [expression] is valid in both Java and Kotlin.
-     */
-    private fun writeAssertTrue(lines: Lines, expression: String) =
-        lines.addStatement("assertTrue($expression)")
-
-    private fun writeAssertEquals(lines: Lines, expected: String, actual: String) =
-        lines.addStatement("assertEquals($expected, $actual)")
-
-    private fun writeAssertEqualsWithDelta(lines: Lines, expected: String, actual: String) =
-        lines.addStatement("assertEquals($expected, $actual, $DELTA)")
-
-    private fun writeAssertContains(lines: Lines, replyVariable: String, text: String) {
-        //in Kotlin the reply may be declared nullable by a script the driver rendered
-        val reply = if (format.isKotlin()) "$replyVariable!!" else replyVariable
-        writeAssertTrue(lines, "$reply.contains(${TestWriterUtils.quotedEscaped(text, format)})")
-    }
 
     /**
      * A message that could not be published is recorded during the search, so a generated test
