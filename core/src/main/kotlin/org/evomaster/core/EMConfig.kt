@@ -3125,6 +3125,10 @@ class EMConfig {
     var execNumForDetectFlakiness = 1
 
     @Experimental
+    @Cfg("Specify whether to use an unbounded time budget for flakiness detection.")
+    var unboundBudgetForFlakiness = false
+
+    @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +
             "This is necessary when the generated tests are executed on the different machine. " +
             "Note that this setting only affects the generated test cases.")
