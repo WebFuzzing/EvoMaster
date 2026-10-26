@@ -263,6 +263,10 @@ class RestIndividual(
         val actions = seeMainExecutableActions()
         val n = actions.size
 
+        if (index !in 0..<n) {
+            throw IllegalArgumentException("Index is out of main actions list bounds")
+        }
+
         if (index == n-1) {
             return
         }
