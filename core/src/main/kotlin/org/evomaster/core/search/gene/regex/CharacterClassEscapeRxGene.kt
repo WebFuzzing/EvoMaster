@@ -270,7 +270,7 @@ class CharacterClassEscapeRxGene(
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         if (regexType == RegexType.ECMA_262 && (type[0] == SPACE || type[0] == NON_SPACE)) {
             // java.util.regex has a different set for \s, so we cannot use that here (same for \S)
-            return value.length == 1 && ecma262SpaceSet.any { value[0] in it } == (type[0] == SPACE)
+            return value.length == 1 && ecma262SpaceMultiCharRange.contains(value[0]) == (type[0] == SPACE)
         }
 
         // we pass the same embedded flags to the regex to accurately match the expected behavior
