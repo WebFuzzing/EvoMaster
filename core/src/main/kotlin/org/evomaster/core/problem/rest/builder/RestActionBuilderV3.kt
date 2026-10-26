@@ -394,8 +394,11 @@ object RestActionBuilderV3 {
         }
 
         //Note to simplify code, we just create a whole OpenAPI schema
+        val parsedDtoSchema = mapper.readTree("{$dtoSchema}")
+        val schemaNode = parsedDtoSchema.get(name)
+            ?: throw IllegalArgumentException("Schema '$name' not found in dto schema")
         val schemas = mapper.createObjectNode()
-        schemas.set<JsonNode>(name, mapper.readTree(dtoSchema))
+        schemas.set<JsonNode>(name, schemaNode)
 
         //FIXME here we are swallowing all error messages in schema
         //FIXME duplicated code
