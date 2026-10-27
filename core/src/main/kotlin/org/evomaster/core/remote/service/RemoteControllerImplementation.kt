@@ -346,7 +346,7 @@ class RemoteControllerImplementation() : RemoteController{
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
-                    .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
+                    .queryParam("killSwitch", !ignoreKillSwitch && config.isKillSwitchOn())
                     .queryParam("fullyCovered", fullyCovered)
                     .queryParam("descriptiveIds", descriptiveIds)
                     .queryParam(QUERY_FROM_DATABASE, !config.useInsertionForSqlHeuristics)

@@ -304,6 +304,16 @@ class EMConfig {
     }
 
     /**
+     * The options the user set explicitly, on the command line or in the configuration
+     * file, over every call to [updateProperties]. Values assigned in code do not count.
+     *
+     * A boolean option has no DEFAULT sentinel like an enum, so this is how a default that
+     * depends on the problem type, which may only be resolved from the driver after the
+     * checks here, tells a value the user chose from one left alone.
+     */
+    private val explicitlySetOptions: MutableSet<KMutableProperty<*>> = mutableSetOf()
+
+    /**
      * Update the values of the properties based on the options
      * chosen on the command line
      *
@@ -338,13 +348,14 @@ class EMConfig {
         //why was this done for each updateProperty???
         excludedTargetsForImpactCollection = extractExcludedTargetsForImpactCollection()
 
+        val modifiedOptions = modifiedOptions(options, cff)
+        explicitlySetOptions.addAll(properties.filter { it.name in modifiedOptions })
+
         checkMultiFieldConstraints()
 
         handleDeprecated()
 
         handleCreateConfigPathIfMissing(properties)
-
-        val modifiedOptions = modifiedOptions(options, cff)
 
         checkForExperimentalSettings(modifiedOptions.keys)
         checkForInternalSettings(modifiedOptions.keys)
@@ -1113,6 +1124,18 @@ class EMConfig {
      * holds the connection to the broker even when the SUT itself is treated as a black box.
      */
     fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
+
+    /**
+     * Whether the driver should be asked to stop SUT code still running once the coverage
+     * of a test has been collected. Read this, not [killSwitch], when talking to the driver.
+     *
+     * Off for AsyncAPI unless the user set [killSwitch] explicitly: a message-driven service
+     * typically consumes on long-lived threads, and stopping one stops the service for good.
+     * Decided here rather than while checking the options, as [problemType] may only become
+     * ASYNCAPI once resolved from the driver.
+     */
+    fun isKillSwitchOn() = killSwitch
+            && (problemType != ProblemType.ASYNCAPI || EMConfig::killSwitch in explicitlySetOptions)
 
     /**
      * Check that, for AsyncAPI, tests are written in a supported format (Java or Kotlin).
@@ -2939,7 +2962,10 @@ class EMConfig {
 
     @Cfg("Try to enforce the stopping of SUT business-level code." +
             " This is needed when TCP connections timeouts, to avoid thread executions" +
-            " from previous HTTP calls affecting the current one")
+            " from previous HTTP calls affecting the current one." +
+            " Off by default when testing an AsyncAPI service, unless set explicitly:" +
+            " a message-driven service typically consumes on long-lived threads," +
+            " which the kill switch would stop for good")
     var killSwitch = true
 
     @Cfg("Number of milliseconds we are going to wait to get a response on a TCP connection, e.g., " +
