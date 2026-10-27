@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.function.LongFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +17,7 @@ public class AsyncApiSettleTest {
     /**
      * A SUT whose coverage cannot be read.
      */
-    private static final Supplier<Long> NO_COVERAGE = () -> null;
+    private static final LongFunction<Long> NO_COVERAGE = remaining -> null;
 
     private static final long SETTLE_MS = 1_000;
 
@@ -77,6 +77,37 @@ public class AsyncApiSettleTest {
             assertNotNull(reply.settleEndedBy);
             assertEquals(value, mapper.readTree(mapper.writeValueAsString(reply)).get("settleEndedBy").asText());
         }
+    }
+
+    @Test
+    public void testCoverageReadsReceiveOnlyTheRemainingBudget() {
+        AsyncApiActionDto dto = coverageStable(STABLE_MS);
+        dto.settleMs = 50L;
+        AsyncApiReplyDto reply = new AsyncApiReplyDto();
+        List<Long> budgets = new ArrayList<>();
+        settleThatSleeps().settle(dto, reply, remaining -> {
+            budgets.add(remaining);
+            now += Math.min(1_000, remaining);
+            return null;
+        });
+        assertEquals(java.util.Collections.singletonList(50L), budgets);
+        assertEquals(50L, reply.settledMs);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
+    }
+
+    @Test
+    public void testNoCoverageReadStartsAtTheDeadline() {
+        AsyncApiActionDto dto = coverageStable(STABLE_MS);
+        dto.settleMs = AsyncApiSettle.POLL_INTERVAL_MS;
+        AsyncApiReplyDto reply = new AsyncApiReplyDto();
+        int[] reads = {0};
+        settleThatSleeps().settle(dto, reply, remaining -> {
+            assertTrue(now < START + dto.settleMs);
+            reads[0]++;
+            return 1L;
+        });
+        assertEquals(1, reads[0]);
+        assertEquals(dto.settleMs, reply.settledMs);
     }
 
     @Test
@@ -181,7 +212,7 @@ public class AsyncApiSettleTest {
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
 
-        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, () -> 7L);
+        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, remaining -> 7L);
 
         assertEquals(AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE, reply.settleEndedBy);
         assertEquals(STABLE_MS, reply.settledMs);
@@ -197,7 +228,7 @@ public class AsyncApiSettleTest {
             ends a stable window after the last move, not after the first.
          */
         long[] count = {0};
-        Supplier<Long> busyUntil300 = () -> {
+        LongFunction<Long> busyUntil300 = remaining -> {
             if (now - START <= 300) {
                 count[0]++;
             }
@@ -217,7 +248,7 @@ public class AsyncApiSettleTest {
         long[] count = {0};
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, () -> ++count[0]);
+        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, remaining -> ++count[0]);
 
         assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -237,7 +268,7 @@ public class AsyncApiSettleTest {
     public void testCoverageLostHalfWayMeansTheRestOfTheWindow() {
 
         //eg the connection to an external SUT's agent dropping
-        Supplier<Long> lostAfter50 = () -> now - START < 50 ? Long.valueOf(now) : null;
+        LongFunction<Long> lostAfter50 = remaining -> now - START < 50 ? Long.valueOf(now) : null;
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
         settleThatSleeps().settle(coverageStable(STABLE_MS), reply, lostAfter50);
@@ -255,7 +286,7 @@ public class AsyncApiSettleTest {
             waited.
          */
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, () -> {
+        settleThatSleeps().settle(coverageStable(STABLE_MS), reply, remaining -> {
             throw new IllegalStateException("agent gone");
         });
 
@@ -266,7 +297,7 @@ public class AsyncApiSettleTest {
     @Test
     public void testCoverageThatFailsToBeReadHalfWayMeansTheRestOfTheWindow() {
 
-        Supplier<Long> failingAfter50 = () -> {
+        LongFunction<Long> failingAfter50 = remaining -> {
             if (now - START >= 50) {
                 throw new IllegalStateException("agent gone");
             }
@@ -285,7 +316,7 @@ public class AsyncApiSettleTest {
 
         for (Long none : new Long[]{null, 0L, -1L}) {
             AsyncApiReplyDto reply = new AsyncApiReplyDto();
-            settleThatSleeps().settle(coverageStable(none), reply, () -> 7L);
+            settleThatSleeps().settle(coverageStable(none), reply, remaining -> 7L);
             assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy, "stableMs=" + none);
         }
     }
@@ -298,7 +329,7 @@ public class AsyncApiSettleTest {
         dto.stableMs = STABLE_MS;
 
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settleThatSleeps().settle(dto, reply, () -> fail("the coverage was read for a fixed wait"));
+        settleThatSleeps().settle(dto, reply, remaining -> fail("the coverage was read for a fixed wait"));
 
         assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
         assertEquals(SETTLE_MS, reply.settledMs);
@@ -316,7 +347,7 @@ public class AsyncApiSettleTest {
 
         long[] count = {0};
         AsyncApiReplyDto reply = new AsyncApiReplyDto();
-        settle.settle(coverageStable(STABLE_MS), reply, () -> ++count[0]);
+        settle.settle(coverageStable(STABLE_MS), reply, remaining -> ++count[0]);
 
         assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
         assertEquals(AsyncApiReplyDto.SettleEndReason.INTERRUPTED, reply.settleEndedBy);

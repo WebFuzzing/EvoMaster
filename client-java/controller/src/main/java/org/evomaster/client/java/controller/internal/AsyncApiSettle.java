@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiRep
 
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.function.LongFunction;
 
 /**
  * Keeps an AsyncAPI action open for a while after the driver has returned from publishing it,
@@ -70,9 +71,10 @@ public class AsyncApiSettle {
      * @param reply             what the driver reported about it, to which the wait is added
      * @param objectiveUpdates  reads how many times the SUT has reached or improved a coverage
      *                          objective in the current test, or null when that cannot be known.
+     *                          The argument is the remaining read budget in milliseconds, which the reader must respect.
      *                          Only read for {@link AsyncApiActionDto.MessageCompletionStrategy#COVERAGE_STABLE}
      */
-    public void settle(AsyncApiActionDto dto, AsyncApiReplyDto reply, Supplier<Long> objectiveUpdates) {
+    public void settle(AsyncApiActionDto dto, AsyncApiReplyDto reply, LongFunction<Long> objectiveUpdates) {
         Objects.requireNonNull(dto);
         Objects.requireNonNull(reply);
         Objects.requireNonNull(objectiveUpdates);
@@ -117,6 +119,14 @@ public class AsyncApiSettle {
         }
     }
 
+    private Long readCoverage(long deadline, LongFunction<Long> objectiveUpdates) {
+        long remaining = deadline - clock.nowMs();
+        if (remaining <= 0) {
+            return null;
+        }
+        return readOrNull(() -> objectiveUpdates.apply(remaining), OBJECTIVE_UPDATES_FAILURE_WARNING);
+    }
+
     private AsyncApiReplyDto.SettleEndReason waitUntil(long deadline) throws InterruptedException {
         long left = deadline - clock.nowMs();
         if (left > 0) {
@@ -135,12 +145,12 @@ public class AsyncApiSettle {
             long start,
             long settleMs,
             long stableMs,
-            Supplier<Long> objectiveUpdates
+            LongFunction<Long> objectiveUpdates
     ) throws InterruptedException {
 
         long deadline = start + settleMs;
 
-        Long last = readOrNull(objectiveUpdates, OBJECTIVE_UPDATES_FAILURE_WARNING);
+        Long last = readCoverage(deadline, objectiveUpdates);
         long lastChange = start;
 
         while (true) {
@@ -160,7 +170,10 @@ public class AsyncApiSettle {
             long nap = Math.min(POLL_INTERVAL_MS, Math.min(deadline - now, lastChange + stableMs - now));
             sleeper.sleep(nap);
 
-            Long current = readOrNull(objectiveUpdates, OBJECTIVE_UPDATES_FAILURE_WARNING);
+            if (clock.nowMs() >= deadline) {
+                return AsyncApiReplyDto.SettleEndReason.DEADLINE;
+            }
+            Long current = readCoverage(deadline, objectiveUpdates);
             if (current != null && !current.equals(last)) {
                 lastChange = clock.nowMs();
             }

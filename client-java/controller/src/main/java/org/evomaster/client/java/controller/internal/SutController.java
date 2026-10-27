@@ -1874,6 +1874,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return null;
     }
 
+    /**
+     * Read the coverage counter within the given positive budget in milliseconds.
+     * The default delegates to the in-process counter. Drivers that perform blocking I/O
+     * must override this method and return null when the budget expires.
+     */
+    public Long getObjectiveUpdateCount(long timeoutMs) {
+        return getObjectiveUpdateCount();
+    }
+
     protected BootTimeInfoDto getBootTimeInfoDto(BootTimeObjectiveInfo info){
         if (info == null)
             return null;

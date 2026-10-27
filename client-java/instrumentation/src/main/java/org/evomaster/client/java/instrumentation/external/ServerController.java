@@ -334,24 +334,51 @@ public class ServerController {
      * or null if the agent could not be asked, or failed to answer
      */
     public synchronized Long getObjectiveUpdateCount() {
+        return getObjectiveUpdateCount(Integer.MAX_VALUE);
+    }
 
-        boolean sent = sendCommand(Command.OBJECTIVE_UPDATE_COUNT);
-        if (!sent) {
-            SimpleLogger.error("Failed to send message");
+    /**
+     * Bound the agent's response time by the remaining settle budget. A timed-out response
+     * cannot be reused: subsequent commands share this stream and would read it out of turn.
+     */
+    public synchronized Long getObjectiveUpdateCount(long timeoutMs) {
+        if (timeoutMs <= 0 || !isConnectionOn()) {
             return null;
         }
-
-        Object response = waitAndGetResponse();
-        if (response == null) {
-            SimpleLogger.error("Failed to read response about objective update count");
+        int previousTimeout = 0;
+        try {
+            previousTimeout = socket.getSoTimeout();
+            int budget = (int) Math.min(timeoutMs, Integer.MAX_VALUE);
+            socket.setSoTimeout(previousTimeout == 0 ? budget : Math.min(previousTimeout, budget));
+            if (!sendCommand(Command.OBJECTIVE_UPDATE_COUNT)) {
+                socket.close();
+                return null;
+            }
+            Object response = in.readObject();
+            if (response != null && !(response instanceof Long)) {
+                throw new IllegalStateException(errorMsgExpectingResponse(response, "a Long"));
+            }
+            return (Long) response;
+        } catch (IOException e) {
+            //A late or partial response must never become the next command's response.
+            try {
+                socket.close();
+            } catch (IOException closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
+            SimpleLogger.debug("Failed to read objective update count: " + e.getMessage());
             return null;
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            if (!socket.isClosed()) {
+                try {
+                    socket.setSoTimeout(previousTimeout);
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
         }
-
-        if (!(response instanceof Long)) {
-            throw new IllegalStateException(errorMsgExpectingResponse(response, "a Long"));
-        }
-
-        return (Long) response;
     }
 
     public synchronized UnitsInfoRecorder getUnitsInfoRecorder(){

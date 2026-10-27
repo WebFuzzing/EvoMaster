@@ -7,8 +7,17 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The controller's side of the connection to the agent of an external SUT, talking to a real
@@ -98,5 +107,38 @@ public class ServerControllerTest {
         assertEquals(OBJECTIVES_PER_COMPARISON, server.getObjectiveUpdateCount());
         assertTrue(server.setExecutingAction(true));
         assertEquals(OBJECTIVES_PER_COMPARISON, server.getObjectiveUpdateCount());
+    }
+    @Test
+    void testUnresponsiveAgentIsDisconnectedWithinTheReadBudget() throws Exception {
+        ServerController server = new ServerController();
+        int port = server.startServer();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        CountDownLatch release = new CountDownLatch(1);
+        Future<?> agent = executor.submit(() -> {
+            try (Socket socket = new Socket("localhost", port);
+                 ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+                 ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+                assertEquals(Command.OBJECTIVE_UPDATE_COUNT, in.readObject());
+                assertTrue(release.await(10, TimeUnit.SECONDS));
+                //The server must close the stream, so no late response can be read by another command.
+                assertEquals(-1, in.read());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        try {
+            assertTrue(server.waitForIncomingConnection(10_000));
+            assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
+                assertNull(server.getObjectiveUpdateCount(50));
+                assertFalse(server.isConnectionOn());
+                assertNull(server.getObjectiveUpdateCount(50));
+            });
+            release.countDown();
+            agent.get(2, TimeUnit.SECONDS);
+        } finally {
+            release.countDown();
+            server.closeServer();
+            executor.shutdownNow();
+        }
     }
 }
