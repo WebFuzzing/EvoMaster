@@ -91,7 +91,8 @@ abstract class RegexTestTemplate {
      * For regex that can only match a fixed set of values, checks that every
      * sampled value is one of [expected], and that all of them do get sampled.
      */
-    protected fun checkSamplesExactly(regex: String, vararg expected: String, tries: Int = 500) {
+    protected fun checkSamplesExactly(regex: String, vararg expected: String, tries: Int = 500) = checkSamplesExactly(regex, expected.toSet(), tries)
+    protected fun checkSamplesExactly(regex: String, expected: Collection<String>, tries: Int = 500) {
         val randomness = Randomness().apply { updateSeed(42) }
         val gene = createGene(regex)
         val sampled = mutableSetOf<String>()
