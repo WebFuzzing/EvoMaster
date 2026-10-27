@@ -82,6 +82,13 @@ class StatisticsTest {
     }
 
     @Test
+    fun testBlackBoxExperimentsDoNotReportAsyncApiCoverage() {
+        val data = asyncApiStatistics("--blackBox=true", "--bbExperiments=true")
+        assertEquals("0", data[Statistics.TOTAL_LINES])
+        assertEquals("0", data[Statistics.COVERED_LINES])
+    }
+
+    @Test
     fun testMongoHeuristicsAverage() {
         val statistics = Statistics()
         statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(10)
