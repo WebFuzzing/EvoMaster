@@ -36,7 +36,15 @@ public class NcsRequestConsumer implements SmartLifecycle {
 
     private static final Duration POLL = Duration.ofMillis(200);
 
+    private static final String GROUP_PREFIX = "ncs-";
+
     private final String bootstrapServers;
+
+    /**
+     * The consumer group to join. Fresh at each start unless one is given, so that a restarted
+     * service does not resume old offsets.
+     */
+    private final String groupId;
 
     private final NcsService service;
 
@@ -50,8 +58,13 @@ public class NcsRequestConsumer implements SmartLifecycle {
 
     private KafkaProducer<String, String> producer;
 
-    public NcsRequestConsumer(@Value("${ncs.kafka.bootstrap}") String bootstrapServers, NcsService service) {
+    public NcsRequestConsumer(
+            @Value("${ncs.kafka.bootstrap}") String bootstrapServers,
+            @Value("${ncs.kafka.group:}") String groupId,
+            NcsService service
+    ) {
         this.bootstrapServers = bootstrapServers;
+        this.groupId = groupId.isEmpty() ? GROUP_PREFIX + System.nanoTime() : groupId;
         this.service = service;
     }
 
@@ -60,10 +73,10 @@ public class NcsRequestConsumer implements SmartLifecycle {
 
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        //a fresh group each start, so that a restarted service does not resume old offsets
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "ncs-" + System.nanoTime());
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
+        //committed by hand once a batch is answered, see consume()
+        consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumer = new KafkaConsumer<>(consumerProps);
@@ -87,6 +100,14 @@ public class NcsRequestConsumer implements SmartLifecycle {
                 ConsumerRecords<String, String> records = consumer.poll(POLL);
                 for (ConsumerRecord<String, String> request : records) {
                     answer(request);
+                }
+                /*
+                    Committed once every request polled is answered, so a committed offset means
+                    a handled request, as with Spring Kafka's default. Auto-commit runs on a
+                    timer, so a driver watching the lag could not tell when the service is done.
+                 */
+                if (!records.isEmpty()) {
+                    consumer.commitSync();
                 }
             }
         } catch (WakeupException e) {

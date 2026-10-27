@@ -913,13 +913,8 @@ class EMConfig {
             throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
         }
 
-        if (asyncApiCompletion == AsyncApiCompletion.COVERAGE_STABLE && asyncApiSettleMs <= 0) {
-            throw ConfigProblemException("'asyncApiCompletion' ${AsyncApiCompletion.COVERAGE_STABLE} ends a" +
-                    " settle window early, so it needs one: set 'asyncApiSettleMs' to the longest wait to allow")
-        }
-
-        if (asyncApiCompletion == AsyncApiCompletion.HANDLER_RETURN && asyncApiSettleMs <= 0) {
-            throw ConfigProblemException("'asyncApiCompletion' ${AsyncApiCompletion.HANDLER_RETURN} ends a" +
+        if (asyncApiCompletion != AsyncApiCompletion.FIXED && asyncApiSettleMs <= 0) {
+            throw ConfigProblemException("'asyncApiCompletion' $asyncApiCompletion ends a" +
                     " settle window early, so it needs one: set 'asyncApiSettleMs' to the longest wait to allow")
         }
 
@@ -3113,7 +3108,14 @@ class EMConfig {
          * action published to, and every thread that received one has gone back to its broker
          * client for more. Read off the Kafka instrumentation (`instrumentMR_KAFKA`).
          */
-        HANDLER_RETURN
+        HANDLER_RETURN,
+
+        /**
+         * Stop early once the driver says the service's consumers have caught up with every
+         * message published so far. Needs a driver that answers that question; with one that
+         * does not, the whole window is waited.
+         */
+        CONSUMER_LAG
     }
 
     @Experimental
@@ -3124,12 +3126,20 @@ class EMConfig {
             " covered earlier in the same test looks done too. HANDLER_RETURN ends it once the service has received" +
             " a message from the address published to, and every thread that received one has asked its broker" +
             " client for more, as a consumer loop does when its handler returns. It needs instrumentMR_KAFKA, and is" +
-            " a heuristic too: work a handler hands off to another thread looks done as soon as it is handed off.")
+            " a heuristic too: work a handler hands off to another thread looks done as soon as it is handed off." +
+            " CONSUMER_LAG ends it once the driver says the service's consumers have caught up with every message" +
+            " published so far, eg on Kafka once the committed offsets of the service's consumer groups reach the" +
+            " end of what they read. The driver has to implement areAsyncApiConsumersCaughtUp for that, otherwise" +
+            " the whole window is waited; a consumer that commits before it is done with a message looks done too" +
+            " early.")
     var asyncApiCompletion = AsyncApiCompletion.FIXED
 
     @Experimental
     @Cfg("When testing an AsyncAPI service with asyncApiCompletion COVERAGE_STABLE, how long the service has" +
-            " to go without improving its coverage, in milliseconds, for the settle window to end early.")
+            " to go without improving its coverage, in milliseconds, for the settle window to end early." +
+            " The stable period counts from the start of the wait, so it has to be longer than the service takes to" +
+            " pick a message up, or the window can end before the handler has even started. It has to be shorter" +
+            " than asyncApiSettleMs for the window to ever end early.")
     @Min(1.0)
     var asyncApiStableMs = 200
 

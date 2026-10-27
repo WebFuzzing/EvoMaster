@@ -42,12 +42,19 @@ public class AsyncApiActionDto {
 
         /**
          * Stop early once the SUT has received at least one message from {@link #address}, and
-         * every thread that received one has gone back to its client for more, which is what a
-         * consumer loop does when its handler has returned. Read off what the instrumentation
-         * records of the SUT's broker client calls, so only for clients it tracks. A heuristic:
-         * work handed off to another thread looks done as soon as it is handed off.
+         * every thread that received one has gone back to its client for more, ie its handler
+         * returned. Only for broker clients the instrumentation tracks. A heuristic: work handed
+         * off to another thread looks done as soon as it is handed off.
          */
-        HANDLER_RETURN
+        HANDLER_RETURN,
+
+        /**
+         * Stop early once the driver says that the SUT's consumers have caught up with every
+         * message published so far, eg on Kafka, their committed offsets reached the end of the
+         * partitions. A driver that cannot tell makes this {@link #FIXED}. A consumer that
+         * commits before it is done with a message looks caught up too early.
+         */
+        CONSUMER_LAG
     }
 
     /**

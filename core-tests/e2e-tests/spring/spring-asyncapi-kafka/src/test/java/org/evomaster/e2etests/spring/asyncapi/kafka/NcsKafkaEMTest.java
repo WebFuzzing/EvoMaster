@@ -273,6 +273,47 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
     }
 
     /**
+     * The same, but each action ends once the driver says the consumer group has caught up. NCS
+     * commits once it has answered, and the reply is back by the time the controller asks, so
+     * most waits end almost at once.
+     */
+    @Test
+    public void testRunEMWithConsumerLag() throws Throwable {
+
+        runTestHandlingFlaky(
+                "NcsKafkaConsumerLagEM",
+                "org.foo.asyncapi.NcsKafkaConsumerLagEM",
+                40,
+                false,
+                (args) -> {
+
+                    setOption(args, "asyncApiReplyTimeoutMs", "3000");
+
+                    /*
+                        A window far longer than NCS ever needs: a wait that went to the deadline
+                        every time would mean the driver never said the group had caught up.
+                     */
+                    setOption(args, "asyncApiSettleMs", "5000");
+                    setOption(args, "asyncApiCompletion", "CONSUMER_LAG");
+
+                    Solution<AsyncApiIndividual> solution = initAndRun(args);
+
+                    assertTrue(countOutcome(solution, AsyncApiOutcome.REPLIED) > 0, "nothing was answered");
+                    assertEquals(0, countOutcome(solution, AsyncApiOutcome.NO_REPLY), "a promised reply never came");
+                    assertEquals(0, countOutcome(solution, AsyncApiOutcome.PUBLISH_FAILED), "a message never left");
+                    assertEverySettled(solution);
+
+                    assertTrue(countSettleEnd(solution, AsyncApiReplyDto.SettleEndReason.CAUGHT_UP) > 0,
+                            "no wait ended with the consumer group caught up");
+                    assertEquals(0, countSettleEnd(solution, AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE),
+                            "a wait for the consumers ended on stable coverage");
+                    assertEquals(0, countSettleEnd(solution, AsyncApiReplyDto.SettleEndReason.INTERRUPTED),
+                            "a wait was interrupted");
+                },
+                3);
+    }
+
+    /**
      * The no-reply oracle, end to end. With fixture replies deliberately disabled,
      * every message goes unanswered, and that is reported as a fault once experimental oracles
      * are asked for.

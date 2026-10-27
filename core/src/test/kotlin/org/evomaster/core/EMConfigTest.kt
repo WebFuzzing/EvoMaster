@@ -1021,6 +1021,24 @@ internal class EMConfigTest{
     }
 
     @Test
+    fun testConsumerLagNeedsASettleWindowToEndEarly(){
+
+        //in white-box, as the settle options are ignored in black-box
+        fun parse(vararg args: String) =
+            EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse("--blackBox", "false", *args)) }
+
+        val e = assertThrows<ConfigProblemException> {
+            parse("--problemType", "ASYNCAPI", "--asyncApiCompletion", "CONSUMER_LAG")
+        }
+        assertTrue(e.message!!.contains("asyncApiSettleMs"), e.message)
+        assertTrue(e.message!!.contains("CONSUMER_LAG"), e.message)
+
+        val config = parse("--problemType", "ASYNCAPI",
+            "--asyncApiCompletion", "CONSUMER_LAG", "--asyncApiSettleMs", "2000")
+        assertEquals(EMConfig.AsyncApiCompletion.CONSUMER_LAG, config.asyncApiCompletion)
+    }
+
+    @Test
     fun testSetFalseOnDependsOn(){
 
         val parser = EMConfig.getOptionParser()
