@@ -35,27 +35,6 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         private val HTML_ENTITY_REGEX = Regex("&(?:#[0-9]+|#x[0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]+);")
     }
 
-    /**
-     * Write a JUnit assertion for an [expression] valid in Java or Kotlin.
-     */
-    protected fun writeAssertTrue(lines: Lines, expression: String) =
-        lines.addStatement("assertTrue($expression)")
-
-    /** Write a JUnit equality assertion from source expressions, already quoted when necessary. */
-    protected fun writeAssertEquals(lines: Lines, expected: String, actual: String) =
-        lines.addStatement("assertEquals($expected, $actual)")
-
-    /** Write a JUnit floating-point assertion with the caller's tolerance. */
-    protected fun writeAssertEqualsWithDelta(lines: Lines, expected: String, actual: String, delta: Double) =
-        lines.addStatement("assertEquals($expected, $actual, $delta)")
-
-    /** Assert that a JVM string expression contains [text], escaping the literal for the output format. */
-    protected fun writeAssertContains(lines: Lines, actual: String, text: String) {
-        //A Kotlin expression supplied by a driver may be nullable.
-        val value = if (format.isKotlin()) "$actual!!" else actual
-        writeAssertTrue(lines, "$value.contains(${TestWriterUtils.quotedEscaped(text, format)})")
-    }
-
     protected fun createUniqueResponseVariableName(): String {
         val name = "res_$counter"
         counter++

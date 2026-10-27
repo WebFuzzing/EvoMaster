@@ -198,7 +198,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
         if (payload.isNullOrBlank()) {
             //an acknowledgement, or a transport that answers in metadata
-            writeAssertTrue(lines, "$replyVariable == null || $replyVariable.isEmpty()")
+            writeJUnitAssertTrue(lines, "$replyVariable == null || $replyVariable.isEmpty()")
             return
         }
 
@@ -219,7 +219,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
         if (tree == null || tree.isMissingNode) {
             //not JSON, so the reply can only be checked as text
             if (isSuitableToPrint(payload)) {
-                writeAssertContains(lines, replyVariable, payload.trim())
+                writeJUnitAssertContains(lines, replyVariable, payload.trim())
             } else {
                 lines.addSingleCommentLine(
                     "the reply is not JSON, and its text is not asserted on as it might differ between runs"
@@ -252,7 +252,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
     private fun onReplyObject(lines: Lines, node: JsonNode, nodeExpression: String, jsonPath: String) {
 
         if (node.isEmpty) {
-            writeAssertTrue(lines, "$nodeExpression.isEmpty()")
+            writeJUnitAssertTrue(lines, "$nodeExpression.isEmpty()")
             return
         }
 
@@ -274,7 +274,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
     private fun onReplyArray(lines: Lines, node: JsonNode, nodeExpression: String, jsonPath: String) {
 
-        writeAssertEquals(lines, node.size().toString(), "$nodeExpression.size()")
+        writeJUnitAssertEquals(lines, node.size().toString(), "$nodeExpression.size()")
 
         val limit = if (config.maxAssertionForDataInCollection >= 0) {
             config.maxAssertionForDataInCollection
@@ -296,21 +296,21 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
     private fun onReplyValue(lines: Lines, node: JsonNode, nodeExpression: String, jsonPath: String) {
         when {
-            node.isNull -> writeAssertTrue(lines, "$nodeExpression.isNull()")
+            node.isNull -> writeJUnitAssertTrue(lines, "$nodeExpression.isNull()")
 
-            node.isBoolean -> writeAssertEquals(lines, node.asBoolean().toString(), "$nodeExpression.asBoolean()")
+            node.isBoolean -> writeJUnitAssertEquals(lines, node.asBoolean().toString(), "$nodeExpression.asBoolean()")
 
             node.isIntegralNumber -> {
                 val v = node.asLong()
                 val suffix = if (format.isJava() && (v > Int.MAX_VALUE || v < Int.MIN_VALUE)) "L" else ""
-                writeAssertEquals(lines, "$v$suffix", "$nodeExpression.asLong()")
+                writeJUnitAssertEquals(lines, "$v$suffix", "$nodeExpression.asLong()")
             }
 
             node.isNumber -> {
                 val v = node.asDouble()
                 //out of range it parses as an infinity, which has no literal
                 if (v.isFinite()) {
-                    writeAssertEqualsWithDelta(lines, v.toString(), "$nodeExpression.asDouble()", DELTA)
+                    writeJUnitAssertEqualsWithDelta(lines, v.toString(), "$nodeExpression.asDouble()", DELTA)
                 } else {
                     lines.addSingleCommentLine(
                         "$jsonPath is not asserted on, as it is outside the range of a double"
@@ -321,7 +321,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
             node.isTextual -> {
                 val text = node.asText()
                 if (isSuitableToPrint(text)) {
-                    writeAssertEquals(lines, TestWriterUtils.quotedEscaped(text, format), "$nodeExpression.asText()")
+                    writeJUnitAssertEquals(lines, TestWriterUtils.quotedEscaped(text, format), "$nodeExpression.asText()")
                 } else {
                     lines.addSingleCommentLine(
                         "$jsonPath is not asserted on, as its value might differ between runs"
@@ -334,7 +334,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
     }
 
     private fun writeAssertHasField(lines: Lines, nodeExpression: String, field: String) =
-        writeAssertTrue(lines, "$nodeExpression.has(${TestWriterUtils.quotedEscaped(field, format)})")
+        writeJUnitAssertTrue(lines, "$nodeExpression.has(${TestWriterUtils.quotedEscaped(field, format)})")
 
     private fun childExpression(nodeExpression: String, name: String) =
         "$nodeExpression.get(${TestWriterUtils.quotedEscaped(name, format)})"
