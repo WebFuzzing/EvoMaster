@@ -816,7 +816,7 @@ internal class EMConfigTest{
 
         val asyncApiExperiments = configFor("--$blackBox", "true", "--problemType", "ASYNCAPI",
             "--createTests", "false", "--bbExperiments", "true")
-        assertTrue(asyncApiExperiments.readsSutCoverage())
+        assertFalse(asyncApiExperiments.readsSutCoverage())
 
         val whiteBox = configFor("--$blackBox", "false", "--problemType", "ASYNCAPI", "--createTests", "false")
         assertTrue(whiteBox.readsSutCoverage())

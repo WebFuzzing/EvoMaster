@@ -216,6 +216,15 @@ class AsyncApiFitnessTest {
     }
 
     @Test
+    fun testBlackBoxExperimentsStillReadNoCoverage() {
+        startNcs("$BLACK_BOX=true", "--bbExperiments=true") { replied(DOUBLE_RESULT) }
+        driver.testResults = { fail("AsyncAPI black-box experiments must not request coverage") }
+        val covered = coveredIds(evaluate("bessj"))
+        assertEquals(0, driver.testResultsRequests)
+        assertFalse(covered.contains(SUT_LINE))
+    }
+
+    @Test
     fun testTheDriverIsToldEverythingItNeeds() {
 
         startNcs { replied(DOUBLE_RESULT) }

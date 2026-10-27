@@ -1130,9 +1130,9 @@ class EMConfig {
      * read to report the code coverage of this run.
      *
      * The same as [usesDriver], except for a black-box AsyncAPI run, where the driver is only
-     * the way onto the broker and no coverage is read from it.
+     * the way onto the broker and no coverage is read from it, including with [bbExperiments].
      */
-    fun readsSutCoverage() = !blackBox || bbExperiments
+    fun readsSutCoverage() = !blackBox || (bbExperiments && problemType != ProblemType.ASYNCAPI)
 
     /**
      * Whether the driver should be asked to stop SUT code still running once the coverage
