@@ -218,7 +218,7 @@ object RedisInsertBuilder {
 
     /**
      * When a HGETALL failed command carries the schema of the Java type observed for its keyspace
-     * (captured by BasicRedisPersistentEntityClassReplacement when a Spring Data Redis
+     * (captured by AbstractBasicRedisPersistentEntityClassReplacement when a Spring Data Redis
      * `@RedisHash` repository bootstraps), builds one [RedisQueryField] per declared field of that
      * type, reusing the same OpenAPI-schema-to-Gene engine already used for REST DTO bodies
      * ([RestActionBuilderV3.createGeneForDTO]), instead of a single placeholder field/value that
