@@ -24,9 +24,11 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
     private static final List<String> OPERATIONS =
             Arrays.asList("checkTriangle", "bessj", "expint", "fisher", "gammq", "remainder");
 
+    private static final NcsKafkaController controller = new NcsKafkaController();
+
     @BeforeAll
     public static void initClass() throws Exception {
-        AsyncApiTestBase.initClass(new NcsKafkaController());
+        AsyncApiTestBase.initClass(controller);
     }
 
     @Test
@@ -119,46 +121,47 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
     }
 
     /**
-     * The no-reply oracle, end to end. Given a deadline no round trip through a broker can meet,
+     * The no-reply oracle, end to end. With fixture replies deliberately disabled,
      * every message goes unanswered, and that is reported as a fault once experimental oracles
      * are asked for.
      */
     @Test
     public void testAPromisedReplyThatNeverArrivesIsAFault() throws Throwable {
+        controller.setRepliesEnabled(false);
+        try {
 
-        runTestHandlingFlaky(
-                "NcsKafkaNoReplyEM",
-                "org.foo.asyncapi.NcsKafkaNoReplyEM",
-                30,
-                false,
-                (args) -> {
+            runTestHandlingFlaky(
+                    "NcsKafkaNoReplyEM",
+                    "org.foo.asyncapi.NcsKafkaNoReplyEM",
+                    30,
+                    false,
+                    (args) -> {
 
-                    /*
-                        Shorter than any round trip through a broker. The service answers as it
-                        always does, just never in time, which is how an unanswered message tends
-                        to look in practice. Nothing has to be broken on purpose for it.
-                     */
-                    args.add("--asyncApiReplyTimeoutMs");
-                    args.add("1");
+                        //Replies are disabled in the fixture, so this timeout does not decide the outcome.
+                        args.add("--asyncApiReplyTimeoutMs");
+                        args.add("250");
 
-                    //as in testRunEM: the kill switch would stop the consumer thread for good
-                    args.add("--killSwitch");
-                    args.add("false");
+                        //as in testRunEM: the kill switch would stop the consumer thread for good
+                        args.add("--killSwitch");
+                        args.add("false");
 
-                    /*
-                        Both AsyncAPI categories are experimental, so without this the outcome is
-                        still reached and still a target, but nothing is reported as a fault.
-                     */
-                    args.add("--useExperimentalOracles");
-                    args.add("true");
+                        /*
+                            Both AsyncAPI categories are experimental, so without this the outcome is
+                            still reached and still a target, but nothing is reported as a fault.
+                         */
+                        args.add("--useExperimentalOracles");
+                        args.add("true");
 
-                    Solution<AsyncApiIndividual> solution = initAndRun(args);
+                        Solution<AsyncApiIndividual> solution = initAndRun(args);
 
-                    assertTrue(countOutcome(solution, AsyncApiOutcome.NO_REPLY) > 0,
-                            "every message was answered in time, so the oracle had nothing to find");
-                    assertTrue(faultsOf(solution).contains(ExperimentalFaultCategory.ASYNCAPI_NO_REPLY),
-                            "the unanswered messages were not reported as a fault: " + faultsOf(solution));
-                },
-                3);
+                        assertTrue(countOutcome(solution, AsyncApiOutcome.NO_REPLY) > 0,
+                                "every message was answered in time, so the oracle had nothing to find");
+                        assertTrue(faultsOf(solution).contains(ExperimentalFaultCategory.ASYNCAPI_NO_REPLY),
+                                "the unanswered messages were not reported as a fault: " + faultsOf(solution));
+                    },
+                    3);
+        } finally {
+            controller.setRepliesEnabled(true);
+        }
     }
 }

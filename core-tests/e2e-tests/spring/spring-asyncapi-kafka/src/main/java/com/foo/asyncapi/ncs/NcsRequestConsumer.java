@@ -42,6 +42,8 @@ public class NcsRequestConsumer implements SmartLifecycle {
 
     private volatile boolean running;
 
+    private volatile boolean repliesEnabled = true;
+
     private Thread loop;
 
     private KafkaConsumer<String, String> consumer;
@@ -95,7 +97,16 @@ public class NcsRequestConsumer implements SmartLifecycle {
         }
     }
 
+    /** Used by the no-reply E2E to suppress responses independently of broker timing. */
+    public void setRepliesEnabled(boolean enabled) {
+        repliesEnabled = enabled;
+    }
+
     private void answer(ConsumerRecord<String, String> request) {
+        if (!repliesEnabled) {
+            return;
+        }
+
 
         NcsService.Reply reply = service.handle(request.topic(), request.value());
 
