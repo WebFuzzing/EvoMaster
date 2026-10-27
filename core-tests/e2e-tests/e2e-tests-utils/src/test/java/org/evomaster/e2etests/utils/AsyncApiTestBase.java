@@ -1,17 +1,22 @@
 package org.evomaster.e2etests.utils;
 
+import com.google.inject.Injector;
 import com.webfuzzing.commons.faults.FaultCategory;
+import kotlin.Pair;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome;
 import org.evomaster.core.problem.enterprise.DetectedFault;
 import org.evomaster.core.search.Solution;
+import org.evomaster.core.search.service.IdMapper;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,6 +29,34 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
 
     protected Solution<AsyncApiIndividual> initAndRun(List<String> args) {
         return (Solution<AsyncApiIndividual>) Main.initAndRun(args.toArray(new String[0]));
+    }
+
+    /**
+     * Run the search, and keep the injector too, to read the names of the targets afterwards.
+     */
+    protected Pair<Injector, Solution<AsyncApiIndividual>> initAndDebug(List<String> args) {
+        Pair<Injector, Solution<?>> run = Main.initAndDebug(args.toArray(new String[0]));
+        return new Pair<>(run.getFirst(), (Solution<AsyncApiIndividual>) run.getSecond());
+    }
+
+    /**
+     * That some test in the solution ran code of {@code className}, a class of the SUT.
+     *
+     * A white-box assertion, for messages nothing answers. A whole class rather than a line keeps
+     * the test independent of how the SUT's sources are laid out.
+     *
+     * @param run       what {@link #initAndDebug} returned
+     * @param className the class, with dots, e.g. {@code com.foo.Bar}
+     */
+    protected void assertClassCovered(Pair<Injector, Solution<AsyncApiIndividual>> run, String className) {
+        IdMapper idMapper = run.getFirst().getInstance(IdMapper.class);
+        String target = ObjectiveNaming.classObjectiveName(className);
+        Set<String> coveredClasses = run.getSecond().getOverall().coveredTargets().stream()
+                .map(idMapper::getDescriptiveId)
+                .filter(id -> id.startsWith(ObjectiveNaming.CLASS))
+                .collect(Collectors.toCollection(TreeSet::new));
+        assertTrue(coveredClasses.contains(target),
+                "With seed " + defaultSeed + ": no test ran any code of " + className + ", only of " + coveredClasses);
     }
 
     /**

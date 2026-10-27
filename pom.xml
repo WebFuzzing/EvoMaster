@@ -297,6 +297,11 @@
         <asm.version>9.9</asm.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <kafka-clients.version>3.7.2</kafka-clients.version>
+        <!--
+            Only for tests, of client-java/instrumentation and of the AsyncAPI E2E over Spring Kafka.
+            The version that Spring Boot 2.5.4 manages: 3.x needs Spring 6 and JDK 17.
+        -->
+        <spring-kafka.version>2.7.6</spring-kafka.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
 <!--        <selenium.version>4.31.0</selenium.version>-->
