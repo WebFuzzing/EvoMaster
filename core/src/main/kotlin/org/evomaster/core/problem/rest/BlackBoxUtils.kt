@@ -63,6 +63,16 @@ object BlackBoxUtils {
                         }
                     }
                 }
+                EMConfig.ProblemType.ASYNCAPI -> {
+                    /*
+                        A message-driven service has no one base URL. Each server the document
+                        names has its own address, and that is where a message is published, so
+                        the suite takes them from there rather than from here. Nothing in it
+                        reads this one, and --bbTargetUrl is still honoured above for a run
+                        pointed somewhere else wholesale.
+                     */
+                    return ""
+                }
                 else -> throw IllegalStateException("Black-box testing is currently not supported for ${config.problemType}")
             }
         }
