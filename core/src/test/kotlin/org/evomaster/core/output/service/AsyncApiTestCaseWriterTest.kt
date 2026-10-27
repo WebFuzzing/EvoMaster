@@ -8,6 +8,8 @@ import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.junit.jupiter.api.Assertions.*
+import org.evomaster.core.output.compiler.CompilerForTestGenerated
+import java.time.Duration
 import org.junit.jupiter.api.Test
 
 /**
@@ -114,55 +116,74 @@ class AsyncApiTestCaseWriterTest {
 
     @Test
     fun testEachPublishedMessageIsGivenTheWholeSettleWindow() {
-        listOf(OutputFormat.JAVA_JUNIT_5, OutputFormat.KOTLIN_JUNIT_5).forEach { format ->
-            val body = settledBody(format, 1500, 2) {
-                FakeAsyncApiDriver.fireAndForget().apply { settledMs = 300L }
-            }
-            val publish = body.indexOf("publishAndAwaitReply")
-            val wait = body.indexOf("Thread.sleep(1500)")
-            assertTrue(publish >= 0, body)
-            assertTrue(wait > publish, body)
-            assertTrue(body.indexOf("publishAndAwaitReply", publish + 1) > wait, body)
-            assertEquals(2, Regex("Thread[.]sleep[(]1500[)]").findAll(body).count(), body)
+        val run = compiledSettleTest("EachMessage", 200, 2) {
+            FakeAsyncApiDriver.fireAndForget().apply { settledMs = 50L }
+        }
+        val calls = run()
+        assertEquals(3, calls.size)
+        calls.zipWithNext().forEach { (before, after) ->
+            assertTrue(after - before >= 200_000_000L, "Each message must get the configured window")
         }
     }
 
     @Test
     fun testMessagesWithRepliesOrTimeoutsAreGivenTheSettleWindow() {
-        listOf(OutputFormat.JAVA_JUNIT_5, OutputFormat.KOTLIN_JUNIT_5).forEach { format ->
-            listOf(FakeAsyncApiDriver.replied(AsyncApiTestInjector.DOUBLE_RESULT), FakeAsyncApiDriver.silence())
-                .forEach { reply ->
-                    val body = settledBody(format, 1500) { reply.apply { settledMs = 1500L } }
-                    val publish = body.indexOf("publishAndAwaitReply")
-                    assertTrue(publish >= 0, body)
-                    assertTrue(body.indexOf("Thread.sleep(1500)") > publish, body)
-                }
-        }
+        listOf(FakeAsyncApiDriver.replied(AsyncApiTestInjector.DOUBLE_RESULT), FakeAsyncApiDriver.silence())
+            .forEachIndexed { index, reply ->
+                val run = compiledSettleTest("Reply$index", 200) { reply.apply { settledMs = 50L } }
+                val calls = run()
+                assertEquals(2, calls.size)
+                assertTrue(calls.last() - calls.first() >= 200_000_000L)
+            }
     }
 
     @Test
     fun testNoSettleWaitIsWrittenWhenNoMessageWasKeptOpen() {
-        val noWindow = settledBody(OutputFormat.KOTLIN_JUNIT_5, 0) { FakeAsyncApiDriver.fireAndForget() }
-        assertFalse(noWindow.contains("Thread.sleep"), noWindow)
-        val failed = settledBody(OutputFormat.KOTLIN_JUNIT_5, 1500) {
+        val noWindow = compiledSettleTest("NoWindow", 0) { FakeAsyncApiDriver.fireAndForget() }
+        val failed = compiledSettleTest("Failed", 60_000) {
             FakeAsyncApiDriver.fireAndForget().apply { published = false }
         }
-        assertFalse(failed.contains("Thread.sleep"), failed)
+        assertTimeoutPreemptively(Duration.ofSeconds(2)) {
+            assertEquals(2, noWindow().size)
+            assertEquals(1, failed().size)
+        }
     }
 
-    private fun settledBody(
-        format: OutputFormat,
+    /** Compile the generated method and observe when its scripted actions execute. */
+    private fun compiledSettleTest(
+        name: String,
         settleMs: Int,
         count: Int = 1,
         answer: () -> AsyncApiReplyDto
-    ): String {
+    ): () -> List<Long> {
         val injector = AsyncApiTestInjector.create(
-            AsyncApiTestInjector.ncsDriver { answer() },
-            "--blackBox=false", "--createTests=true",
-            "--outputFormat=${format.name}", "--asyncApiSettleMs=$settleMs"
+            AsyncApiTestInjector.ncsDriver { action ->
+                answer().apply {
+                    testScript = listOf("calls.add(System.nanoTime())", "val ${action.replyVariable} = \"reply\"")
+                }
+            },
+            "--blackBox=false", "--createTests=true", "--enableBasicAssertions=false", "--testTimeout=0",
+            "--outputFormat=KOTLIN_JUNIT_5", "--asyncApiSettleMs=$settleMs"
         )
         val evaluated = AsyncApiTestInjector.evaluate(injector, *Array(count) { "bessj" })
-        return injector.getInstance(TestCaseWriter::class.java)
+        val body = injector.getInstance(TestCaseWriter::class.java)
             .convertToCompilableTestCode(TestCase(evaluated, "testSettle"), "").toString()
+        val className = "GeneratedSettle$name"
+        CompilerForTestGenerated.compile(OutputFormat.KOTLIN_JUNIT_5, """
+            import org.junit.jupiter.api.Test
+            import org.junit.jupiter.api.Assertions.*
+            class $className {
+                val calls = mutableListOf<Long>()
+                $body
+            }
+        """.trimIndent(), className)
+        val klass = javaClass.classLoader.loadClass(className)
+        val instance = klass.getDeclaredConstructor().newInstance()
+        return {
+            klass.getDeclaredMethod("testSettle").invoke(instance)
+            @Suppress("UNCHECKED_CAST")
+            val calls = klass.getDeclaredMethod("getCalls").invoke(instance) as List<Long>
+            calls + System.nanoTime()
+        }
     }
 }
