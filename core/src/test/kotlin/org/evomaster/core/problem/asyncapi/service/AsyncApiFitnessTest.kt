@@ -3,8 +3,11 @@ package org.evomaster.core.problem.asyncapi.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Injector
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
+import org.evomaster.client.java.controller.api.dto.TargetInfoDto
+import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
@@ -31,6 +34,18 @@ class AsyncApiFitnessTest {
         private const val EXPERIMENTAL_ORACLES = "--useExperimentalOracles=true"
 
         private const val ERROR = """{"error": {"code": 400, "message": "n must be >= 3"}}"""
+
+        private const val BLACK_BOX = "--blackBox"
+
+        /**
+         * A line of the SUT, as an instrumented driver would report it once a message reached it.
+         */
+        private const val SUT_LINE = "${ObjectiveNaming.LINE}_at_com.foo.NcsService_00042"
+
+        /**
+         * The numeric id the driver gives [SUT_LINE].
+         */
+        private const val SUT_LINE_ID = 1
 
         /**
          * One operation that expects nothing back, and one whose message carries a header
@@ -128,7 +143,9 @@ class AsyncApiFitnessTest {
     ) {
 
         driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(schemaText), answer)
-        injector = AsyncApiTestInjector.create(driver, "--blackBox=false", *options)
+        //white-box unless a test asks otherwise: EMConfig refuses an option given twice
+        val mode = if (options.any { it.startsWith("$BLACK_BOX=") }) arrayOf() else arrayOf("$BLACK_BOX=false")
+        injector = AsyncApiTestInjector.create(driver, *mode, *options)
 
         sampler = injector.getInstance(AsyncApiSampler::class.java)
         idMapper = injector.getInstance(IdMapper::class.java)
@@ -151,6 +168,61 @@ class AsyncApiFitnessTest {
 
     private fun results(evaluated: EvaluatedIndividual<AsyncApiIndividual>): List<AsyncApiCallResult> =
         evaluated.evaluatedMainActions().map { it.result as AsyncApiCallResult }
+
+    /**
+     * What an instrumented driver reports once a message reached [SUT_LINE].
+     */
+    private fun lineReached() = TestResultsDto().apply {
+        targets.add(TargetInfoDto().apply {
+            id = SUT_LINE_ID
+            descriptiveId = SUT_LINE
+            value = 1.0
+            actionIndex = 0
+        })
+    }
+
+    @Test
+    fun testAWhiteBoxRunReadsTheCoverageOfTheService() {
+
+        startNcs { replied(DOUBLE_RESULT) }
+        driver.testResults = { lineReached() }
+
+        val evaluated = evaluate("bessj")
+        val covered = coveredIds(evaluated)
+
+        assertTrue(driver.testResultsRequests > 0, "the coverage of the service was never asked for")
+        assertTrue(covered.contains(SUT_LINE), "$covered")
+        assertTrue(covered.contains("ASYNCAPI_OUTCOME:REPLIED:bessj"), "$covered")
+    }
+
+    @Test
+    fun testABlackBoxRunReadsNoCoverage() {
+
+        /*
+            The driver is there only to reach the broker. Even an instrumented one is never
+            asked for lines: the targets come from the replies.
+         */
+        startNcs("$BLACK_BOX=true") { replied(DOUBLE_RESULT) }
+        driver.testResults = { lineReached() }
+
+        val evaluated = evaluate("bessj", "expint")
+        val covered = coveredIds(evaluated)
+
+        assertEquals(0, driver.testResultsRequests, "a black-box run asked the driver for coverage")
+        assertFalse(covered.contains(SUT_LINE), "$covered")
+        assertTrue(covered.contains("ASYNCAPI_OUTCOME:REPLIED:bessj"), "$covered")
+        assertTrue(covered.contains("ASYNCAPI_REPLY:doubleResult:expint"), "$covered")
+        assertEquals(2, driver.published.size)
+    }
+
+    @Test
+    fun testBlackBoxExperimentsStillReadNoCoverage() {
+        startNcs("$BLACK_BOX=true", "--bbExperiments=true") { replied(DOUBLE_RESULT) }
+        driver.testResults = { fail("AsyncAPI black-box experiments must not request coverage") }
+        val covered = coveredIds(evaluate("bessj"))
+        assertEquals(0, driver.testResultsRequests)
+        assertFalse(covered.contains(SUT_LINE))
+    }
 
     @Test
     fun testTheDriverIsToldEverythingItNeeds() {
