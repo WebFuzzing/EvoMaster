@@ -14,7 +14,6 @@ import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
@@ -187,7 +186,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         for(a in individual.seeAllActions()){
             val update = if(a is ApiWsAction) {
-                a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
+                a.parameters.find { it is UpdateForParam } as? UpdateForParam
             }else if (a is RPCExternalServiceAction){
                 a.responses.find { it is UpdateForParam } as? UpdateForParam
             } else null
