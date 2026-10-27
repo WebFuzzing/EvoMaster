@@ -159,7 +159,9 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
         Method m = r.get();
         replaceMethod(m);
         if(isConstructor){
-            handleConstruct(m, candidateClasses.get(0).getClass());
+            //the instance must be consumed from the class declaring the chosen replacement, as
+            //there might be several candidate classes for the same target (eg, one per library version)
+            handleConstruct(m, m.getDeclaringClass().asSubclass(MethodReplacementClass.class));
         }
 
         //Can be put back if needed for debugging... otherwise it is just expensive overhead

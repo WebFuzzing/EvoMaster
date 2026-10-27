@@ -445,7 +445,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         // Spring Data Redis repositories capture the hash's Java type during SUT startup, the
         // same way Spring Data MongoDB does for initMongoHandler() above; see
-        // BasicRedisPersistentEntityClassReplacement for where it is captured.
+        // AbstractBasicRedisPersistentEntityClassReplacement for where it is captured.
         List<AdditionalInfo> list = getAdditionalInfoList();
         if (!list.isEmpty()) {
             AdditionalInfo last = list.get(list.size() - 1);

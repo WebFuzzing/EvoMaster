@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Checks the id field that {@link BasicRedisPersistentEntityClassReplacement} reports for an entity,
+ * Checks the id field that {@link AbstractBasicRedisPersistentEntityClassReplacement} reports for an entity,
  * going through the replaced constructor: Spring builds the persistent entity inside an
  * {@link InstrumentingClassLoader}, as it does when a repository is bootstrapped in a SUT.
  */
