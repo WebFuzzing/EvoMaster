@@ -448,6 +448,22 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
+    public final Long getObjectiveUpdateCount() {
+        if (!isInstrumentationActivated()) {
+            return null;
+        }
+        return serverController.getObjectiveUpdateCount();
+    }
+
+    @Override
+    public final Long getObjectiveUpdateCount(long timeoutMs) {
+        if (!isInstrumentationActivated()) {
+            return null;
+        }
+        return serverController.getObjectiveUpdateCount(timeoutMs);
+    }
+
+    @Override
     public final void newActionSpecificHandler(ActionDto dto) {
         if (isInstrumentationActivated()) {
             serverController.setAction(new Action(

@@ -1862,6 +1862,27 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract BootTimeInfoDto getBootTimeInfoDto();
 
+    /**
+     * How many times, in the current test, a coverage objective of the SUT was reached for the
+     * first time or improved on its best value. Read while an action is kept open, to tell
+     * whether the SUT is still reaching anything new.
+     *
+     * @return the count, which only grows within a test, or null when unknown, eg because the
+     * SUT is not instrumented
+     */
+    public Long getObjectiveUpdateCount() {
+        return null;
+    }
+
+    /**
+     * Read the coverage counter within the given positive budget in milliseconds.
+     * The default delegates to the in-process counter. Drivers that perform blocking I/O
+     * must override this method and return null when the budget expires.
+     */
+    public Long getObjectiveUpdateCount(long timeoutMs) {
+        return getObjectiveUpdateCount();
+    }
+
     protected BootTimeInfoDto getBootTimeInfoDto(BootTimeObjectiveInfo info){
         if (info == null)
             return null;

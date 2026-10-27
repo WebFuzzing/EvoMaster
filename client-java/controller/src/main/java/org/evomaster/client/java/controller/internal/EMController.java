@@ -897,7 +897,7 @@ public class EMController {
                     was already turned off for this action by newAction above, and must stay
                     off for the service's threads, not only this one.
                  */
-                asyncApiSettle.settle(dto.asyncApiCall, replyDto);
+                asyncApiSettle.settle(dto.asyncApiCall, replyDto, sutController::getObjectiveUpdateCount);
 
                 return Response.status(200).entity(WrappedResponseDto.withData(replyDto)).build();
             }

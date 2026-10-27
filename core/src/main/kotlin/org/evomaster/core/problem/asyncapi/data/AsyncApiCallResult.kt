@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.asyncapi.data
 
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.search.action.Action
 
@@ -15,6 +16,7 @@ class AsyncApiCallResult : EnterpriseActionResult {
         const val CORRELATION_MATCHED = "CORRELATION_MATCHED"
         const val WAITED_MS = "WAITED_MS"
         const val SETTLED_MS = "SETTLED_MS"
+        const val SETTLE_ENDED_BY = "SETTLE_ENDED_BY"
         const val TEST_SCRIPT = "TEST_SCRIPT"
 
         /*
@@ -93,6 +95,16 @@ class AsyncApiCallResult : EnterpriseActionResult {
     }
 
     fun getSettledMs(): Long? = getResultValue(SETTLED_MS)?.toLong()
+
+    /**
+     * Why the controller stopped keeping the action open. Absent when no wait was asked for.
+     */
+    fun setSettleEndedBy(end: AsyncApiReplyDto.SettleEndReason) {
+        addResultValue(SETTLE_ENDED_BY, end.name)
+    }
+
+    fun getSettleEndedBy(): AsyncApiReplyDto.SettleEndReason? =
+        getResultValue(SETTLE_ENDED_BY)?.let { AsyncApiReplyDto.SettleEndReason.valueOf(it) }
 
     /**
      * The lines the driver rendered for a generated test, or empty when it rendered none.
