@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.EmittedMessageDto
 import org.evomaster.client.java.controller.api.dto.StringSpecializationInfoDto
 import org.evomaster.client.java.controller.api.dto.TargetInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.UnitsInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
@@ -19,12 +20,14 @@ import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome
+import org.evomaster.core.problem.asyncapi.param.UpdateForAsyncApiPayloadParam
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.fireAndForget
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.replied
 import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver.Companion.silence
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.problem.asyncapi.service.AsyncApiTestInjector.DOUBLE_RESULT
 import org.evomaster.core.search.gene.string.StringGene
@@ -117,6 +120,101 @@ class AsyncApiFitnessTest {
                 action: receive
                 channel:
                   ${'$'}ref: '#/channels/events'
+        """.trimIndent()
+
+        private const val EXPAND = "--expandAsyncApiPayloads=true"
+
+        /**
+         * The class the service reads a return request into, as the driver names it.
+         */
+        private const val RETURN_DTO = "com.foo.shop.ReturnRequested"
+
+        /**
+         * Another class the service could be reported to have read in the same window.
+         */
+        private const val AUDIT_DTO = "com.foo.shop.AuditEntry"
+
+        /**
+         * A class whose field is of class [LINE_DTO].
+         */
+        private const val EXCHANGE_DTO = "com.foo.shop.ExchangeRequested"
+
+        /**
+         * The class of a field of [EXCHANGE_DTO], which the controller reports as read along
+         * with it the first time.
+         */
+        private const val LINE_DTO = "com.foo.shop.ExchangeLine"
+
+        /**
+         * A class whose schema is no object, as for an enum.
+         */
+        private const val STATUS_DTO = "com.foo.shop.ReturnStatus"
+
+        /**
+         * A field only [RETURN_DTO] has.
+         */
+        private const val RETURN_FIELD = "reason"
+
+        /**
+         * A field only [AUDIT_DTO] has.
+         */
+        private const val AUDIT_FIELD = "actor"
+
+        /**
+         * The schemas of the two classes, in the form the driver reports them: key is the class
+         * name, value is its OpenAPI schema, prefixed with that name.
+         */
+        private val DTO_SCHEMAS = mapOf(
+            RETURN_DTO to """"$RETURN_DTO":{"type":"object","properties":{"$RETURN_FIELD":{"type":"string"},"items":{"type":"integer"}}}""",
+            AUDIT_DTO to """"$AUDIT_DTO":{"type":"object","properties":{"$AUDIT_FIELD":{"type":"string"}}}""",
+            EXCHANGE_DTO to """"$EXCHANGE_DTO":{"type":"object","properties":{"line":{"${'$'}ref":"#/components/schemas/$LINE_DTO"}}}""",
+            LINE_DTO to """"$LINE_DTO":{"type":"object","properties":{"sku":{"type":"string"}}}""",
+            STATUS_DTO to """"$STATUS_DTO":{"type":"string","enum":["OPEN","CLOSED"]}"""
+        )
+
+        /**
+         * A message that declares no payload, one declared with no structure, and one with a
+         * field.
+         */
+        private val OPAQUE = """
+            asyncapi: 3.0.0
+            info:
+              title: Opaque payloads
+              version: 1.0.0
+            channels:
+              returns:
+                address: shop.returns
+                messages:
+                  returnRequested:
+                    name: ReturnRequested
+              audits:
+                address: shop.audits
+                messages:
+                  audit:
+                    payload:
+                      type: object
+              orders:
+                address: shop.orders
+                messages:
+                  order:
+                    payload:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+            operations:
+              requestReturn:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/returns'
+              audit:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/audits'
+              placeOrder:
+                action: receive
+                channel:
+                  ${'$'}ref: '#/channels/orders'
         """.trimIndent()
 
         /**
@@ -1345,5 +1443,233 @@ class AsyncApiFitnessTest {
 
         assertTrue(coveredIds(evaluated).none { it.startsWith("ASYNCAPI_EMITTED") }, coveredIds(evaluated).toString())
         assertTrue(faultsOn(evaluated).isEmpty())
+    }
+
+    // ------------------------------------------------------------------ opaque payloads
+
+    /**
+     * Have the driver know the schemas of [names], as it does once the service has read one of
+     * each.
+     */
+    private fun driverKnows(vararg names: String) {
+        driver.info.unitsInfoDto = UnitsInfoDto().apply {
+            parsedDtos = DTO_SCHEMAS.filterKeys { it in names }
+        }
+    }
+
+    /**
+     * What an instrumented driver reports for an action during which the service read [names].
+     */
+    private fun parsed(vararg names: String) = AdditionalInfoDto().apply { parsedDtoNames.addAll(names) }
+
+    private fun evaluateParsing(names: List<String>, vararg perAction: AdditionalInfoDto): EvaluatedIndividual<AsyncApiIndividual> {
+        driver.testResults = { TestResultsDto().apply { additionalInfoList.addAll(perAction) } }
+        return AsyncApiTestInjector.evaluate(injector, *names.toTypedArray())
+    }
+
+    private fun updatesOn(individual: AsyncApiIndividual, index: Int = 0) =
+        (individual.seeMainExecutableActions()[index] as AsyncApiAction).parameters
+            .filterIsInstance<UpdateForAsyncApiPayloadParam>()
+
+    private fun fieldsOf(update: UpdateForAsyncApiPayloadParam) =
+        (update.gene as ObjectGene).fields.map { it.name }.toSet()
+
+    @Test
+    fun testAnOpaquePayloadIsLinedUpToBeReplacedByWhatTheServiceRead() {
+
+        start(OPAQUE, EXPAND) { fireAndForget() }
+        driverKnows(RETURN_DTO)
+        startTheSearch()
+
+        val evaluated = evaluateParsing(listOf("requestReturn"), parsed(RETURN_DTO))
+
+        //what was published is what the document allowed: the message was evaluated as it was
+        assertEquals("{}", driver.published.single().payload.replace(Regex("\\s"), ""))
+        val update = updatesOn(evaluated.individual).single()
+        assertEquals(setOf(RETURN_FIELD, "items"), fieldsOf(update))
+    }
+
+    @Test
+    fun testADeclaredOpaquePayloadIsReplacedToo() {
+
+        start(OPAQUE, EXPAND) { fireAndForget() }
+        driverKnows(AUDIT_DTO)
+        startTheSearch()
+
+        val evaluated = evaluateParsing(listOf("audit"), parsed(AUDIT_DTO))
+
+        assertEquals(setOf(AUDIT_FIELD), fieldsOf(updatesOn(evaluated.individual).single()))
+    }
+
+    @Test
+    fun testAPayloadWithFieldsIsNeverReplaced() {
+
+        start(OPAQUE, EXPAND) { fireAndForget() }
+        driverKnows(RETURN_DTO)
+        startTheSearch()
+
+        val evaluated = evaluateParsing(listOf("placeOrder"), parsed(RETURN_DTO))
+
+        assertTrue(updatesOn(evaluated.individual).isEmpty())
+    }
+
+    @Test
+    fun testTheClassIsCreditedToTheMessageWhoseActionWasOpen() {
+
+        start(OPAQUE, EXPAND) { fireAndForget() }
+        driverKnows(RETURN_DTO, AUDIT_DTO)
+        startTheSearch()
+
+        val evaluated = evaluateParsing(listOf("audit", "requestReturn"), AdditionalInfoDto(), parsed(RETURN_DTO))
+
+        assertTrue(updatesOn(evaluated.individual, 0).isEmpty())
+        assertEquals(setOf(RETURN_FIELD, "items"), fieldsOf(updatesOn(evaluated.individual, 1).single()))
+    }
+
+    @Test
+    fun testTheSchemaOfAClassSeenForTheFirstTimeIsAskedForAgain() {
+
+        //when the search started, the service had read nothing yet, so the driver knew no class
+        start(OPAQUE, EXPAND) { fireAndForget() }
+        startTheSearch()
+        evaluateParsing(listOf("audit"), AdditionalInfoDto())
+
+        driverKnows(RETURN_DTO)
+        val evaluated = evaluateParsing(listOf("requestReturn"), parsed(RETURN_DTO))
+
+        assertEquals(1, updatesOn(evaluated.individual).size)
+    }
+
+    @Test
+    fun testAClassTheDriverHasNoSchemaForIsLeftAlone() {
+
+        start(OPAQUE, EXPAND) { fireAndForget() }
+        driverKnows(AUDIT_DTO)
+        startTheSearch()
+
+        val evaluated = evaluateParsing(listOf("requestReturn"), parsed(RETURN_DTO))
+
+        assertTrue(updatesOn(evaluated.individual).isEmpty())
+    }
+
+    @Test
+    fun testOneOfSeveralClassesIsChosenTheSameWayUnderTheSameSeed() {
+
+        fun chosen(): Set<String> {
+            RestActionBuilderV3.cleanCache()
+            start(OPAQUE, EXPAND) { fireAndForget() }
+            driverKnows(RETURN_DTO, AUDIT_DTO)
+            startTheSearch()
+            //reported in the opposite order to the sorted one, which is what the choice is made from
+            val evaluated = evaluateParsing(listOf("requestReturn"), parsed(RETURN_DTO, AUDIT_DTO))
+            return fieldsOf(updatesOn(evaluated.individual).single())
+        }
+
+        val first = chosen()
+
+        assertTrue(first == setOf(RETURN_FIELD, "items") || first == setOf(AUDIT_FIELD), "$first")
+        assertEquals(first, chosen())
+    }
+
+    @Test
+    fun testTheClassOfAFieldIsNotTakenForTheMessage() {
+
+        start(OPAQUE, EXPAND) { fireAndForget() }
+        driverKnows(EXCHANGE_DTO, LINE_DTO)
+        startTheSearch()
+
+        //whatever the seed: the line is only ever the shape of a field of the exchange
+        repeat(5) {
+            val evaluated = evaluateParsing(listOf("requestReturn"), parsed(LINE_DTO, EXCHANGE_DTO))
+            assertEquals(setOf("line"), fieldsOf(updatesOn(evaluated.individual).single()))
+        }
+    }
+
+    @Test
+    fun testAClassThatIsNoObjectIsNotTakenForTheMessage() {
+
+        start(OPAQUE, EXPAND) { fireAndForget() }
+        driverKnows(STATUS_DTO, AUDIT_DTO)
+        startTheSearch()
+
+        val alone = evaluateParsing(listOf("requestReturn"), parsed(STATUS_DTO))
+        assertTrue(updatesOn(alone.individual).isEmpty())
+
+        //whatever the seed: an opaque payload is published as an object, which the status is not
+        repeat(5) {
+            val evaluated = evaluateParsing(listOf("requestReturn"), parsed(STATUS_DTO, AUDIT_DTO))
+            assertEquals(setOf(AUDIT_FIELD), fieldsOf(updatesOn(evaluated.individual).single()))
+        }
+    }
+
+    @Test
+    fun testWhatWasReadWhileAMessageFailedToBePublishedIsNotCreditedToIt() {
+
+        var calls = 0
+        start(OPAQUE, EXPAND) {
+            if (calls++ == 0) fireAndForget() else AsyncApiReplyDto().apply { published = false }
+        }
+        driverKnows(RETURN_DTO)
+        startTheSearch()
+
+        //read late, from the first message, while the second one was being tried
+        val evaluated = evaluateParsing(listOf("audit", "requestReturn"), AdditionalInfoDto(), parsed(RETURN_DTO))
+
+        assertTrue(updatesOn(evaluated.individual, 1).isEmpty())
+    }
+
+    @Test
+    fun testAMessageAlreadyWaitingForItsReplacementGetsNoOther() {
+
+        start(OPAQUE, EXPAND) { fireAndForget() }
+        driverKnows(RETURN_DTO)
+        startTheSearch()
+        driver.testResults = { TestResultsDto().apply { additionalInfoList.add(parsed(RETURN_DTO)) } }
+
+        val individual = AsyncApiTestInjector.individualOf(injector, "requestReturn")
+        AsyncApiTestInjector.evaluate(injector, individual)
+        AsyncApiTestInjector.evaluate(injector, individual)
+
+        assertEquals(1, updatesOn(individual).size)
+    }
+
+    @Test
+    fun testNothingIsReplacedUnlessAskedFor() {
+
+        start(OPAQUE) { fireAndForget() }
+        driverKnows(AUDIT_DTO)
+        startTheSearch()
+
+        val evaluated = evaluateParsing(listOf("audit"), parsed(AUDIT_DTO))
+
+        assertTrue(updatesOn(evaluated.individual).isEmpty())
+        //and a message without a payload is still not something to publish
+        assertFalse(sampler.seeAvailableActions().any { it.getName() == "requestReturn" })
+    }
+
+    @Test
+    fun testNothingIsReplacedOutsideTheSearch() {
+
+        start(OPAQUE, EXPAND) { fireAndForget() }
+        driverKnows(AUDIT_DTO)
+
+        val evaluated = evaluateParsing(listOf("audit"), parsed(AUDIT_DTO))
+
+        assertTrue(updatesOn(evaluated.individual).isEmpty())
+    }
+
+    @Test
+    fun testABlackBoxRunReplacesNothing() {
+
+        //nothing is asked of the driver about what the service read, so there is nothing to replace with
+        start(OPAQUE, EXPAND, "$BLACK_BOX=true") { fireAndForget() }
+        driverKnows(AUDIT_DTO)
+        startTheSearch()
+
+        val evaluated = evaluateParsing(listOf("audit"), parsed(AUDIT_DTO))
+
+        assertEquals(0, driver.testResultsRequests)
+        assertTrue(updatesOn(evaluated.individual).isEmpty())
+        assertFalse(sampler.seeAvailableActions().any { it.getName() == "requestReturn" })
     }
 }

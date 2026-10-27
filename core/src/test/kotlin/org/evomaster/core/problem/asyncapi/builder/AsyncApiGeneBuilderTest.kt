@@ -23,7 +23,91 @@ import org.junit.jupiter.api.Test
 
 class AsyncApiGeneBuilderTest {
 
+    companion object {
+        /**
+         * One message per way of writing a payload, named after what it is, for the tests on which
+         * payloads are opaque.
+         */
+        private val PAYLOADS = """
+            asyncapi: 3.0.0
+            info:
+              title: Every way of saying something, or nothing, about a payload
+              version: 1.0.0
+            components:
+              messages:
+                missing:
+                  name: Missing
+                empty:
+                  payload: {}
+                object:
+                  payload:
+                    type: object
+                objectInAList:
+                  payload:
+                    type: [object]
+                annotatedFreeForm:
+                  payload:
+                    title: Anything
+                    description: Whatever the producer sends
+                    ${'$'}comment: not described yet
+                    type: object
+                    additionalProperties: true
+                namedOpaque:
+                  payload:
+                    ${'$'}ref: '#/components/schemas/Anything'
+                namedStructured:
+                  payload:
+                    ${'$'}ref: '#/components/schemas/Order'
+                structured:
+                  payload:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                string:
+                  payload:
+                    type: string
+                typedMap:
+                  payload:
+                    type: object
+                    additionalProperties:
+                      type: string
+                closed:
+                  payload:
+                    type: object
+                    additionalProperties: false
+                withExamples:
+                  payload:
+                    type: object
+                    examples:
+                      - id: a
+                choice:
+                  payload:
+                    oneOf:
+                      - type: string
+                      - type: integer
+                missingAvro:
+                  contentType: application/vnd.apache.avro
+                missingVendorJson:
+                  contentType: application/vnd.shop.order+json
+              schemas:
+                Anything:
+                  type: object
+                  description: Not described yet
+                Order:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+            """.trimIndent()
+    }
+
     private val options = AsyncApiGeneBuilder.options(EMConfig())
+
+    /**
+     * [PAYLOADS], parsed.
+     */
+    private val payloads = AsyncApiAccess.parseFromText(PAYLOADS)
 
     /**
      * RestActionBuilderV3 keeps its built genes in a static cache, so a test that did not clear
@@ -650,5 +734,58 @@ class AsyncApiGeneBuilderTest {
 
         assertTrue(first.contains("from-first"), first)
         assertTrue(second.contains("from-second"), second)
+    }
+
+    // ------------------------------------------------------------------ opaque payloads
+
+    private fun isOpaque(messageId: String) =
+        AsyncApiGeneBuilder.isOpaque(payloads, payloads.messages.getValue(messageId))
+
+    @Test
+    fun testPayloadsThatSayNothingAboutTheirShapeAreOpaque() {
+
+        listOf("missing", "empty", "object", "objectInAList", "annotatedFreeForm", "namedOpaque", "missingVendorJson")
+            .forEach { assertTrue(isOpaque(it), "'$it' should be opaque") }
+    }
+
+    @Test
+    fun testPayloadsThatSayAnythingAboutTheirShapeAreNot() {
+
+        //a field, a type, a typed or closed map, a value, a choice: each of them is something to build from
+        listOf("namedStructured", "structured", "string", "typedMap", "closed", "withExamples", "choice")
+            .forEach { assertFalse(isOpaque(it), "'$it' should not be opaque") }
+    }
+
+    @Test
+    fun testOnlyAJsonPayloadIsOpaque() {
+
+        //missing because it is in a format the parser cannot read, which a JSON class would not read either
+        assertFalse(isOpaque("missingAvro"))
+    }
+
+    @Test
+    fun testTheDocumentDefaultContentTypeDecidesWhenTheMessageGivesNone() {
+
+        val schema = document("""
+            asyncapi: 3.0.0
+            info:
+              title: Binary by default
+              version: 1.0.0
+            defaultContentType: application/octet-stream
+            components:
+              messages:
+                missing:
+                  name: Missing
+        """)
+
+        assertFalse(AsyncApiGeneBuilder.isOpaque(schema, schema.messages.getValue("missing")))
+    }
+
+    @Test
+    fun testTheOpaquePlaceholderIsPublishedAsAnEmptyObject() {
+
+        val gene = AsyncApiGeneBuilder.buildOpaquePayloadPlaceholder(payloads.messages.getValue("missing"))
+
+        assertEquals("{}", printed(gene).replace(Regex("\\s"), ""))
     }
 }

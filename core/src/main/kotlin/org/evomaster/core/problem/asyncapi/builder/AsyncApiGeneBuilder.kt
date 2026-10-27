@@ -11,6 +11,7 @@ import com.webfuzzing.asyncapi.resolver.AsyncApiRefResolver
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
 
 /**
  * Turns the JSON Schema of an AsyncAPI message into the genes the search mutates.
@@ -51,6 +52,21 @@ object AsyncApiGeneBuilder {
     private const val MINIMUM = "minimum"
     private const val MAXIMUM = "maximum"
 
+    private const val ADDITIONAL_PROPERTIES = "additionalProperties"
+    private const val TITLE = "title"
+    private const val DESCRIPTION = "description"
+    private const val COMMENT = "\$comment"
+    private const val SCHEMA_DIALECT = "\$schema"
+    private const val ID = "\$id"
+    private const val DEPRECATED = "deprecated"
+
+    /**
+     * What every JSON media type has in its name: `application/json`, and the structured
+     * syntax suffix `+json` of the vendor ones.
+     */
+    private const val JSON_MEDIA_TYPE_MARKER = "json"
+
+    private const val TYPE_OBJECT = "object"
     private const val TYPE_STRING = "string"
     private const val TYPE_INTEGER = "integer"
     private const val TYPE_NUMBER = "number"
@@ -69,6 +85,14 @@ object AsyncApiGeneBuilder {
      * a keyword either.
      */
     private val DATA_KEYWORDS = setOf(CONST, DEFAULT, ENUM, EXAMPLE, EXAMPLES)
+
+    /**
+     * The JSON Schema keywords that describe a schema without constraining what it accepts. A
+     * payload schema made of nothing else says nothing about the payload's shape.
+     *
+     * `examples` and `default` are left out on purpose: a value hints at a shape.
+     */
+    private val ANNOTATION_KEYWORDS = setOf(TITLE, DESCRIPTION, COMMENT, SCHEMA_DIALECT, ID, DEPRECATED)
 
     /**
      * The keywords whose value maps arbitrary names to schemas. Their keys come from the
@@ -93,6 +117,69 @@ object AsyncApiGeneBuilder {
         options,
         examplesOf(message, EXAMPLE_PAYLOAD)
     )
+
+    /**
+     * Whether the document says nothing about the shape of the message's payload, so that there
+     * is nothing to build genes from but what the service is seen doing with it.
+     *
+     * That is when the message declares no payload, or a schema whose keywords are only
+     * annotations ([ANNOTATION_KEYWORDS]), `type: object` (alone or as the only member of a list)
+     * and `additionalProperties: true`, e.g. `{}` or `{type: object}`. A reference that is the
+     * whole declaration is followed to the component schema it names.
+     *
+     * Only a JSON payload can be opaque, i.e., one whose content type, or the document's default,
+     * is JSON or not given: what replaces it is the class a JSON library read it into. A payload
+     * missing because its schema format cannot be read (Avro, say) is not JSON.
+     */
+    fun isOpaque(schema: AsyncApiDocument, message: AsyncApiMessage): Boolean {
+
+        val contentType = message.contentType ?: schema.defaultContentType
+        if (contentType != null && !contentType.lowercase().contains(JSON_MEDIA_TYPE_MARKER)) {
+            return false
+        }
+
+        var current: JsonNode = message.payload ?: return true
+        val followed = mutableSetOf<String>()
+
+        while (isWholeSchemaRef(current)) {
+            val key = AsyncApiRefResolver.refOf(current)
+                ?.let { AsyncApiRefResolver.refKey(it, AsyncApiRefResolver.SCHEMA_PREFIX) }
+                ?: return false
+            if (!followed.add(key)) {
+                //a reference that comes back to itself describes nothing either way
+                return false
+            }
+            current = schema.componentSchemas[key] ?: return false
+        }
+
+        if (!current.isObject) {
+            return false
+        }
+
+        return current.fields().asSequence().all { (keyword, value) ->
+            when (keyword) {
+                in ANNOTATION_KEYWORDS -> true
+                TYPE -> isObjectType(value)
+                ADDITIONAL_PROPERTIES -> value.isBoolean && value.booleanValue()
+                else -> false
+            }
+        }
+    }
+
+    /**
+     * Whether a `type` keyword allows objects and nothing else.
+     */
+    private fun isObjectType(type: JsonNode): Boolean =
+        (type.isTextual && type.asText() == TYPE_OBJECT)
+                || (type.isArray && type.size() == 1 && type[0].isTextual && type[0].asText() == TYPE_OBJECT)
+
+    /**
+     * What an opaque payload that the message does not declare at all is published as, until
+     * the service is seen reading it into a class: `{}`, which a JSON library reads into a class
+     * without failing, unlike no payload.
+     */
+    fun buildOpaquePayloadPlaceholder(message: AsyncApiMessage): Gene =
+        ObjectGene("${message.id}.payload", listOf())
 
     /**
      * The genes for a message's headers, or null when it declares none.
