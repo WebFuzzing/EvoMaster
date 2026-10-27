@@ -134,6 +134,36 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
                 5);
     }
 
+    @Test
+    public void testRunEMInJava() throws Throwable {
+
+        /*
+            The lines that publish are written in the language the suite is generated in, and
+            only one of the two is exercised by the test above. Compiling and running the other
+            is what catches emitted Java that does not compile.
+
+            A short budget: what is under test here is the emitted Java, not the search.
+         */
+        runTestHandlingFlakyAndCompilation(
+                "NcsKafkaJavaEM",
+                "org.foo.asyncapi.NcsKafkaJavaEM",
+                null,
+                40,
+                true,
+                false,
+                (args) -> {
+
+                    setOption(args, "outputFormat", "JAVA_JUNIT_5");
+                    setOption(args, "asyncApiReplyTimeoutMs", "3000");
+
+                    Solution<AsyncApiIndividual> solution = initAndRun(args);
+
+                    assertTrue(solution.getIndividuals().size() >= 1);
+                    assertTrue(countOutcome(solution, AsyncApiOutcome.REPLIED) > 0, "nothing was answered");
+                },
+                5);
+    }
+
     /**
      * A search that keeps every action open for a while after the driver returns. The service
      * goes on answering, and every message is recorded as having been waited on.
