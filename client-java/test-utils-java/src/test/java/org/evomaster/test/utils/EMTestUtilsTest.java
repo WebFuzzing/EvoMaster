@@ -7,6 +7,30 @@ import static org.junit.jupiter.api.Assertions.*;
 public class EMTestUtilsTest {
 
     @Test
+    public void testAwaitAllChecksEveryCondition() throws InterruptedException {
+        assertTrue(EMTestUtils.awaitAll(0, () -> true, () -> true));
+        assertFalse(EMTestUtils.awaitAll(0, () -> true, () -> false));
+        assertTrue(EMTestUtils.awaitAll(0));
+        assertThrows(IllegalArgumentException.class, () -> EMTestUtils.awaitAll(-1));
+    }
+
+    @Test
+    public void testAwaitAllPollsUntilReady() throws InterruptedException {
+        long start = System.nanoTime();
+        assertTrue(EMTestUtils.awaitAll(1000, () -> System.nanoTime() - start >= 1_000_000));
+    }
+
+    @Test
+    public void testAwaitAllPreservesInterruption() {
+        Thread.currentThread().interrupt();
+        try {
+            assertThrows(InterruptedException.class, () -> EMTestUtils.awaitAll(1000, () -> false));
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
     public void testCreateString(){
 
         String prefix = "foo";

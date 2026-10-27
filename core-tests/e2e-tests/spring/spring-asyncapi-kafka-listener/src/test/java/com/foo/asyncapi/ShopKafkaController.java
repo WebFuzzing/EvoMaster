@@ -27,6 +27,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -48,7 +51,15 @@ public class ShopKafkaController extends EmbeddedSutController {
 
     private static final String KAFKA_IMAGE = "apache/kafka:3.8.0";
 
-    private static final String DOCUMENT = "/asyncapi/shop-kafka.yaml";
+    /**
+     * The document describing every operation of the shop but restocking.
+     */
+    public static final String DOCUMENT = "/asyncapi/shop-kafka.yaml";
+
+    /**
+     * The document describing restocking, whose handler calls the supplier over HTTP.
+     */
+    public static final String RESTOCK_DOCUMENT = "/asyncapi/shop-restock-kafka.yaml";
 
     private static final String BOOTSTRAP_PROPERTY = "spring.kafka.bootstrap-servers";
 
@@ -77,7 +88,21 @@ public class ShopKafkaController extends EmbeddedSutController {
 
     private KafkaAsyncApiDriverHelper helper;
 
+    /**
+     * Which of the shop's documents the search is given, as a resource path.
+     */
+    private final String document;
+
     public ShopKafkaController() {
+        this(DOCUMENT);
+    }
+
+    /**
+     * @param document which of {@link #DOCUMENT} and {@link #RESTOCK_DOCUMENT} to give the search.
+     *                 The service is the same either way, with every listener running.
+     */
+    public ShopKafkaController(String document) {
+        this.document = Objects.requireNonNull(document);
         super.setControllerPort(0);
     }
 
@@ -233,15 +258,15 @@ public class ShopKafkaController extends EmbeddedSutController {
     }
 
     private String readDocument() {
-        try (InputStream in = getClass().getResourceAsStream(DOCUMENT)) {
+        try (InputStream in = getClass().getResourceAsStream(document)) {
             if (in == null) {
-                throw new IllegalStateException("Missing resource " + DOCUMENT);
+                throw new IllegalStateException("Missing resource " + document);
             }
             return new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))
                     .lines()
                     .collect(Collectors.joining("\n"));
         } catch (IOException e) {
-            throw new IllegalStateException("Cannot read " + DOCUMENT, e);
+            throw new IllegalStateException("Cannot read " + document, e);
         }
     }
 

@@ -6,6 +6,7 @@ import com.google.inject.Inject
 import com.webfuzzing.asyncapi.models.AsyncApiChannel
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId
 import com.webfuzzing.asyncapi.models.AsyncApiReply
+import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.EmittedMessageDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
@@ -26,9 +27,12 @@ import org.evomaster.core.problem.asyncapi.param.AsyncApiParam
 import org.evomaster.core.problem.asyncapi.param.UpdateForAsyncApiPayloadParam
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceFitnessHandler
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -155,6 +159,13 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
     private lateinit var asyncApiSampler: AsyncApiSampler
 
     /**
+     * The HTTP services the SUT calls while it handles a message, mocked with WireMock as for
+     * REST, when enabled.
+     */
+    @Inject
+    private lateinit var externalServices: HttpWsExternalServiceFitnessHandler
+
+    /**
      * Tells apart the correlation ids of the messages this run publishes.
      *
      * Drawn from [randomness], so that a run repeated under the same seed publishes the same
@@ -210,8 +221,11 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         val actions = individual.seeMainExecutableActions().filterIsInstance<AsyncApiAction>()
 
+        //what the WireMock instances served over the whole test, for the harvester
+        val servedRequests = mutableListOf<HttpExternalServiceRequest>()
+
         for ((index, action) in actions.withIndex()) {
-            val ok = publish(action, index, actionResults, fv)
+            val ok = publish(action, index, actionResults, fv, servedRequests)
             if (!ok) {
                 break
             }
@@ -230,6 +244,10 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             handleExtra(dto, fv)
 
             handleEmittedMessages(fv, actions, dto.additionalInfoList, actionResults.filterIsInstance<AsyncApiCallResult>())
+
+            if (externalServices.isEnabled()) {
+                handleExternalServices(individual, dto.additionalInfoList, actionResults, servedRequests)
+            }
 
             if (epc.isInSearch() && config.expandAsyncApiPayloads) {
                 //before taint analysis, as REST does: a replacement payload starts out untainted
@@ -516,13 +534,37 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
     }
 
     /**
+     * Act on the HTTP services the SUT was seen calling while the test was executed.
+     */
+    private fun handleExternalServices(
+        individual: AsyncApiIndividual,
+        infoDto: List<AdditionalInfoDto>,
+        actionResults: List<ActionResult>,
+        servedRequests: List<HttpExternalServiceRequest>
+    ) {
+        val started = externalServices.handleExternalServiceInfo(individual, infoDto)
+        if (started) {
+            /*
+                A WireMock instance was started because of this test, so it ran with that service
+                unreachable. Kept out of the archive, as REST does.
+             */
+            actionResults.forEach { it.deathSentence = true }
+        }
+
+        externalServices.harvestActualResponses(servedRequests)
+    }
+
+    /**
+     * @param servedRequests where to add the requests the WireMock instances served while the
+     *                       message was handled
      * @return whether the message reached the wire, so that the test can go on
      */
     private fun publish(
         action: AsyncApiAction,
         index: Int,
         actionResults: MutableList<ActionResult>,
-        fv: FitnessValue
+        fv: FitnessValue,
+        servedRequests: MutableList<HttpExternalServiceRequest>
     ): Boolean {
 
         searchTimeController.waitForRateLimiter()
@@ -533,6 +575,8 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         val dto = getActionDto(action, index)
         dto.asyncApiCall = toDto(action, index)
 
+        val mocked = if (externalServices.isEnabled()) externalServices.prepareForMainAction(action) else null
+
         val reply = rc.executeNewAsyncApiActionAndGetReply(dto)
 
         if (reply == null || reply.published != true) {
@@ -540,11 +584,22 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
                 Not a finding about the service: the driver could not put the message on the
                 wire, could not be reached at all, or did not say. Nothing published after this
                 point would mean anything, so the test stops here, and no target is registered.
+                Nor is any request the WireMock instances served meanwhile: it was made for an
+                earlier message.
              */
             result.setOutcome(AsyncApiOutcome.PUBLISH_FAILED)
             result.setErrorMessage(describeFailure(reply))
             result.stopping = true
             return false
+        }
+
+        if (mocked != null) {
+            /*
+                Read once the driver returns, after the settle window if there is one. A later
+                call is credited to the next message, or to none, like the code it covers, so
+                without a window a call made on the service's consumer thread is usually missed.
+             */
+            servedRequests.addAll(externalServices.registerServedRequests(fv, index, mocked))
         }
 
         val outcome = record(reply, result)
@@ -714,6 +769,14 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         result.setReplyMessage(recognised.id)
         fv.updateTarget(idMapper.handleLocalTarget(getReplyTargetId(recognised.id, name)), 1.0, index)
+    }
+
+    override fun getActionDto(action: Action, index: Int): ActionDto {
+        val dto = super.getActionDto(action, index)
+        if (externalServices.isEnabled()) {
+            externalServices.addMappings(dto, index, action.getRoot() as AsyncApiIndividual)
+        }
+        return dto
     }
 
     /**
