@@ -3042,6 +3042,15 @@ class EMConfig {
     var asyncApiReplyTimeoutMs = 5000
 
     @Experimental
+    @Cfg("When testing an AsyncAPI service in white-box mode, how long to keep each published message's action" +
+            " open after the driver has returned, in milliseconds, so that the code the service runs to handle it" +
+            " is still credited to that action. A message-driven service handles a message on a thread of its own," +
+            " which may still be running once the driver has seen it published, or its reply arrive." +
+            " The wait happens in the driver's controller. 0 means no wait.")
+    @Min(0.0)
+    var asyncApiSettleMs = 0
+
+    @Experimental
     @Cfg("When testing an AsyncAPI service, the probability of publishing a message's declared example as it is," +
             " rather than a value sampled from its schema. A service that silently drops what it does not recognise" +
             " may never reply to sampled values, and the examples are what its author knows it accepts.")

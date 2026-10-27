@@ -1,9 +1,15 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.core.EMConfig
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
+import org.evomaster.core.output.TestCase
+import org.evomaster.core.problem.asyncapi.service.AsyncApiTestInjector
+import org.evomaster.core.problem.asyncapi.service.FakeAsyncApiDriver
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.junit.jupiter.api.Assertions.*
+import org.evomaster.core.output.compiler.CompilerForTestGenerated
+import java.time.Duration
 import org.junit.jupiter.api.Test
 
 /**
@@ -105,6 +111,79 @@ class AsyncApiTestCaseWriterTest {
 
         assertThrows(IllegalArgumentException::class.java) {
             emit("""{"a": 1}""") { outputFormat = OutputFormat.PYTHON_UNITTEST }
+        }
+    }
+
+    @Test
+    fun testEachPublishedMessageIsGivenTheWholeSettleWindow() {
+        val run = compiledSettleTest("EachMessage", 200, 2) {
+            FakeAsyncApiDriver.fireAndForget().apply { settledMs = 50L }
+        }
+        val calls = run()
+        assertEquals(3, calls.size)
+        calls.zipWithNext().forEach { (before, after) ->
+            assertTrue(after - before >= 200_000_000L, "Each message must get the configured window")
+        }
+    }
+
+    @Test
+    fun testMessagesWithRepliesOrTimeoutsAreGivenTheSettleWindow() {
+        listOf(FakeAsyncApiDriver.replied(AsyncApiTestInjector.DOUBLE_RESULT), FakeAsyncApiDriver.silence())
+            .forEachIndexed { index, reply ->
+                val run = compiledSettleTest("Reply$index", 200) { reply.apply { settledMs = 50L } }
+                val calls = run()
+                assertEquals(2, calls.size)
+                assertTrue(calls.last() - calls.first() >= 200_000_000L)
+            }
+    }
+
+    @Test
+    fun testNoSettleWaitIsWrittenWhenNoMessageWasKeptOpen() {
+        val noWindow = compiledSettleTest("NoWindow", 0) { FakeAsyncApiDriver.fireAndForget() }
+        val failed = compiledSettleTest("Failed", 60_000) {
+            FakeAsyncApiDriver.fireAndForget().apply { published = false }
+        }
+        assertTimeoutPreemptively(Duration.ofSeconds(2)) {
+            assertEquals(2, noWindow().size)
+            assertEquals(1, failed().size)
+        }
+    }
+
+    /** Compile the generated method and observe when its scripted actions execute. */
+    private fun compiledSettleTest(
+        name: String,
+        settleMs: Int,
+        count: Int = 1,
+        answer: () -> AsyncApiReplyDto
+    ): () -> List<Long> {
+        val injector = AsyncApiTestInjector.create(
+            AsyncApiTestInjector.ncsDriver { action ->
+                answer().apply {
+                    testScript = listOf("calls.add(System.nanoTime())", "val ${action.replyVariable} = \"reply\"")
+                }
+            },
+            "--blackBox=false", "--createTests=true", "--enableBasicAssertions=false", "--testTimeout=0",
+            "--outputFormat=KOTLIN_JUNIT_5", "--asyncApiSettleMs=$settleMs"
+        )
+        val evaluated = AsyncApiTestInjector.evaluate(injector, *Array(count) { "bessj" })
+        val body = injector.getInstance(TestCaseWriter::class.java)
+            .convertToCompilableTestCode(TestCase(evaluated, "testSettle"), "").toString()
+        val className = "GeneratedSettle$name"
+        CompilerForTestGenerated.compile(OutputFormat.KOTLIN_JUNIT_5, """
+            import org.junit.jupiter.api.Test
+            import org.junit.jupiter.api.Assertions.*
+            class $className {
+                val calls = mutableListOf<Long>()
+                $body
+            }
+        """.trimIndent(), className)
+        val klass = javaClass.classLoader.loadClass(className)
+        val instance = klass.getDeclaredConstructor().newInstance()
+        return {
+            klass.getDeclaredMethod("testSettle").invoke(instance)
+            @Suppress("UNCHECKED_CAST")
+            val calls = klass.getDeclaredMethod("getCalls").invoke(instance) as List<Long>
+            calls + System.nanoTime()
         }
     }
 }

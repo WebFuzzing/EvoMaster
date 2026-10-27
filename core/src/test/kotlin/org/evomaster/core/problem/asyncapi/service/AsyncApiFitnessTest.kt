@@ -745,4 +745,58 @@ class AsyncApiFitnessTest {
 
         assertEquals(1234L, driver.published.single().replyTimeoutMs)
     }
+
+    @Test
+    fun testNoSettleWindowIsAskedForByDefault() {
+
+        startNcs { replied(DOUBLE_RESULT) }
+
+        evaluate("bessj")
+
+        assertNull(driver.published.single().settleMs)
+    }
+
+    @Test
+    fun testTheSettleWindowIsAskedForInWhiteBox() {
+
+        startNcs("--asyncApiSettleMs=250") { fireAndForget() }
+
+        evaluate("bessj", "expint")
+
+        assertEquals(listOf(250L, 250L), driver.published.map { it.settleMs })
+    }
+
+    @Test
+    fun testABlackBoxRunAsksForNoSettleWindow() {
+
+        /*
+            The window is there so that the code a message reaches is credited to it. A
+            black-box run collects no code coverage, so it would only slow the search down.
+         */
+        startNcs("$BLACK_BOX=true", "--asyncApiSettleMs=250") { fireAndForget() }
+
+        evaluate("bessj")
+
+        assertNull(driver.published.single().settleMs)
+    }
+
+    @Test
+    fun testHowLongTheControllerWaitedIsKeptOnTheResult() {
+
+        startNcs("--asyncApiSettleMs=250") { fireAndForget().apply { settledMs = 251 } }
+
+        val evaluated = evaluate("bessj")
+
+        assertEquals(251L, results(evaluated).single().getSettledMs())
+    }
+
+    @Test
+    fun testNoWaitIsRecordedWhenTheControllerReportsNone() {
+
+        startNcs { fireAndForget() }
+
+        val evaluated = evaluate("bessj")
+
+        assertNull(results(evaluated).single().getSettledMs())
+    }
 }

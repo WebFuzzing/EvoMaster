@@ -116,6 +116,35 @@ public class NcsKafkaEMTest extends AsyncApiTestBase {
     }
 
     /**
+     * A search that keeps every action open for a while after the driver returns. The service
+     * goes on answering, and every message is recorded as having been waited on.
+     */
+    @Test
+    public void testRunEMWithASettleWindow() throws Throwable {
+
+        runTestHandlingFlaky(
+                "NcsKafkaSettleEM",
+                "org.foo.asyncapi.NcsKafkaSettleEM",
+                40,
+                false,
+                (args) -> {
+
+                    setOption(args, "asyncApiReplyTimeoutMs", "3000");
+
+                    //long enough to be noticed, short enough for the budget: every action takes at least this long
+                    setOption(args, "asyncApiSettleMs", "200");
+
+                    Solution<AsyncApiIndividual> solution = initAndRun(args);
+
+                    assertTrue(countOutcome(solution, AsyncApiOutcome.REPLIED) > 0, "nothing was answered");
+                    assertEquals(0, countOutcome(solution, AsyncApiOutcome.NO_REPLY), "a promised reply never came");
+                    assertEquals(0, countOutcome(solution, AsyncApiOutcome.PUBLISH_FAILED), "a message never left");
+                    assertEverySettled(solution);
+                },
+                3);
+    }
+
+    /**
      * The no-reply oracle, end to end. With fixture replies deliberately disabled,
      * every message goes unanswered, and that is reported as a fault once experimental oracles
      * are asked for.

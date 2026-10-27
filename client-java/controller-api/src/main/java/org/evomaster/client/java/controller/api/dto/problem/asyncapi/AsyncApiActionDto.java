@@ -94,6 +94,17 @@ public class AsyncApiActionDto {
     public Long replyTimeoutMs;
 
     /**
+     * How long to keep the action open once the driver has returned, in milliseconds. The SUT
+     * handles a message on a thread of its own, possibly after the driver saw the publish
+     * acknowledged or the reply arrive, and what it covers meanwhile must be credited to this
+     * action, not to the next one or to none.
+     *
+     * The wait is done by the controller, so drivers need not implement it. Null, zero or
+     * negative mean no wait. Only set when the SUT is instrumented.
+     */
+    public Long settleMs;
+
+    /**
      * The language to render {@link AsyncApiReplyDto#testScript} in. Only Java and Kotlin are
      * ever asked for.
      *
