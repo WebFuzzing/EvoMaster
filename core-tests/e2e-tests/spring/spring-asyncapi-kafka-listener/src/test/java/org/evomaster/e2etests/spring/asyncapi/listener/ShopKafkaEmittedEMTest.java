@@ -36,6 +36,8 @@ public class ShopKafkaEmittedEMTest extends AsyncApiTestBase {
 
     private static final String KOTLIN = ".kt";
 
+    private static final String JAVA = ".java";
+
     private static final String PLACE_ORDER = "placeOrder";
 
     private static final String ADJUST_STOCK = "adjustStock";
@@ -68,6 +70,24 @@ public class ShopKafkaEmittedEMTest extends AsyncApiTestBase {
                 args -> runAndCheck(args), 5);
 
         assertGeneratedTestsObserve(outputFolder, className, KOTLIN);
+    }
+
+    /**
+     * The same, writing the suite in Java, the other language the observing code is written in.
+     */
+    @Test
+    public void testRunEMInJava() throws Throwable {
+
+        String outputFolder = "ShopKafkaEmittedJavaEM";
+        String className = "org.foo.asyncapi.ShopKafkaEmittedJavaEM";
+
+        runTestHandlingFlakyAndCompilation(outputFolder, className, null, 30, true, false,
+                args -> {
+                    setOption(args, "outputFormat", "JAVA_JUNIT_5");
+                    runAndCheck(args);
+                }, 5);
+
+        assertGeneratedTestsObserve(outputFolder, className, JAVA);
     }
 
     private void runAndCheck(List<String> args) {
