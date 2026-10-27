@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation;
 
 import org.evomaster.client.java.instrumentation.cassandra.CassandraSchemaTracer;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
+import org.evomaster.client.java.instrumentation.staticstate.AsyncMessageTracker;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
@@ -45,6 +46,14 @@ public class InstrumentationController {
      */
     public static long getObjectiveUpdateCount(){
         return ExecutionTracer.getObjectiveUpdateCount();
+    }
+
+    /**
+     * @return what the SUT received from {@code address} in the current action, and how much of
+     * it it is done with, see {@link AsyncMessageTracker}
+     */
+    public static MessageHandlingState getMessageHandlingState(String address){
+        return AsyncMessageTracker.getHandlingState(address);
     }
 
     public static void newAction(Action action){

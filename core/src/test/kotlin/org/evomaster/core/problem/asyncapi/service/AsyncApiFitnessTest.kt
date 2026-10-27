@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Injector
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.EmittedMessageDto
 import org.evomaster.client.java.controller.api.dto.StringSpecializationInfoDto
 import org.evomaster.client.java.controller.api.dto.TargetInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
@@ -64,6 +65,11 @@ class AsyncApiFitnessTest {
          * What the service compared the tainted payload field with, in the tests on taint.
          */
         private const val COMPARED_WITH = "order-created"
+
+        /**
+         * Where NCS answers bessj, and what it emits there, in the tests on emitted messages.
+         */
+        private const val BESSJ_REPLY = "ncs.bessj.reply"
 
         /**
          * A value taint analysis would recognise as its own once the service reports it back.
@@ -782,6 +788,84 @@ class AsyncApiFitnessTest {
         assertEquals(2000L, dto.settleMs)
         assertEquals(AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE, dto.completion)
         assertEquals(150L, dto.stableMs)
+    }
+
+    @Test
+    fun testHandlerReturnIsAskedFor() {
+
+        startNcs("--asyncApiSettleMs=2000", "--asyncApiCompletion=HANDLER_RETURN", "--instrumentMR_KAFKA=true") {
+            fireAndForget()
+        }
+
+        evaluate("bessj")
+
+        val dto = driver.published.single()
+        assertEquals(2000L, dto.settleMs)
+        assertEquals(AsyncApiActionDto.MessageCompletionStrategy.HANDLER_RETURN, dto.completion)
+        assertNull(dto.stableMs)
+    }
+
+    /**
+     * What an instrumented driver reports for an action during which the service emitted one
+     * message to [address].
+     */
+    private fun emitted(address: String) = AdditionalInfoDto().apply {
+        emittedMessages.add(EmittedMessageDto().apply {
+            this.address = address
+            payload = DOUBLE_RESULT
+            payloadTruncated = false
+            payloadType = String::class.java.name
+        })
+    }
+
+    @Test
+    fun testWhatTheServiceEmittedIsKeptOnTheResultOfItsAction() {
+
+        startNcs("--asyncApiSettleMs=2000", "--asyncApiCompletion=HANDLER_RETURN", "--instrumentMR_KAFKA=true") {
+            fireAndForget()
+        }
+        driver.testResults = {
+            TestResultsDto().apply {
+                additionalInfoList.add(emitted(BESSJ_REPLY))
+                //the second message made the service emit nothing
+                additionalInfoList.add(AdditionalInfoDto())
+            }
+        }
+
+        val results = results(evaluate("bessj", "expint"))
+
+        val first = results[0].getEmittedMessages().single()
+        assertEquals(BESSJ_REPLY, first.address)
+        assertEquals(DOUBLE_RESULT, first.payload)
+        assertEquals(false, first.payloadTruncated)
+        assertEquals(String::class.java.name, first.payloadType)
+
+        assertTrue(results[1].getEmittedMessages().isEmpty())
+        //and a copy of the result keeps them
+        assertEquals(BESSJ_REPLY, results[0].copy().getEmittedMessages().single().address)
+    }
+
+    @Test
+    fun testFewerEntriesThanActionsLeaveTheRestWithoutEmittedMessages() {
+
+        startNcs { fireAndForget() }
+        driver.testResults = { TestResultsDto().apply { additionalInfoList.add(emitted(BESSJ_REPLY)) } }
+
+        val results = results(evaluate("bessj", "expint"))
+
+        assertEquals(1, results[0].getEmittedMessages().size)
+        assertTrue(results[1].getEmittedMessages().isEmpty())
+    }
+
+    @Test
+    fun testABlackBoxRunKeepsNoEmittedMessages() {
+
+        startNcs("$BLACK_BOX=true") { fireAndForget() }
+        driver.testResults = { TestResultsDto().apply { additionalInfoList.add(emitted(BESSJ_REPLY)) } }
+
+        val result = results(evaluate("bessj")).single()
+
+        assertTrue(result.getEmittedMessages().isEmpty())
     }
 
     @Test

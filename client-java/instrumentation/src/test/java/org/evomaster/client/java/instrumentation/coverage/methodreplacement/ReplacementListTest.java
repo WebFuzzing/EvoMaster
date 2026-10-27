@@ -24,6 +24,14 @@ class ReplacementListTest {
     }
 
     @Test
+    public void testSeveralClassesCanTargetTheSameClassWhenAtMostOneReplacesItsConstructors(){
+
+        //poll(Duration) and poll(long) are in separate classes, and neither replaces a constructor
+        List<MethodReplacementClass> list = ReplacementList.getReplacements("org/apache/kafka/clients/consumer/KafkaConsumer", true);
+        assertEquals(2, list.size(), "Replacements: " + list);
+    }
+
+    @Test
     public void testReplacementMethods() {
 
         for (MethodReplacementClass mrc : ReplacementList.getList()) {

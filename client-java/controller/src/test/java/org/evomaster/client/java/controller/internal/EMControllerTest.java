@@ -9,6 +9,11 @@ import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiAct
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.client.java.controller.problem.AsyncApiProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto;
+import org.evomaster.client.java.controller.api.dto.EmittedMessageDto;
+import org.evomaster.client.java.controller.api.dto.TestResultsDto;
+import org.evomaster.client.java.instrumentation.EmittedMessage;
+import org.evomaster.client.java.instrumentation.staticstate.AsyncMessageTracker;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.InstrumentingAgent;
 import org.evomaster.client.java.sql.DbSpecification;
@@ -20,7 +25,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -41,6 +52,15 @@ public class EMControllerTest {
     private static final String OBJECTIVE_PREFIX = "EMControllerTest_";
 
     /**
+     * Where the actions published here go, and the SUT consumes from.
+     */
+    private static final String ADDRESS = "EMControllerTest_requests";
+
+    private static final String PAYLOAD = "{\"result\":42}";
+
+    private static final long CONSUMER_TIMEOUT_SECONDS = 10;
+
+    /**
      * What happened, in order, across the driver and the controller's wait.
      */
     private final List<String> events = new ArrayList<>();
@@ -48,6 +68,12 @@ public class EMControllerTest {
     private long now;
 
     private AsyncApiDriver driver;
+
+    /**
+     * Stands in for the SUT's consumer thread: what it receives, and whether it is done with it,
+     * is tracked per thread.
+     */
+    private ExecutorService consumer;
 
     private EMController controller;
 
@@ -81,6 +107,7 @@ public class EMControllerTest {
         now = 0;
         driver = new AsyncApiDriver();
         driver.newTest();
+        consumer = Executors.newSingleThreadExecutor();
         controller = new EMController(driver, new AsyncApiSettle(() -> now, ms -> {
             events.add("settle " + ms);
             now += ms;
@@ -91,6 +118,26 @@ public class EMControllerTest {
     public void tearDown() {
         //static state, shared with whatever runs next in this JVM
         ExecutionTracer.reset();
+        consumer.shutdownNow();
+    }
+
+    /**
+     * Run on the stand-in for the SUT's consumer thread, and wait for it.
+     */
+    private void onTheConsumerThread(Runnable runnable) {
+        try {
+            consumer.submit(runnable).get(CONSUMER_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static AsyncApiActionDto untilHandled() {
+        AsyncApiActionDto call = new AsyncApiActionDto();
+        call.settleMs = SETTLE_MS;
+        call.completion = AsyncApiActionDto.MessageCompletionStrategy.HANDLER_RETURN;
+        call.address = ADDRESS;
+        return call;
     }
 
     private Response publish(Long settleMs) {
@@ -261,6 +308,94 @@ public class EMControllerTest {
         assertEquals(SETTLE_MS, reply.settledMs);
     }
 
+    @Test
+    public void testTheDriverRunsMarkedAsTheDriver() {
+
+        Response response = publish(null);
+
+        assertEquals(OK, response.getStatus());
+        assertEquals(true, driver.markedAsDriver, "the driver published unmarked");
+        assertFalse(ExecutionTracer.isExecutingDriverAction(), "the mark outlived the driver");
+    }
+
+    @Test
+    public void testTheDriverMarkIsClearedWhenTheDriverFails() {
+
+        driver.fails = true;
+
+        Response response = publish(null);
+
+        assertEquals(SERVER_ERROR, response.getStatus());
+        assertEquals(true, driver.markedAsDriver, "the driver published unmarked");
+        assertFalse(ExecutionTracer.isExecutingDriverAction(), "the mark outlived the failed driver");
+    }
+
+    @Test
+    public void testASutDoneWithTheMessageIsLetGo() {
+
+        //the SUT takes the message while the driver is still publishing
+        driver.onPublish = () -> onTheConsumerThread(() -> AsyncMessageTracker.received(Collections.singletonList(ADDRESS)));
+
+        //and goes back for more while the controller waits
+        controller = new EMController(driver, new AsyncApiSettle(() -> now, ms -> {
+            now += ms;
+            onTheConsumerThread(() -> AsyncMessageTracker.askingForMore(true));
+        }));
+
+        Response response = publishCall(untilHandled());
+
+        AsyncApiReplyDto reply = replyIn(response);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.HANDLER_RETURN, reply.settleEndedBy);
+        assertEquals(AsyncApiSettle.POLL_INTERVAL_MS, reply.settledMs);
+    }
+
+    @Test
+    public void testWithoutTheAgentHandlerReturnWaitsTheWholeWindow() {
+
+        //what the tracker holds is not the SUT's when nothing is instrumented
+        setAgentActive(false);
+        driver.onPublish = () -> onTheConsumerThread(() -> {
+            AsyncMessageTracker.received(Collections.singletonList(ADDRESS));
+            AsyncMessageTracker.askingForMore(true);
+        });
+
+        Response response = publishCall(untilHandled());
+
+        AsyncApiReplyDto reply = replyIn(response);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
+        assertEquals(SETTLE_MS, reply.settledMs);
+    }
+
+    @Test
+    public void testASutThatNeverTakesTheMessageIsWaitedOnUntilTheDeadline() {
+
+        Response response = publishCall(untilHandled());
+
+        AsyncApiReplyDto reply = replyIn(response);
+        assertEquals(AsyncApiReplyDto.SettleEndReason.DEADLINE, reply.settleEndedBy);
+        assertEquals(SETTLE_MS, reply.settledMs);
+    }
+
+    @Test
+    public void testWhatTheSutEmittedAndConsumedReachesTheTestResults() {
+
+        ExecutionTracer.addEmittedMessage(new EmittedMessage(ADDRESS, PAYLOAD, String.class.getName()));
+
+        Response response = controller.getTestResultsWithIdsInBody(
+                Collections.emptyList(), false, false, false, false, mock(HttpServletRequest.class));
+
+        assertEquals(OK, response.getStatus());
+        TestResultsDto results = (TestResultsDto) ((WrappedResponseDto<?>) response.getEntity()).data;
+        AdditionalInfoDto info = results.additionalInfoList.get(0);
+
+        assertEquals(1, info.emittedMessages.size());
+        EmittedMessageDto message = info.emittedMessages.get(0);
+        assertEquals(ADDRESS, message.address);
+        assertEquals(PAYLOAD, message.payload);
+        assertEquals(false, message.payloadTruncated);
+        assertEquals(String.class.getName(), message.payloadType);
+    }
+
     /**
      * A driver that publishes nothing, and says it did unless told to fail.
      */
@@ -268,9 +403,21 @@ public class EMControllerTest {
 
         private boolean fails = false;
 
+        /**
+         * What the SUT does while the driver publishes.
+         */
+        private Runnable onPublish = () -> {};
+
+        /**
+         * Whether the thread publishing was marked as running the driver, when it published.
+         */
+        private Boolean markedAsDriver = null;
+
         @Override
         public void executeAsyncApiAction(AsyncApiActionDto dto, AsyncApiReplyDto reply) {
             events.add("publish");
+            markedAsDriver = ExecutionTracer.isExecutingDriverAction();
+            onPublish.run();
             if (fails) {
                 throw new IllegalStateException("no broker");
             }
