@@ -14,6 +14,7 @@ import javax.tools.ToolProvider
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
+import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 import kotlin.reflect.KClass
 
@@ -75,7 +76,7 @@ object CompilerForTestGenerated{
 
         val diagnostics = DiagnosticCollector<JavaFileObject>()
 
-        compiler.getStandardFileManager(diagnostics, null, null).use { manager ->
+        compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8).use { manager ->
 
             val units = manager.getJavaFileObjectsFromFiles(files)
 

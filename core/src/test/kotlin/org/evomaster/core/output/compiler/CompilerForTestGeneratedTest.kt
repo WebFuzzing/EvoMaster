@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Files
+import java.nio.charset.Charset
+import java.net.URLClassLoader
+import java.util.concurrent.TimeUnit
 
 class CompilerForTestGeneratedTest{
 
@@ -73,6 +76,44 @@ class CompilerForTestGeneratedTest{
         assertEquals(msg, res)
     }
 
+
+    @Test
+    fun testJavaSourceUsesUtf8WithANonUtf8JvmDefault() {
+        val directory = Files.createTempDirectory("generated-java-encoding").toFile()
+        val output = File(directory, "output.log")
+        val classpath = System.getProperty("java.class.path").split(File.pathSeparator)
+            .joinToString(File.pathSeparator) { File(it).absolutePath }
+        val process = ProcessBuilder(
+            File(System.getProperty("java.home"), "bin/java").absolutePath,
+            "-Dfile.encoding=ISO-8859-1", "-cp", classpath, javaClass.name
+        ).directory(directory).redirectErrorStream(true).redirectOutput(output).start()
+        try {
+            assertTrue(process.waitFor(30, TimeUnit.SECONDS), "Encoding probe timed out")
+            assertEquals(0, process.exitValue(), output.readText())
+        } finally {
+            if (process.isAlive) {
+                process.destroyForcibly().waitFor()
+            }
+            directory.deleteRecursively()
+        }
+    }
+
+    companion object {
+        /** Runs in a fresh JVM so its default charset cannot be cached from another test. */
+        @JvmStatic
+        fun main(args: Array<String>) {
+            check(Charset.defaultCharset() == Charsets.ISO_8859_1)
+            val name = "GeneratedUnicodeJava"
+            val expected = "\u00e9"
+            CompilerForTestGenerated.compile(OutputFormat.JAVA_JUNIT_5,
+                "public class $name { public String value() { return \"$expected\"; } }", name)
+            URLClassLoader(arrayOf(File("target/test-classes").toURI().toURL())).use { loader ->
+                val klass = loader.loadClass(name)
+                val value = klass.getDeclaredMethod("value").invoke(klass.getDeclaredConstructor().newInstance())
+                check(expected == value) { "The compiler changed a non-ASCII literal" }
+            }
+        }
+    }
 
     private fun checkCompileKotlinClass(source: File, className: String){
 
