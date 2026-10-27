@@ -176,6 +176,24 @@ public class SMTResultParser {
         return null;
     }
 
+    private static final Pattern UNICODE_ESCAPE = Pattern.compile("\\\\u\\{([0-9a-fA-F]{1,6})\\}");
+
+    /**
+     * Undoes the escapes of an SMT-LIB string literal: a double quote written as two, and a character
+     * written as \\u{X}, with X its code point in hex. Z3 writes every character outside printable
+     * ASCII that way, so without decoding, a value such as "ORDIN\\u{c6}R" was used as is.
+     */
+    static String unescapeString(String text) {
+        String unquoted = text.replace("\"\"", "\"");
+        Matcher m = UNICODE_ESCAPE.matcher(unquoted);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            m.appendReplacement(sb, Matcher.quoteReplacement(new String(Character.toChars(Integer.parseInt(m.group(1), 16)))));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
     /**
      * The name of a struct's constructor, from the first token of the struct.
      *
@@ -265,8 +283,8 @@ public class SMTResultParser {
             value = value.substring(0, value.length() - 1).trim(); // Remove parentheses
         }
         if (value.startsWith("\"") && value.endsWith("\"")) {
-            // If it is a string: remove the quotes and undo the SMT-LIB escape of " as ""
-            return new StringValue(value.substring(1, value.length() - 1).replace("\"\"", "\""));
+            // If it is a string: remove the quotes and undo the SMT-LIB escapes
+            return new StringValue(unescapeString(value.substring(1, value.length() - 1)));
         }
         try {
             if (value.matches("- \\d+")) {

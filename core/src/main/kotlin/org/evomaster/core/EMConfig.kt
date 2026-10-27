@@ -722,7 +722,11 @@ class EMConfig {
                         " 'problemType'. The system will default to RESTful API testing.")
                 problemType = ProblemType.REST
             }
-            if (outputFormat == OutputFormat.DEFAULT) {
+            /*
+                AsyncAPI uses a driver in black-box too, as there is no universal client for a
+                broker, so the format is resolved from the driver as in white-box.
+             */
+            if (outputFormat == OutputFormat.DEFAULT && problemType != ProblemType.ASYNCAPI) {
                 LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
                         " 'outputFormat'. The system will default to $defaultOutputFormatForBlackBox.")
                 outputFormat = defaultOutputFormatForBlackBox
@@ -875,10 +879,7 @@ class EMConfig {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
 
-        if (problemType == ProblemType.ASYNCAPI && createTests) {
-            throw ConfigProblemException("Test generation for AsyncAPI services is not available yet." +
-                    " For the time being, run with '--createTests false' to only search for faults.")
-        }
+        checkAsyncApiOutputFormat()
 
         if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
             throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
@@ -1112,6 +1113,23 @@ class EMConfig {
      * holds the connection to the broker even when the SUT itself is treated as a black box.
      */
     fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
+
+    /**
+     * Check that, for AsyncAPI, tests are written in a supported format (Java or Kotlin).
+     *
+     * Called when options are validated, and again once a DEFAULT format has been resolved from
+     * the driver.
+     */
+    fun checkAsyncApiOutputFormat() {
+
+        if (problemType == ProblemType.ASYNCAPI
+                && createTests
+                && outputFormat != OutputFormat.DEFAULT
+                && !outputFormat.isJavaOrKotlin()) {
+            throw ConfigProblemException("Tests for AsyncAPI services can only be written in Java or Kotlin." +
+                    " Was: $outputFormat")
+        }
+    }
 
     fun activatedExperimentalFeatures(): List<String> {
 
@@ -1406,7 +1424,9 @@ class EMConfig {
     @Important(2.0)
     @Cfg("Specify in which format the tests should be outputted." +
             " If left on `DEFAULT`, for white-box testing then the value specified in the _EvoMaster Driver_ will be used." +
-            " On the other hand, for black-box testing it will default to a predefined type (e.g., Python).")
+            " On the other hand, for black-box testing it will default to a predefined type (e.g., Python)." +
+            " For AsyncAPI, a driver is used in black-box too, so `DEFAULT` is resolved from the driver in" +
+            " both modes, and only Java and Kotlin are supported.")
     var outputFormat = OutputFormat.DEFAULT
 
     @Important(2.1)
@@ -1610,7 +1630,8 @@ class EMConfig {
             " If left to DEFAULT, the type will be inferred from the EM Driver." +
             " However, in case of ambiguities (e.g., the driver specifies more than one type)," +
             " then this field must be set with a specific type." +
-            " This is also the case for Black-Box testing where there is no EM Driver." +
+            " This is also the case for Black-Box testing, where there is usually no EM Driver" +
+            " (AsyncAPI is the exception: see outputFormat)." +
             " In this latter case, the system defaults to handle REST APIs.")
     var problemType = ProblemType.DEFAULT
 
@@ -3123,6 +3144,10 @@ class EMConfig {
     @DependsOnTrueFor("handleFlakiness")
     @Cfg("Specify the number of re-executions for detecting flakiness in tests. Set to 0 to disable re-execution based flakiness detection.")
     var execNumForDetectFlakiness = 1
+
+    @Experimental
+    @Cfg("Specify whether to use an unbounded time budget for flakiness detection.")
+    var unboundBudgetForFlakiness = false
 
     @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +
