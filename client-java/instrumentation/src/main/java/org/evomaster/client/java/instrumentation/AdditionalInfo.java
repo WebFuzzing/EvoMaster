@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
 import org.evomaster.client.java.instrumentation.cassandra.CassandraTableMetadata;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;

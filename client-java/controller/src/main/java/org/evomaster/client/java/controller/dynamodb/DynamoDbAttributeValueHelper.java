@@ -1,6 +1,8 @@
 package org.evomaster.client.java.controller.dynamodb;
 
-import org.evomaster.client.java.instrumentation.DynamoDbQueryValue;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeType;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbReflectionHelper;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbQueryValue;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -172,7 +174,7 @@ public final class DynamoDbAttributeValueHelper {
     }
 
     private static Object toPlainQueryValue(DynamoDbQueryValue queryValue) {
-        Object payload = queryValue.value();
+        Object payload = queryValue.getPayload();
         switch (queryValue.type()) {
             case UNSET:
                 return queryValue;

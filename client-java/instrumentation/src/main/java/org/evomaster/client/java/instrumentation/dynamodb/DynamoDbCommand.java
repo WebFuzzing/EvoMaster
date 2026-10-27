@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation;
+package org.evomaster.client.java.instrumentation.dynamodb;
 
 import java.io.Serializable;
 import java.util.ArrayList;

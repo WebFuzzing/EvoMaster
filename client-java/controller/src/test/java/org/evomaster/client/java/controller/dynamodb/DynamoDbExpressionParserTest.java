@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.dynamodb;
 
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeType;
 import org.evomaster.client.java.controller.dynamodb.operations.*;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.*;
 import org.junit.jupiter.api.Test;

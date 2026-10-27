@@ -1,10 +1,11 @@
-package org.evomaster.client.java.controller.dynamodb;
+package org.evomaster.client.java.instrumentation.dynamodb;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
- * Shared reflection helpers used by DynamoDB parser utilities and request snapshots.
+ * Shared reflection helpers used by DynamoDB parser utilities and captured requests.
  */
 public final class DynamoDbReflectionHelper {
 
@@ -42,6 +43,9 @@ public final class DynamoDbReflectionHelper {
         }
         try {
             Method method = target.getClass().getMethod(methodName);
+            if (!Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
+                method.setAccessible(true);
+            }
             return method.invoke(target);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
             return null;

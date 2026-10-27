@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.dynamodb.parsers;
 
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 
 /**
  * Parser for DynamoDB {@code PutItem} requests.

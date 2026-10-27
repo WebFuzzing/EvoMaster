@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
-import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeType;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeType;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeValueHelper;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbComparisonType;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbValueLookup;

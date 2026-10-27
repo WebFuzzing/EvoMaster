@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.dynamodb.DynamoDbExpressionParser;
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
-import org.evomaster.client.java.instrumentation.DynamoDbQuery;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbQuery;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.EqualsOperation;
 
 import java.util.*;

@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation;
+package org.evomaster.client.java.instrumentation.dynamodb;
 
 /**
  * Shared DynamoDB API operation names used across instrumentation and parsing logic.

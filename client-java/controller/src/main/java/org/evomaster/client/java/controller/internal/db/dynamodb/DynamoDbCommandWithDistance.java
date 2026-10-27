@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.dynamodb;
 
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 
 import java.util.Objects;
 

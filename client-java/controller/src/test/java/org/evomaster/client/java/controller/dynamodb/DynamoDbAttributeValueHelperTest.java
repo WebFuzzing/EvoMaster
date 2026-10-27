@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.dynamodb;
 
-import org.evomaster.client.java.instrumentation.DynamoDbQueryValue;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeType;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbQueryValue;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;

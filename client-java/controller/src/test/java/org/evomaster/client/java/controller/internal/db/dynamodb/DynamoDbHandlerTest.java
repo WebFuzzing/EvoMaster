@@ -4,8 +4,8 @@ import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbE
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;

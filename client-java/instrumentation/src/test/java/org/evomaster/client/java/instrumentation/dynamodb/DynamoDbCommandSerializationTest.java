@@ -1,6 +1,6 @@
-package org.evomaster.client.java.instrumentation;
+package org.evomaster.client.java.instrumentation.dynamodb;
 
-import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeType;
+import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -58,7 +58,7 @@ public class DynamoDbCommandSerializationTest {
             assertEquals(names, query.expressionAttributeNames());
             DynamoDbQueryValue id = query.expressionAttributeValues().get(":id");
             assertEquals(DynamoDbAttributeType.BINARY, id.type());
-            assertArrayEquals(new byte[]{10, 7, 86}, (byte[]) id.value());
+            assertArrayEquals(new byte[]{10, 7, 86}, (byte[]) id.getPayload());
         }
     }
 
@@ -75,9 +75,9 @@ public class DynamoDbCommandSerializationTest {
                 .build());
 
         assertEquals(DynamoDbAttributeType.STRING, query.key().get("playerId").type());
-        assertEquals("Messi", query.key().get("playerId").value());
+        assertEquals("Messi", query.key().get("playerId").getPayload());
         assertEquals(DynamoDbAttributeType.NUMBER, query.key().get("seasonYear").type());
-        assertEquals("2022", query.key().get("seasonYear").value());
+        assertEquals("2022", query.key().get("seasonYear").getPayload());
     }
 
     /** An absent attribute type differs from an explicit DynamoDB null value. */
@@ -113,9 +113,9 @@ public class DynamoDbCommandSerializationTest {
         Map<String, DynamoDbQuery.BatchGetKeys> captured = query.batchRequestItems();
 
         assertEquals(requestItems.keySet(), captured.keySet());
-        assertEquals("Messi", captured.get("WorldCupPlayers").keys().get(0).get("playerId").value());
+        assertEquals("Messi", captured.get("WorldCupPlayers").keys().get(0).get("playerId").getPayload());
         DynamoDbQueryValue teamId = captured.get("WorldCupTeams").keys().get(0).get("teamId");
         assertEquals(DynamoDbAttributeType.NUMBER, teamId.type());
-        assertEquals("10", teamId.value());
+        assertEquals("10", teamId.getPayload());
     }
 }

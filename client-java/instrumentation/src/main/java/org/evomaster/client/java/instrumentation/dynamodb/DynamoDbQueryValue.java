@@ -1,6 +1,4 @@
-package org.evomaster.client.java.instrumentation;
-
-import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeType;
+package org.evomaster.client.java.instrumentation.dynamodb;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -164,7 +162,7 @@ public final class DynamoDbQueryValue implements Serializable {
      *
      * @return payload, or {@code null} for null and unset values
      */
-    public Serializable value() {
+    public Serializable getPayload() {
         if (value instanceof byte[]) {
             return ((byte[]) value).clone();
         }

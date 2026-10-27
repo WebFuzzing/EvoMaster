@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.dynamodb;
+package org.evomaster.client.java.instrumentation.dynamodb;
 
 import java.util.HashMap;
 import java.util.Map;

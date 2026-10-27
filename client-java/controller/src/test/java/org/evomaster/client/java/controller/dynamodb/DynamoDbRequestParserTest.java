@@ -1,10 +1,12 @@
 package org.evomaster.client.java.controller.dynamodb;
 
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeType;
+
 import org.evomaster.client.java.controller.dynamodb.operations.*;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.*;
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
-import org.evomaster.client.java.instrumentation.DynamoDbQuery;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbQuery;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.SdkBytes;
 

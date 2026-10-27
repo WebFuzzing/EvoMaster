@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.dynamodb;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.evomaster.client.java.controller.dynamodb.operations.*;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeType;
 
 import java.util.*;
 

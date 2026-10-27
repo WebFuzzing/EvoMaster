@@ -1,9 +1,9 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
-import org.evomaster.client.java.instrumentation.DynamoDbQuery;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbQuery;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -384,11 +384,11 @@ public class DynamoDbClassReplacementTest {
         assertEquals(expectedTableNames, command.getTableNames());
         assertEquals(expectedOperationName, command.getOperationName());
         assertNotNull(command.getDdbRequest());
-        DynamoDbQuery requestSnapshot = command.getDdbRequest();
+        DynamoDbQuery query = command.getDdbRequest();
         if (expectedOperationName == DynamoDbOperationNames.BATCH_GET_ITEM) {
-            assertEquals(expectedTableNames, new ArrayList<>(requestSnapshot.batchRequestItems().keySet()));
+            assertEquals(expectedTableNames, new ArrayList<>(query.batchRequestItems().keySet()));
         } else {
-            assertEquals(expectedTableNames.get(0), requestSnapshot.tableName());
+            assertEquals(expectedTableNames.get(0), query.tableName());
         }
     }
 }

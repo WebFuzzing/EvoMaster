@@ -1,8 +1,8 @@
 package org.evomaster.client.java.controller.dynamodb.parsers;
 
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
-import org.evomaster.client.java.instrumentation.DynamoDbQuery;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbQuery;
 
 import java.util.Map;
 

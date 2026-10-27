@@ -1,6 +1,5 @@
-package org.evomaster.client.java.instrumentation;
+package org.evomaster.client.java.instrumentation.dynamodb;
 
-import org.evomaster.client.java.controller.dynamodb.DynamoDbReflectionHelper;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
