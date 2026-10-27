@@ -28,6 +28,7 @@ public class ReplacementList {
                     new AbstractEndpointClassReplacement(),
                     new Base64DecoderClassReplacement(),
                     new BasicRedisPersistentEntityClassReplacement(),
+                    new LegacyBasicRedisPersistentEntityClassReplacement(),
                     new BooleanClassReplacement(),
                     new ByteClassReplacement(),
                     new CharacterClassReplacement(),
