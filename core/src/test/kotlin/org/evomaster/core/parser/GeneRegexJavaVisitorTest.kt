@@ -53,6 +53,16 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testQuotedBackslash(){
+        checkSameAsJava("""\Q\\E""")
+        checkSameAsJava("""\Qa\\\Eb""")
+        checkSameAsJava("""\Q\\Eb\Qx\Qy\E""")
+        checkSameAsJava("""\Q\a\b\x\y\z\0\E""")
+        checkSameAsJava("""\Qabc\""")
+        checkSameAsJava("""^((f|F)(u|U)\Q\\E)$""")
+    }
+
+    @Test
     fun testMultipleQuotes(){
         checkSameAsJava("^(\\Q6\\E(n|N)(u|U)(a|A)(q|Q)(w|W)(b|B)\\Q51\\E(y|Y)(w|W)\\Q1\\E(e|E)(r|R)(n|N))$")
         checkSameAsJava("^((z|Z)(l|L)(q|Q)\\Q9\\E(r|R)(e|E)(k|K)(q|Q)(b|B)\\Q6\\E(e|E)(q|Q)(u|U))$")
