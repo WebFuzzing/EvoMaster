@@ -261,19 +261,18 @@ class RestIndividual(
      */
     fun removeReferencesToResourceIfCreated(index: Int) {
         val actions = seeMainExecutableActions()
-        val n = actions.size
 
-        if (index !in 0..<n) {
+        if (index !in actions.indices) {
             throw IllegalArgumentException("Index is out of main actions list bounds")
         }
 
-        if (index == n-1) {
+        if (index == actions.size - 1) {
             return
         }
 
         if (actions[index].saveCreatedResourceLocation) {
             val creationLocationId = actions[index].creationLocationId()
-            for (i in index + 1 until n) {
+            for (i in index + 1 until actions.size) {
                 if (actions[i].usePreviousLocationId == creationLocationId) {
                     actions[i].usePreviousLocationId = null
                 }
