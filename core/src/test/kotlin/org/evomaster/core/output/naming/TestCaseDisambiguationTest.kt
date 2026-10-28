@@ -240,6 +240,20 @@ class TestCaseDisambiguationTest {
     }
 
     @Test
+    fun emptyQueryParameterWithHyphensProducesValidTestName() {
+        val simpleIndividual = getEvaluatedIndividualWith(getRestCallAction("/JWT/decode"))
+        val queryIndividual = getEvaluatedIndividualWith(getRestCallAction("/JWT/decode",
+            parameters = mutableListOf(getStringQueryParam("jwt-encode-user"))))
+        ensureGeneValue(queryIndividual, "jwt-encode-user", "")
+        val solution = Solution(mutableListOf(simpleIndividual, queryIndividual), "suitePrefix", "suiteSuffix",
+            Termination.NONE, emptyList(), emptyList())
+
+        val testCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 120).getTestCases()
+
+        assertEquals("test_1_getOnJWTDecodeWithQueryParamEmptyJwt_encode_userReturnsEmpty", testCases[1].name)
+    }
+
+    @Test
     fun emptyStringAndNegativeIntQueryParamsAreAdded() {
         val simpleIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages"))
         val queryParamsIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages", parameters = mutableListOf(getStringQueryParam("name"), getIntegerQueryParam("limit"))))
