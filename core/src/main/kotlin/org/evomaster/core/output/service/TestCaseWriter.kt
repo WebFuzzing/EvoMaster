@@ -56,6 +56,40 @@ abstract class TestCaseWriter {
 
 
     /**
+     * Write a JUnit assertion for an [expression] valid in Java or Kotlin.
+     */
+    protected fun writeJUnitAssertTrue(lines: Lines, expression: String) {
+        requireJUnitFormat()
+        lines.addStatement("assertTrue($expression)")
+    }
+
+    /** Write a JUnit equality assertion from source expressions, already quoted when necessary. */
+    protected fun writeJUnitAssertEquals(lines: Lines, expected: String, actual: String) {
+        requireJUnitFormat()
+        lines.addStatement("assertEquals($expected, $actual)")
+    }
+
+    /** Write a JUnit floating-point assertion with the caller's tolerance. */
+    protected fun writeJUnitAssertEqualsWithDelta(lines: Lines, expected: String, actual: String, delta: Double) {
+        requireJUnitFormat()
+        lines.addStatement("assertEquals($expected, $actual, $delta)")
+    }
+
+    /** Assert that a JVM string expression contains [text], escaping the literal for the output format. */
+    protected fun writeJUnitAssertContains(lines: Lines, actual: String, text: String) {
+        requireJUnitFormat()
+        //A Kotlin expression supplied by a driver may be nullable.
+        val value = if (format.isKotlin()) "$actual!!" else actual
+        writeJUnitAssertTrue(lines, "$value.contains(${TestWriterUtils.quotedEscaped(text, format)})")
+    }
+
+    private fun requireJUnitFormat() {
+        require(format.isJavaOrKotlin()) {
+            "JUnit assertions require Java or Kotlin output, got $format"
+        }
+    }
+
+    /**
      * save content to the same folder where [testResourcePath] is with a file name [fileName]
      */
     protected fun saveTextToDisk(text: String, testResourcePath: Path, fileName: String){
