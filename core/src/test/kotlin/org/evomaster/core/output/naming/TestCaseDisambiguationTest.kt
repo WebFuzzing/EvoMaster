@@ -14,6 +14,8 @@ import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import java.util.Collections.singletonList
 
 class TestCaseDisambiguationTest {
@@ -239,18 +241,37 @@ class TestCaseDisambiguationTest {
         assertEquals("test_1_getOnLanguagesWithQueryParamEmptyNameReturnsEmpty", testCases[1].name)
     }
 
-    @Test
-    fun emptyQueryParameterWithHyphensProducesValidTestName() {
+    @ParameterizedTest
+    @CsvSource("jwt-encode-user,Jwt_encode_user", "enabled.x,Enabled_x", "enabled.y,Enabled_y")
+    fun emptyQueryParameterProducesValidTestName(parameterName: String, expectedToken: String) {
         val simpleIndividual = getEvaluatedIndividualWith(getRestCallAction("/JWT/decode"))
         val queryIndividual = getEvaluatedIndividualWith(getRestCallAction("/JWT/decode",
-            parameters = mutableListOf(getStringQueryParam("jwt-encode-user"))))
-        ensureGeneValue(queryIndividual, "jwt-encode-user", "")
+            parameters = mutableListOf(getStringQueryParam(parameterName))))
+        ensureGeneValue(queryIndividual, parameterName, "")
         val solution = Solution(mutableListOf(simpleIndividual, queryIndividual), "suitePrefix", "suiteSuffix",
             Termination.NONE, emptyList(), emptyList())
 
         val testCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 120).getTestCases()
 
-        assertEquals("test_1_getOnJWTDecodeWithQueryParamEmptyJwt_encode_userReturnsEmpty", testCases[1].name)
+        assertEquals("test_1_getOnJWTDecodeWithQueryParamEmpty${expectedToken}ReturnsEmpty", testCases[1].name)
+    }
+
+    @Test
+    fun sanitizedQueryParameterCollisionsKeepDistinctTestNames() {
+        val individuals = listOf("enabled-x", "enabled.x", "enabled_x").map { name ->
+            getEvaluatedIndividualWith(getRestCallAction("/items",
+                parameters = mutableListOf(getStringQueryParam(name)))).also {
+                ensureGeneValue(it, name, "")
+            }
+        }.toMutableList()
+        val solution = Solution(individuals, "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val names = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 120)
+            .getTestCases().map { it.name }
+
+        // If the sanitized tokens cannot disambiguate the tests, the strategy keeps
+        // the shorter name. The existing numeric prefix still guarantees uniqueness.
+        assertEquals((0..2).map { "test_${it}_getOnItemsReturnsEmpty" }, names)
     }
 
     @Test
