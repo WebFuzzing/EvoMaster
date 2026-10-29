@@ -27,6 +27,8 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModu
 
         super.configure()
 
+        binder().requireExplicitBindings()
+
         if(bindRemote){
             /*
                 Governator does not seem to have a way to override bindings for testing :(

@@ -25,6 +25,8 @@ class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
 
         super.configure()
 
+        binder().requireExplicitBindings()
+
         if (bindRemote) {
             bind(RemoteController::class.java)
                 .to(RemoteControllerImplementation::class.java)
@@ -55,7 +57,7 @@ class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
             .asEagerSingleton()
 
         bind(object : TypeLiteral<AbstractRestFitness>() {})
-            .to(ResourceRestFitness::class.java)
+            .to(RestFitness::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<*>>() {})

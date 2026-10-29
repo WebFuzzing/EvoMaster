@@ -25,6 +25,8 @@ class BlackBoxRestModule(
 
         super.configure()
 
+        binder().requireExplicitBindings()
+
         bind(object : TypeLiteral<EnterpriseSampler<RestIndividual>>() {})
             .to(RestSampler::class.java)
             .asEagerSingleton()
