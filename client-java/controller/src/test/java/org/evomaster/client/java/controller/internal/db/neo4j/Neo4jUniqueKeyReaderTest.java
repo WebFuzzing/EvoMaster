@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.neo4j;
 
-import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jDbInfoDto;
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto;
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityDto;
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityPropertyDto;
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyDto;
@@ -66,16 +66,16 @@ public class Neo4jUniqueKeyReaderTest {
         run("CREATE (:Player {id: 1}), (:Player {id: 'two'}), (:Player {name: 'no id'}), "
                 + "(:Match {white: 'a', black: 'b'})");
 
-        Neo4jDbInfoDto dto = new Neo4jUniqueKeyReader().read(client, Collections.emptyList());
+        Neo4jExistingDataDto dto = new Neo4jUniqueKeyReader().read(client, Collections.emptyList());
 
         assertEquals(2, dto.uniqueKeys.size());
 
         Neo4jUniqueKeyDto player = find(dto, "Player");
-        assertEquals(Collections.singletonList("id"), player.propertyKeys);
+        assertEquals(Collections.singletonList("id"), player.properties);
         assertEquals(Arrays.asList("INTEGER=1", "STRING=two"), render(player).stream().sorted().collect(Collectors.toList()));
 
         Neo4jUniqueKeyDto match = find(dto, "Match");
-        assertEquals(Arrays.asList("white", "black"), match.propertyKeys);
+        assertEquals(Arrays.asList("white", "black"), match.properties);
         assertEquals(Collections.singletonList("STRING=a,STRING=b"), render(match));
     }
 
@@ -84,12 +84,12 @@ public class Neo4jUniqueKeyReaderTest {
         run("CREATE (:Adopter:Person {id: 'gQNkuJUNO_nF', name: 'Ana'}), (:Adopter {id: 'other'}), "
                 + "(:Person {id: 'not an adopter'})");
 
-        Neo4jDbInfoDto dto = new Neo4jUniqueKeyReader().read(client, Collections.singletonList(
+        Neo4jExistingDataDto dto = new Neo4jUniqueKeyReader().read(client, Collections.singletonList(
                 entity(Arrays.asList("Adopter", "Person"), property("id", true), property("name", false))));
 
         assertEquals(1, dto.uniqueKeys.size());
         Neo4jUniqueKeyDto adopter = find(dto, "Adopter");
-        assertEquals(Collections.singletonList("id"), adopter.propertyKeys);
+        assertEquals(Collections.singletonList("id"), adopter.properties);
         assertEquals(Arrays.asList("STRING=gQNkuJUNO_nF", "STRING=other"),
                 render(adopter).stream().sorted().collect(Collectors.toList()));
     }
@@ -99,7 +99,7 @@ public class Neo4jUniqueKeyReaderTest {
         run("CREATE CONSTRAINT player_id IF NOT EXISTS FOR (n:Player) REQUIRE n.id IS UNIQUE");
         run("CREATE (:Player {id: 1.5})");
 
-        Neo4jDbInfoDto dto = new Neo4jUniqueKeyReader().read(client, Collections.singletonList(
+        Neo4jExistingDataDto dto = new Neo4jUniqueKeyReader().read(client, Collections.singletonList(
                 entity(Collections.singletonList("Player"), property("id", true))));
 
         assertEquals(1, dto.uniqueKeys.size());
@@ -110,13 +110,13 @@ public class Neo4jUniqueKeyReaderTest {
     public void testValuesOfTypesAnInsertionCannotHoldAreLeftOut() {
         run("CREATE (:Adopter {id: [1, 2]}), (:Adopter {id: date('2026-10-20')}), (:Adopter {id: true})");
 
-        Neo4jDbInfoDto dto = new Neo4jUniqueKeyReader().read(client, Collections.singletonList(
+        Neo4jExistingDataDto dto = new Neo4jUniqueKeyReader().read(client, Collections.singletonList(
                 entity(Collections.singletonList("Adopter"), property("id", true))));
 
         assertEquals(Collections.singletonList("BOOLEAN=true"), render(find(dto, "Adopter")));
     }
 
-    private static Neo4jUniqueKeyDto find(Neo4jDbInfoDto dto, String label) {
+    private static Neo4jUniqueKeyDto find(Neo4jExistingDataDto dto, String label) {
         return dto.uniqueKeys.stream().filter(k -> k.label.equals(label)).findFirst()
                 .orElseThrow(() -> new AssertionError("No key for " + label));
     }

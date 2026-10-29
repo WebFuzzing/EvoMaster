@@ -333,7 +333,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val oldNeo4jDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
 
-        val added = handleFailedNeo4jQueries(ind, failedQueries, sampler.neo4jSchema, sampler.neo4jUniqueKeys)
+        val added = handleFailedNeo4jQueries(ind, failedQueries, sampler.neo4jSchema, sampler.existingNeo4jData)
 
         // a new insertion may repeat a unique key of an older one, and if it cannot be repaired it is removed
         ind.repairInitializationActions(randomness)

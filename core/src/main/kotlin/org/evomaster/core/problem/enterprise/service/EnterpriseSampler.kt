@@ -50,9 +50,9 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
 
     /**
      * The keys the nodes inserted into Neo4j must not repeat, with the values the database already held
-     * for them. Null if there are none, or before the SUT info is read.
+     * for them when the search started. Null if there are none, or if no Neo4j data is generated.
      */
-    var neo4jUniqueKeys: Neo4jUniqueKeys? = null
+    var existingNeo4jData: Neo4jUniqueKeys? = null
         protected set
 
     var existingSqlData : List<SqlAction> = listOf()
@@ -174,7 +174,9 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
     open fun initNeo4jInfo(infoDto: SutInfoDto) {
         val entities = infoDto.unitsInfoDto?.neo4jEntities ?: emptyList()
         neo4jSchema = if (entities.isEmpty()) null else Neo4jSchema(entities)
-        neo4jUniqueKeys = infoDto.neo4jDbInfoDto?.let { Neo4jUniqueKeys(it) }?.takeUnless { it.isEmpty() }
+        if (config.shouldGenerateNeo4jData()) {
+            existingNeo4jData = rc.getNeo4jExistingData()?.let { Neo4jUniqueKeys(it) }?.takeUnless { it.isEmpty() }
+        }
     }
 
     fun extractFkTables(tables: Set<TableId>): Set<TableId> {

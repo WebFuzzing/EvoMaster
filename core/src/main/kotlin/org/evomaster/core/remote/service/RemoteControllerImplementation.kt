@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
@@ -588,6 +589,20 @@ class RemoteControllerImplementation() : RemoteController{
             response,
             object : GenericType<WrappedResponseDto<Neo4jInsertionResultsDto>>() {}
         )?.data
+    }
+
+    override fun getNeo4jExistingData(): Neo4jExistingDataDto? {
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.NEO4J_EXISTING_DATA)
+                .request()
+                .get()
+        }
+        val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<Neo4jExistingDataDto>>() {})
+        if (!checkResponse(response, dto, "Failed to read the existing Neo4j data")) {
+            return null
+        }
+        return dto?.data
     }
 
     override fun executeDynamoDbInsertions(dto: DynamoDbDatabaseCommandsDto): DynamoDbInsertionResultsDto? {

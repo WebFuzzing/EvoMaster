@@ -1,6 +1,6 @@
 package org.evomaster.core.database.neo4j
 
-import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jDbInfoDto
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto
 
 /**
@@ -8,13 +8,13 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPro
  * started: the uniqueness constraints of the database plus the ids of the SUT's entities. It also keeps
  * the values the database already held for them, which the reset of the SUT restores before every test.
  */
-class Neo4jUniqueKeys(dto: Neo4jDbInfoDto) {
+class Neo4jUniqueKeys(dto: Neo4jExistingDataDto) {
 
     /**
      * @property label label of the nodes the key applies to
-     * @property propertyKeys properties that together identify a node with [label]
+     * @property properties properties that together identify a node with [label]
      */
-    data class Key(val label: String, val propertyKeys: List<String>)
+    data class Key(val label: String, val properties: List<String>)
 
     /**
      * The value a node holds for a key, as each property's type and text. The type is part of it
@@ -30,12 +30,12 @@ class Neo4jUniqueKeys(dto: Neo4jDbInfoDto) {
 
     init {
         val valid = dto.uniqueKeys
-            .filter { !it.label.isNullOrEmpty() && it.propertyKeys.isNotEmpty() }
-            .map { Key(it.label, it.propertyKeys.toList()) to it.existingValues }
+            .filter { !it.label.isNullOrEmpty() && it.properties.isNotEmpty() }
+            .map { Key(it.label, it.properties.toList()) to it.existingValues }
         keys = valid.map { it.first }.distinct()
         existing = valid.flatMap { (key, existingValues) ->
             existingValues
-                .filter { entries -> entries.size == key.propertyKeys.size && entries.all { it.type != null && it.value != null } }
+                .filter { entries -> entries.size == key.properties.size && entries.all { it.type != null && it.value != null } }
                 .map { entries -> Value(key, entries.map { it.type to it.value }) }
         }.toSet()
     }
@@ -52,7 +52,7 @@ class Neo4jUniqueKeys(dto: Neo4jDbInfoDto) {
          * which leaves it out of the key as Neo4j does
          */
         fun valueOf(key: Key, node: Neo4jNodeTemplate): Value? {
-            val values = key.propertyKeys.map { name ->
+            val values = key.properties.map { name ->
                 val property = node.properties.firstOrNull { it.key == name } ?: return null
                 property.type to property.valueAsText()
             }

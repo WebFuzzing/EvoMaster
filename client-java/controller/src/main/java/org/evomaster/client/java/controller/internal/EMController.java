@@ -16,6 +16,9 @@ import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityDto;
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto;
+import org.evomaster.client.java.controller.internal.db.neo4j.Neo4jUniqueKeyReader;
 import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
@@ -266,13 +269,6 @@ public class EMController {
             String msg = "Failed to extract units info";
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
-        }
-
-        try {
-            dto.neo4jDbInfoDto = noKillSwitch(() -> sutController.getNeo4jDbInfo(dto.unitsInfoDto.neo4jEntities));
-        } catch (RuntimeException e) {
-            // without it the search still runs, it just cannot keep inserted nodes from repeating keys
-            SimpleLogger.warn("Failed to read the unique keys of Neo4j: " + e.getMessage());
         }
 
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
@@ -1267,6 +1263,32 @@ public class EMController {
                     .entity(WrappedResponseDto.withError(msg)).build();
         } finally {
             sutController.setExecutingInitNeo4j(false);
+        }
+    }
+
+    @Path(ControllerConstants.NEO4J_EXISTING_DATA)
+    @GET
+    public Response getNeo4jExistingData(@Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
+        try {
+            ReflectionBasedNeo4jClient connection = noKillSwitch(sutController::getNeo4jConnection);
+            if (connection == null) {
+                String msg = "No active Neo4j connection";
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            UnitsInfoDto unitsInfo = noKillSwitch(() -> sutController.getUnitsInfoDto());
+            List<Neo4jEntityDto> entities = unitsInfo == null ? null : unitsInfo.neo4jEntities;
+            Neo4jExistingDataDto existingData = noKillSwitch(() -> new Neo4jUniqueKeyReader().read(connection, entities));
+            return Response.status(200).entity(WrappedResponseDto.withData(existingData)).build();
+
+        } catch (RuntimeException e) {
+            String msg = "Failed to read the existing Neo4j data: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
     }
 }

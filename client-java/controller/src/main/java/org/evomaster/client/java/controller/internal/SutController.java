@@ -44,9 +44,6 @@ import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.internal.db.mongo.MongoHandler;
 import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
 import org.evomaster.client.java.controller.internal.db.neo4j.Neo4jHandler;
-import org.evomaster.client.java.controller.internal.db.neo4j.Neo4jUniqueKeyReader;
-import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jDbInfoDto;
-import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityDto;
 import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
@@ -344,20 +341,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("No connection to Neo4j");
         }
         return Neo4jScriptRunner.executeInsert(connection, commands);
-    }
-
-    /**
-     * @param entities the Neo4j entities of the SUT, whose ids count as unique keys
-     * @return the keys the nodes inserted into Neo4j must not repeat, with the values the database
-     * already holds for them, or null if the SUT gives no connection to Neo4j
-     */
-    public final Neo4jDbInfoDto getNeo4jDbInfo(List<Neo4jEntityDto> entities) {
-
-        ReflectionBasedNeo4jClient connection = getNeo4jConnection();
-        if (connection == null) {
-            return null;
-        }
-        return new Neo4jUniqueKeyReader().read(connection, entities);
     }
 
     @Override

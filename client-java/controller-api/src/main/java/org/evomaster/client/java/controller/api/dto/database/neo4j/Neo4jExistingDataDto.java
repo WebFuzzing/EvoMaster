@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * What the controller read from the SUT's Neo4j database when the search started.
+ * Data already in the SUT's Neo4j database that inserted nodes must not clash with.
  */
-public class Neo4jDbInfoDto {
+public class Neo4jExistingDataDto {
 
     /**
      * The keys the nodes inserted by EvoMaster must not repeat, together with the values already taken.
@@ -16,6 +16,6 @@ public class Neo4jDbInfoDto {
     /**
      * Default constructor
      */
-    public Neo4jDbInfoDto() {
+    public Neo4jExistingDataDto() {
     }
 }

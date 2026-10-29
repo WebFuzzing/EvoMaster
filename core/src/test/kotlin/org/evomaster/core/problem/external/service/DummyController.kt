@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.external.service
 
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
@@ -96,6 +97,10 @@ class DummyController: RemoteController {
     }
 
     override fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto? {
+        TODO("Not yet implemented")
+    }
+
+    override fun getNeo4jExistingData(): Neo4jExistingDataDto? {
         TODO("Not yet implemented")
     }
 

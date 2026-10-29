@@ -78,7 +78,7 @@ object Neo4jActionUtils {
 
         while (clash != null && attempts < maxNumberOfAttempts) {
             val genes = node.properties
-                .filter { it.key in clash.key.propertyKeys }
+                .filter { it.key in clash.key.properties }
                 .map { it.gene }
                 .filter { it.isMutable() }
             if (genes.isEmpty()) return null

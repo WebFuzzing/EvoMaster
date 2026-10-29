@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A set of properties whose values no two nodes with a label can share. It comes either from a
- * uniqueness or node key constraint of the database, or from the property the SUT's entity maps as
- * its id, which the SUT expects to be unique even when the database does not enforce it.
+ * Properties whose values no two nodes with a label can share. It comes either from a uniqueness or
+ * node key constraint of the database, or from the property the SUT's entity maps as its id, which the
+ * SUT expects to be unique even when the database does not enforce it.
  */
 public class Neo4jUniqueKeyDto {
 
@@ -18,14 +18,15 @@ public class Neo4jUniqueKeyDto {
     public String label;
 
     /**
-     * Properties that together identify a node with {@link #label}. A node that lacks any of them is
-     * not bound by the key.
+     * Names of the properties that make up the key. Usually just one, eg {@code id}. A composite
+     * constraint, eg {@code REQUIRE (n.white, n.black) IS UNIQUE}, has several, and then two nodes clash
+     * only when they repeat all of them.
      */
-    public List<String> propertyKeys = new ArrayList<>();
+    public List<String> properties = new ArrayList<>();
 
     /**
-     * The values the nodes already in the database hold for the key, one list per node, with one entry
-     * per property of {@link #propertyKeys} in the same order.
+     * The values already taken in the database, one element per existing node. Each element is a list
+     * because a composite key has one value per property, in the same order as {@link #properties}.
      */
     public List<List<Neo4jInsertionEntryDto>> existingValues = new ArrayList<>();
 
@@ -33,5 +34,14 @@ public class Neo4jUniqueKeyDto {
      * Default constructor
      */
     public Neo4jUniqueKeyDto() {
+    }
+
+    /**
+     * @param label label of the nodes the key applies to
+     * @param properties names of the properties that make up the key
+     */
+    public Neo4jUniqueKeyDto(String label, List<String> properties) {
+        this.label = label;
+        this.properties = new ArrayList<>(properties);
     }
 }

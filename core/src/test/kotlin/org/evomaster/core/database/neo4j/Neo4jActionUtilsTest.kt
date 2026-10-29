@@ -1,6 +1,6 @@
 package org.evomaster.core.database.neo4j
 
-import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jDbInfoDto
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto
@@ -24,12 +24,12 @@ class Neo4jActionUtilsTest {
     private fun key(label: String, vararg properties: String, existing: List<List<Neo4jInsertionEntryDto>> = emptyList()) =
         Neo4jUniqueKeyDto().also {
             it.label = label
-            it.propertyKeys = properties.toMutableList()
+            it.properties = properties.toMutableList()
             it.existingValues = existing.toMutableList()
         }
 
     private fun keys(vararg keys: Neo4jUniqueKeyDto) =
-        Neo4jUniqueKeys(Neo4jDbInfoDto().also { it.uniqueKeys = keys.toMutableList() })
+        Neo4jUniqueKeys(Neo4jExistingDataDto().also { it.uniqueKeys = keys.toMutableList() })
 
     private fun string(key: String, value: String) = Neo4jPropertyGene(key, Neo4jPropertyTypeDto.STRING, StringGene(key, value))
 
