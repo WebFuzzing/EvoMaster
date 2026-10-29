@@ -68,6 +68,14 @@ object GeneUtils {
         BODY,
         NONE,
         X_WWW_FORM_URLENCODED,
+        /**
+         * Only used to dispatch on the content-type of a REST body payload, so that the handling of
+         * multipart stays symmetric with the other content types. No gene implements this mode: the
+         * multipart envelope is built by [org.evomaster.core.problem.rest.param.BodyParam], which is the
+         * only object holding both the gene tree and the per-part metadata. Each part's value is then
+         * printed with a mode that already exists (TEXT or JSON).
+         */
+        MULTIPART_FORM_DATA,
         BOOLEAN_SELECTION_MODE,
         BOOLEAN_SELECTION_NESTED_MODE,
         GQL_INPUT_MODE,
@@ -184,6 +192,8 @@ object GeneUtils {
             EscapeMode.TEXT -> applyTextEscapes(string, format)
             EscapeMode.NONE,
             EscapeMode.X_WWW_FORM_URLENCODED,
+            //the envelope is assembled by BodyParam, and escaped for the output format by the writer
+            EscapeMode.MULTIPART_FORM_DATA,
             EscapeMode.BOOLEAN_SELECTION_MODE,
             EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE,
             EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE,
