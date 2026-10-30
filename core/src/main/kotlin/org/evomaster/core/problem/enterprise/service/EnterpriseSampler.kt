@@ -17,6 +17,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.WarningsAggregator
 import org.evomaster.core.database.neo4j.Neo4jSchema
+import org.evomaster.core.database.neo4j.Neo4jUniqueKeys
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.database.sql.schema.TableId
@@ -45,6 +46,13 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
      * info is read.
      */
     var neo4jSchema: Neo4jSchema? = null
+        protected set
+
+    /**
+     * The keys the nodes inserted into Neo4j must not repeat, with the values the database already held
+     * for them when the search started. Null if there are none, or if no Neo4j data is generated.
+     */
+    var existingNeo4jData: Neo4jUniqueKeys? = null
         protected set
 
     var existingSqlData : List<SqlAction> = listOf()
@@ -168,6 +176,9 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
     open fun initNeo4jInfo(infoDto: SutInfoDto) {
         val entities = infoDto.unitsInfoDto?.neo4jEntities ?: emptyList()
         neo4jSchema = if (entities.isEmpty()) null else Neo4jSchema(entities)
+        if (config.shouldGenerateNeo4jData()) {
+            existingNeo4jData = rc.getNeo4jExistingData()?.let { Neo4jUniqueKeys(it) }?.takeUnless { it.isEmpty() }
+        }
     }
 
     fun extractFkTables(tables: Set<TableId>): Set<TableId> {

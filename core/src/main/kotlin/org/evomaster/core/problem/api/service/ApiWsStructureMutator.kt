@@ -13,6 +13,7 @@ import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.neo4j.Neo4jInsertBuilder
 import org.evomaster.core.database.neo4j.Neo4jSchema
+import org.evomaster.core.database.neo4j.Neo4jUniqueKeys
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisInsertBuilder
 import org.evomaster.core.database.sql.SqlAction
@@ -332,7 +333,12 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val oldNeo4jDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
 
-        val addedNeo4jDbInsertions = handleFailedNeo4jQueries(ind, failedQueries, sampler.neo4jSchema)
+        val added = handleFailedNeo4jQueries(ind, failedQueries, sampler.neo4jSchema, sampler.existingNeo4jData)
+
+        // a new insertion may repeat a unique key of an older one, and if it cannot be repaired it is removed
+        ind.repairInitializationActions(randomness)
+        val kept = ind.seeNeo4jDbActions()
+        val addedNeo4jDbInsertions = added.filter { a -> kept.any { it === a } }
             .let { if (it.isEmpty()) emptyList() else listOf(it) }
 
         if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
@@ -677,7 +683,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     private fun <T : ApiWsIndividual> handleFailedNeo4jQueries(
         ind: T,
         failedQueries: List<Neo4jFailedQueryDto>,
-        schema: Neo4jSchema?
+        schema: Neo4jSchema?,
+        uniqueKeys: Neo4jUniqueKeys?
     ): List<EnvironmentAction> {
 
         val existingKeys = ind.seeInitializingActions()
@@ -685,7 +692,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             .map { it.insertionKey() }
             .toSet()
 
-        val addedActions = Neo4jInsertBuilder.buildInsertActions(failedQueries, existingKeys, schema)
+        val addedActions = Neo4jInsertBuilder.buildInsertActions(failedQueries, existingKeys, schema, uniqueKeys)
 
         if (addedActions.isNotEmpty()) {
             ind.addInitializingActions(actions = addedActions)
