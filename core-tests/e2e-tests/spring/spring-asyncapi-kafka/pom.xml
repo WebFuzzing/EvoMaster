@@ -10,9 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!--
-        NCS, the numerical case study, re-expressed as a service driven by Kafka messages:
-        a request topic and a reply topic per operation, described by an AsyncAPI document.
-        The SUT speaks only Kafka; there is no HTTP endpoint at all.
+        E2E tests for AsyncAPI services that speak Kafka, and have no HTTP endpoint at all.
     -->
     <artifactId>evomaster-e2e-tests-spring-asyncapi-kafka</artifactId>
     <packaging>jar</packaging>

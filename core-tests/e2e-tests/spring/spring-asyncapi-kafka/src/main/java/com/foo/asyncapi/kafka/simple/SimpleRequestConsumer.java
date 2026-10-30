@@ -1,5 +1,7 @@
-package com.foo.asyncapi.ncs;
+package com.foo.asyncapi.kafka.simple;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -18,27 +20,32 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Properties;
 
 /**
- * Reads every request topic, answers each request on the matching reply topic, and copies the
+ * Reads foo.request and bar.request, answers each on its reply topic, and copies the
  * correlation id header over so that the requester can pair the two.
  */
 @Component
-public class NcsRequestConsumer implements SmartLifecycle {
+public class SimpleRequestConsumer implements SmartLifecycle {
 
-    private static final Logger log = LoggerFactory.getLogger(NcsRequestConsumer.class);
+    private static final Logger log = LoggerFactory.getLogger(SimpleRequestConsumer.class);
 
-    /**
-     * The header a request carries its correlation id in, as the document declares.
-     */
+    public static final String FOO_REQUEST = "foo.request";
+    public static final String FOO_REPLY = "foo.reply";
+    public static final String BAR_REQUEST = "bar.request";
+    public static final String BAR_REPLY = "bar.reply";
+
     static final String CORRELATION_HEADER = "correlationId";
 
     private static final Duration POLL = Duration.ofMillis(200);
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
     private final String bootstrapServers;
 
-    private final NcsService service;
+    private final SimpleService service;
 
     private volatile boolean running;
 
@@ -50,7 +57,7 @@ public class NcsRequestConsumer implements SmartLifecycle {
 
     private KafkaProducer<String, String> producer;
 
-    public NcsRequestConsumer(@Value("${ncs.kafka.bootstrap}") String bootstrapServers, NcsService service) {
+    public SimpleRequestConsumer(@Value("${kafka.bootstrap}") String bootstrapServers, SimpleService service) {
         this.bootstrapServers = bootstrapServers;
         this.service = service;
     }
@@ -61,13 +68,13 @@ public class NcsRequestConsumer implements SmartLifecycle {
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         //a fresh group each start, so that a restarted service does not resume old offsets
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "ncs-" + System.nanoTime());
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "simple-" + System.nanoTime());
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumer = new KafkaConsumer<>(consumerProps);
-        consumer.subscribe(service.requestTopics());
+        consumer.subscribe(Arrays.asList(FOO_REQUEST, BAR_REQUEST));
 
         Properties producerProps = new Properties();
         producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -77,7 +84,7 @@ public class NcsRequestConsumer implements SmartLifecycle {
         producer = new KafkaProducer<>(producerProps);
 
         running = true;
-        loop = new Thread(this::consume, "ncs-kafka-consumer");
+        loop = new Thread(this::consume, "simple-kafka-consumer");
         loop.start();
     }
 
@@ -107,25 +114,49 @@ public class NcsRequestConsumer implements SmartLifecycle {
             return;
         }
 
+        String replyTopic = replyTopicOf(request.topic());
 
-        NcsService.Reply reply = service.handle(request.topic(), request.value());
+        String body;
+        try {
+            JsonNode x = mapper.readTree(request.value()).get("x");
+            if (x == null || !x.isInt()) {
+                throw new IllegalArgumentException("x must be an integer");
+            }
+            int value = compute(request.topic(), x.intValue());
+            body = mapper.createObjectNode().put("value", value).toString();
+        } catch (Exception e) {
+            //as a web framework answers a crash with a 500: a reply, but not one the contract declares
+            body = mapper.createObjectNode().put("error", String.valueOf(e.getMessage())).toString();
+        }
 
-        ProducerRecord<String, String> record = new ProducerRecord<>(reply.topic, request.key(), reply.body);
+        ProducerRecord<String, String> record = new ProducerRecord<>(replyTopic, request.key(), body);
 
         Header correlation = request.headers().lastHeader(CORRELATION_HEADER);
         if (correlation != null) {
             record.headers().add(CORRELATION_HEADER, correlation.value());
         }
 
-        /*
-            A send that fails is otherwise indistinguishable from a slow one: the run reports a
-            reply that never came, and nothing says why.
-         */
         producer.send(record, (metadata, failure) -> {
             if (failure != null) {
-                log.warn("Could not publish a reply to {}", reply.topic, failure);
+                log.warn("Could not publish a reply to {}", replyTopic, failure);
             }
         });
+    }
+
+    private static String replyTopicOf(String requestTopic) {
+        switch (requestTopic) {
+            case FOO_REQUEST: return FOO_REPLY;
+            case BAR_REQUEST: return BAR_REPLY;
+            default: throw new IllegalArgumentException("Not a request topic: " + requestTopic);
+        }
+    }
+
+    private int compute(String requestTopic, int x) {
+        switch (requestTopic) {
+            case FOO_REQUEST: return service.foo(x);
+            case BAR_REQUEST: return service.bar(x);
+            default: throw new IllegalArgumentException("Not a request topic: " + requestTopic);
+        }
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.foo.asyncapi.ncs;
+package com.foo.asyncapi.kafka;
 
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -37,7 +37,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,23 +47,19 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
- * The driver for NCS over Kafka, and the reference implementation of
- * {@link #executeAsyncApiAction}: it owns the broker, publishes what the core asks it to, waits
- * for the reply that answers it, and reports what came back without judging it.
+ * Shared driver for Spring services that speak Kafka, as {@code SpringController} is for REST.
+ * The service is given the broker address in the {@value #BOOTSTRAP_PROPERTY} property.
  */
-public class NcsKafkaController extends EmbeddedSutController {
+public abstract class KafkaController extends EmbeddedSutController {
 
     private static final String KAFKA_IMAGE = "apache/kafka:3.8.0";
 
-    private static final String DOCUMENT = "/asyncapi/ncs-kafka.yaml";
-
-    private static final String BOOTSTRAP_PROPERTY = "ncs.kafka.bootstrap";
+    protected static final String BOOTSTRAP_PROPERTY = "kafka.bootstrap";
 
     /**
-     * The header a correlation id travels in when the document names no location. Kafka has
-     * no native correlation, so the driver has to pick one.
+     * Kafka has no native correlation: the documents of these E2Es declare this header.
      */
-    private static final String DEFAULT_CORRELATION_HEADER = "correlationId";
+    protected static final String CORRELATION_HEADER = "correlationId";
 
     private static final long DEFAULT_REPLY_TIMEOUT_MS = 5_000;
 
@@ -84,48 +79,54 @@ public class NcsKafkaController extends EmbeddedSutController {
 
     private static final Duration CLOSE_TIMEOUT = Duration.ofSeconds(5);
 
-    /**
-     * A triangle request that is valid, so the service answers with a result rather than an error.
-     */
-    private static final String PROBE_REQUEST = "{\"a\":3,\"b\":4,\"c\":5}";
+    private final Class<?> applicationClass;
 
-    /**
-     * Every topic the document names, created up front so that no first request or reply has
-     * to wait for auto-creation.
-     */
-    private static final List<String> TOPICS = Arrays.asList(
-            "ncs.triangle.request", "ncs.triangle.reply",
-            "ncs.bessj.request", "ncs.bessj.reply",
-            "ncs.expint.request", "ncs.expint.reply",
-            "ncs.fisher.request", "ncs.fisher.reply",
-            "ncs.gammq.request", "ncs.gammq.reply",
-            "ncs.remainder.request", "ncs.remainder.reply");
+    private final String document;
 
     private final KafkaContainer kafka = new KafkaContainer(KAFKA_IMAGE);
 
     /**
-     * Keys are literal Kafka reply-topic names (for example, ncs.triangle.reply). Values are
-     * the consumers positioned on those topics, created the first time a reply is
-     * awaited there and kept for the rest of the run.
+     * Keys are reply-topic names. Values are the consumers positioned on them, created on first use.
      */
     private final Map<String, Consumer<String, String>> replyConsumers = new LinkedHashMap<>();
 
-    private ConfigurableApplicationContext ctx;
+    protected ConfigurableApplicationContext ctx;
 
     private Producer<String, String> producer;
 
-    public NcsKafkaController() {
+    /**
+     * @param applicationClass the Spring application of the service
+     * @param document         the classpath resource of its AsyncAPI document
+     */
+    protected KafkaController(Class<?> applicationClass, String document) {
+        this.applicationClass = applicationClass;
+        this.document = document;
         super.setControllerPort(0);
     }
 
-    NcsKafkaController(Producer<String, String> producer) {
-        this();
+    KafkaController(Class<?> applicationClass, String document, Producer<String, String> producer) {
+        this(applicationClass, document);
         this.producer = producer;
     }
 
-    /** Enable or suppress replies in the fixture, after its readiness probe has completed. */
-    public void setRepliesEnabled(boolean enabled) {
-        ctx.getBean(NcsRequestConsumer.class).setRepliesEnabled(enabled);
+    /**
+     * Every topic the document names, created up front rather than waiting for auto-creation.
+     */
+    protected abstract List<String> getTopics();
+
+    /**
+     * A request the service answers, published by the default {@link #awaitServiceReady()} until
+     * a reply comes back. A service that does not reply overrides that method instead.
+     */
+    protected ProducerRecord<String, String> getProbeRequest() {
+        return null;
+    }
+
+    /**
+     * The topic the reply to {@link #getProbeRequest()} arrives on.
+     */
+    protected String getProbeReplyTopic() {
+        return null;
     }
 
     @Override
@@ -134,11 +135,7 @@ public class NcsKafkaController extends EmbeddedSutController {
         try {
             return start();
         } catch (RuntimeException e) {
-            /*
-                Nothing else will: isSutRunning() answers on the Spring context, which is not
-                assigned until the end, so a failure here would leave the broker running for the
-                rest of the fork.
-             */
+            //isSutRunning() is false until the end, so nothing else would stop the broker
             stopSut();
             throw e;
         }
@@ -151,7 +148,7 @@ public class NcsKafkaController extends EmbeddedSutController {
 
         createTopics(bootstrap);
 
-        ctx = new SpringApplicationBuilder(NcsKafkaApplication.class)
+        ctx = new SpringApplicationBuilder(applicationClass)
                 .web(WebApplicationType.NONE)
                 .properties(BOOTSTRAP_PROPERTY + "=" + bootstrap)
                 .run();
@@ -163,38 +160,38 @@ public class NcsKafkaController extends EmbeddedSutController {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producer = new KafkaProducer<>(props);
 
-        awaitServiceConsuming();
+        awaitServiceReady();
 
         //this service has no URL: what there is to know is where its broker listens
         return bootstrap;
     }
 
     /**
-     * Return only once the service is answering, rather than as soon as it has been started.
-     *
-     * Joining a consumer group takes a moment, and a request published before that happens is
-     * answered late, after whoever sent it has stopped waiting. For a search, that would look
-     * like a service that does not reply, and the first dozen messages would each cost the
-     * whole reply timeout.
+     * Return once the service is consuming: a request sent before then is answered too late, and
+     * looks like a missing reply. By default, publish {@link #getProbeRequest()} until it is answered.
      */
-    private void awaitServiceConsuming() {
+    protected void awaitServiceReady() {
+
+        if (getProbeRequest() == null || getProbeReplyTopic() == null) {
+            throw new IllegalStateException(
+                    "Either override awaitServiceReady(), or provide a probe request and its reply topic");
+        }
 
         long deadline = System.currentTimeMillis() + READY_TIMEOUT_MS;
 
-        try (Consumer<String, String> replies = consumerAt(NcsService.TRIANGLE_REPLY)) {
+        try (Consumer<String, String> replies = consumerAt(getProbeReplyTopic())) {
 
             while (System.currentTimeMillis() < deadline) {
 
                 String probe = "ready-" + System.nanoTime();
-                ProducerRecord<String, String> record =
-                        new ProducerRecord<>(NcsService.TRIANGLE_REQUEST, probe, PROBE_REQUEST);
-                record.headers().add(DEFAULT_CORRELATION_HEADER, bytes(probe));
+                ProducerRecord<String, String> record = getProbeRequest();
+                record.headers().add(CORRELATION_HEADER, bytes(probe));
                 producer.send(record);
 
                 long roundTrip = System.currentTimeMillis() + READY_POLL_MS;
                 while (System.currentTimeMillis() < roundTrip) {
                     for (ConsumerRecord<String, String> reply : replies.poll(Duration.ofMillis(POLL_MS))) {
-                        Header correlation = reply.headers().lastHeader(DEFAULT_CORRELATION_HEADER);
+                        Header correlation = reply.headers().lastHeader(CORRELATION_HEADER);
                         if (correlation != null && correlation.value() != null
                                 && probe.equals(new String(correlation.value(), StandardCharsets.UTF_8))) {
                             return;
@@ -205,7 +202,7 @@ public class NcsKafkaController extends EmbeddedSutController {
         }
 
         throw new IllegalStateException(
-                "The NCS service did not answer a probe within " + READY_TIMEOUT_MS + " ms");
+                "The service did not answer a probe within " + READY_TIMEOUT_MS + " ms");
     }
 
     private void createTopics(String bootstrap) {
@@ -214,29 +211,26 @@ public class NcsKafkaController extends EmbeddedSutController {
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
 
         try (AdminClient admin = AdminClient.create(props)) {
-            List<NewTopic> topics = TOPICS.stream()
+            List<NewTopic> topics = getTopics().stream()
                     .map(name -> new NewTopic(name, 1, (short) 1))
                     .collect(Collectors.toList());
             admin.createTopics(topics).all().get(PUBLISH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
             if (!(e.getCause() instanceof TopicExistsException)) {
-                throw new RuntimeException("Could not create the NCS topics", e);
+                throw new RuntimeException("Could not create the topics", e);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while creating the NCS topics", e);
+            throw new RuntimeException("Interrupted while creating the topics", e);
         } catch (TimeoutException e) {
-            throw new RuntimeException("Could not create the NCS topics", e);
+            throw new RuntimeException("Could not create the topics", e);
         }
     }
 
     @Override
     public void stopSut() {
 
-        /*
-            Every close is given a deadline and is allowed to fail: a Kafka client that will not
-            shut down must not keep the whole controller from stopping, which the E2E asserts.
-         */
+        //every close has a deadline and may fail, so that a stuck client cannot block the stop
         closeReplyConsumers();
 
         if (producer != null) {
@@ -264,20 +258,9 @@ public class NcsKafkaController extends EmbeddedSutController {
     }
 
     @Override
-    public String getPackagePrefixesToCover() {
-        return "com.foo.asyncapi.ncs.";
-    }
-
-    @Override
     public void resetStateOfSUT() {
 
-        /*
-            The service itself is stateless: every request is answered from its own content.
-            What does carry over is where the reply consumers are positioned, and that matters:
-            a search restarted under the same seed mints the same correlation ids again, so a
-            reply left on a topic by the previous test would answer a request of this one. They
-            are dropped here, and the next one to be needed is created at the end of its topic.
-         */
+        //the same seed mints the same correlation ids, so a reply left by a previous test must not be read
         closeReplyConsumers();
     }
 
@@ -297,11 +280,8 @@ public class NcsKafkaController extends EmbeddedSutController {
     }
 
     /**
-     * The container picks a port when it starts, so the address in the document is never where
-     * this broker actually is. A generated test asks for this instead of trusting the document.
-     *
-     * Asking before the container is up is answered with null, as the contract says to, rather
-     * than with the exception testcontainers raises for a port that has not been mapped yet.
+     * The container picks its port at start, so the document's address is never the real one.
+     * Null before the container is up.
      */
     @Override
     public String getAsyncApiServerAddress(String serverName) {
@@ -319,15 +299,15 @@ public class NcsKafkaController extends EmbeddedSutController {
     }
 
     private String readDocument() {
-        try (InputStream in = getClass().getResourceAsStream(DOCUMENT)) {
+        try (InputStream in = getClass().getResourceAsStream(document)) {
             if (in == null) {
-                throw new IllegalStateException("Missing resource " + DOCUMENT);
+                throw new IllegalStateException("Missing resource " + document);
             }
             return new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))
                     .lines()
                     .collect(Collectors.joining("\n"));
         } catch (IOException e) {
-            throw new IllegalStateException("Cannot read " + DOCUMENT, e);
+            throw new IllegalStateException("Cannot read " + document, e);
         }
     }
 
@@ -396,20 +376,20 @@ public class NcsKafkaController extends EmbeddedSutController {
         reply.waitedMs = timeout;
     }
 
-    /** Read this fixture's correlation header; absent or null values mean unknown correlation. */
+    /** Read the correlation header; absent or null values mean unknown correlation. */
     static String correlationOf(ConsumerRecord<String, String> record, AsyncApiActionDto dto) {
         Header header = record.headers().lastHeader(correlationHeaderName(dto));
         return header == null || header.value() == null
                 ? null : new String(header.value(), StandardCharsets.UTF_8);
     }
 
-    /** This fixture implements only the correlation header declared in ncs-kafka.yaml. */
+    /** This driver implements only correlation by the {@value #CORRELATION_HEADER} header. */
     static String correlationHeaderName(AsyncApiActionDto dto) {
         if ((dto.correlationLocation != null && dto.correlationLocation != AsyncApiActionDto.CorrelationLocation.HEADER)
-                || (dto.correlationPointer != null && !dto.correlationPointer.equals("/" + DEFAULT_CORRELATION_HEADER))) {
-            throw new IllegalArgumentException("NCS supports only the /correlationId header location");
+                || (dto.correlationPointer != null && !dto.correlationPointer.equals("/" + CORRELATION_HEADER))) {
+            throw new IllegalArgumentException("Only the /" + CORRELATION_HEADER + " header location is supported");
         }
-        return DEFAULT_CORRELATION_HEADER;
+        return CORRELATION_HEADER;
     }
 
     private Consumer<String, String> consumerOn(String address) {
@@ -418,8 +398,7 @@ public class NcsKafkaController extends EmbeddedSutController {
     }
 
     /**
-     * A consumer positioned at the end of {@code address}, so that it sees only what is published
-     * from now on.
+     * A consumer that sees only what is published to {@code address} from now on.
      */
     private Consumer<String, String> consumerAt(String address) {
 
