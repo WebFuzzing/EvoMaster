@@ -528,7 +528,7 @@ class RedisInsertBuilderTest {
 
 /**
  * Stands in for a `@RedisHash`-annotated class, as used by [RedisInsertBuilderTest] to derive a
- * schema the same way [org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses.BasicRedisPersistentEntityClassReplacement]
+ * schema the same way [org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses.AbstractBasicRedisPersistentEntityClassReplacement]
  * would for a real one.
  */
 class RedisHashTestEntity {
