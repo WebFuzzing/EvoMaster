@@ -164,12 +164,18 @@ QUOTE_CLOSE
  : '\\' 'E' -> popMode
  ;
 
-// One or more characters that do not form a "\E" sequence, so either:
-// - a backslash immediately followed by something other than 'E',
-// - any single non-backslash character.
-// Note that this cannot consume the sequence QUOTE_CLOSE.
+// One or more characters other than a backslash.
+// A backslash is never consumed here, as it could be the start of a "\E" sequence.
+// There are no escapes inside a quote as every character is literal.
 QUOTE_CONTENT
- : ( '\\' ~[E] | ~[\\] )+
+ : ~[\\]+
+ ;
+
+// A backslash that does not start a "\E" sequence, which is content as well.
+// As the lexer prioritizes the longest match, when the character after '\\' is 'E' the token is QUOTE_CLOSE.
+// Otherwise, if its not 'E' it becomes a 1 character QUOTE_CONTENT ('\\'). e.g.: "\\E" is QUOTE_CONTENT, QUOTE_CLOSE.
+QUOTE_BACKSLASH
+ : '\\' -> type(QUOTE_CONTENT)
  ;
 
 // ---------------------------------------------------------------

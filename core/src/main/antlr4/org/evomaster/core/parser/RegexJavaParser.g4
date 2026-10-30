@@ -106,7 +106,7 @@ atom
 
 // Special for Java
 quote
- : QUOTE_OPEN QUOTE_CONTENT? QUOTE_CLOSE? // both the content and closing the quote is optional in java regex.
+ : QUOTE_OPEN QUOTE_CONTENT* QUOTE_CLOSE? // both the content and closing the quote is optional in java regex.
 ;
 
 patternCharacter
