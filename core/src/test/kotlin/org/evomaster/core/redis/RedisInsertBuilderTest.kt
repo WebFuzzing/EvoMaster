@@ -3,6 +3,9 @@ package org.evomaster.core.redis
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFieldType
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFilterDto
+import org.evomaster.client.java.instrumentation.`object`.ClassToSchema
+import org.evomaster.client.java.instrumentation.`object`.RedisTypeToOasConverter
+import org.evomaster.core.database.redis.RedisDbActionTransformer
 import org.evomaster.core.database.redis.RedisHsetAction
 import org.evomaster.core.database.redis.RedisInsertBuilder
 import org.evomaster.core.database.redis.RedisQueryAction
@@ -14,6 +17,7 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -69,6 +73,132 @@ class RedisInsertBuilderTest {
         assertEquals(1, actions.size)
         val action = actions[0] as RedisHsetAction
         assertEquals("user:1", action.key)
+        assertEquals("field", action.field)
+    }
+
+    @Test
+    fun testHgetallWithEntityTypeBuildsQueryActionWithOnePerProperty() {
+        val schema = ClassToSchema.getOrDeriveSchemaWithItsRef(RedisHashTestEntity::class.java)
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand("entities:1", entityType = schema)), emptySet()
+        )
+
+        assertEquals(1, actions.size)
+        val action = actions[0] as RedisQueryAction
+        assertEquals("entities:1", action.key)
+        assertEquals(setOf("id", "name", "age", "address"), action.fields.map { it.name }.toSet())
+    }
+
+    @Test
+    fun testHgetallInactiveOptionalFieldIsLeftOutOfTheHash() {
+        val schema = ClassToSchema.getOrDeriveSchemaWithItsRef(RedisHashTestEntity::class.java)
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand("entities:1", entityType = schema)), emptySet()
+        )
+        val action = actions[0] as RedisQueryAction
+
+        val allFields = RedisDbActionTransformer.transform(actions).insertions.map { it.field }.toSet()
+        assertEquals(setOf("id", "name", "age", "address"), allFields)
+
+        (action.fields.first { it.name == "address" }.valueGene as OptionalGene).isActive = false
+        (action.fields.first { it.name == "age" }.valueGene as OptionalGene).isActive = false
+
+        val remaining = RedisDbActionTransformer.transform(actions).insertions.map { it.field }.toSet()
+        assertEquals(setOf("id", "name"), remaining)
+        assertEquals(remaining.size, action.insertionsCount())
+    }
+
+    @Test
+    fun testHgetallNestedObjectsAreFlattenedIntoDottedFields() {
+        val hash = hashFor(RedisHashRichEntity::class.java)
+
+        // two properties of the same nested type must each get their own prefix
+        assertTrue(hash.keys.containsAll(listOf("address.city", "address.zip", "work.city", "work.zip")), hash.keys.toString())
+        // a nested object is never written as a single field holding its JSON
+        assertFalse(hash.containsKey("address"))
+        assertFalse(hash.containsKey("work"))
+    }
+
+    @Test
+    fun testHgetallLeavesOfEveryBasicTypeAreWrittenInTheFormatSpringReadsBack() {
+        val hash = hashFor(RedisHashRichEntity::class.java)
+
+        // the parsers below are the ones Spring Data Redis uses to read each of these types
+        java.time.LocalDate.parse(hash.getValue("localDate"))
+        java.time.LocalDateTime.parse(hash.getValue("localDateTime"))
+        java.time.LocalTime.parse(hash.getValue("localTime"))
+        java.time.Instant.parse(hash.getValue("instant"))
+        java.util.UUID.fromString(hash.getValue("uuid"))
+        java.math.BigDecimal(hash.getValue("price"))
+        java.math.BigInteger(hash.getValue("big"))
+        // java.util.Date is stored as epoch milliseconds, not as a formatted date
+        assertTrue(hash.getValue("date").toLong() >= 0, hash.getValue("date"))
+        RedisHashRichEntity.Color.valueOf(hash.getValue("color"))
+        assertTrue(hash.getValue("flag") in listOf("true", "false"))
+        hash.getValue("l").toLong()
+        hash.getValue("d").toDouble()
+        hash.getValue("f").toFloat()
+        hash.getValue("s").toShort()
+        hash.getValue("b").toByte()
+        assertEquals(1, hash.getValue("c").length)
+    }
+
+    @Test
+    fun testHgetallEmptyCollectionsAndMapsWriteNothing() {
+        val hash = hashFor(RedisHashRichEntity::class.java)
+
+        // they start empty, and an empty collection is stored as no field at all
+        assertTrue(hash.keys.none { it.startsWith("tags") || it.startsWith("addrs") || it.startsWith("attrs") }, hash.keys.toString())
+    }
+
+    @Test
+    fun testHgetallIdFieldIsFixedToTheIdOfTheKey() {
+        val hash = hashFor(RedisHashRichEntity::class.java, key = "rich:42", idField = "id")
+
+        assertEquals("42", hash["id"])
+    }
+
+    @Test
+    fun testHgetallIdFieldIsNotAFreeGene() {
+        val schema = ClassToSchema.getOrDeriveSchemaWithItsRef(RedisHashRichEntity::class.java, false, RedisTypeToOasConverter.defaults())
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand("rich:42", entityType = schema, idField = "id")), emptySet()
+        )
+        val idField = (actions[0] as RedisQueryAction).fields.first { it.name == "id" }
+
+        assertEquals("42", idField.constantValue)
+        assertNull(idField.valueGene)
+    }
+
+    @Test
+    fun testHgetallIdFieldMissingFromTheSchemaIsIgnored() {
+        val schema = ClassToSchema.getOrDeriveSchemaWithItsRef(RedisHashRichEntity::class.java, false, RedisTypeToOasConverter.defaults())
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand("rich:42", entityType = schema, idField = "notAProperty")), emptySet()
+        )
+
+        // nothing matches, so nothing is fixed
+        assertTrue((actions[0] as RedisQueryAction).fields.all { it.valueGene != null })
+    }
+
+    @Test
+    fun testHgetallWithoutIdFieldKeepsEveryFieldFree() {
+        val schema = ClassToSchema.getOrDeriveSchemaWithItsRef(RedisHashRichEntity::class.java, false, RedisTypeToOasConverter.defaults())
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand("rich:42", entityType = schema)), emptySet()
+        )
+
+        assertTrue((actions[0] as RedisQueryAction).fields.all { it.valueGene != null })
+    }
+
+    @Test
+    fun testHgetallWithUnparsableEntityTypeFallsBackToPlaceholderField() {
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand("user:1", entityType = "not a valid schema")), emptySet()
+        )
+
+        assertEquals(1, actions.size)
+        val action = actions[0] as RedisHsetAction
         assertEquals("field", action.field)
     }
 
@@ -178,9 +308,24 @@ class RedisInsertBuilderTest {
         it.command = "HGET"
     }
 
-    private fun hgetallCommand(key: String) = RedisFailedCommand().also {
+    private fun hgetallCommand(key: String, entityType: String? = null, idField: String? = null) = RedisFailedCommand().also {
         it.keys = listOf(key)
         it.command = "HGETALL"
+        it.entityType = entityType
+        it.entityIdField = idField
+    }
+
+    /**
+     * The hash that would be stored for [entity] under [key]: the field name -> value of every
+     * HSET generated for it. The schema is derived the same way the replacement does for a real
+     * `@RedisHash` class.
+     */
+    private fun hashFor(entity: Class<*>, key: String = "rich:1", idField: String? = null): Map<String, String> {
+        val schema = ClassToSchema.getOrDeriveSchemaWithItsRef(entity, false, RedisTypeToOasConverter.defaults())
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand(key, entityType = schema, idField = idField)), emptySet()
+        )
+        return RedisDbActionTransformer.transform(actions).insertions.associate { it.field to it.value }
     }
 
     private fun keysCommand(pattern: String) = RedisFailedCommand().also {
@@ -379,4 +524,52 @@ class RedisInsertBuilderTest {
 
         assertEquals("title", (actions[0] as RedisQueryAction).fields[0].name)
     }
+}
+
+/**
+ * Stands in for a `@RedisHash`-annotated class, as used by [RedisInsertBuilderTest] to derive a
+ * schema the same way [org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses.BasicRedisPersistentEntityClassReplacement]
+ * would for a real one.
+ */
+class RedisHashTestEntity {
+    var id: String? = null
+    var name: String? = null
+    var age: Int = 0
+    var address: String? = null
+}
+class RedisHashTestAddress {
+    var city: String? = null
+    var zip: Int? = null
+}
+
+/**
+ * Has one property of each basic type, two of the same nested type, and a collection, a list of
+ * nested objects and a map.
+ */
+class RedisHashRichEntity {
+
+    enum class Color { RED, BLUE }
+
+    var id: String? = null
+    var color: Color? = null
+    var price: java.math.BigDecimal? = null
+    var big: java.math.BigInteger? = null
+    var flag: Boolean = false
+    var l: Long = 0L
+    var d: Double = 0.0
+    var f: Float = 0f
+    var s: Short = 0
+    var b: Byte = 0
+    var c: Char = 'a'
+    var date: java.util.Date? = null
+    var localDate: java.time.LocalDate? = null
+    var localDateTime: java.time.LocalDateTime? = null
+    var localTime: java.time.LocalTime? = null
+    var instant: java.time.Instant? = null
+    var uuid: java.util.UUID? = null
+    var address: RedisHashTestAddress? = null
+    var work: RedisHashTestAddress? = null
+    var tags: List<String>? = null
+    var addrs: List<RedisHashTestAddress>? = null
+    var attrs: Map<String, String>? = null
 }

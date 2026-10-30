@@ -120,6 +120,8 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoCollectionSchema> mongoCollectionSchemaData = new CopyOnWriteArraySet<>();
 
+    private final Set<RedisHashSchema> redisHashSchemaData = new CopyOnWriteArraySet<>();
+
     private final Set<CassandraTableMetadata> cassandraTableMetadataData = new CopyOnWriteArraySet<>();
 
     public Set<ExecutedSqlCommand> getSqlInfoData(){
@@ -152,6 +154,10 @@ public class AdditionalInfo implements Serializable {
 
     public Set<MongoCollectionSchema> getMongoCollectionTypeData(){
         return Collections.unmodifiableSet(mongoCollectionSchemaData);
+    }
+
+    public Set<RedisHashSchema> getRedisHashSchemaData(){
+        return Collections.unmodifiableSet(redisHashSchemaData);
     }
 
     public Set<CassandraTableMetadata> getCassandraTableMetadataData(){
@@ -188,6 +194,10 @@ public class AdditionalInfo implements Serializable {
 
     public void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){
         mongoCollectionSchemaData.add(mongoCollectionSchema);
+    }
+
+    public void addRedisHashType(RedisHashSchema redisHashSchema){
+        redisHashSchemaData.add(redisHashSchema);
     }
 
     public void addCassandraTableMetadata(CassandraTableMetadata cassandraTableMetadata){

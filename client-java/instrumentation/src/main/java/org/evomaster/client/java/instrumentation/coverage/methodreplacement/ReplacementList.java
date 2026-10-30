@@ -27,6 +27,7 @@ public class ReplacementList {
             listCache = Arrays.asList(
                     new AbstractEndpointClassReplacement(),
                     new Base64DecoderClassReplacement(),
+                    new BasicRedisPersistentEntityClassReplacement(),
                     new BooleanClassReplacement(),
                     new ByteClassReplacement(),
                     new CharacterClassReplacement(),
@@ -40,6 +41,7 @@ public class ReplacementList {
                     new DoubleClassReplacement(),
                     new DynamoDbClassReplacement.Sync(),
                     new DynamoDbClassReplacement.Async(),
+                    new DynamoDbFunctionClassReplacement(),
                     new EnumClassReplacement(),
                     new FloatClassReplacement(),
                     new GsonClassReplacement(),

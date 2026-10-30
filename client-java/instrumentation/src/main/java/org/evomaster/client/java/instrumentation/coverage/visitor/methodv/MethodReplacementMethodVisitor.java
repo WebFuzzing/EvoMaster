@@ -98,7 +98,6 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             return;
         }
 
-
         /*
          * This is a very special case. This can happen when we replace a method
          * for X.foo() in a class Y, when Y extends X, and then it calls foo in
