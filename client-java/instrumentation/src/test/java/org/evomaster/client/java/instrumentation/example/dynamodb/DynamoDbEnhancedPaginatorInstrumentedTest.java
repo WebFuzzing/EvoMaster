@@ -1,8 +1,9 @@
 package org.evomaster.client.java.instrumentation.example.dynamodb;
 
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbQueryValue;
 import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -49,10 +50,6 @@ public class DynamoDbEnhancedPaginatorInstrumentedTest {
     private static final String QUERY = "query";
     private static final String SCAN = "scan";
     private static final String BATCH_GET = "batch-get";
-    private static final String REQUEST_ITEMS_METHOD = "requestItems";
-    private static final String KEYS_METHOD = "keys";
-    private static final String EXCLUSIVE_START_KEY_METHOD = "exclusiveStartKey";
-    private static final String REQUEST_PACKAGE = "software.amazon.awssdk.services.dynamodb.model.";
     private static final GenericContainer<?> dynamoDb = new GenericContainer<>("amazon/dynamodb-local:latest")
             .withExposedPorts(DYNAMODB_PORT)
             .withCommand("-jar", "DynamoDBLocal.jar", "-inMemory", "-port", String.valueOf(DYNAMODB_PORT))
@@ -129,7 +126,6 @@ public class DynamoDbEnhancedPaginatorInstrumentedTest {
     public void testObserveEachQueryPage() throws Exception {
         List<DynamoDbCommand> commands = readAndVerifyPages(QUERY, false, DynamoDbOperationNames.QUERY);
         assertTrue(commands.size() >= 2);
-        assertTrue(commands.stream().anyMatch(this::hasContinuationKey));
     }
 
     /** An asynchronous query must record every executed low-level page request. */
@@ -137,7 +133,6 @@ public class DynamoDbEnhancedPaginatorInstrumentedTest {
     public void testObserveEachAsyncQueryPage() throws Exception {
         List<DynamoDbCommand> commands = readAndVerifyPages(QUERY, true, DynamoDbOperationNames.QUERY);
         assertTrue(commands.size() >= 2);
-        assertTrue(commands.stream().anyMatch(this::hasContinuationKey));
     }
 
     /** Scan must record each executed page in both client modes. */
@@ -147,7 +142,6 @@ public class DynamoDbEnhancedPaginatorInstrumentedTest {
             ExecutionTracer.reset();
             List<DynamoDbCommand> commands = readAndVerifyPages(SCAN, async, DynamoDbOperationNames.SCAN);
             assertTrue(commands.size() >= 2, async ? "async" : "sync");
-            assertTrue(commands.stream().anyMatch(this::hasContinuationKey));
         }
     }
 
@@ -159,14 +153,12 @@ public class DynamoDbEnhancedPaginatorInstrumentedTest {
             List<DynamoDbCommand> commands = readAndVerifyPages(
                     BATCH_GET, async, DynamoDbOperationNames.BATCH_GET_ITEM);
             assertEquals(1, commands.size(), async ? "async" : "sync");
-            Object request = commands.get(0).getDdbRequest();
-            Map<?, ?> requestItems = (Map<?, ?>) request.getClass()
-                    .getMethod(REQUEST_ITEMS_METHOD).invoke(request);
-            assertTrue(requestItems.containsKey(tableName));
-            Object keysAndAttributes = requestItems.get(tableName);
-            List<?> keys = (List<?>) keysAndAttributes.getClass().getMethod(KEYS_METHOD)
-                    .invoke(keysAndAttributes);
+            List<Map<String, DynamoDbQueryValue>> keys =
+                    commands.get(0).getDdbRequest().batchRequestItems().get(tableName).keys();
             assertEquals(2, keys.size());
+            assertTrue(keys.stream().allMatch(key -> "Argentina".equals(key.get("country").getPayload())));
+            assertTrue(keys.stream().anyMatch(key -> "Lionel Messi".equals(key.get("name").getPayload())));
+            assertTrue(keys.stream().anyMatch(key -> "Angel Di Maria".equals(key.get("name").getPayload())));
         }
     }
 
@@ -185,30 +177,18 @@ public class DynamoDbEnhancedPaginatorInstrumentedTest {
         String context = operation + (async ? " async" : " sync");
         assertTrue(pages > 0, context);
         assertEquals(pages, commands.size(), context);
-        String requestType;
-        switch (operation) {
-            case QUERY: requestType = "QueryRequest"; break;
-            case SCAN: requestType = "ScanRequest"; break;
-            case BATCH_GET: requestType = "BatchGetItemRequest"; break;
-            default: throw new IllegalArgumentException(operation);
-        }
         assertTrue(commands.stream().allMatch(command ->
                 command.getOperationName() == expected
                         && command.isSuccessfullyExecuted()
-                        && command.getTableNames().contains(tableName)
-                        && (REQUEST_PACKAGE + requestType)
-                        .equals(command.getDdbRequest().getClass().getName())), context);
-        return commands;
-    }
-
-    /** @return whether a later query or scan request contains a continuation key */
-    private boolean hasContinuationKey(DynamoDbCommand command) {
-        try {
-            Map<?, ?> startKey = (Map<?, ?>) command.getDdbRequest().getClass()
-                    .getMethod(EXCLUSIVE_START_KEY_METHOD).invoke(command.getDdbRequest());
-            return !startKey.isEmpty();
-        } catch (ReflectiveOperationException e) {
-            throw new AssertionError(e);
+                        && command.getTableNames().contains(tableName)), context);
+        if (!BATCH_GET.equals(operation)) {
+            assertTrue(commands.stream().allMatch(command -> tableName.equals(command.getDdbRequest().tableName())), context);
         }
+        if (QUERY.equals(operation)) {
+            assertTrue(commands.stream().allMatch(command ->
+                    command.getDdbRequest().expressionAttributeValues().values().stream()
+                            .anyMatch(value -> "Argentina".equals(value.getPayload()))), context);
+        }
+        return commands;
     }
 }

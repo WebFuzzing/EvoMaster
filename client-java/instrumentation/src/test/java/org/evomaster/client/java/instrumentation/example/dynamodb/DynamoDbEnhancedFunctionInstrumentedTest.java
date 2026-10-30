@@ -1,8 +1,8 @@
 package org.evomaster.client.java.instrumentation.example.dynamodb;
 
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -17,7 +17,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -58,7 +57,7 @@ public class DynamoDbEnhancedFunctionInstrumentedTest {
         }
     }
 
-    /** Both clients must record the exact request containing the extension's condition. */
+    /** Both clients must capture the final request's version condition as a serializable snapshot. */
     @Test
     public void testRecordVersionedUpdatesFromInstrumentedEnhancedClient() throws Exception {
         InstrumentingClassLoader loader = new InstrumentingClassLoader(EXAMPLE_PACKAGE);
@@ -75,13 +74,13 @@ public class DynamoDbEnhancedFunctionInstrumentedTest {
             }
             assertEquals(1, commands.size(), async ? "async" : "sync");
             DynamoDbCommand command = commands.get(0);
-            assertSame(request, command.getDdbRequest());
             assertEquals(DynamoDbOperationNames.UPDATE_ITEM, command.getOperationName());
             assertEquals("Products", command.getTableNames().get(0));
             assertTrue(command.isSuccessfullyExecuted());
 
             String condition = (String) request.getClass().getMethod(CONDITION_EXPRESSION_METHOD).invoke(request);
             assertFalse(condition.isEmpty());
+            assertEquals(condition, command.getDdbRequest().filterExpression());
             Map<?, ?> values = (Map<?, ?>) request.getClass()
                     .getMethod(EXPRESSION_ATTRIBUTE_VALUES_METHOD).invoke(request);
             assertTrue(values.values().stream().anyMatch(value -> {
@@ -91,10 +90,12 @@ public class DynamoDbEnhancedFunctionInstrumentedTest {
                     throw new AssertionError(e);
                 }
             }));
+            assertTrue(command.getDdbRequest().expressionAttributeValues().values().stream()
+                    .anyMatch(value -> PRODUCT_VERSION.equals(value.getPayload())));
         }
     }
 
-    /** Get, put, and delete must record the exact request for both Enhanced Clients. */
+    /** Get, put, and delete must capture request snapshots for both Enhanced Clients. */
     @Test
     public void testRecordEveryEagerPlayerOperation() throws Exception {
         InstrumentingClassLoader loader = new InstrumentingClassLoader(EXAMPLE_PACKAGE);
@@ -104,7 +105,7 @@ public class DynamoDbEnhancedFunctionInstrumentedTest {
         for (String operation : new String[]{GET_ITEM, PUT_ITEM, DELETE_ITEM}) {
             for (boolean async : new boolean[]{false, true}) {
                 ExecutionTracer.reset();
-                Object request = execute.invoke(null, operation, async);
+                execute.invoke(null, operation, async);
                 List<DynamoDbCommand> commands = new ArrayList<>();
                 for (AdditionalInfo info : ExecutionTracer.exposeAdditionalInfoList()) {
                     commands.addAll(info.getDynamoDbInfoData());
@@ -113,7 +114,11 @@ public class DynamoDbEnhancedFunctionInstrumentedTest {
                 String context = operation + (async ? " async" : " sync");
                 assertEquals(1, commands.size(), context);
                 DynamoDbCommand command = commands.get(0);
-                assertSame(request, command.getDdbRequest(), context);
+                assertEquals("WorldCupPlayers", command.getDdbRequest().tableName(), context);
+                if (!PUT_ITEM.equals(operation)) {
+                    assertEquals("Argentina", command.getDdbRequest().key().get("country").getPayload(), context);
+                    assertEquals("Lionel Messi", command.getDdbRequest().key().get("name").getPayload(), context);
+                }
                 assertEquals(operationName(operation), command.getOperationName(), context);
                 assertEquals("WorldCupPlayers", command.getTableNames().get(0), context);
                 assertTrue(command.isSuccessfullyExecuted(), context);

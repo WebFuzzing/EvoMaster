@@ -2,8 +2,8 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import com.foo.somedifferentpackage.examples.dynamodb.EnhancedFunctionApplyExample.Product;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,7 +72,11 @@ public class DynamoDbFunctionClassReplacementTest {
         assertSame(response, DynamoDbFunctionClassReplacement.apply(call, request));
 
         DynamoDbCommand command = onlyCommand();
-        assertSame(request, command.getDdbRequest());
+        assertEquals(request.tableName(), command.getDdbRequest().tableName());
+        assertEquals(request.conditionExpression(), command.getDdbRequest().filterExpression());
+        assertEquals(request.expressionAttributeNames(), command.getDdbRequest().expressionAttributeNames());
+        request.expressionAttributeValues().forEach((name, value) ->
+                assertEquals(value.n(), command.getDdbRequest().expressionAttributeValues().get(name).getPayload()));
         assertEquals(DynamoDbOperationNames.UPDATE_ITEM, command.getOperationName());
         assertEquals("Products", command.getTableNames().get(0));
         assertTrue(command.isSuccessfullyExecuted());
@@ -102,7 +106,7 @@ public class DynamoDbFunctionClassReplacementTest {
             assertSame(result, DynamoDbFunctionClassReplacement.apply(
                     (Function<Object, Object>) actual -> result, request));
             DynamoDbCommand command = onlyCommand();
-            assertSame(request, command.getDdbRequest());
+            assertEquals("WorldCupPlayers", command.getDdbRequest().tableName());
             assertEquals(operations.get(i), command.getOperationName());
             assertEquals("WorldCupPlayers", command.getTableNames().get(0));
             assertTrue(command.isSuccessfullyExecuted());
