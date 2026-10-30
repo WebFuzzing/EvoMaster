@@ -11,8 +11,8 @@ import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.EqualsOperation;
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeType;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeType;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbComparisonType;
 import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.BeginsWithOperation;

@@ -1,10 +1,10 @@
-package org.evomaster.client.java.controller.dynamodb;
+package org.evomaster.client.java.instrumentation.dynamodb;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * DynamoDB attribute types accepted by the {@code attribute_type} expression function.
+ * DynamoDB attribute types captured in query values and accepted by the {@code attribute_type} expression function.
  */
 public enum DynamoDbAttributeType {
 
@@ -17,13 +17,18 @@ public enum DynamoDbAttributeType {
     BOOLEAN("BOOL", ValueFamily.NONE, false),
     NULL("NULL", ValueFamily.NONE, false),
     LIST("L", ValueFamily.NONE, false),
-    MAP("M", ValueFamily.NONE, false);
+    MAP("M", ValueFamily.NONE, false),
+    /** No SDK attribute type was set or recognized; distinct from an explicit DynamoDB NULL value. */
+    UNSET(null, ValueFamily.NONE, false);
 
+    /** Maps each DynamoDB type token to its corresponding enum value. */
     private static final Map<String, DynamoDbAttributeType> BY_TOKEN = new HashMap<>();
 
     static {
         for (DynamoDbAttributeType type : values()) {
-            BY_TOKEN.put(type.token, type);
+            if (type.token != null) {
+                BY_TOKEN.put(type.token, type);
+            }
         }
     }
 
@@ -60,7 +65,7 @@ public enum DynamoDbAttributeType {
     }
 
     /**
-     * @return DynamoDB type token used in expression attribute values
+     * @return DynamoDB type token used in expression attribute values, or {@code null} for {@link #UNSET}
      */
     public String getToken() {
         return token;
