@@ -17,11 +17,13 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Processes DynamoDB commands captured from the SUT and computes database heuristics for them.
@@ -39,6 +41,14 @@ public class DynamoDbHandler {
 
     /** Canonical keys used to avoid reporting duplicate inferred insertions. */
     private final Set<String> insertionKeys = new LinkedHashSet<>();
+
+    /**
+     * Maps each table name to its immutable base-table primary-key attributes and supported scalar types.
+     * Definitions are loaded lazily through DescribeTable and retained across {@link #reset()} calls,
+     * avoiding repeated schema reads when completing inferred insertions. Secondary-index keys are excluded.
+     * Cleared by {@link #setDynamoDbClient(Object)} because another client can refer to different table schemas.
+     */
+    private final Map<String, DynamoDbPrimaryKey> primaryKeysByTable = new HashMap<>();
 
     /** Parser used to extract predicates and table names from captured requests. */
     private final DynamoDbRequestParser requestParser = new DynamoDbRequestParser();
@@ -116,6 +126,7 @@ public class DynamoDbHandler {
      */
     public void setDynamoDbClient(Object dynamoDbClient) {
         this.dynamoDbClient = dynamoDbClient;
+        primaryKeysByTable.clear();
     }
 
     /**
@@ -193,7 +204,7 @@ public class DynamoDbHandler {
                     evaluatedCommands.add(new DynamoDbCommandWithDistance(command, tableName, metrics));
                 }
                 if (extractDynamoDbExecution && distance > 0.0d) {
-                    registerFailedQuery(command, tableName, parsed);
+                    registerFailedQuery(command, tableName, parsed, items);
                 }
             } catch (RuntimeException e) {
                 registerFailure(command, tableName, e);
@@ -207,8 +218,10 @@ public class DynamoDbHandler {
      * @param command intercepted DynamoDB read
      * @param tableName table read by the command
      * @param parsed parsed request conditions
+     * @param items existing table items that can supply non-key scalar attributes
      */
-    private void registerFailedQuery(DynamoDbCommand command, String tableName, ParsedDynamoDbRequest parsed) {
+    private void registerFailedQuery(DynamoDbCommand command, String tableName, ParsedDynamoDbRequest parsed,
+                                     List<Map<String, Object>> items) {
         if (command.getOperationName() != DynamoDbOperationNames.GET_ITEM
                 && command.getOperationName() != DynamoDbOperationNames.QUERY) {
             return;
@@ -221,11 +234,102 @@ public class DynamoDbHandler {
             return;
         }
 
+        DynamoDbPrimaryKey primaryKey = getPrimaryKey(tableName);
+        if (primaryKey == null || !matchesPrimaryKeyTypes(attributes, primaryKey)) {
+            return;
+        }
+
+        completeFromTableItem(tableName, attributes, primaryKey.getAttributes().keySet(), items);
+        Map<String, DynamoDbScalarTypeDto> missingKeys = new LinkedHashMap<>(primaryKey.getAttributes());
+        missingKeys.keySet().removeAll(attributes.keySet());
+        addFailedQueryIfAbsent(tableName, attributes, missingKeys);
+    }
+
+    /**
+     * Loads and caches the base-table key, leaving failed schema reads eligible for retry.
+     *
+     * @param tableName table whose primary key is needed
+     * @return primary-key metadata, or {@code null} when inspection fails
+     */
+    private DynamoDbPrimaryKey getPrimaryKey(String tableName) {
+        try {
+            return primaryKeysByTable.computeIfAbsent(tableName,
+                    name -> tableDataAccessor.getPrimaryKeyAttributes(dynamoDbClient, name));
+        } catch (RuntimeException e) {
+            SimpleLogger.uniqueWarn("Failed to inspect DynamoDB primary key for table " + tableName
+                    + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Validates supplied key types, leaving missing values for core to generate.
+     *
+     * @param attributes inferred query attributes
+     * @param primaryKey required key names and scalar types
+     * @return whether all supplied key values match the table schema
+     */
+    private boolean matchesPrimaryKeyTypes(Map<String, DynamoDbAttributeValueDto> attributes,
+                                           DynamoDbPrimaryKey primaryKey) {
+        for (Map.Entry<String, DynamoDbScalarTypeDto> key : primaryKey.getAttributes().entrySet()) {
+            DynamoDbAttributeValueDto existing = attributes.get(key.getKey());
+            if (existing != null && existing.type != key.getValue()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Records an inferred insertion once per action, using its canonical attributes for deduplication.
+     *
+     * @param tableName table being populated
+     * @param attributes inferred query and template attributes
+     * @param missingKeys key names and types that core must generate
+     */
+    private void addFailedQueryIfAbsent(String tableName, Map<String, DynamoDbAttributeValueDto> attributes,
+                                       Map<String, DynamoDbScalarTypeDto> missingKeys) {
         List<DynamoDbAttributeValueDto> insertionAttributes = new ArrayList<>(attributes.values());
         String insertionKey = DynamoDbInsertionKeyBuilder.fromAttributes(tableName, insertionAttributes);
         if (insertionKeys.add(insertionKey)) {
-            failedQueries.add(new DynamoDbFailedQuery(tableName, insertionAttributes));
+            failedQueries.add(new DynamoDbFailedQuery(tableName, insertionAttributes, missingKeys));
         }
+    }
+
+    /**
+     * Copies supported non-key attributes from the richest existing item, keeping query values intact.
+     * A key-only item can satisfy DynamoDB while lacking fields required by the SUT after the read.
+     * Ties use the canonical attribute key so scan order does not change the chosen template.
+     *
+     * @param tableName table being populated
+     * @param attributes inferred query values, extended in place
+     * @param primaryKeys primary-key names that must not be copied from another item
+     * @param items normalized table contents
+     */
+    private void completeFromTableItem(String tableName, Map<String, DynamoDbAttributeValueDto> attributes,
+                                       Set<String> primaryKeys, List<Map<String, Object>> items) {
+        Map<String, DynamoDbAttributeValueDto> template = Collections.emptyMap();
+        String templateKey = null;
+        for (Map<String, Object> item : items) {
+            Map<String, DynamoDbAttributeValueDto> candidate = new LinkedHashMap<>();
+            for (Map.Entry<String, Object> entry : new TreeMap<>(item).entrySet()) {
+                if (!primaryKeys.contains(entry.getKey())) {
+                    DynamoDbAttributeValueDto attribute = toAttribute(entry.getKey(), entry.getValue());
+                    if (attribute != null) {
+                        candidate.put(entry.getKey(), attribute);
+                    }
+                }
+            }
+            String candidateKey = DynamoDbInsertionKeyBuilder.fromAttributes(tableName,
+                    new ArrayList<>(candidate.values()));
+            if (candidate.size() > template.size()
+                    || (candidate.size() == template.size()
+                    && (templateKey == null || candidateKey.compareTo(templateKey) < 0))) {
+                template = candidate;
+                templateKey = candidateKey;
+            }
+        }
+        template.forEach(attributes::putIfAbsent);
     }
 
     /**

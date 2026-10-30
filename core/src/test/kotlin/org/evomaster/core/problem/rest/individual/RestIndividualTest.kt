@@ -1,10 +1,13 @@
 package org.evomaster.core.problem.rest.individual
 
 import org.evomaster.core.TestUtils
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -13,6 +16,33 @@ import org.junit.jupiter.api.Test
  * created by manzhang on 2024/1/30
  */
 class RestIndividualTest {
+
+    @Test
+    fun testDynamoDbInsertionFollowsTheRestInput() {
+        val rest = TestUtils.generateFakeQueryRestAction("1", "/players")
+        val country = rest.seeTopGenes().filterIsInstance<StringGene>().single()
+        country.value = "Argentina"
+        val individual = RestIndividual(mutableListOf(rest), SampleType.RANDOM)
+        individual.resetLocalIdRecursively()
+        individual.doInitializeLocalId()
+        individual.doInitialize()
+
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "country", "Argentina")
+        individual.addInitializingActions(listOf(insertion))
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(
+            listOf(insertion), individual.seeFullTreeGenes(ActionFilter.NO_INIT)
+        )
+        assertTrue(individual.verifyBindingGenes())
+
+        val copy = individual.copy() as RestIndividual
+        val copiedCountry = copy.seeFullTreeGenes(ActionFilter.NO_INIT).filterIsInstance<StringGene>().single()
+        val copiedInsertion = copy.seeDynamoDbActions().single() as DynamoDbAction
+        copiedCountry.value = "Uruguay"
+        copiedCountry.syncBindingGenesBasedOnThis()
+
+        assertEquals("Uruguay", (copiedInsertion.attributes.single().gene as StringGene).value)
+        assertEquals("Argentina", (insertion.attributes.single().gene as StringGene).value)
+    }
 
 
 

@@ -1,12 +1,20 @@
 package org.evomaster.client.java.controller.internal.db.dynamodb;
 
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,6 +89,63 @@ public class DynamoDbTableDataAccessorTest {
         assertEquals("Argentina", items.get(0).get("country"));
         assertEquals("Lionel Messi", items.get(0).get("playerName"));
         verify(client).scan(any(ScanRequest.class));
+    }
+
+    @Test
+    public void testReadsPrimaryKeySchema() {
+        DynamoDbClient client = mock(DynamoDbClient.class);
+        TableDescription table = TableDescription.builder()
+                .keySchema(
+                        KeySchemaElement.builder().attributeName("country").keyType(KeyType.HASH).build(),
+                        KeySchemaElement.builder().attributeName("fifaId").keyType(KeyType.RANGE).build())
+                .attributeDefinitions(
+                        AttributeDefinition.builder().attributeName("country").attributeType(ScalarAttributeType.S).build(),
+                        AttributeDefinition.builder().attributeName("fifaId").attributeType(ScalarAttributeType.N).build(),
+                        AttributeDefinition.builder().attributeName("playerName").attributeType(ScalarAttributeType.S).build())
+                .build();
+        when(client.describeTable(any(DescribeTableRequest.class)))
+                .thenReturn(DescribeTableResponse.builder().table(table).build());
+
+        DynamoDbPrimaryKey primaryKey = accessor.getPrimaryKeyAttributes(client, TABLE);
+
+        assertEquals(2, primaryKey.getAttributes().size());
+        assertEquals(DynamoDbScalarTypeDto.STRING, primaryKey.getAttributes().get("country"));
+        assertEquals(DynamoDbScalarTypeDto.NUMBER, primaryKey.getAttributes().get("fifaId"));
+        verify(client).describeTable(any(DescribeTableRequest.class));
+    }
+
+    @Test
+    public void testAwaitsAsynchronousPrimaryKeySchema() {
+        DynamoDbAsyncClient client = mock(DynamoDbAsyncClient.class);
+        TableDescription table = TableDescription.builder()
+                .keySchema(KeySchemaElement.builder().attributeName("country").keyType(KeyType.HASH).build())
+                .attributeDefinitions(AttributeDefinition.builder().attributeName("country")
+                        .attributeType(ScalarAttributeType.S).build())
+                .build();
+        when(client.describeTable(any(DescribeTableRequest.class)))
+                .thenReturn(CompletableFuture.completedFuture(DescribeTableResponse.builder().table(table).build()));
+
+        DynamoDbPrimaryKey primaryKey = accessor.getPrimaryKeyAttributes(client, TABLE);
+
+        assertEquals(Collections.singletonMap("country", DynamoDbScalarTypeDto.STRING), primaryKey.getAttributes());
+        verify(client).describeTable(any(DescribeTableRequest.class));
+    }
+
+    @Test
+    public void testRejectsUnsupportedBinaryPrimaryKey() {
+        DynamoDbClient client = mock(DynamoDbClient.class);
+        TableDescription table = TableDescription.builder()
+                .keySchema(KeySchemaElement.builder().attributeName("playerId").keyType(KeyType.HASH).build())
+                .attributeDefinitions(AttributeDefinition.builder().attributeName("playerId")
+                        .attributeType(ScalarAttributeType.B).build())
+                .build();
+        when(client.describeTable(any(DescribeTableRequest.class)))
+                .thenReturn(DescribeTableResponse.builder().table(table).build());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> accessor.getPrimaryKeyAttributes(client, TABLE));
+
+        assertTrue(exception.getMessage().contains("playerId"));
     }
 
     @Test
