@@ -5,7 +5,9 @@ import org.evomaster.client.java.controller.api.dto.database.execution.RedisSear
 import org.evomaster.client.java.controller.api.dto.database.execution.RedisSearchFilterDto
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -68,13 +70,18 @@ object RedisInsertBuilder {
             "HGETALL" -> {
                 val key = keys.firstOrNull() ?: return emptyList()
                 if (key in existingKeys) return emptyList()
-                listOf(
-                    RedisHsetAction(
-                        key = key,
-                        field = "field",
-                        valueGene = StringGene("value")
+                val fields = buildFieldsFromEntityType(cmd.entityType, cmd.entityIdField, key)
+                if (fields != null) {
+                    listOf(RedisQueryAction(key = key, fields = fields))
+                } else {
+                    listOf(
+                        RedisHsetAction(
+                            key = key,
+                            field = "field",
+                            valueGene = StringGene("value")
+                        )
                     )
-                )
+                }
             }
             "KEYS" -> {
                 val pattern = cmd.pattern ?: return emptyList()
@@ -207,6 +214,47 @@ object RedisInsertBuilder {
     private fun buildFreeField(field: String, attributeType: RedisSearchFieldType?): RedisQueryField {
         val gene: Gene = if (attributeType == RedisSearchFieldType.NUMERIC) DoubleGene(field) else StringGene(field)
         return RedisQueryField(field, valueGene = gene)
+    }
+
+    /**
+     * When a HGETALL failed command carries the schema of the Java type observed for its keyspace
+     * (captured by BasicRedisPersistentEntityClassReplacement when a Spring Data Redis
+     * `@RedisHash` repository bootstraps), builds one [RedisQueryField] per declared field of that
+     * type, reusing the same OpenAPI-schema-to-Gene engine already used for REST DTO bodies
+     * ([RestActionBuilderV3.createGeneForDTO]), instead of a single placeholder field/value that
+     * would leave every other field null after deserialization.
+     *
+     * Spring Data Redis takes the id of the entity it reads from a field of the hash, not from the
+     * key. So that the entity looks like the one that was asked for, the field of [idField] is fixed
+     * to the id part of [key] (what follows its keyspace) instead of being free for the search to
+     * change.
+     *
+     * @return null when there is no known schema for the command, or it could not be turned into
+     * fields, so the caller falls back to the generic placeholder field.
+     */
+    private fun buildFieldsFromEntityType(entityType: String?, idField: String?, key: String): List<RedisQueryField>? {
+        if (entityType == null) return null
+
+        val typeName = entityType.substringBefore(":").drop(1).dropLast(1)
+
+        val gene = try {
+            RestActionBuilderV3.createGeneForDTO(typeName, entityType, RestActionBuilderV3.Options(invalidData = false))
+        } catch (e: Exception) {
+            LoggingUtil.uniqueWarn(log, "Could not derive fields from Redis entity schema for $typeName: ${e.message}")
+            return null
+        }
+
+        val fixedFields = (gene as? ObjectGene)?.fixedFields ?: return null
+        if (fixedFields.isEmpty()) return null
+
+        val idValue = key.substringAfter(':')
+        return fixedFields.map {
+            if (it.name == idField) {
+                RedisQueryField(it.name, constantValue = idValue)
+            } else {
+                RedisQueryField(it.name, valueGene = it)
+            }
+        }
     }
 
     private fun escapeRegexLiteral(word: String): String {

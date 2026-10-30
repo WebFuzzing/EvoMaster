@@ -24,6 +24,15 @@ class RedisQueryField(
     }
 
     /**
+     * The fields of the Redis hash that this field is stored as, as (name, value) pairs. A constant
+     * or a simple gene is a single one, named after this field, but a nested object, a collection
+     * or a map is stored as many, see [RedisHashFlattener]. Empty if the field is not to be stored,
+     * which is the case for an inactive optional gene.
+     */
+    fun hashEntries(): List<Pair<String, String>> =
+        if (constantValue != null) listOf(name to constantValue) else RedisHashFlattener.flatten(name, valueGene!!)
+
+    /**
      * The current value of this field, as a plain string suitable for a Redis HSET, regardless of
      * whether it comes from a constant or from a gene.
      */

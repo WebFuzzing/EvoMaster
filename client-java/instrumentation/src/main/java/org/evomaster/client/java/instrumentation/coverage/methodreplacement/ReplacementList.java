@@ -27,6 +27,7 @@ public class ReplacementList {
             listCache = Arrays.asList(
                     new AbstractEndpointClassReplacement(),
                     new Base64DecoderClassReplacement(),
+                    new BasicRedisPersistentEntityClassReplacement(),
                     new BooleanClassReplacement(),
                     new ByteClassReplacement(),
                     new CharacterClassReplacement(),
