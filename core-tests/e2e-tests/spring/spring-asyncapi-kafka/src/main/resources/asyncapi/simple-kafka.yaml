@@ -1,0 +1,82 @@
+# An artificial service for the AsyncAPI E2E tests. Written for EvoMaster.
+asyncapi: 3.0.0
+info:
+  title: Simple Kafka API
+  version: 1.0.0
+  description: |
+    Two request/reply operations over Kafka. Each takes an integer x and replies with a
+    constant. A negative x makes the service fail, and it answers with a message this document
+    does not declare.
+defaultContentType: application/json
+
+servers:
+  kafka:
+    host: localhost:9092
+    protocol: kafka
+
+channels:
+  fooRequest:
+    address: foo.request
+    messages:
+      request:
+        $ref: '#/components/messages/request'
+  fooReply:
+    address: foo.reply
+    messages:
+      result:
+        $ref: '#/components/messages/result'
+  barRequest:
+    address: bar.request
+    messages:
+      request:
+        $ref: '#/components/messages/request'
+  barReply:
+    address: bar.reply
+    messages:
+      result:
+        $ref: '#/components/messages/result'
+
+operations:
+  foo:
+    action: receive
+    channel:
+      $ref: '#/channels/fooRequest'
+    reply:
+      channel:
+        $ref: '#/channels/fooReply'
+  bar:
+    action: receive
+    channel:
+      $ref: '#/channels/barRequest'
+    reply:
+      channel:
+        $ref: '#/channels/barReply'
+
+components:
+  messages:
+    request:
+      name: Request
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/Request'
+    result:
+      name: Result
+      contentType: application/json
+      correlationId:
+        location: '$message.header#/correlationId'
+      payload:
+        $ref: '#/components/schemas/Result'
+
+  schemas:
+    Request:
+      type: object
+      required: [x]
+      properties:
+        x: { type: integer, format: int32 }
+    Result:
+      type: object
+      required: [value]
+      properties:
+        value: { type: integer, format: int32 }
