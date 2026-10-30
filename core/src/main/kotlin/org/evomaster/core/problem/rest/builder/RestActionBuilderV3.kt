@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.builder
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.parser.OpenAPIParser
@@ -86,6 +87,21 @@ object RestActionBuilderV3 {
     private val dtoCache = mutableMapOf<String, Gene>()
 
     private val mapper = ObjectMapper()
+
+    private fun buildOpenApiSchema(
+        schemas: JsonNode,
+        openApiVersion: String
+    ): Pair<SchemaOpenAPI, RestSchema> {
+        val root = mapper.createObjectNode()
+        root.put("openapi", openApiVersion)
+        root.putObject(OPENAPI_COMPONENT_NAME)
+            .set<JsonNode>(OPENAPI_SCHEMA_NAME, schemas.deepCopy())
+
+        val schemaText = mapper.writeValueAsString(root)
+        val parsed = OpenAPIParser().readContents(schemaText, null, null)
+        val currentSchema = SchemaOpenAPI(schemaText, parsed.openAPI, SchemaLocation.MEMORY)
+        return currentSchema to RestSchema(currentSchema)
+    }
 
     class Options(
         /**
@@ -327,27 +343,17 @@ object RestActionBuilderV3 {
             return dtoCache[dtoSchema]!!.copy()
         }
 
-        val schema = """
-            {
-                "openapi": "3.0.0",
-                "$OPENAPI_COMPONENT_NAME": {
-                    "$OPENAPI_SCHEMA_NAME": $allSchemasValue
-                }
-            }          
-        """.trimIndent()
-
         //FIXME here we are swallowing all error messages in schema
         //FIXME duplicated code
-        val swagger = OpenAPIParser().readContents(schema,null,null)
-        val currentSchema = SchemaOpenAPI(schema,swagger.openAPI, SchemaLocation.MEMORY)
-        val schemaHolder = RestSchema(currentSchema)
+        val (currentSchema, schemaHolder) = buildOpenApiSchema(mapper.readTree(allSchemasValue), "3.0.0")
+        val swagger = currentSchema.schemaParsed
 
         var wanted: Gene? = null
 
         schemas.forEach { (t, u) ->
             val forThisOne = if (t == dtoSchemaName) offered else listOf()
             val gene = getGene(t,
-                swagger.openAPI.components.schemas[t]!!,
+                swagger.components.schemas[t]!!,
                 schemaHolder,
                 currentSchema,
                 ArrayDeque(),
@@ -388,22 +394,15 @@ object RestActionBuilderV3 {
         }
 
         //Note to simplify code, we just create a whole OpenAPI schema
-        val schema = """
-            {
-                "openapi": "3.0.0",
-                "$OPENAPI_COMPONENT_NAME": {
-                    "$OPENAPI_SCHEMA_NAME": {
-                        $dtoSchema
-                    }
-                }
-            }          
-        """.trimIndent()
+        val parsedDtoSchema = mapper.readTree("{$dtoSchema}")
+        val schemaNode = parsedDtoSchema.get(name)
+            ?: throw IllegalArgumentException("Schema '$name' not found in dto schema")
+        val schemas = mapper.createObjectNode()
+        schemas.set<JsonNode>(name, schemaNode)
 
         //FIXME here we are swallowing all error messages in schema
         //FIXME duplicated code
-        val swagger = OpenAPIParser().readContents(schema,null,null)
-        val currentSchema = SchemaOpenAPI(schema,swagger.openAPI, SchemaLocation.MEMORY)
-        val schemaHolder = RestSchema(currentSchema)
+        val (currentSchema, schemaHolder) = buildOpenApiSchema(schemas, "3.0.0")
         val gene = createObjectGene(
             name,
             currentSchema.schemaParsed.components.schemas[name]!!,
@@ -462,6 +461,46 @@ object RestActionBuilderV3 {
         }
 
         return dtoSchemas.map { dtoCache[it]!!.copy() }
+    }
+
+    /**
+     * Create a Gene from a set of related JSON-Schema definitions supplied as already-parsed
+     * [JsonNode]s.
+     *
+     * @param rootName the key in [schemasByName] whose gene is returned
+     * @param schemasByName every schema to register, keyed by component name; must contain [rootName]
+     * @param options the options to customize the gene creation process
+     * @return the Gene for [rootName]
+     * @throws IllegalArgumentException if [rootName] is not present in [schemasByName]
+     */
+    fun createGeneForDTO(
+        rootName: String,
+        schemasByName: Map<String, JsonNode>,
+        options: Options
+    ): Gene {
+
+        if (!schemasByName.containsKey(rootName)) {
+            throw IllegalArgumentException("Root schema '$rootName' not present among provided schemas")
+        }
+
+        val schemas = mapper.createObjectNode()
+        schemasByName.forEach { (name, node) -> schemas.set<JsonNode>(name, node) }
+        val (currentSchema, schemaHolder) = buildOpenApiSchema(schemas, "3.1.0")
+        val parsed = currentSchema.schemaParsed
+
+        val schema = parsed.components.schemas[rootName]
+            ?: throw IllegalStateException("Cannot find schema '$rootName' after parsing")
+
+        return getGene(
+            rootName,
+            schema,
+            schemaHolder,
+            currentSchema,
+            ArrayDeque(),
+            rootName,
+            options,
+            messages = mutableListOf()
+        ).copy()
     }
 
 
@@ -1495,7 +1534,7 @@ object RestActionBuilderV3 {
             "sf-decimal" -> return BigDecimalGene(name, precision = 15, scale = 3)
             //time and date-time without/with timezone, reusing the existing datetime genes
             "time" -> return TimeGene(name, format = FormatForDatesAndTimes.RFC3339, onlyValidTimes = !options.invalidData)
-            "time-local" -> return TimeGene(name, format = FormatForDatesAndTimes.ISO_LOCAL, onlyValidTimes = !options.invalidData)
+            "time-local", "local-time" -> return TimeGene(name, format = FormatForDatesAndTimes.ISO_LOCAL, onlyValidTimes = !options.invalidData)
             "date-time-local" -> return DateTimeGene(name, onlyValid = !options.invalidData, format = FormatForDatesAndTimes.ISO_LOCAL)
             //RFC3339 duration (a full ISO-8601 duration)
             "duration" -> return regexGene(name, "^P[1-9][0-9]{0,2}Y[1-9][0-9]{0,2}M[1-9][0-9]{0,2}DT[1-9][0-9]{0,2}H[1-9][0-9]{0,2}M[1-9][0-9]{0,2}S$")

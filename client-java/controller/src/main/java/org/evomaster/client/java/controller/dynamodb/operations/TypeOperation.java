@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.dynamodb.operations;
 
-import org.evomaster.client.java.controller.dynamodb.DynamoDbAttributeType;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeType;
 
 /**
  * DynamoDB {@code attribute_type(path, type)} predicate operation.

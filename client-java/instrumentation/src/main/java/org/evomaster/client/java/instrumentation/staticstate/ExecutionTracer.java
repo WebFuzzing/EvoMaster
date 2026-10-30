@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.staticstate;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.cassandra.CassandraTableMetadata;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.shared.*;
 
@@ -476,6 +477,12 @@ public class ExecutionTracer {
     public static void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){
         if (!executingInitMongo) {
             getCurrentAdditionalInfo().addMongoCollectionType(mongoCollectionSchema);
+        }
+    }
+
+    public static void addRedisHashType(RedisHashSchema redisHashSchema){
+        if (!executingInitRedis) {
+            getCurrentAdditionalInfo().addRedisHashType(redisHashSchema);
         }
     }
 
