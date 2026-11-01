@@ -1043,7 +1043,8 @@ class StringGene(
             this.specializations.clear()
             this.specializations.addAll(other.specializations)
 
-            killAllChildren()
+            // Clean up discarded specializations without detaching this string's own bindings.
+            killChildren(specializationGenes.toList())
             val adopted = other.specializationGenes.map { it.copy() }
             adopted.forEach { it.resetLocalIdRecursively()}
             addChildren(adopted)

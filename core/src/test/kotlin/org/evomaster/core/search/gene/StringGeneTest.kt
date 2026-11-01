@@ -7,6 +7,28 @@ import org.junit.jupiter.api.Test
 
 internal class StringGeneTest{
 
+    /** Copying values must retain both directions of each live binding. */
+    @Test
+    fun synchronizedPlayerIdentifiersKeepTheirBindings() {
+        val player = StringGene("playerId", "_EM_3_XYZ_")
+        val first = StringGene("player_id", player.value)
+        val second = StringGene("captainId", player.value)
+        listOf(first, second).forEach {
+            player.addBindingGene(it)
+            it.addBindingGene(player)
+        }
+        player.syncBindingGenesBasedOnThis()
+        listOf(first, second).forEach {
+            assertTrue(player.isDirectBoundWith(it))
+            assertTrue(it.isDirectBoundWith(player))
+        }
+        first.value = "Lionel Messi"
+        first.syncBindingGenesBasedOnThis()
+        org.junit.jupiter.api.Assertions.assertEquals(first.value, player.value)
+        org.junit.jupiter.api.Assertions.assertEquals(first.value, second.value)
+    }
+
+
     @Test
     fun slashTest(){
         val testChar = '\\'
