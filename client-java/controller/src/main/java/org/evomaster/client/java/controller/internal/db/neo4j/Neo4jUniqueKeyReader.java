@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityDt
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityPropertyDto;
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto;
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyDto;
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyExistingValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto;
 import org.evomaster.client.java.controller.neo4j.Neo4jInsertionTemplateBuilder;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
@@ -137,15 +138,15 @@ public class Neo4jUniqueKeyReader {
      * one of them is not bound by the key, as in Neo4j. A node whose value has a type an insertion cannot
      * hold (eg, a list or a date) cannot clash with one, so it is left out too.
      */
-    private List<List<Neo4jInsertionEntryDto>> existingValues(Neo4jGraph graph, Neo4jUniqueKeyDto key) {
-        List<List<Neo4jInsertionEntryDto>> existing = new ArrayList<>();
+    private List<Neo4jUniqueKeyExistingValueDto> existingValues(Neo4jGraph graph, Neo4jUniqueKeyDto key) {
+        List<Neo4jUniqueKeyExistingValueDto> existing = new ArrayList<>();
         for (Neo4jNode node : graph.getNodes()) {
             if (!node.getLabels().contains(key.label)) {
                 continue;
             }
             List<Neo4jInsertionEntryDto> values = valuesOf(node, key.properties);
             if (values != null) {
-                existing.add(values);
+                existing.add(new Neo4jUniqueKeyExistingValueDto(values));
             }
         }
         return existing;

@@ -1,7 +1,5 @@
 package org.evomaster.client.java.controller.api.dto.database.neo4j;
 
-import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,10 +23,9 @@ public class Neo4jUniqueKeyDto {
     public List<String> properties = new ArrayList<>();
 
     /**
-     * The values already taken in the database, one element per existing node. Each element is a list
-     * because a composite key has one value per property, in the same order as {@link #properties}.
+     * The values of the key already taken in the database, one per existing node that holds them.
      */
-    public List<List<Neo4jInsertionEntryDto>> existingValues = new ArrayList<>();
+    public List<Neo4jUniqueKeyExistingValueDto> existingValues = new ArrayList<>();
 
     /**
      * Default constructor

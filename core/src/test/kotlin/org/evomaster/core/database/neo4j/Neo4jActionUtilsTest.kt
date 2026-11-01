@@ -2,6 +2,7 @@ package org.evomaster.core.database.neo4j
 
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyDto
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyExistingValueDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto
 import org.evomaster.core.problem.enterprise.SampleType
@@ -25,7 +26,7 @@ class Neo4jActionUtilsTest {
         Neo4jUniqueKeyDto().also {
             it.label = label
             it.properties = properties.toMutableList()
-            it.existingValues = existing.toMutableList()
+            it.existingValues = existing.map { values -> Neo4jUniqueKeyExistingValueDto(values) }.toMutableList()
         }
 
     private fun keys(vararg keys: Neo4jUniqueKeyDto) =

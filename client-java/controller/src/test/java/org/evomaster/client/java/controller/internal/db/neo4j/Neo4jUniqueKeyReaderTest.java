@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExisting
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityDto;
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityPropertyDto;
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto;
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyExistingValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
 import org.junit.jupiter.api.AfterAll;
@@ -124,8 +124,8 @@ public class Neo4jUniqueKeyReaderTest {
     /** Each existing value as "TYPE=value" entries joined by commas. */
     private static List<String> render(Neo4jUniqueKeyDto key) {
         List<String> rendered = new ArrayList<>();
-        for (List<Neo4jInsertionEntryDto> entries : key.existingValues) {
-            rendered.add(entries.stream().map(e -> e.type + "=" + e.value).collect(Collectors.joining(",")));
+        for (Neo4jUniqueKeyExistingValueDto existing : key.existingValues) {
+            rendered.add(existing.properties.stream().map(e -> e.type + "=" + e.value).collect(Collectors.joining(",")));
         }
         return rendered;
     }

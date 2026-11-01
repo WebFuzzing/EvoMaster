@@ -35,6 +35,7 @@ class Neo4jUniqueKeys(dto: Neo4jExistingDataDto) {
         keys = valid.map { it.first }.distinct()
         existing = valid.flatMap { (key, existingValues) ->
             existingValues
+                .map { it.properties ?: emptyList() }
                 .filter { entries -> entries.size == key.properties.size && entries.all { it.type != null && it.value != null } }
                 .map { entries -> Value(key, entries.map { it.type to it.value }) }
         }.toSet()
