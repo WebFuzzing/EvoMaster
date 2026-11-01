@@ -41,6 +41,8 @@ public class ReplacementList {
                     new DoubleClassReplacement(),
                     new DynamoDbClassReplacement.Sync(),
                     new DynamoDbClassReplacement.Async(),
+                    new DynamoDbEnhancedClientClassReplacement.Sync(),
+                    new DynamoDbEnhancedClientClassReplacement.Async(),
                     new DynamoDbFunctionClassReplacement(),
                     new EnumClassReplacement(),
                     new FloatClassReplacement(),
