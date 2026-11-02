@@ -891,7 +891,14 @@ object RestActionBuilderV3 {
             //a comma-separated list is allowed; the first entry is used
             val declared = multipart.encoding?.get(name)?.contentType
                 ?.substringBefore(",")?.trim()?.takeIf { it.isNotEmpty() }
+            /*
+                For a property declared as an array, `format: binary` sits on its `items` and not on
+                the property itself, since RFC 7578 sends such a property as one file part per element.
+                Missing this would leave every list of uploads without a filename, i.e. not a file at
+                all as far as the server is concerned.
+             */
             val isFile = propertySchema?.format.equals("binary", ignoreCase = true)
+                    || propertySchema?.items?.format.equals("binary", ignoreCase = true)
             name to PartMeta(isFile = isFile, contentType = declared)
         }
     }

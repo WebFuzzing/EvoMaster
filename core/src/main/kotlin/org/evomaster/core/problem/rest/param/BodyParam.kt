@@ -8,6 +8,7 @@ import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeMultipartForm
 import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeTextPlain
 import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeXml
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
@@ -219,7 +220,7 @@ class BodyParam(gene: Gene,
      * mutation happens between the two calls.
      */
     fun multipartBoundary(): String {
-        val values = multipartParts().map { it.second.getValueAsRawString() }
+        val values = multipartParts().map { it.leaf.getValueAsRawString() }
         var boundary = DEFAULT_BOUNDARY
         var i = 2
         while (values.any { it.contains(boundary) }) {
@@ -229,18 +230,46 @@ class BodyParam(gene: Gene,
     }
 
     /**
-     * The parts to be sent, in schema order, as (property name, leaf gene) pairs. Inactive
-     * [OptionalGene]s are skipped, so a non-required property simply has no part.
+     * One part of the envelope.
+     *
+     * @param repeatedIndex null for a plain property, else the 0-based position of the element inside
+     *                      an array property. Such parts all share one [name], so the index is the
+     *                      only thing telling them apart, and is what their filename is derived from.
+     */
+    private class MultipartPart(val name: String, val leaf: Gene, val repeatedIndex: Int?)
+
+    /**
+     * The parts to be sent, in schema order. Inactive [OptionalGene]s are skipped, so a non-required
+     * property simply has no part.
      *
      * Same inclusion rules as [ObjectGene] uses for its own serializations.
+     *
+     * Note this is a flatMap and not a map: RFC 7578 has no syntax for a collection inside a single
+     * part, so a property declared as an array is sent as one part per element, all of them carrying
+     * the same name. The returned list can therefore hold repeated names — which is exactly what an
+     * [ObjectGene] cannot represent, and does not need to, since the duplication lives one level
+     * below its fields.
      */
-    private fun multipartParts(): List<Pair<String, Gene>> {
+    private fun multipartParts(): List<MultipartPart> {
         val obj = primaryGene().getWrappedGene(ObjectGene::class.java) ?: return listOf()
         return obj.fixedFields
-            .filter { it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene)) }
-            .filter { it.isPrintable() }
-            .map { it.name to it.getLeafGene() }
+            .filter { isPartToBePrinted(it) }
+            .flatMap { field ->
+                val leaf = field.getLeafGene()
+                if (leaf is ArrayGene<*>) {
+                    leaf.getViewOfElements()
+                        .filter { isPartToBePrinted(it) }
+                        .mapIndexed { i, e -> MultipartPart(field.name, e.getLeafGene(), i) }
+                } else {
+                    listOf(MultipartPart(field.name, leaf, null))
+                }
+            }
     }
+
+    private fun isPartToBePrinted(g: Gene): Boolean =
+        g !is CycleObjectGene
+                && (g !is OptionalGene || (g.isActive && g.gene !is CycleObjectGene))
+                && g.isPrintable()
 
     /**
      * Content-Type of a single part: the value declared in `encoding[<property>].contentType` when
@@ -257,6 +286,16 @@ class BodyParam(gene: Gene,
     }
 
     /**
+     * Filename declared for a file part. Derived, never stored: the N parts of an array property
+     * share a name, so the index is appended to keep their filenames distinct, as a real client
+     * uploading several files at once would.
+     */
+    private fun partFilename(part: MultipartPart, partContentType: String): String {
+        val suffix = if (part.repeatedIndex == null) "" else "_${part.repeatedIndex}"
+        return "${part.name}$suffix${extensionForContentType(partContentType)}"
+    }
+
+    /**
      * The RFC 7578 envelope. Note that no part carries real binary content — every value comes out of
      * a gene as text — so the body is a String and there is nothing that UTF-8 encoding could corrupt.
      */
@@ -265,21 +304,21 @@ class BodyParam(gene: Gene,
         val boundary = multipartBoundary()
         val buffer = StringBuilder()
 
-        multipartParts().forEach { (name, leaf) ->
+        multipartParts().forEach { part ->
 
-            val partType = partContentType(name, leaf)
+            val partType = partContentType(part.name, part.leaf)
 
             val value = if (isContentTypeJson(partType)) {
-                leaf.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = targetFormat)
+                part.leaf.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = targetFormat)
             } else {
                 //same as the x-www-form-urlencoded serialization: the raw value, unquoted
-                leaf.getValueAsRawString()
+                part.leaf.getValueAsRawString()
             }
 
             buffer.append("--").append(boundary).append(CRLF)
-            buffer.append("Content-Disposition: form-data; name=\"").append(name).append("\"")
-            if (parts[name]?.isFile == true) {
-                buffer.append("; filename=\"").append(name).append(extensionForContentType(partType)).append("\"")
+            buffer.append("Content-Disposition: form-data; name=\"").append(part.name).append("\"")
+            if (parts[part.name]?.isFile == true) {
+                buffer.append("; filename=\"").append(partFilename(part, partType)).append("\"")
             }
             buffer.append(CRLF)
             buffer.append("Content-Type: ").append(partType).append(CRLF)
