@@ -5,6 +5,7 @@ import org.evomaster.core.search.gene.regex.CharacterClassEscapeRxGene
 import org.evomaster.core.search.gene.regex.CharacterRangeRxGene
 import org.evomaster.core.search.gene.regex.PatternCharacterBlockGene
 import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.utils.CharacterRange
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -291,6 +292,106 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
     @Test
     fun testAssertionsInDisjunctions(){
         checkSameAsJava("^(bar)\$|^(foo)\$|^hello|world\$")
+    }
+
+    @Test
+    fun testAnchorsInsideGroups(){
+        checkSameAsJava("""^$""")
+        checkSameAsJava("""(^$)""")
+        checkSameAsJava("""(^a$)""")
+        checkSameAsJava("""(^a)b""")
+        checkSameAsJava("""a(b$)""")
+        checkSameAsJava("""^(a|b$)""")
+        checkSameAsJava("""((^)|($))""")
+    }
+
+    @Test
+    fun testAnchorsInAlternativesOfAGroup(){
+        checkSameAsJava("""(^|,)a(,|$)""")
+        checkSameAsJava("""(^a)|b""")
+        checkSameAsJava("""a|(^b)""")
+    }
+
+    @Test
+    fun testRepeatedAnchors(){
+        checkSameAsJava("""^^a""")
+        checkSameAsJava("""a$$""")
+        checkSameAsJava("""^$|^$""")
+    }
+
+    @Test
+    fun testNothingBeforeOrAfterAnchorCanBeEmpty(){
+        checkSameAsJava("""a?^b""")
+        checkSameAsJava("""a*^b""")
+        checkSameAsJava("""(a?)^b""")
+        checkSameAsJava("""(?:a|)^b""")
+        checkSameAsJava("""a(?:b|)$""")
+        checkSameAsJava($$"""a$b?""")
+        checkSameAsJava("""^a?$""")
+    }
+
+    @Test
+    fun testAlternativeWithUnsatisfiableAnchorIsDropped(){
+        checkSameAsJava("""^a|b^c""")
+        checkSameAsJava($$"""a$b|c""")
+        checkSameAsJava("""(?:a^b|c)d""")
+    }
+
+    @Test
+    fun testUnsatisfiableAnchor(){
+        listOf(
+            $$"""a^b$c""",
+            """a^""",
+            """^a^""",
+            $$"""$a""",
+            $$"""a$b""",
+            """(a|b)^c""",
+            """a(^b)""",
+            """(a^)b""",
+            """a(^c|(^d))""",
+            """(a)(^)""",
+            """x(?:^|^y)z"""
+        ).forEach {
+            assertThrows<IllegalStateException> { createGene(it) }
+        }
+    }
+
+    @Test
+    fun testAPIGuruUnsatisfiableAnchors(){
+        listOf(
+            """.*/^[\d]{12}$/.*""",
+            """/^[a-z0-9._]+$/""",
+            """/^[a-z0-9]$}/""",
+            """/^[a-zA-Z0-9\\-_.:]+$/""",
+            """/^[a-zA-Z0-9]$/""",
+            """/^\d{4}-\d{2}-\d{2}$/""",
+            """/^\d{4}-\d{2}-\d{2}T(0[0-9]|1[0-9]|2[0-3])(:[0-5][0-9]){2}(\-(0[0-9]|1[0-2])|\+(0[0-9]|1[0-4]))[0-5][0-9]$/""",
+            """[^-A-Za-z0-9\+/=]\|=[^=]\|=\{3,\}$\{1,4096\}""",
+            """\(\?ms\)\s*^-----BEGIN \(\?-s:.*\)PRIVATE KEY-----$.*\?^-----END \(\?-s:.*\)PRIVATE KEY-----$\s*""",
+            """^([0-1]\d|2[0-3]):[0-5]\d$:[0-5]\d$""",
+            """^[-_a-zA-Z0-9]*$\{2,64\}$""",
+            """^\([\p\{L\}\p\{Z\}\p\{N\}_.:\/=\+\-@]*\)$\{1,128\}""",
+            """^\([\p\{L\}\p\{Z\}\p\{N\}_.:\/=\+\-@]*\)$\{1,256\}""",
+            """^arn:aws([a-z-]+)?:ec2:[a-z\d-]+:\d{12}:placement-group/^.{1,255}$"""
+        ).forEach {
+            assertThrows<IllegalStateException> { createGene(it) }
+        }
+    }
+
+    @Test
+    fun testTextAroundTheValueIsCopied(){
+        listOf("""a""", """(^a|b)c""").forEach { regex ->
+            val randomness = Randomness().apply { updateSeed(42) }
+            val source = createGene(regex)
+            val target = createGene(regex)
+            repeat(100) {
+                source.randomize(randomness, false)
+                assertEquals(source.getValueAsRawString(), source.copy().getValueAsRawString())
+                target.randomize(randomness, false)
+                assertTrue(target.copyValueFrom(source))
+                assertEquals(source.getValueAsRawString(), target.getValueAsRawString())
+            }
+        }
     }
 
     @Test
