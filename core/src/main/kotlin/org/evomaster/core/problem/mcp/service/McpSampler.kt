@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.mcp.service
 
-import com.fasterxml.jackson.databind.JsonNode
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.api.schema.JsonSchemaValidator
@@ -60,7 +59,6 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
     private fun discoverTools() {
         val tools = mcpClient.listTools()
         outputSchemas.clear()
-        tools.forEach { outputSchemas[it.name] = it.outputSchema }
         val options = RestActionBuilderV3.Options(config)
         val messages = McpActionBuilder.addActionsFromToolList(tools, toolActionCluster, options)
         messages.forEach { log.warn(it) }
