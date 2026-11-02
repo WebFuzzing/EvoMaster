@@ -176,8 +176,8 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         if(ctx.assertion() != null){
             val assertion = ctx.assertion()
             val type = when {
-                assertion.CARET() != null -> AssertionType.START_OF_INPUT
-                assertion.DOLLAR() != null -> AssertionType.END_OF_INPUT
+                assertion.CARET() != null -> AssertionType.CARET
+                assertion.DOLLAR() != null -> AssertionType.DOLLAR
                 else -> throw IllegalStateException("Unsupported assertion: ${assertion.text}")
             }
             return VisitResult(AssertionRxGene(null, type))

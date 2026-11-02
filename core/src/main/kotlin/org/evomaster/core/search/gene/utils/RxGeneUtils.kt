@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.utils
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.AssertionRxGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
+import org.evomaster.core.search.gene.regex.DisjunctionRxGene
 import org.evomaster.core.search.gene.regex.QuantifierRxGene
 import org.evomaster.core.search.gene.regex.RxAbsorbable
 import org.evomaster.core.search.gene.regex.RxTerm
@@ -33,6 +34,17 @@ object RxGeneUtils {
      */
     fun canAllBeZeroWidth(genes: List<Gene>): Boolean =
         genes.all { (it as? RxAbsorbable)?.canBeZeroWidth == true }
+
+    /**
+     * The assertions that take part in the value of [gene], those in the active alternative of each group.
+     */
+    fun activeAssertions(gene: Gene): List<AssertionRxGene> = when (gene) {
+        // for now, we do not go into quantifiers or assertions as nested assertions are rejected
+        is AssertionRxGene -> listOf(gene)
+        is DisjunctionListRxGene -> activeAssertions(gene.disjunctions[gene.activeDisjunction])
+        is DisjunctionRxGene -> gene.terms.flatMap { activeAssertions(it) }
+        else -> emptyList()
+    }
 
     /**
      * The numbers of the capture groups that are in [gene], or that are [gene] itself, including the ones inside the

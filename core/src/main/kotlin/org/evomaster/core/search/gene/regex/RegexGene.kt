@@ -322,6 +322,14 @@ class RegexGene(
             return value
         }
 
+        if (hasAssertions) {
+            // a mutation of the tree can change what is active (for example the alternative of a group), and so which
+            // anchors there are, so the text around the value only counts on a side that has no anchor
+            val activeAnchors = RxGeneUtils.activeAssertions(disjunctions)
+            return (if (activeAnchors.any{ it.requiresEmptyBefore }) "" else prefix) + value +
+                    (if (activeAnchors.any{ it.requiresEmptyAfter }) "" else postfix)
+        }
+
         return prefix + value + postfix
     }
 

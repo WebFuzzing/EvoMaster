@@ -5,12 +5,15 @@ import org.evomaster.core.search.gene.regex.CharacterClassEscapeRxGene
 import org.evomaster.core.search.gene.regex.CharacterRangeRxGene
 import org.evomaster.core.search.gene.regex.PatternCharacterBlockGene
 import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.utils.CharacterRange
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.regex.Pattern
 
 open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
 
@@ -390,6 +393,24 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
                 target.randomize(randomness, false)
                 assertTrue(target.copyValueFrom(source))
                 assertEquals(source.getValueAsRawString(), target.getValueAsRawString())
+            }
+        }
+    }
+
+    @Test
+    fun testAnchorMutations(){
+        listOf("""(^a|b)c""", """(^|,)a(,|$)""", """^a|b$""", """^(a|b$)""").forEach { regex ->
+            val gene = createGene(regex)
+            val pattern = Pattern.compile(regex)
+            val randomness = Randomness().apply { updateSeed(42) }
+            val apc = AdaptiveParameterControl()
+            val mwc = MutationWeightControl()
+            gene.doInitialize(randomness)
+            gene.randomize(randomness, false)
+            repeat(1000) {
+                gene.standardMutation(randomness, apc, mwc)
+                val value = gene.getValueAsRawString()
+                assertTrue(pattern.matcher(value).find(), "Invalid mutation for \"$regex\": \"$value\"")
             }
         }
     }
