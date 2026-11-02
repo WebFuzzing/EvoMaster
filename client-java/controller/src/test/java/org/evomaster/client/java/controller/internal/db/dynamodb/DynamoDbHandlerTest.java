@@ -3,7 +3,8 @@ package org.evomaster.client.java.controller.internal.db.dynamodb;
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.junit.jupiter.api.Test;
@@ -154,10 +155,10 @@ public class DynamoDbHandlerTest {
         assertEquals(1, execution.failedQueries.size());
         DynamoDbFailedQuery failedQuery = execution.failedQueries.get(0);
         assertEquals(TABLE, failedQuery.tableName);
-        assertAttribute(failedQuery.attributes, "country", DynamoDbScalarTypeDto.STRING, "Argentina");
-        assertAttribute(failedQuery.attributes, "playerName", DynamoDbScalarTypeDto.STRING, "Lionel Scaloni");
-        assertAttribute(failedQuery.attributes, "fifaId", DynamoDbScalarTypeDto.NUMBER, "10");
-        assertAttribute(failedQuery.attributes, "captain", DynamoDbScalarTypeDto.BOOLEAN, "true");
+        assertAttribute(failedQuery.attributes, "country", DynamoDbKeyScalarTypeDto.STRING, "Argentina");
+        assertAttribute(failedQuery.attributes, "playerName", DynamoDbKeyScalarTypeDto.STRING, "Lionel Scaloni");
+        assertAttribute(failedQuery.attributes, "fifaId", DynamoDbKeyScalarTypeDto.NUMBER, "10");
+        assertAttribute(failedQuery.attributes, "captain", DynamoDbKeyScalarTypeDto.BOOLEAN, "true");
 
         handler.reset();
         assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
@@ -219,13 +220,13 @@ public class DynamoDbHandlerTest {
     private void assertAttribute(
             List<DynamoDbAttributeValueDto> attributes,
             String name,
-            DynamoDbScalarTypeDto type,
+            DynamoDbKeyScalarTypeDto type,
             String value) {
         DynamoDbAttributeValueDto attribute = attributes.stream()
                 .filter(candidate -> name.equals(candidate.attributeName))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Missing attribute " + name));
-        assertEquals(type, attribute.type);
+        assertEquals(DynamoDbValueTypeDto.fromKeyScalar(type), attribute.type);
         assertEquals(value, attribute.value);
     }
 

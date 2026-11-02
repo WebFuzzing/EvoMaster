@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbE
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKeyBuilder;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbRequestParser;
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
@@ -300,13 +300,13 @@ public class DynamoDbHandler {
      */
     private DynamoDbAttributeValueDto toAttribute(String name, Object value) {
         if (value instanceof String) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbScalarTypeDto.STRING, (String) value);
+            return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.STRING, (String) value);
         }
         if (value instanceof Number) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbScalarTypeDto.NUMBER, String.valueOf(value));
+            return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.NUMBER, String.valueOf(value));
         }
         if (value instanceof Boolean) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbScalarTypeDto.BOOLEAN, String.valueOf(value));
+            return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.BOOLEAN, String.valueOf(value));
         }
         return null;
     }
