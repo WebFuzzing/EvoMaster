@@ -71,6 +71,39 @@ public class ReflectionBasedDynamoDbClientTest {
         assertEquals(Collections.singletonList(true), results.executionResults);
     }
 
+    /** Nested template values must retain their native DynamoDB types. */
+    @Test
+    public void testExecuteInsertionsWithDocumentValues() {
+        DynamoDbClient mockClient = mock(DynamoDbClient.class);
+        when(mockClient.putItem(any(PutItemRequest.class))).thenReturn(PutItemResponse.builder().build());
+
+        DynamoDbInsertionDto insertion = worldCupPlayer();
+        Map<String, Object> document = new LinkedHashMap<>();
+        Map<String, Object> player = new LinkedHashMap<>();
+        player.put("name", "Lionel Messi");
+        player.put("captain", true);
+        document.put("players", Collections.singletonList(player));
+        document.put("score", new java.math.BigDecimal("10.1234567890123456789"));
+        document.put("coach", null);
+        document.put("emptyMap", Collections.emptyMap());
+        document.put("emptyList", Collections.emptyList());
+
+        insertion.attributes.add(DynamoDbAttributeValueDto.fromPlainValue("squad", document));
+
+        ReflectionBasedDynamoDbClient client = new ReflectionBasedDynamoDbClient(mockClient);
+        DynamoDbInsertionResultsDto results = client.executeInsertions(Collections.singletonList(insertion));
+
+        assertTrue(results.executionResults.get(0));
+        ArgumentCaptor<PutItemRequest> captor = ArgumentCaptor.forClass(PutItemRequest.class);
+        verify(mockClient).putItem(captor.capture());
+        AttributeValue squad = captor.getValue().item().get("squad");
+        assertNotNull(squad);
+        assertTrue(squad.hasM());
+        assertEquals(true, squad.m().get("coach").nul());
+        assertEquals("10.1234567890123456789", squad.m().get("score").n());
+        assertEquals("Lionel Messi", squad.m().get("players").l().get(0).m().get("name").s());
+    }
+
     @Test
     public void testExecuteInsertionsPartialFailure() {
         DynamoDbClient mockClient = mock(DynamoDbClient.class);
