@@ -54,6 +54,8 @@ class WFCReportWriter {
         exportResource(prefix, "/assets/icon.svg", sourcePath = "/icon.svg")
         exportResource(prefix, "/assets/report.js")
         exportResource(prefix, "/assets/report.css")
+        // Node script rendering report.json as Markdown, e.g., for GitHub Actions job summaries
+        exportResource(prefix, "/wfc-summary.cjs")
 
         writeLowCodeIndex(prefix)
     }
@@ -166,7 +168,13 @@ class WFCReportWriter {
                 for(ea in test.evaluatedIndividual.evaluatedMainActions()){
                     val faultIds = (ea.result as EnterpriseActionResult)
                         .getFaults()
-                        .map { FaultCategoryId().apply { code = it.category.code; context = it.context} }
+                        .map {
+                            FaultCategoryId().apply {
+                                id = it.category.id
+                                code = it.category.code
+                                context = it.context
+                            }
+                        }
 
                     if(faultIds.isNotEmpty()) {
                         val ff = FoundFault()

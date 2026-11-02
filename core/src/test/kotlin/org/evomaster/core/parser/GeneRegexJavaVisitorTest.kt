@@ -53,6 +53,16 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testQuotedBackslash(){
+        checkSameAsJava("""\Q\\E""")
+        checkSameAsJava("""\Qa\\\Eb""")
+        checkSameAsJava("""\Q\\Eb\Qx\Qy\E""")
+        checkSameAsJava("""\Q\a\b\x\y\z\0\E""")
+        checkSameAsJava("""\Qabc\""")
+        checkSameAsJava("""^((f|F)(u|U)\Q\\E)$""")
+    }
+
+    @Test
     fun testMultipleQuotes(){
         checkSameAsJava("^(\\Q6\\E(n|N)(u|U)(a|A)(q|Q)(w|W)(b|B)\\Q51\\E(y|Y)(w|W)\\Q1\\E(e|E)(r|R)(n|N))$")
         checkSameAsJava("^((z|Z)(l|L)(q|Q)\\Q9\\E(r|R)(e|E)(k|K)(q|Q)(b|B)\\Q6\\E(e|E)(q|Q)(u|U))$")
@@ -165,10 +175,6 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("^[(?i)-a]$")
         checkSameAsJava("^[(?i:abc)-a]$")
         checkCanSample("^[a&b]$", "&", 100)
-        // these are rejected as lexer has no token for \1 or \k<name> here, as they are not available on CHAR_CLASS_MODE
-        // on Java these throw on Pattern.compile since backreferences are not allowed within character classes
-        assertThrows<ParseCancellationException> { checkSameAsJava("^[\\1]$") }
-        assertThrows<ParseCancellationException> { checkSameAsJava("^[\\k<name>]$") }
     }
 
     @Test
@@ -313,6 +319,24 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testBackreferenceGroupCounts(){
+        // non-capturing groups do not get a group number
+        checkSameAsJava("""^(?:abc)([d-j]+)\1$""")
+        checkSameAsJava("""^(?:a)(?:b)(c)\1$""")
+        checkSameAsJava("""^(?:x(a|b))(?:y(c|d))\2\1$""")
+        checkSameAsJava("""^(p)(?:q(r))\2\1$""")
+        checkSameAsJava("""^(?:(?:e)(f))\1$""")
+        checkSameAsJava("""^(?i:x)(?:y)(?<foo>[d-f])\1\k<foo>$""")
+        // flag groups do not get a group number either
+        checkSameAsJava("""^(?i:a)(b)\1$""")
+        checkSameAsJava("""^(?s:(c))\1$""")
+        checkSameAsJava("""^(?i:x)(?<foo>[d-f])\1\k<foo>$""")
+        // only 2 groups exist, so \12 is \1 followed by the digit 2
+        checkSameAsJava("""^(?:a)(b)(?:c)(d)\12$""")
+        checkCanSample("""^(?:a)(b)(?:c)(d)\12$""", "abcdb2", 100)
+    }
+
+    @Test
     override fun testJSExclusiveEscapes() {
         // JS exclusive
     }
@@ -382,6 +406,66 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("((\\1|\\2)*)")
         checkSameAsJava("(\\12)*")
         assertThrows<IllegalStateException> { checkSameAsJava("\\12*") }
+    }
+
+    @Test
+    fun testBackreferenceToQuantifiedGroup() {
+        // the group is the template of the quantifier, what gets rendered are the copies of it
+        checkSameAsJava("""^([a-z]){3}\1$""")
+        checkSameAsJava("""^(?:([a-z])\.)+\1$""")
+    }
+
+    @Test
+    fun testBackreferenceTakesValueOfLastRepetition() {
+        checkSameAsJava("""^(?:([a-z])X){1,3}\1$""")
+        // the last of the 2 repetitions is the one that counts
+        checkCanSample("""^(?:(a|b)x){2}\1$""", listOf("axaxa", "axbxb", "bxaxa", "bxbxb"), 1000)
+    }
+
+    @Test
+    fun testBackreferenceToGroupInDisjunction() {
+        // when the group is not in the active branch, its value from a previous sample must not be used
+        checkSameAsJava("""^(?:([a-z])|(\d))\1?$""")
+        checkCanSample("""^(?:(a)|b)\1?$""", listOf("a", "aa", "b"), 1000)
+    }
+
+    @Test
+    fun testNamedBackreferences() {
+        checkSameAsJava("""(?<n>[a-z])\k<n>""")
+        checkSameAsJava("""(?<a>[a-z])(?<b>[a-z])\k<b>\k<a>""")
+        // each named group has a number too, which counts the same as the one of a numbered group
+        checkSameAsJava("""(?:x)([a-z])(?<n>[a-z])\2\k<n>\1""")
+        checkSameAsJava("""^(?<n>[a-z])\1\k<n>$""")
+        checkSameAsJava("""^(?<n>[a-z]){3}\k<n>$""")
+        checkSameAsJava("""^(?<n>[a-z])(?:-(?<m>\d))+\k<m>\k<n>$""")
+        checkSameAsJava("""^(?i:x)(?:y)(?<n>[a-z]{2})\k<n>\1$""")
+    }
+
+    @Test
+    fun testBackreferencesToGroupsThatCannotMatch() {
+        // the group is unsatisfiable, and so is the branch with the backreference to it
+        checkCanSample("""^(?:([a&&b])\1|c)$""", listOf("c"), 100)
+        checkCanSample("""^(?:(?<n>[a&&b])\k<n>|c)$""", listOf("c"), 100)
+        // a group can not match what it refers to from inside itself
+        checkCanSample("""^(?:(a\1)|b)$""", listOf("b"), 100)
+        // or before it is there
+        checkCanSample("""^(?:\1(a)|b)$""", listOf("b"), 100)
+        // there is no group 2
+        checkCanSample("""^(?:(a)\2|b)$""", listOf("b"), 100)
+    }
+
+    @Test
+    fun testBackreferenceToGroupInLookahead() {
+        checkSameAsJava("""^(?=([a-z]{2}))[a-z]{2}\1$""")
+        checkSameAsJava("""^(?=(?<n>[a-z]{2}))[a-z]{2}\k<n>$""")
+    }
+
+    @Test
+    fun testBackreferenceToQuantifiedGroupInLookahead() {
+        checkSameAsJava("""^(?=([a-z])*)[a-z]\1$""")
+        checkSameAsJava("""^(?=([a-z])+)[a-z]\1$""")
+        checkSameAsJava("""^(?=([a-z]){2})[a-z]{2}\1$""")
+        checkSameAsJava("""^(?=(?:([a-z])|\d)*)[a-z]\1$""")
     }
 
     @Test
@@ -652,5 +736,31 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("(?s)^\\Z.*")
         checkCanSample("(?s)^\\Z.*", listOf("", "\n", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 1000)
         checkCanSample("(?s)^\\Z(.?){5}", listOf("", "\n", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 1000)
+    }
+
+    @Test
+    fun testCapturesAreNotResetInEachRepetition(){
+        // in Java, a group keeps the value of the last repetition in which it took part (so "abac" matches),
+        // and a group that never took part makes the backreference fail (so no "bc")
+        checkSamplesExactly("""^(?:(a)|b){1,2}\1c$""", "aac", "aaac", "abac", "baac")
+        checkSameAsJava("""^(?:(a)|b){1,2}\1c$""")
+    }
+
+    @Test
+    fun testBackreferenceToGroupThatDidNotTakePart(){
+        // in Java a backreference to a group that did not take part fails to match
+        assertThrows<IllegalStateException> { checkSameAsJava("""^([^\s\S])*\1$""") }
+        assertThrows<IllegalStateException> { checkSameAsJava("""^(?:([^\s\S])|a)\1$""") }
+        checkSamplesExactly("""^(a)?\1$""", "aa")
+    }
+
+    @Test
+    fun testTermThatCannotMatchAfterFlagScopeMakesAlternativeUnsatisfiable(){
+        assertThrows<IllegalStateException> { createGene("""(?i)[a&&b]+(a)""") }
+        assertThrows<IllegalStateException> { createGene("""(?i)a[a&&b]+""") }
+        // but it can be skipped when it is optional
+        checkSamplesExactly("""^(?i)[a&&b]*a$""", "a", "A")
+        // and a term that can match after the flag scope is still there
+        checkSamplesExactly("""^(?i)a[b-c]$""", "ab", "Ab", "ac", "Ac", "aB", "AB", "aC", "AC")
     }
 }

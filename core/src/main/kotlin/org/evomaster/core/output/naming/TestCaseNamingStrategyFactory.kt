@@ -7,6 +7,7 @@ import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.search.Solution
@@ -44,6 +45,7 @@ class TestCaseNamingStrategyFactory(
             individuals.any { it.individual is RestIndividual } ->  RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, nameWithQueryParameters, maxTestCaseNameLength)
             individuals.any { it.individual is GraphQLIndividual } ->  GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
             individuals.any { it.individual is RPCIndividual } ->  RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
+            individuals.any { it.individual is AsyncApiIndividual } ->  AsyncApiActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
             individuals.any { it.individual is WebIndividual } -> {
                 log.warn("Web individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
                 NamingHelperNumberedTestCaseNamingStrategy(solution)

@@ -33,18 +33,18 @@ public class NearSphereSelector extends QuerySelector {
         if (fieldName == null) {
             return null;
         }
-        Object innerDoc = getValue(query, fieldName);
+        Object innerDoc = documentGetValue(query, fieldName);
 
-        if (!isBsonDocument(innerDoc) || !documentContainsField(innerDoc, operator())) {
+        if (!isDocument(innerDoc) || !documentContainsField(innerDoc, operator())) {
             return null;
         }
 
-        Object point = getValue(innerDoc, operator());
+        Object point = documentGetValue(innerDoc, operator());
         if (point == null) {
             return null;
         }
 
-        Object geometry = isBsonDocument(point) ? getValue(point, GEOMETRY_OPERATOR) : null;
+        Object geometry = isDocument(point) ? documentGetValue(point, GEOMETRY_OPERATOR) : null;
         boolean legacyCoordinates = geometry == null;
 
         return parseValue(fieldName, innerDoc, legacyCoordinates);
@@ -55,7 +55,7 @@ public class NearSphereSelector extends QuerySelector {
         if (fieldName == null) {
             return null;
         }
-        Set<String> keys = documentKeys(getValue(query, fieldName));
+        Set<String> keys = documentKeys(documentGetValue(query, fieldName));
         return keys == null ? null : keys.stream().findFirst().orElse(null);
     }
 
@@ -70,9 +70,9 @@ public class NearSphereSelector extends QuerySelector {
         Double maxDistance;
         Double minDistance;
 
-        Object point = getValue(innerDoc, operator());
-        Object rawMaxDistance = getValue(legacyCoordinates ? innerDoc : point, MAX_DISTANCE_OPERATOR);
-        Object rawMinDistance = getValue(legacyCoordinates ? innerDoc : point, MIN_DISTANCE_OPERATOR);
+        Object point = documentGetValue(innerDoc, operator());
+        Object rawMaxDistance = documentGetValue(legacyCoordinates ? innerDoc : point, MAX_DISTANCE_OPERATOR);
+        Object rawMinDistance = documentGetValue(legacyCoordinates ? innerDoc : point, MIN_DISTANCE_OPERATOR);
 
         if ((rawMaxDistance != null && !(rawMaxDistance instanceof Number))
                 || (rawMinDistance != null && !(rawMinDistance instanceof Number))) {
@@ -91,9 +91,9 @@ public class NearSphereSelector extends QuerySelector {
                 }
                 longitude = (Number) rawLongitude;
                 latitude = (Number) rawLatitude;
-            } else if (isBsonDocument(point)) {
-                Object rawLongitude = getValue(point, X_FIELD_NAME);
-                Object rawLatitude = getValue(point, Y_FIELD_NAME);
+            } else if (isDocument(point)) {
+                Object rawLongitude = documentGetValue(point, X_FIELD_NAME);
+                Object rawLatitude = documentGetValue(point, Y_FIELD_NAME);
                 if (!(rawLongitude instanceof Number) || !(rawLatitude instanceof Number)) {
                     return null;
                 }
@@ -106,11 +106,11 @@ public class NearSphereSelector extends QuerySelector {
             maxDistance = maxDistance == null ? null : convertLegacyDistance(maxDistance);
             minDistance = minDistance == null ? null : convertLegacyDistance(minDistance);
         } else {
-            Object geometry = getValue(point, GEOMETRY_OPERATOR);
-            if (!isBsonDocument(geometry) || !GeoJsonUtils.isGeoJsonPoint(geometry)) {
+            Object geometry = documentGetValue(point, GEOMETRY_OPERATOR);
+            if (!isDocument(geometry) || !GeoJsonUtils.isGeoJsonPoint(geometry)) {
                 return null;
             }
-            Object coordinates = getValue(geometry, COORDINATES_FIELD_NAME);
+            Object coordinates = documentGetValue(geometry, COORDINATES_FIELD_NAME);
             longitude = (Number) ((List<?>) coordinates).get(0);
             latitude = (Number) ((List<?>) coordinates).get(1);
         }
@@ -133,7 +133,7 @@ public class NearSphereSelector extends QuerySelector {
 
     private String extractFieldName(Object query) {
         Objects.requireNonNull(query);
-        if (!isBsonDocument(query)) {
+        if (!isDocument(query)) {
             return null;
         } else {
             Set<String> keys = documentKeys(query);

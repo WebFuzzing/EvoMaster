@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.RxGeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -104,7 +105,21 @@ class AssertionRxGene(
         mode: GeneUtils.EscapeMode?,
         targetFormat: OutputFormat?,
         extraCheck: Boolean
-    ): String = ""
+    ): String {
+        if (hasCaptureGroups) {
+            // we call getValueAsPrintableString for the innerGene in this case so that the capture group(s) of the
+            // inner value are rendered and saved on RegexGene for back reference usage. we do not use this value here.
+            innerGene?.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+        }
+        return ""
+    }
+
+    /**
+     * True if there is a capture group somewhere inside [innerGene].
+     */
+    private val hasCaptureGroups: Boolean by lazy {
+        innerGene?.let { RxGeneUtils.captureGroupIndexesIn(it).isNotEmpty() } ?: false
+    }
 
     /**
      * Returns the value currently sampled from [innerGene], or null if there is no

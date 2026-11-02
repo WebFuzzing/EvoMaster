@@ -16,7 +16,6 @@ import org.evomaster.client.java.instrumentation.Neo4JRunCommand;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -172,14 +171,7 @@ public class Neo4jHandler {
                 continue;
             }
 
-            Map<String, Object> parameters;
-            try {
-                parameters = ReflectionBasedNeo4jClient.parametersAsMap(op.getParameters());
-            } catch (Exception e) {
-                SimpleLogger.uniqueWarn("Failed to read the parameters of a Cypher query for Neo4j heuristics: "
-                        + e.getMessage());
-                parameters = Collections.emptyMap();
-            }
+            Map<String, Object> parameters = op.getParameters();
 
             Neo4jDistanceWithMetrics metrics;
             try {

@@ -24,6 +24,14 @@ internal class EMConfigTest{
 
 
     @Test
+    fun testNoExperimentalInDefaultConfigs(){
+
+        val config = EMConfig()
+        val activeExperimentals = config.activatedExperimentalFeatures()
+        assertEquals(0, activeExperimentals.size, "Activated: ${activeExperimentals.joinToString(", ")}")
+    }
+
+    @Test
     fun testChangeSetEnum(){
 
         val parser = EMConfig.getOptionParser()
@@ -786,18 +794,25 @@ internal class EMConfigTest{
     }
 
     @Test
-    fun testAsyncApiCannotWriteTestsYet(){
+    fun testAsyncApiWritesTestsOnlyInJavaOrKotlin(){
 
-        val parser = EMConfig.getOptionParser()
+        //a parser remembers what it last parsed, so each case gets its own
+        fun parse(vararg args: String) =
+            EMConfig().updateProperties(EMConfig.getOptionParser().parse(*args))
 
-        //createTests is on by default, and there is no test writer for AsyncAPI yet
-        val e = assertThrows<ConfigProblemException> {
-            EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI"))
+        listOf("JS_JEST", "PYTHON_UNITTEST").forEach { format ->
+            val e = assertThrows<ConfigProblemException> {
+                parse("--problemType", "ASYNCAPI", "--outputFormat", format)
+            }
+            assertTrue(e.message!!.contains("Java or Kotlin"), e.message)
         }
-        assertTrue(e.message!!.contains("createTests"), e.message)
 
-        //so a run has to say it only wants the search
-        EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI", "--createTests", "false"))
+        parse("--problemType", "ASYNCAPI")
+        parse("--problemType", "ASYNCAPI", "--outputFormat", "JAVA_JUNIT_5")
+        parse("--problemType", "ASYNCAPI", "--outputFormat", "KOTLIN_JUNIT_5")
+
+        //a run that only searches does not write tests
+        parse("--problemType", "ASYNCAPI", "--outputFormat", "JS_JEST", "--createTests", "false")
     }
 
     @Test
@@ -808,6 +823,37 @@ internal class EMConfigTest{
         assertThrows<ConfigProblemException> {
             EMConfig().updateProperties(parser.parse(
                 "--problemType", "ASYNCAPI", "--createTests", "false", "--seedTestCases", "true", "--seedTestCasesPath", "seeds.json"))
+        }
+    }
+
+
+    @Test
+    fun testSetFalseOnDependsOn(){
+
+        val parser = EMConfig.getOptionParser()
+
+        val cfg = EMConfig()
+        cfg.blackBox = false
+        //generateNeo4jData depends on true for extractNeo4jExecutionInfo
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "true", "--extractNeo4jExecutionInfo", "true"))
+        assertEquals(true, cfg.generateNeo4jData)
+        assertEquals(true, cfg.extractNeo4jExecutionInfo)
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "false", "--extractNeo4jExecutionInfo", "true"))
+        assertEquals(false, cfg.generateNeo4jData)
+        assertEquals(true, cfg.extractNeo4jExecutionInfo)
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "false", "--extractNeo4jExecutionInfo", "false"))
+        assertEquals(false, cfg.generateNeo4jData)
+        assertEquals(false, cfg.extractNeo4jExecutionInfo)
+
+        cfg.updateProperties(parser.parse("--generateNeo4jData", "true", "--extractNeo4jExecutionInfo", "true"))
+        assertEquals(true, cfg.generateNeo4jData)
+        assertEquals(true, cfg.extractNeo4jExecutionInfo)
+
+        assertThrows<ConfigProblemException> {
+            cfg.updateProperties(parser.parse("--generateNeo4jData", "true", "--extractNeo4jExecutionInfo", "false"))
         }
     }
 }

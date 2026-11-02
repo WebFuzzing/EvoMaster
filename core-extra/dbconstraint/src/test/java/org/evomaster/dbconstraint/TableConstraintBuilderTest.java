@@ -39,6 +39,17 @@ public class TableConstraintBuilderTest {
         assertTrue(constraint instanceof EnumConstraint);
     }
 
+    /**
+     * There is no constraint for "any value but these", and an EnumConstraint would restrict the column
+     * to exactly the forbidden values, so NOT IN is reported as unsupported.
+     */
+    @Test
+    public void testNotInIsNotTranslatedAsEnum() {
+        TableConstraintBuilder builder = new TableConstraintBuilder();
+        TableConstraint constraint = builder.translateToConstraint("fooTable", "fooColumn NOT IN ('A','B')", ConstraintDatabaseType.H2);
+        assertTrue(constraint instanceof UnsupportedTableConstraint);
+    }
+
     @Test
     public void testLikeConstraint() {
         TableConstraintBuilder builder = new TableConstraintBuilder();

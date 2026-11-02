@@ -67,6 +67,12 @@ enum class ExperimentalFaultCategory(
 
     ;
 
+
+    override fun getId(): String {
+        //return the name of the enum
+        return super.name
+    }
+
     override fun getCode(): Int {
         return code
     }

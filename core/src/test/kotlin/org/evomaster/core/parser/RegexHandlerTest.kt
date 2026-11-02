@@ -146,6 +146,25 @@ internal class RegexHandlerTest{
     }
 
     @Test
+    fun testGrammarSyntaxErrorsWithoutOffendingSymbol(){
+        // this happens when the syntax error comes from a lexer recognizer
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("^[\\1]$") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("^[\\k<name>]$") }
+    }
+
+    @Test
+    fun testGrammarSyntaxErrorsWithoutRecognitionException(){
+        // this happens when the parser was able to recover in line without exiting the surrounding rule
+        // so errors like "missing token" or "extraneous token"
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("a**") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("a)") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("+") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForEcma262("a**") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForEcma262("a)") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForEcma262("+") }
+    }
+
+    @Test
     fun testCreateGeneForJVMInvalidRegex() {
 
         assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\xR") }

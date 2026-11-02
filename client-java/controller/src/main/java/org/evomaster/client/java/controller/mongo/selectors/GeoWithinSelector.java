@@ -39,7 +39,7 @@ public class GeoWithinSelector extends SingleConditionQuerySelector {
 
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
-        if (value == null || !isBsonDocument(value)) {
+        if (value == null || !isDocument(value)) {
             return null;
         }
         Set<String> keys = documentKeys(value);
@@ -47,7 +47,7 @@ public class GeoWithinSelector extends SingleConditionQuerySelector {
             return null;
         }
         String shapeOperator = keys.iterator().next();
-        Object shapeValue = getValue(value, shapeOperator);
+        Object shapeValue = documentGetValue(value, shapeOperator);
 
         if (GEOMETRY_OPERATOR.equals(shapeOperator)) {
             try {

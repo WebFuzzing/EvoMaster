@@ -62,6 +62,7 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
 
         //TODO this will require refactoring
         initSqlInfo(infoDto)
+        initNeo4jInfo(infoDto)
         //initAdHocInitialIndividuals()
         //postInits()
 

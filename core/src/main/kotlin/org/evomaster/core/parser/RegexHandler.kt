@@ -179,7 +179,7 @@ object RegexHandler {
 
         val stream = CharStreams.fromString(regex)
         val lexer = RegexEcma262Lexer(stream)
-        val tokenStream = prepareLexer(lexer)
+        val tokenStream = prepareEcma262Lexer(lexer)
         val parser = RegexEcma262Parser(tokenStream)
         prepareParser(parser)
 
@@ -254,6 +254,30 @@ object RegexHandler {
         return CommonTokenStream(lexer)
     }
 
+    /**
+     * Similar to [prepareLexer], but lexes the regex once beforehand to count capture groups.
+     * That total from the first pass is saved and used by the lexer behind the returned stream to correctly
+     * identify ECMA back references, and the octal and identity escapes they fall back to.
+     * @throws ParseCancellationException on lexical errors during the first pass
+     */
+    private fun prepareEcma262Lexer(lexer: RegexEcma262Lexer) : CommonTokenStream {
+        lexer.removeErrorListeners()
+        lexer.addErrorListener(ThrowingErrorListener())
+
+        // 1st pass: lex everything just so the lexer counts the capture groups
+        // this first pass may throw if there are lexer errors, this is why this method can throw
+        do {
+            val token = lexer.nextToken()
+        } while (token.type != Token.EOF)
+
+        // we save the capture group count and reset the lexer
+        val total = lexer.captureGroups
+        lexer.reset()
+        lexer.totalCaptureGroups = total
+        // 2nd pass happens later, when the parser reads the tokens from this stream, with totalCaptureGroups set
+        return CommonTokenStream(lexer)
+    }
+
     private fun prepareParser(parser: Parser){
         parser.removeErrorListeners()
         parser.addErrorListener(ThrowingErrorListener())
@@ -268,7 +292,9 @@ object RegexHandler {
         // for example, on our Java grammar [\1] is a lexer error since \1 has no token within that context
         // org.antlr.v4.runtime.BaseErrorListener.syntaxError declares this parameter as Object, which is nullable
         // org.antlr.v4.runtime.Lexer.notifyListeners calls this method with offendingSymbol as null
-        override fun syntaxError(recognizer: Recognizer<*, *>, offendingSymbol: Any?, line: Int, charPositionInLine: Int, msg: String, e: RecognitionException) {
+        // similar idea for e, it can be null so we use RecognitionException? here to avoid NPE, for more info see:
+        // https://www.antlr.org/api/Java/org/antlr/v4/runtime/BaseErrorListener.html#:~:text=public%C2%A0void%C2%A0syntaxError
+        override fun syntaxError(recognizer: Recognizer<*, *>, offendingSymbol: Any?, line: Int, charPositionInLine: Int, msg: String, e: RecognitionException?) {
             throw ParseCancellationException("line $line:$charPositionInLine $msg")
         }
     }

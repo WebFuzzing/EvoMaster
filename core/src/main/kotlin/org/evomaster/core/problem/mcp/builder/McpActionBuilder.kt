@@ -60,8 +60,8 @@ object McpActionBuilder {
         messages: MutableList<String>
     ): ObjectGene {
 
-        val schemas = JsonSchemaToOpenApiConverter.convert(toolName, inputSchema, messages)
-        val gene = RestActionBuilderV3.createGeneForDTOs(toolName, schemas, options)
+        val schemas = MCPInputSchemaToOpenApiConverter.convert(toolName, inputSchema, messages)
+        val gene = RestActionBuilderV3.createGeneForDTO(toolName, schemas, options)
 
         return gene as? ObjectGene
             ?: ObjectGene("input", listOf()).also {

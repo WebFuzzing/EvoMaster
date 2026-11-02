@@ -69,6 +69,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         rpcHandler.initActionCluster(problem, actionCluster,scheduleActionCluster, infoDto)
 
         initSqlInfo(infoDto)
+        initNeo4jInfo(infoDto)
 
         initAdHocInitialIndividuals(infoDto)
 

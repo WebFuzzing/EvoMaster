@@ -811,6 +811,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 }
             }.toLong()
 
+            // release the connection before waiting, as the 429 body is never read
+            response.close()
+
             LoggingUtil.getInfoLogger().warn("Going to wait $delay seconds before trying again")
             val hasWaited = searchTimeController.waitUpToSeconds(delay)
 
@@ -880,6 +883,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             } else {
                 log.warn("Failed to parse HTTP response: ${e.message}")
             }
+        } finally {
+            // a body that decodes to nothing (eg an empty gzip stream) is never read, and would keep its pooled connection
+            response.close()
         }
 
         if(config.isEnabledFaultCategory(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE)){

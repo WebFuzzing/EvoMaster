@@ -144,7 +144,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
         assertEquals(1, faults.size)
-        assertEquals(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, faults.first())
+        assertEquals(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, faults.first())
 
         assertEquals(3, target.individual.size())
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())
@@ -202,7 +202,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
         assertEquals(1, faults.size)
-        assertEquals(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, faults.first())
+        assertEquals(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, faults.first())
 
         assertEquals(3, target.individual.size())
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())
@@ -249,7 +249,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
         assertEquals(1, faults.size)
-        assertEquals(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, faults.first())
+        assertEquals(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, faults.first())
 
         assertEquals(3, target.individual.size())
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())

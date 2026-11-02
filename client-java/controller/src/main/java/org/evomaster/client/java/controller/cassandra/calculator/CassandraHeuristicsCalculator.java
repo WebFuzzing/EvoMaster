@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.cassandra.parser.CqlParserUtils;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
+import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +24,20 @@ import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.TRUE_
  */
 public class CassandraHeuristicsCalculator {
 
-    private final CassandraOperationEvaluator evaluator = new CassandraOperationEvaluator();
+    private final CassandraOperationEvaluator evaluator;
+
+    public CassandraHeuristicsCalculator() {
+        this(null);
+    }
+
+    /**
+     * Creates a calculator with an optional taint callback used during string
+     * comparisons.
+     * @param taintHandler optional callback used when strings are compared
+     */
+    public CassandraHeuristicsCalculator(TaintHandler taintHandler) {
+        this.evaluator = new CassandraOperationEvaluator(taintHandler);
+    }
 
     /**
      * Computes the heuristic distance of the given CQL query with respect to the provided rows.

@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.cassandra.calculator;
 import com.datastax.oss.driver.api.core.data.CqlDuration;
 import org.evomaster.client.java.controller.cassandra.model.CassandraRow;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
+import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
@@ -804,5 +805,105 @@ public class CassandraHeuristicsCalculatorTest {
         Instant ts = Instant.parse("2011-02-03T05:00:00Z");
         double d = dist("SELECT * FROM t WHERE ts = '2011-02-03 04:05:00+0000'", row("ts", ts));
         assertTrue(d > 0.0 && d < 1.0);
+    }
+
+    // Taint reporting
+
+    private static final String TAINT = "_EM_1_XYZ_";
+
+    /**
+     * Records every string equality reported to it, as an unordered pair of operands.
+     */
+    private static class RecordingTaintHandler implements TaintHandler {
+
+        private final List<Set<String>> equalities = new ArrayList<>();
+
+        @Override
+        public void handleTaintForStringEquals(String left, String right, boolean ignoreCase) {
+            equalities.add(new HashSet<>(Arrays.asList(left, right)));
+        }
+
+        @Override
+        public void handleTaintForRegex(String value, String regex) {
+            fail("CQL has no regex predicate, so nothing should be reported as one");
+        }
+    }
+
+    private static Set<String> pair(String a, String b) {
+        return new HashSet<>(Arrays.asList(a, b));
+    }
+
+    private double distTainted(RecordingTaintHandler handler, String cql, CassandraRow... rows) {
+        return new CassandraHeuristicsCalculator(handler).computeDistance(cql, Arrays.asList(rows));
+    }
+
+    @Test
+    void taint_stringEquals_reportsRowValueAndLiteral() {
+        RecordingTaintHandler handler = new RecordingTaintHandler();
+        distTainted(handler, "SELECT * FROM t WHERE s = 'abc'", row("s", TAINT));
+        assertEquals(Collections.singletonList(pair(TAINT, "abc")), handler.equalities);
+    }
+
+    @Test
+    void taint_in_reportsOnePairPerCandidate() {
+        RecordingTaintHandler handler = new RecordingTaintHandler();
+        distTainted(handler, "SELECT * FROM t WHERE s IN ('a', 'b')", row("s", TAINT));
+        assertEquals(Arrays.asList(pair(TAINT, "a"), pair(TAINT, "b")), handler.equalities);
+    }
+
+    @Test
+    void taint_contains_reportsSentinelInCollection() {
+        // CONTAINS passes the literal first and the element second, the reverse of '=' and IN
+        RecordingTaintHandler handler = new RecordingTaintHandler();
+        distTainted(handler, "SELECT * FROM t WHERE tags CONTAINS 'abc'",
+                row("tags", new LinkedHashSet<>(Collections.singletonList(TAINT))));
+        assertEquals(Collections.singletonList(pair("abc", TAINT)), handler.equalities);
+    }
+
+    @Test
+    void taint_containsKey_reportsSentinelMapKey() {
+        Map<String, Long> m = new LinkedHashMap<>();
+        m.put(TAINT, 1L);
+        RecordingTaintHandler handler = new RecordingTaintHandler();
+        distTainted(handler, "SELECT * FROM t WHERE m CONTAINS KEY 'k'", row("m", m));
+        assertEquals(Collections.singletonList(pair("k", TAINT)), handler.equalities);
+    }
+
+    @Test
+    void taint_numericEquals_reportsNothing() {
+        RecordingTaintHandler handler = new RecordingTaintHandler();
+        distTainted(handler, "SELECT * FROM t WHERE n = 1", row("n", 2L));
+        assertTrue(handler.equalities.isEmpty());
+    }
+
+    @Test
+    void taint_uuidEquals_reportsNothing() {
+        // UUID columns are built as UUIDGene, which taint analysis never specializes
+        RecordingTaintHandler handler = new RecordingTaintHandler();
+        distTainted(handler, "SELECT * FROM t WHERE id = " + UUID_A, row("id", UUID_B));
+        assertTrue(handler.equalities.isEmpty());
+    }
+
+    @Test
+    void taint_inetRowValue_reportsSentinelLiteral() throws Exception {
+        // a tainted REST parameter compared against a stored address must still be reported
+        RecordingTaintHandler handler = new RecordingTaintHandler();
+        distTainted(handler, "SELECT * FROM t WHERE ip = '" + TAINT + "'",
+                row("ip", InetAddress.getByName("192.168.1.1")));
+        assertEquals(Collections.singletonList(pair("192.168.1.1", TAINT)), handler.equalities);
+    }
+
+    @Test
+    void taint_reportingNeverAltersDistance() {
+        String[] queries = {
+                "SELECT * FROM t WHERE s = 'abc'",
+                "SELECT * FROM t WHERE s IN ('a', 'b')",
+                "SELECT * FROM t WHERE s = '" + TAINT + "'",
+        };
+        for (String cql : queries) {
+            RecordingTaintHandler handler = new RecordingTaintHandler();
+            assertEquals(dist(cql, row("s", TAINT)), distTainted(handler, cql, row("s", TAINT)), DELTA);
+            assertFalse(handler.equalities.isEmpty());
+        }
     }
 }

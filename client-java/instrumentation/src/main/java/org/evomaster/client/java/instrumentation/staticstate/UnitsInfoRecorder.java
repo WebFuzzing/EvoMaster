@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.staticstate;
 
 import org.evomaster.client.java.instrumentation.ClassAnalyzer;
 import org.evomaster.client.java.instrumentation.JpaConstraint;
+import org.evomaster.client.java.instrumentation.Neo4jEntity;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -49,6 +50,22 @@ public class UnitsInfoRecorder implements Serializable {
 
     private List<JpaConstraint> jpaConstraints;
 
+    /**
+     * Neo4j entity classes found in the SUT, i.e. the shape of the nodes it stores.
+     */
+    private final List<Neo4jEntity> neo4jEntities;
+
+    /**
+     * Whether {@link #neo4jEntities} reflects the classes in {@link #coveredClassNames}.
+     */
+    private boolean analyzedNeo4jEntities;
+
+    /**
+     * Names of every class instrumented for coverage since the JVM started. Unlike {@link #unitNames}, this is
+     * kept across {@link #reset()}, as a class is loaded only once and could not be recorded again.
+     */
+    private final Set<String> coveredClassNames;
+
     private volatile boolean analyzedClasses;
 
     /*
@@ -87,6 +104,8 @@ public class UnitsInfoRecorder implements Serializable {
         numberOfInstrumentedNumberComparisons = new AtomicInteger(0);
         parsedDtos = new ConcurrentHashMap<>();
         jpaConstraints = new CopyOnWriteArrayList<>();
+        neo4jEntities = new CopyOnWriteArrayList<>();
+        coveredClassNames = new CopyOnWriteArraySet<>();
         analyzedClasses = false;
         extractedSpecifiedDtos = new ConcurrentHashMap<>();
         classLoaders = new ConcurrentHashMap<>();
@@ -106,6 +125,7 @@ public class UnitsInfoRecorder implements Serializable {
             which would make not possible to use the same SUT in 2 different E2E
          */
         copy.classLoaders.putAll(singleton.classLoaders);
+        copy.coveredClassNames.addAll(singleton.coveredClassNames);
         singleton = copy;
     }
 
@@ -129,8 +149,11 @@ public class UnitsInfoRecorder implements Serializable {
     public static void markNewUnit(String name){
         synchronized (singleton) {
             singleton.unitNames.add(name);
+            singleton.coveredClassNames.add(name);
             singleton.analyzedClasses = false;
             singleton.jpaConstraints.clear();
+            singleton.analyzedNeo4jEntities = false;
+            singleton.neo4jEntities.clear();
         }
     }
 
@@ -201,6 +224,10 @@ public class UnitsInfoRecorder implements Serializable {
         singleton.jpaConstraints.add(constraint);
     }
 
+    public static void registerNewNeo4jEntity(Neo4jEntity entity){
+        singleton.neo4jEntities.add(entity);
+    }
+
     public ClassLoader getSutClassLoader(){
         if(unitNames.isEmpty()){
             return null;
@@ -222,6 +249,21 @@ public class UnitsInfoRecorder implements Serializable {
             }
 
             return Collections.unmodifiableList(jpaConstraints);
+        }
+    }
+
+    /**
+     * @return the Neo4j entities of the SUT, analyzed lazily like {@link #getJpaConstraints()}, but over every
+     * class instrumented so far rather than only those recorded since the last {@link #reset()}
+     */
+    public List<Neo4jEntity> getNeo4jEntities(){
+        synchronized (singleton) {
+            if (!analyzedNeo4jEntities) {
+                neo4jEntities.clear();
+                ClassAnalyzer.doAnalyzeNeo4jEntities(coveredClassNames);
+                analyzedNeo4jEntities = true;
+            }
+            return Collections.unmodifiableList(neo4jEntities);
         }
     }
 

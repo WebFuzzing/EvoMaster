@@ -1,0 +1,66 @@
+package org.evomaster.client.java.instrumentation.dynamodb;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
+/**
+ * Shared reflection helpers used by DynamoDB parser utilities and captured requests.
+ */
+public final class DynamoDbReflectionHelper {
+
+    /**
+     * Utility class, no instances.
+     */
+    private DynamoDbReflectionHelper() {
+    }
+
+    /**
+     * Invokes a no-argument method on the target object.
+     *
+     * @param target target object
+     * @param methodName method name to invoke
+     * @return invocation result or {@code null} on errors
+     */
+    public static Object invokeNoArg(Object target, String methodName) {
+        try {
+            return invokeNoArgPropagatingRuntimeExceptions(target, methodName);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Invokes a no-argument method while allowing runtime reflection failures to propagate.
+     *
+     * @param target target object
+     * @param methodName method name to invoke
+     * @return invocation result or {@code null} when the target, method, or invocation is unavailable
+     */
+    public static Object invokeNoArgPropagatingRuntimeExceptions(Object target, String methodName) {
+        if (target == null) {
+            return null;
+        }
+        try {
+            Method method = target.getClass().getMethod(methodName);
+            if (!Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
+                method.setAccessible(true);
+            }
+            return method.invoke(target);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Invokes a no-argument method and returns it only when boolean.
+     *
+     * @param target target object
+     * @param methodName method name to invoke
+     * @return boolean result or {@code null}
+     */
+    public static Boolean invokeBooleanNoArg(Object target, String methodName) {
+        Object value = invokeNoArg(target, methodName);
+        return value instanceof Boolean ? (Boolean) value : null;
+    }
+}

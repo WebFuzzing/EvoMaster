@@ -68,6 +68,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
         //TODO this will require refactoring
         initSqlInfo(infoDto)
+        initNeo4jInfo(infoDto)
         //initAdHocInitialIndividuals()
         //postInits()
 

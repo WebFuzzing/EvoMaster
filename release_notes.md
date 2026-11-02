@@ -2,8 +2,17 @@
 
 Under development in `master` branch.
 
+### New Features
+- upgrade to WFC 0.13.0 now can enable CI tools to create Markdown summaries via the generated `wfc-summary.cjs` script file. 
+
 ### Addressed GitHub Issues
 - #711: What are the type of faults that can be detected with this tool?  
+
+### Fixed Bugs
+- Fixed issue for gzip-compressed responses with empty bodies leading to resource leakage.
+- Fixed instrumentation bug in JDK 25.
+- Fixed experimental configurations that were wrongly on by default.
+- Fixed issue in memory settings of Docker image.
 
 # Version 6.2.0
 

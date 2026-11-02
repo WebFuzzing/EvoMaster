@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.RedisSear
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.controller.redis.*;
 import org.evomaster.client.java.instrumentation.RedisCommand;
+import org.evomaster.client.java.instrumentation.RedisHashSchema;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
@@ -47,6 +48,13 @@ public class RedisHandler {
      * The client must be created given both host and port for Redis DB.
      */
     private ReflectionBasedRedisClient redisClient = null;
+
+    /**
+     * Key -> a Redis keyspace, ie the part of a key before its first ":" (e.g. "entities" for
+     * "entities:1"). Value -> the schema of the Java type observed for that keyspace (e.g. via a
+     * Spring Data Redis {@code @RedisHash} repository), see {@link RedisHashSchema}.
+     */
+    private final Map<String, RedisHashSchema> hashSchemasByKeyspace = new HashMap<>();
 
     private final RedisHeuristicsCalculator calculator = new RedisHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
@@ -92,13 +100,35 @@ public class RedisHandler {
         operations.add(info);
     }
 
+    public void handle(RedisHashSchema info) {
+        hashSchemasByKeyspace.put(info.getKeyspace(), info);
+    }
+
+    /**
+     * @return the keyspace of a key, ie the part before its first ":". A key with no ":" has no
+     * keyspace of its own.
+     */
+    private static String keyspaceOf(String key) {
+        int colon = key.indexOf(':');
+        return colon < 0 ? null : key.substring(0, colon);
+    }
+
     public List<RedisCommandEvaluation> getEvaluatedRedisCommands() {
         operations.stream()
             .filter(command -> command.getType().shouldCalculateHeuristic())
             .forEach(redisCommand -> {
-                RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
-                evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
-                registerFailedCommand(redisCommand, distanceWithMetrics.getDistance());
+                try {
+                    RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
+                    evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
+                    registerFailedCommand(redisCommand, distanceWithMetrics.getDistance());
+                } catch (Exception e) {
+                    // A single command must never take down the whole test evaluation: this is
+                    // reported here (rather than left to computeDistance's own catch) because it
+                    // also covers registerFailedCommand/createFailedCommand, which parse whatever
+                    // query string the SUT happened to build, including malformed ones no grammar
+                    // here accounts for.
+                    SimpleLogger.warn("Could not evaluate Redis command " + redisCommand + ": " + e, e);
+                }
             });
         operations.clear();
 
@@ -134,7 +164,6 @@ public class RedisHandler {
         List<String> args = redisCommand.extractArgs();
         switch (type) {
             case GET:
-            case HGETALL:
             case SINTER:
             case SMEMBERS: {
                 if (args.isEmpty()) {
@@ -145,6 +174,21 @@ public class RedisHandler {
                         args,
                         null,
                         null);
+            }
+
+            case HGETALL: {
+                if (args.isEmpty()) {
+                    throw new IllegalArgumentException("Command " + type.getLabel() + " has invalid arguments.");
+                }
+                String keyspace = keyspaceOf(args.get(0));
+                RedisHashSchema schema = keyspace == null ? null : hashSchemasByKeyspace.get(keyspace);
+                return new RedisFailedCommand(
+                        type.getLabel().toUpperCase(),
+                        args,
+                        null,
+                        null,
+                        schema == null ? null : schema.getHashSchema(),
+                        schema == null ? null : schema.getIdField());
             }
 
             case KEYS: {

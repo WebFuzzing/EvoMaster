@@ -149,6 +149,21 @@ public interface SutHandler {
 
     /**
      * <p>
+     * Where the AsyncAPI server called {@code serverName} can actually be reached, now.
+     * </p>
+     *
+     * The address in the document is where the service was deployed, not where a system started
+     * for testing is: a broker in a container binds a port chosen at start-up. A generated suite
+     * that carries the driver asks this when it starts, as it takes the base URL of a REST
+     * system from {@link #startSut()}.
+     *
+     * @param serverName the key of the server in the document
+     * @return where to reach it, or null to use the address the document declares
+     */
+    default String getAsyncApiServerAddress(String serverName) {return null;}
+
+    /**
+     * <p>
      * execute an RPC endpoint with evomaster driver
      * </p>
      *
@@ -212,6 +227,30 @@ public interface SutHandler {
      * heuristics and to insert test data.
      */
     default ReflectionBasedNeo4jClient getNeo4jConnection() {return null;}
+
+    /**
+     * Whether, before each test, EvoMaster should put the Neo4j graph back as it was right after the SUT
+     * started, so that no data a test inserted, changed or deleted reaches the next one. Only what differs
+     * from that state is touched. It needs {@link #getNeo4jConnection()}, and it takes the place of
+     * cleaning the graph by hand in {@link #resetStateOfSUT()}. The generated tests do the same, through
+     * {@link #resetNeo4jDatabase()}.
+     * <p>
+     * TODO this will need to be refactored when we consolidate how all databases (SQL and NoSQL alike) are configured
+     *
+     * @return {@code true} to have the graph restored automatically before each test
+     */
+    default boolean employSmartNeo4jClean() {return false;}
+
+    /**
+     * Puts the Neo4j graph back as it was right after the SUT started, if {@link #employSmartNeo4jClean()}
+     * asks for it. The first call after a start only records that state, as nothing has run yet.
+     * <p>
+     * The generated tests call it before {@link #resetStateOfSUT()}.
+     * <p>
+     * Users do not implement it: {@code SutController} implements it (as a final method), the same way it
+     * implements {@link #resetDatabase(List)}. Drivers only override {@link #employSmartNeo4jClean()}.
+     */
+    default void resetNeo4jDatabase() {}
 
     default Object getOpenSearchConnection() {return null;}
 

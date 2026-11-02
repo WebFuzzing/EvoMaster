@@ -56,6 +56,14 @@ object AsyncApiGeneBuilder {
     private const val TYPE_NUMBER = "number"
     private const val TYPE_BOOLEAN = "boolean"
 
+    /*
+        What this builder reads off a Message Example Object: the two parts a gene is built for,
+        and the name that lets the search keep a whole example together.
+     */
+    private const val EXAMPLE_PAYLOAD = "payload"
+    private const val EXAMPLE_HEADERS = "headers"
+    private const val EXAMPLE_NAME = "name"
+
     /**
      * The keywords whose value is literal data rather than a schema, so nothing inside them is
      * a keyword either.
@@ -70,12 +78,21 @@ object AsyncApiGeneBuilder {
 
     /**
      * The genes for a message's payload, or null when it declares none.
+     *
+     * When the message declares examples and [options] ask for them, their payloads are offered
+     * as whole values beside the schema-derived genes, with the probability the options give.
      */
     fun buildPayloadGene(
         schema: AsyncApiDocument,
         message: AsyncApiMessage,
         options: RestActionBuilderV3.Options
-    ): Gene? = build(message.payload, "${message.id}.payload", schema, options)
+    ): Gene? = build(
+        message.payload,
+        "${message.id}.payload",
+        schema,
+        options,
+        examplesOf(message, EXAMPLE_PAYLOAD)
+    )
 
     /**
      * The genes for a message's headers, or null when it declares none.
@@ -98,7 +115,48 @@ object AsyncApiGeneBuilder {
         schema: AsyncApiDocument,
         message: AsyncApiMessage,
         options: RestActionBuilderV3.Options
-    ): Gene? = build(withoutCorrelationId(message), "${message.id}.headers", schema, options)
+    ): Gene? = build(
+        withoutCorrelationId(message),
+        "${message.id}.headers",
+        schema,
+        options,
+        examplesOf(message, EXAMPLE_HEADERS).map { (headers, name) ->
+            Pair(withoutCorrelationField(headers, message), name)
+        }
+    )
+
+    /**
+     * The [part] of every example the message declares that has one, each with the example's
+     * name where it gives one.
+     *
+     * They go to the gene builder beside the schema, the way REST passes a parameter's
+     * examples, rather than written into it: that path never crosses the OpenAPI parser, which
+     * would keep only one, and draws no complaint on a scalar. The name is what lets the search
+     * pick a whole example consistently across fields, when asked to with probNamedExamples.
+     */
+    private fun examplesOf(message: AsyncApiMessage, part: String): List<Pair<JsonNode, String?>> =
+        message.examples.mapNotNull { example ->
+            example.get(part)
+                ?.takeUnless { it.isNull }
+                ?.let { Pair(it, example.get(EXAMPLE_NAME)?.takeIf { n -> n.isTextual }?.asText()) }
+        }
+
+    /**
+     * The example headers without the one the correlation id is stamped into, which the headers
+     * gene does not have either.
+     */
+    private fun withoutCorrelationField(example: JsonNode, message: AsyncApiMessage): JsonNode {
+
+        val correlation = message.correlationId
+        val field = correlation?.fieldName
+
+        if (correlation == null || correlation.source != AsyncApiCorrelationId.Source.HEADER
+            || field == null || !example.isObject) {
+            return example
+        }
+
+        return (example.deepCopy<JsonNode>() as ObjectNode).apply { remove(field) }
+    }
 
     /**
      * The headers schema without the property the correlation id is stamped into.
@@ -146,6 +204,9 @@ object AsyncApiGeneBuilder {
     /**
      * Options for building AsyncAPI payloads.
      *
+     * `probUseExamples` is the probability of publishing a message's declared example as it is;
+     * it is off unless the user asks, since it is a way of steering the search.
+     *
      * Note `invalidData = false`, which is not what REST does. That flag makes the builder add
      * a bogus "EVOMASTER" member to every enum, on purpose, to probe how a service handles a
      * value it never declared. In a message payload that backfires: an enum of one value is how
@@ -160,6 +221,7 @@ object AsyncApiGeneBuilder {
     fun options(config: EMConfig) = RestActionBuilderV3.Options(
         enableConstraintHandling = config.enableSchemaConstraintHandling,
         invalidData = false,
+        probUseExamples = config.probAsyncApiExamples,
         usingWhiteBox = !config.blackBox,
         enableAdvancedFormats = config.enableAdvancedFormats,
         inferFormatFromNames = config.inferFormatFromNames
@@ -169,7 +231,8 @@ object AsyncApiGeneBuilder {
         declared: JsonNode?,
         inlineName: String,
         schema: AsyncApiDocument,
-        options: RestActionBuilderV3.Options
+        options: RestActionBuilderV3.Options,
+        examples: List<Pair<Any, String?>>
     ): Gene? {
 
         if (declared == null) {
@@ -201,7 +264,7 @@ object AsyncApiGeneBuilder {
         }
 
         //the format createGeneForDTO expects: the name of the wanted schema, then all of them
-        return RestActionBuilderV3.createGeneForDTO(name, "\"$name\":$schemas", options)
+        return RestActionBuilderV3.createGeneForDTO(name, "\"$name\":$schemas", options, examples)
     }
 
     /**

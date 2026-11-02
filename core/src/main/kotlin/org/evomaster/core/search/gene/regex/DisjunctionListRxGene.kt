@@ -18,8 +18,13 @@ import org.slf4j.LoggerFactory
 
 private data class BranchRanking(val absorbableCount: Int, val branchIndex: Int)
 
+/**
+ * @param captureGroupIndex if this is a capturing group, its number (1-based, as in a backreference \N); otherwise null.
+ * When rendered, a capturing group records its value in the [RegexGene] it is part of, for backreferences to use.
+ */
 class DisjunctionListRxGene(
-        val disjunctions: List<DisjunctionRxGene>
+        val disjunctions: List<DisjunctionRxGene>,
+        val captureGroupIndex: Int? = null
 ) : RxAtom, CompositeFixedGene("disjunction_list", disjunctions), PhenotypeDormantGene {
 
     //FIXME refactor with ChoiceGene
@@ -36,7 +41,7 @@ class DisjunctionListRxGene(
     }
 
     override fun copyContent(): Gene {
-        val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
+        val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene }, captureGroupIndex)
         copy.activeDisjunction = this.activeDisjunction
         copy.name = this.name //in case name is changed from its default
         return copy
@@ -156,11 +161,18 @@ class DisjunctionListRxGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        if (disjunctions.isEmpty()) {
-            return ""
+        val value = if (disjunctions.isEmpty()) {
+            ""
+        } else {
+            disjunctions[activeDisjunction].getValueAsPrintableString(previousGenes, mode, targetFormat)
         }
-        return disjunctions[activeDisjunction]
-            .getValueAsPrintableString(previousGenes, mode, targetFormat)
+
+        if (captureGroupIndex != null) {
+            // no RegexGene if the gene is not part of a regex tree, this could happen for example in GeneRandomizedTest
+            getFirstParent(RegexGene::class.java)?.recordCapturedValue(captureGroupIndex, value)
+        }
+
+        return value
     }
 
 

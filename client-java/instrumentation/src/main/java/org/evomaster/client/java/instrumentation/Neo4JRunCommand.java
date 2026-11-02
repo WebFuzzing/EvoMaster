@@ -1,6 +1,8 @@
 package org.evomaster.client.java.instrumentation;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Info related to Neo4J RUN command execution.
@@ -12,9 +14,12 @@ public class Neo4JRunCommand implements Serializable {
     private final String query;
 
     /**
-     * Query parameters (can be Map, Value, Record, or null)
+     * Query parameters:
+     * key -> name of the parameter, as the query refers to it without the leading {@code $}
+     * value -> value bound to it, as a plain Java object (String, Long, Double, Boolean, List, Map)
+     * and never one of the driver's own types, which cannot be serialized
      */
-    private final Object parameters;
+    private final Map<String, Object> parameters;
 
     /**
      * If the operation was successfully executed
@@ -26,9 +31,9 @@ public class Neo4JRunCommand implements Serializable {
      */
     private final long executionTime;
 
-    public Neo4JRunCommand(String query, Object parameters, boolean successfullyExecuted, long executionTime) {
+    public Neo4JRunCommand(String query, Map<String, Object> parameters, boolean successfullyExecuted, long executionTime) {
         this.query = query;
-        this.parameters = parameters;
+        this.parameters = parameters == null ? Collections.emptyMap() : parameters;
         this.successfullyExecuted = successfullyExecuted;
         this.executionTime = executionTime;
     }
@@ -37,7 +42,7 @@ public class Neo4JRunCommand implements Serializable {
         return query;
     }
 
-    public Object getParameters() {
+    public Map<String, Object> getParameters() {
         return parameters;
     }
 

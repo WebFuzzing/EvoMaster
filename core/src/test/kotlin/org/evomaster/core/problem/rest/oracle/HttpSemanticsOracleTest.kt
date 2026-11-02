@@ -648,6 +648,51 @@ class HttpSemanticsOracleTest {
     }
 
     @Test
+    fun testPut_sentWriteOnlyFieldNotInGetSchema_noFalsePositive() {
+        val schema = buildUsersSchema(
+            putWritable = listOf("name", "hidden"),
+            getResponseFields = listOf("name", "timestamp")
+        )
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(activeFields = mapOf("name" to "Alice", "hidden" to "secret")),
+            getResponseBody = """{"name":"Alice","timestamp":"123"}""",
+            schema = schema
+        )
+        assertFalse(mismatch)
+    }
+
+    @Test
+    fun testPut_sentWriteOnlyFieldNotInGetSchema_exposedFieldChanged_returnsTrue() {
+        val schema = buildUsersSchema(
+            putWritable = listOf("name", "hidden"),
+            getResponseFields = listOf("name")
+        )
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(activeFields = mapOf("name" to "Alice", "hidden" to "secret")),
+            getResponseBody = """{"name":"Bob"}""",
+            schema = schema
+        )
+        assertTrue(mismatch)
+    }
+
+    @Test
+    fun testPut_allSentFieldsWriteOnly_returnsFalse() {
+        val schema = buildUsersSchema(
+            putWritable = listOf("hidden"),
+            getResponseFields = listOf("id")
+        )
+        val mismatch = runMismatchedPutOracle(
+            path = "/users",
+            putBody = jsonPutBodyParam(activeFields = mapOf("hidden" to "secret")),
+            getResponseBody = """{"id":"1"}""",
+            schema = schema
+        )
+        assertFalse(mismatch)
+    }
+
+    @Test
     fun testPut_putReturnedNon2xx_returnsFalse() {
         val mismatch = runMismatchedPutOracle(
             path = "/users",

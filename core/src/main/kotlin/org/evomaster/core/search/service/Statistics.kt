@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.enterprise.service.OracleApplicability
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.Endpoint
@@ -74,6 +75,9 @@ class Statistics : SearchListener {
 
     @Inject(optional = true)
     private lateinit var callGraphService: CallGraphService
+
+    @Inject
+    private lateinit var oracleApplicability: OracleApplicability
 
     /**
      * How often test executions did timeout
@@ -156,8 +160,19 @@ class Statistics : SearchListener {
     private var neo4jHeuristicEvaluationFailureCount = 0
     private val neo4jNodesAverageCalculator = IncrementalAverage()
 
+    // cassandra heuristic evaluation statistic
+    private var cassandraHeuristicEvaluationSuccessCount = 0
+    private var cassandraHeuristicEvaluationFailureCount = 0
+    private val cassandraRowsAverageCalculator = IncrementalAverage()
+
     //how long time spent in choosing names for the generated test cases
     private var timeSpentChoosingTestNamesMs = 0L
+
+    /**
+     * Wall-clock time, in milliseconds, for each complete test-suite re-execution
+     * round done during flakiness detection.
+     */
+    private val reExecutionTimesMs = mutableListOf<Long>()
 
    class Pair(val header: String, val element: String)
 
@@ -322,6 +337,13 @@ class Statistics : SearchListener {
         timeSpentChoosingTestNamesMs += ms
     }
 
+    fun reportReExecutionTime(ms: Long) {
+        if (ms < 0) {
+            throw IllegalArgumentException("Passed time cannot be negative: $ms")
+        }
+        reExecutionTimesMs.add(ms)
+    }
+
     fun reportTimeout() {
         timeouts++
     }
@@ -351,6 +373,10 @@ class Statistics : SearchListener {
     /** Records the number of nodes inspected by one Neo4j heuristic evaluation. */
     fun reportNumberOfEvaluatedNodesForNeo4jHeuristic(numberOfEvaluatedNodes: Int) {
         neo4jNodesAverageCalculator.addValue(numberOfEvaluatedNodes)
+    }
+
+    fun reportNumberOfEvaluatedRowsForCassandraHeuristic(numberOfEvaluatedRows: Int) {
+        cassandraRowsAverageCalculator.addValue(numberOfEvaluatedRows)
     }
 
     fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
@@ -392,6 +418,14 @@ class Statistics : SearchListener {
     /** Records one failed DynamoDB heuristic evaluation. */
     fun reportDynamoDbHeuristicEvaluationFailure() {
         dynamoDbHeuristicEvaluationFailureCount++
+    }
+
+    fun reportCassandraHeuristicEvaluationSuccess() {
+        cassandraHeuristicEvaluationSuccessCount++
+    }
+
+    fun reportCassandraHeuristicEvaluationFailure() {
+        cassandraHeuristicEvaluationFailureCount++
     }
 
     fun reportSqlZ3Sat(z3TimeMs: Long) {
@@ -503,6 +537,8 @@ class Statistics : SearchListener {
     internal fun getSqlZ3SolveTimeMs() = sqlZ3SolveTimeMs
     internal fun getSqlInsertionExecutionTimeMs() = sqlInsertionExecutionTimeMs
     internal fun getSqlInsertionExecutionCount() = sqlInsertionExecutionCount
+    internal fun getAllReExecutionTimesMs(): List<Long> = reExecutionTimesMs.toList()
+    internal fun getSumOfReExecutionTimesMs() = reExecutionTimesMs.sum()
 
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
 
@@ -529,6 +565,12 @@ class Statistics : SearchListener {
 
     /** Returns the average number of nodes inspected by Neo4j heuristics. */
     fun averageNumberOfEvaluatedNodesForNeo4jHeuristics(): Double = neo4jNodesAverageCalculator.mean
+
+    /** Returns the total number of Cassandra heuristic evaluations. */
+    fun getCassandraHeuristicsEvaluationCount(): Int = cassandraHeuristicEvaluationSuccessCount + cassandraHeuristicEvaluationFailureCount
+
+    /** Returns the average number of rows inspected by DynamoDB heuristics. */
+    fun averageNumberOfEvaluatedRowsForCassandraHeuristics(): Double = cassandraRowsAverageCalculator.mean
 
     override fun newActionsEvaluated(n: Int) {
 
@@ -669,6 +711,9 @@ class Statistics : SearchListener {
             add(Pair("coverageFailures", "$coverageFailures"))
             add(Pair("clusteringTime", "${solution.clusteringTime}"))
             add(Pair("id", config.statisticsColumnId))
+            add(Pair("flakinessDetectionReExecutionCount", "${reExecutionTimesMs.size}"))
+            add(Pair("flakinessDetectionReExecutionTotalMs", "${reExecutionTimesMs.sum()}"))
+            add(Pair("flakinessDetectionReExecutionTimesMs", reExecutionTimesMs.joinToString("|")))
 
             // statistics info for Mongo Heuristics
             add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristics","${averageNumberOfEvaluatedDocumentsForMongoHeuristics()}"))
@@ -712,7 +757,13 @@ class Statistics : SearchListener {
             add(Pair("averageNumberOfEvaluatedNodesForNeo4jHeuristics","${averageNumberOfEvaluatedNodesForNeo4jHeuristics()}"))
             add(Pair("neo4jHeuristicsEvaluationCount","${getNeo4jHeuristicsEvaluationCount()}"))
 
+            // statistics info for Cassandra Heuristics
+            add(Pair("averageNumberOfEvaluatedRowsForCassandraHeuristics","${averageNumberOfEvaluatedRowsForCassandraHeuristics()}"))
+            add(Pair("cassandraHeuristicsEvaluationCount","${getCassandraHeuristicsEvaluationCount()}"))
+
             add(Pair("timeSpentChoosingTestNamesMs", "$timeSpentChoosingTestNamesMs"))
+
+            add(Pair("oracleApplicability", oracleApplicability.exportStatsAsSingleString()))
 
             for(phase in ExecutionPhaseController.Phase.entries){
                 add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))
@@ -827,7 +878,7 @@ class Statistics : SearchListener {
 
         return aiMetricsAsPairs(
             enabled = true,
-            type = config.aiModelForResponseClassification.joinToString(","),
+            type = "\"" + config.aiModelForResponseClassification.joinToString(",") + "\"",
             accuracy = metrics.accuracy,
             precision = metrics.precision400,
             sensitivity = metrics.sensitivity400,

@@ -295,7 +295,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
     private fun addForInjections() {
 
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_XSS)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_XSS_INJECTION)) {
             log.debug("Skipping security test for XSS as disabled in configuration")
         } else {
             if(hasPhaseTimedOut()) return
@@ -346,7 +346,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
     private fun accessControlBasedOnRESTGuidelines() {
 
-        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION)){
             log.debug("Skipping security test for forbidden but ok others as disabled in configuration")
         } else {
             // quite a few rules here that can be defined
@@ -1322,7 +1322,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
 
                     val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-                    if(DefinedFaultCategory.SECURITY_XSS in faultsCategories){
+                    if(DefinedFaultCategory.SECURITY_XSS_INJECTION in faultsCategories){
                         archive.addIfNeeded(evaluatedIndividual)
                         continue@mainloop
                     }

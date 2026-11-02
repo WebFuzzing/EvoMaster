@@ -69,6 +69,20 @@ class StatisticsTest {
     }
 
     @Test
+    fun testCassandraHeuristicsAverage() {
+        val statistics = Statistics()
+        statistics.reportNumberOfEvaluatedRowsForCassandraHeuristic(2)
+        statistics.reportNumberOfEvaluatedRowsForCassandraHeuristic(4)
+
+        statistics.reportCassandraHeuristicEvaluationSuccess()
+        statistics.reportCassandraHeuristicEvaluationSuccess()
+        statistics.reportCassandraHeuristicEvaluationFailure()
+
+        assertEquals(3, statistics.getCassandraHeuristicsEvaluationCount())
+        assertEquals((2 + 4).toDouble() / 2, statistics.averageNumberOfEvaluatedRowsForCassandraHeuristics())
+    }
+
+    @Test
     fun testSqlZ3CacheAccountingInvariant() {
         val statistics = Statistics()
 
@@ -93,6 +107,18 @@ class StatisticsTest {
             statistics.getSqlZ3QueriesSeenCount(),
             statistics.getSqlZ3CacheHitCount() + statistics.getSqlZ3CacheMissCount()
         )
+    }
+
+    @Test
+    fun testReExecutionTimes() {
+        val statistics = Statistics()
+
+        statistics.reportReExecutionTime(10)
+        statistics.reportReExecutionTime(25)
+        statistics.reportReExecutionTime(5)
+
+        assertEquals(listOf(10L, 25L, 5L), statistics.getAllReExecutionTimesMs())
+        assertEquals(40L, statistics.getSumOfReExecutionTimesMs())
     }
 
 }

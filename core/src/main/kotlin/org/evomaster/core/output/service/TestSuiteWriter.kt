@@ -7,6 +7,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.*
+import org.evomaster.core.output.asyncapi.KafkaTestClientEmitter
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter
@@ -231,6 +232,15 @@ class TestSuiteWriter {
         dtoWriter.write(testSuitePath, testSuiteFileName.getPackage(), solution)
         containsDtos = dtoWriter.containsDtos()
     }
+
+    /**
+     * Whether the driver has the Neo4j graph put back as it was at startup before each test, which the
+     * generated tests then have to do too, as they do not go through the driver's controller.
+     *
+     * TODO in future, this should also be based on `config.employSmartDbClean`
+     */
+    private fun employsSmartNeo4jClean(): Boolean =
+        ::remoteController.isInitialized && remoteController.getCachedSutInfo()?.employSmartNeo4jClean == true
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
         if(sampler !is EnterpriseSampler<*>){
@@ -468,6 +478,11 @@ class TestSuiteWriter {
             addImport("java.util.List", lines)
             addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
+
+            if (config.problemType == EMConfig.ProblemType.ASYNCAPI
+                    && KafkaTestClientEmitter.resultsIn(solution).isNotEmpty()) {
+                addImport(KafkaTestClientEmitter.UTILS_CLASS + ".*", lines, true)
+            }
 
             // BigInteger and BigDecimal
             addImport("java.math.BigDecimal", lines)
@@ -1079,6 +1094,9 @@ class TestSuiteWriter {
             } else if (format.isJavaOrKotlin()) {
                 if (config.employSmartDbClean == true) {
                     addStatement("$controller.resetDatabase(${handleResetDatabaseInput(solution)})", lines)
+                }
+                if (employsSmartNeo4jClean()) {
+                    addStatement("$controller.resetNeo4jDatabase()", lines)
                 }
                 addStatement("$controller.resetStateOfSUT()", lines)
 

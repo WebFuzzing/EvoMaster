@@ -33,66 +33,66 @@ public class BsonHelper {
     public static final String NULL_TYPE = "null";
     private static final String BSON_TYPE_NULL = "NULL";
 
-    public static Object newDocument(Object bsonDocument) {
-        Objects.requireNonNull(bsonDocument);
-        if (!isBsonDocument(bsonDocument)) {
-            throw new IllegalArgumentException("argument bsonDocument must be a BsonDocument");
+    public static Object documentNewDocument(Object document) {
+        Objects.requireNonNull(document);
+        if (!isDocument(document)) {
+            throw new IllegalArgumentException("argument document must be a BsonDocument");
         }
         try {
-            return bsonDocument.getClass().getConstructor().newInstance();
+            return document.getClass().getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void appendToDocument(Object bsonDocument, String fieldName, Object value) {
-        Objects.requireNonNull(bsonDocument);
+    public static void appendToDocument(Object document, String fieldName, Object value) {
+        Objects.requireNonNull(document);
         Objects.requireNonNull(fieldName);
-        if (!isBsonDocument(bsonDocument)) {
-            throw new IllegalArgumentException("argument bsonDocument must be a BsonDocument");
+        if (!isDocument(document)) {
+            throw new IllegalArgumentException("argument document must be a BsonDocument");
         }
         try {
-            Method append = bsonDocument.getClass().getMethod(APPEND_METHOD, String.class, Object.class);
-            append.invoke(bsonDocument, fieldName, value);
+            Method append = document.getClass().getMethod(APPEND_METHOD, String.class, Object.class);
+            append.invoke(document, fieldName, value);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static Object getValue(Object bsonDocument, String fieldName) {
-        Objects.requireNonNull(bsonDocument);
+    public static Object documentGetValue(Object document, String fieldName) {
+        Objects.requireNonNull(document);
         Objects.requireNonNull(fieldName);
-        if (!isBsonDocument(bsonDocument)) {
-            throw new IllegalArgumentException("argument bsonDocument must be a BsonDocument");
+        if (!isDocument(document)) {
+            throw new IllegalArgumentException("argument document must be a BsonDocument");
         }
         try {
-            return bsonDocument.getClass().getMethod(GET_METHOD, Object.class).invoke(bsonDocument, fieldName);
+            return document.getClass().getMethod(GET_METHOD, Object.class).invoke(document, fieldName);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static Boolean documentContainsField(Object bsonDocument, String fieldName) {
-        Objects.requireNonNull(bsonDocument);
+    public static Boolean documentContainsField(Object document, String fieldName) {
+        Objects.requireNonNull(document);
         Objects.requireNonNull(fieldName);
-        if (!isBsonDocument(bsonDocument)) {
-            throw new IllegalArgumentException("argument bsonDocument must be a BsonDocument");
+        if (!isDocument(document)) {
+            throw new IllegalArgumentException("argument document must be a BsonDocument");
         }
         try {
-            return (Boolean) bsonDocument.getClass().getMethod(CONTAINS_KEY_METHOD, Object.class).invoke(bsonDocument, fieldName);
+            return (Boolean) document.getClass().getMethod(CONTAINS_KEY_METHOD, Object.class).invoke(document, fieldName);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static Set<String> documentKeys(Object bsonDocument) {
-        Objects.requireNonNull(bsonDocument);
-        if (!isBsonDocument(bsonDocument)) {
-            throw new IllegalArgumentException("argument bsonDocument must be a BsonDocument");
+    public static Set<String> documentKeys(Object document) {
+        Objects.requireNonNull(document);
+        if (!isDocument(document)) {
+            throw new IllegalArgumentException("argument document must be a BsonDocument");
         }
         try {
-            return (Set<String>) bsonDocument.getClass().getMethod(KEY_SET_METHOD).invoke(bsonDocument);
+            return (Set<String>) document.getClass().getMethod(KEY_SET_METHOD).invoke(document);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             // This exception shouldn't go unnoticed.
             throw new RuntimeException(e);
@@ -100,12 +100,12 @@ public class BsonHelper {
     }
 
     /**
-     * Checks if the given object represents a BSON document.
+     * Checks if the given object represents an org.bson.Document.
      *
      * @param value the object to check; should be non-null to determine if it is a BSON document
      * @return true if the object is a BSON document, false otherwise
      */
-    public static Boolean isBsonDocument(Object value) {
+    public static Boolean isDocument(Object value) {
         return value != null && value.getClass().getName().equals(ORG_BSON_DOCUMENT);
     }
 
@@ -125,11 +125,11 @@ public class BsonHelper {
     /**
      * Determines whether the given object is a BSON BsonTimestamp.
      *
-     * @param obj the object to check; should be non-null to determine if it is a BSON BsonTimestamp
+     * @param value the object to check; should be non-null to determine if it is a BSON BsonTimestamp
      * @return true if the object is a BSON BsonTimestamp, false otherwise
      */
-    public static boolean isBsonTimestamp(Object obj) {
-        return obj != null && obj.getClass().getName().equals(ORG_BSON_BSON_TIMESTAMP);
+    public static boolean isBsonTimestamp(Object value) {
+        return value != null && value.getClass().getName().equals(ORG_BSON_BSON_TIMESTAMP);
     }
 
     /**
@@ -149,7 +149,7 @@ public class BsonHelper {
      * @return the value of the BSON BsonTimestamp
      * @throws IllegalArgumentException if the argument is not a BSON BsonTimestamp
      */
-    public static long getBsonTimestampValue(Object bsonTimestamp) {
+    public static long timestampGetValue(Object bsonTimestamp) {
         Objects.requireNonNull(bsonTimestamp);
         if (!isBsonTimestamp(bsonTimestamp)) {
             throw new IllegalArgumentException("argument bsonTimestamp must be a BsonTimestamp");
@@ -224,31 +224,31 @@ public class BsonHelper {
     }
 
     /**
-     * Checks if the given object is a BSON regular expression.
+     * Checks if the given value is a BSON regular expression.
      *
-     * @param object the object to check; should be non-null to determine if it is a BSON regular expression
-     * @return true if the object is a BSON regular expression, false otherwise
+     * @param value the value to check; should be non-null to determine if it is a BSON regular expression
+     * @return true if the value is a BSON regular expression, false otherwise
      */
-    public static boolean isBsonRegularExpression(Object object) {
-        return object != null && BSON_REGEX_CLASS.equals(object.getClass().getName());
+    public static boolean isBsonRegularExpression(Object value) {
+        return value != null && BSON_REGEX_CLASS.equals(value.getClass().getName());
     }
 
     /**
      * Retrieves the pattern from a BSON regular expression object.
      *
-     * @param value the object representing a BSON regular expression. Must not be null and must be a valid BSON regular expression.
+     * @param bsonRegularExpression the object representing a BSON regular expression. Must not be null and must be a valid BSON regular expression.
      * @return a String representing the pattern of the BSON regular expression.
-     * @throws NullPointerException     if the provided value is null.
-     * @throws IllegalArgumentException if the provided value is not a BSON regular expression.
+     * @throws NullPointerException     if the provided bsonRegularExpression is null.
+     * @throws IllegalArgumentException if the provided bsonRegularExpression is not a BSON regular expression.
      * @throws RuntimeException         if an error occurs while invoking the method to retrieve the pattern.
      */
-    public static String bsonRegexGetPattern(Object value) {
-        Objects.requireNonNull(value, "The provided value cannot be null");
-        if (!isBsonRegularExpression(value)) {
-            throw new IllegalArgumentException("The provided value is not a BSON regular expression but class: " + value.getClass().getName());
+    public static String regexGetPattern(Object bsonRegularExpression) {
+        Objects.requireNonNull(bsonRegularExpression, "The provided bsonRegularExpression cannot be null");
+        if (!isBsonRegularExpression(bsonRegularExpression)) {
+            throw new IllegalArgumentException("The provided bsonRegularExpression is not a BSON regular expression but class: " + bsonRegularExpression.getClass().getName());
         }
         try {
-            return (String) value.getClass().getMethod(GET_PATTERN_METHOD).invoke(value);
+            return (String) bsonRegularExpression.getClass().getMethod(GET_PATTERN_METHOD).invoke(bsonRegularExpression);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -257,19 +257,19 @@ public class BsonHelper {
     /**
      * Retrieves the options associated with a BSON regular expression.
      *
-     * @param value the object representing a BSON regular expression. Must not be null and must be a valid BSON regular expression.
+     * @param bsonRegularExpression the object representing a BSON regular expression. Must not be null and must be a valid BSON regular expression.
      * @return a String representing the options associated with the BSON regular expression.
-     * @throws NullPointerException     if the provided value is null.
-     * @throws IllegalArgumentException if the provided value is not a BSON regular expression.
+     * @throws NullPointerException     if the provided bsonRegularExpression is null.
+     * @throws IllegalArgumentException if the provided bsonRegularExpression is not a BSON regular expression.
      **/
-    public static String bsonRegexGetOptions(Object value) {
-        Objects.requireNonNull(value, "The provided value cannot be null");
-        if (!isBsonRegularExpression(value)) {
-            throw new IllegalArgumentException("The provided value is not a BSON regular expression but class: " + value.getClass().getName());
+    public static String regexGetOptions(Object bsonRegularExpression) {
+        Objects.requireNonNull(bsonRegularExpression, "The provided bsonRegularExpression cannot be null");
+        if (!isBsonRegularExpression(bsonRegularExpression)) {
+            throw new IllegalArgumentException("The provided bsonRegularExpression is not a BSON regular expression but class: " + bsonRegularExpression.getClass().getName());
         }
         try {
-            final Method getOptionsMethod = value.getClass().getMethod(GET_OPTIONS_METHOD);
-            return (String) getOptionsMethod.invoke(value);
+            final Method getOptionsMethod = bsonRegularExpression.getClass().getMethod(GET_OPTIONS_METHOD);
+            return (String) getOptionsMethod.invoke(bsonRegularExpression);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -289,7 +289,7 @@ public class BsonHelper {
         return className.equals(ORG_BSON_BSON_BINARY) || className.equals(ORG_BSON_TYPES_BINARY);
     }
 
-    public static byte[] getBinaryData(Object value) {
+    public static byte[] binaryGetBinaryData(Object value) {
         Objects.requireNonNull(value, "The provided value cannot be null");
         if (!isBsonBinary(value)) {
             throw new IllegalArgumentException("The provided value is not a BSON binary type but class: " + value.getClass().getName());
@@ -302,24 +302,24 @@ public class BsonHelper {
         }
     }
 
-    public static byte[] toByteArray(Object actualValue) {
-        Objects.requireNonNull(actualValue, "The provided value cannot be null");
-        if (!isObjectId(actualValue)) {
-            throw new IllegalArgumentException("The provided value is not a BSON ObjectId but class: " + actualValue.getClass().getName());
+    public static byte[] objectIdToByteArray(Object objectId) {
+        Objects.requireNonNull(objectId, "The provided value cannot be null");
+        if (!isObjectId(objectId)) {
+            throw new IllegalArgumentException("The provided value is not a BSON ObjectId but class: " + objectId.getClass().getName());
         }
         try {
-            final Method toByteArrayMethod = actualValue.getClass().getMethod(TO_BYTE_ARRAY_METHOD);
-            return (byte[]) toByteArrayMethod.invoke(actualValue);
+            final Method toByteArrayMethod = objectId.getClass().getMethod(TO_BYTE_ARRAY_METHOD);
+            return (byte[]) toByteArrayMethod.invoke(objectId);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static boolean isDecimal128(Object v) {
-        return v!=null && v.getClass().getName().equals(ORG_BSON_TYPES_DECIMAL_128);
+    public static boolean isDecimal128(Object value) {
+        return value!=null && value.getClass().getName().equals(ORG_BSON_TYPES_DECIMAL_128);
     }
 
-    public static BigDecimal getBigDecimalValue(Number n) {
+    public static BigDecimal decimal128GetBigDecimalValue(Number n) {
         Objects.requireNonNull(n, "n");
 
         if (!isDecimal128(n)) {
@@ -338,15 +338,15 @@ public class BsonHelper {
         }
     }
 
-    public static boolean isBsonUndefined(Object v) {
-        if (v == null) {
+    public static boolean isBsonUndefined(Object value) {
+        if (value == null) {
             return false;
         }
-        String className = v.getClass().getName();
+        String className = value.getClass().getName();
         return className.equals(ORG_BSON_BSON_UNDEFINED) || className.equals(ORG_BSON_TYPES_UNDEFINED);
     }
 
-    public static boolean isNaN(Object v) {
+    public static boolean decimal128IsNaN(Object v) {
         Objects.requireNonNull(v);
         if (!isDecimal128(v)) {
             throw new IllegalArgumentException("The provided value is not a BSON Decimal128 but class: " + v.getClass().getName());
@@ -360,7 +360,7 @@ public class BsonHelper {
         }
     }
 
-    public static boolean isInfinite(Object v) {
+    public static boolean decimal128IsInfinite(Object v) {
         Objects.requireNonNull(v);
         if (!isDecimal128(v)) {
             throw new IllegalArgumentException("The provided value is not a BSON Decimal128 but class: " + v.getClass().getName());

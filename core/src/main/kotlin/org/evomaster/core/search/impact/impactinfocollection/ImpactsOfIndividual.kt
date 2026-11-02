@@ -187,7 +187,7 @@ open class ImpactsOfIndividual(
 
     /**
      * @param actionIndex is null when there is no action in the individual, then return the first GeneImpact.
-     * Note that the index refers the relative index at actions grouped by the type
+     * The initialization index is relative to its action type unless [absoluteInitializationIndex] is true.
      */
     fun getGene(
         actionName: String?,
@@ -196,7 +196,8 @@ open class ImpactsOfIndividual(
         actionIndex: Int?,
         localId: String?,
         fixedIndexedAction: Boolean,
-        fromInitialization: Boolean
+        fromInitialization: Boolean,
+        absoluteInitializationIndex: Boolean = false
     ): GeneImpact? {
         // all individual should have at leadt one action, then remove this condition
         //if (actionIndex == null || (actionIndex == -1 && noneActionIndividual())) return fixedMainActionImpacts.first().geneImpacts[geneId]
@@ -209,11 +210,12 @@ open class ImpactsOfIndividual(
 
         val impactsOfAction =
                 if (fromInitialization) {
-                    if (initActionClassName != null) initActionImpacts[initActionClassName]?.getImpactOfAction(actionName, actionIndex!!)
+                    if (initActionClassName != null) initActionImpacts[initActionClassName]?.getImpactOfAction(actionName, actionIndex!!, absoluteInitializationIndex)
                     else initActionImpacts.values.firstNotNullOfOrNull {
                         it.getImpactOfAction(
                             actionName,
-                            actionIndex!!
+                            actionIndex!!,
+                            absoluteInitializationIndex
                         )
                     }
                 }
@@ -305,6 +307,11 @@ open class ImpactsOfIndividual(
         if (impactsForInitActionType.getOriginalSize() != initActions.size){
             throw IllegalStateException("inconsistent impact for SQL genes")
         }
+        impactsForInitActionType.syncAbsolutePositions(
+            individual.seeInitializingActions().withIndex()
+                .filter { it.value.getActionGroupKey() == initActionClassName }
+                .map { it.index }
+        )
 
     }
 

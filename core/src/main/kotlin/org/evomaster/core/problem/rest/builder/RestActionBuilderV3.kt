@@ -88,6 +88,21 @@ object RestActionBuilderV3 {
 
     private val mapper = ObjectMapper()
 
+    private fun buildOpenApiSchema(
+        schemas: JsonNode,
+        openApiVersion: String
+    ): Pair<SchemaOpenAPI, RestSchema> {
+        val root = mapper.createObjectNode()
+        root.put("openapi", openApiVersion)
+        root.putObject(OPENAPI_COMPONENT_NAME)
+            .set<JsonNode>(OPENAPI_SCHEMA_NAME, schemas.deepCopy())
+
+        val schemaText = mapper.writeValueAsString(root)
+        val parsed = OpenAPIParser().readContents(schemaText, null, null)
+        val currentSchema = SchemaOpenAPI(schemaText, parsed.openAPI, SchemaLocation.MEMORY)
+        return currentSchema to RestSchema(currentSchema)
+    }
+
     class Options(
         /**
          * presents whether apply name/text analysis on description and summary of rest action
@@ -296,12 +311,17 @@ object RestActionBuilderV3 {
      * @throws IllegalArgumentException if the provided 'name' is not found at the beginning of 'allSchemas'.
      * @throws IllegalStateException if the schema with the specified 'name' cannot be found in 'allSchemas'.
      *
+     * @param examples values to offer for the wanted schema as a whole, each with an optional
+     *                 name, beside the genes derived from it. They take the same path as a REST
+     *                 parameter's examples, so they never go through the OpenAPI parser, and as
+     *                 for those, none is offered unless [Options.probUseExamples] gives it a chance.
      * @see Gene
      * @see Options
      */
     fun createGeneForDTO(dtoSchemaName: String,
                          allSchemas: String,
-                         options: Options
+                         options: Options,
+                         examples: List<Pair<Any,String?>> = listOf()
     ) : Gene{
         if(!allSchemas.startsWith("\"$dtoSchemaName\"")){
             throw IllegalArgumentException("Invalid name $dtoSchemaName for schema $allSchemas")
@@ -312,38 +332,44 @@ object RestActionBuilderV3 {
         val schemas = getMapStringFromSchemas(allSchemasValue)
         val dtoSchema = schemas[dtoSchemaName] ?: throw IllegalStateException("cannot find the schema with $dtoSchemaName from $allSchemas")
 
-        if(dtoCache.containsKey(dtoSchema)){
+        //gated here rather than left to the assembler, which would wrap them in a choice weighted at zero
+        val offered = if (options.probUseExamples > 0) examples else listOf()
+
+        /*
+            The cache is keyed on the schema text alone, so it can only serve a call that brings
+            no examples: two callers may share a schema and still offer different examples for it.
+         */
+        if(offered.isEmpty() && dtoCache.containsKey(dtoSchema)){
             return dtoCache[dtoSchema]!!.copy()
         }
 
-        val schema = """
-            {
-                "openapi": "3.0.0",
-                "$OPENAPI_COMPONENT_NAME": {
-                    "$OPENAPI_SCHEMA_NAME": $allSchemasValue
-                }
-            }          
-        """.trimIndent()
-
         //FIXME here we are swallowing all error messages in schema
         //FIXME duplicated code
-        val swagger = OpenAPIParser().readContents(schema,null,null)
-        val currentSchema = SchemaOpenAPI(schema,swagger.openAPI, SchemaLocation.MEMORY)
-        val schemaHolder = RestSchema(currentSchema)
+        val (currentSchema, schemaHolder) = buildOpenApiSchema(mapper.readTree(allSchemasValue), "3.0.0")
+        val swagger = currentSchema.schemaParsed
+
+        var wanted: Gene? = null
 
         schemas.forEach { (t, u) ->
+            val forThisOne = if (t == dtoSchemaName) offered else listOf()
             val gene = getGene(t,
-                swagger.openAPI.components.schemas[t]!!,
+                swagger.components.schemas[t]!!,
                 schemaHolder,
                 currentSchema,
                 ArrayDeque(),
                 t,
                 options,
+                examples = forThisOne,
                 messages = mutableListOf())
-            dtoCache[u] = gene
+            if (forThisOne.isEmpty()) {
+                dtoCache[u] = gene
+            }
+            if (t == dtoSchemaName) {
+                wanted = gene
+            }
         }
 
-        return dtoCache[dtoSchema]!!.copy()
+        return (wanted ?: throw IllegalStateException("No gene was built for $dtoSchemaName")).copy()
     }
 
     /**
@@ -368,22 +394,15 @@ object RestActionBuilderV3 {
         }
 
         //Note to simplify code, we just create a whole OpenAPI schema
-        val schema = """
-            {
-                "openapi": "3.0.0",
-                "$OPENAPI_COMPONENT_NAME": {
-                    "$OPENAPI_SCHEMA_NAME": {
-                        $dtoSchema
-                    }
-                }
-            }          
-        """.trimIndent()
+        val parsedDtoSchema = mapper.readTree("{$dtoSchema}")
+        val schemaNode = parsedDtoSchema.get(name)
+            ?: throw IllegalArgumentException("Schema '$name' not found in dto schema")
+        val schemas = mapper.createObjectNode()
+        schemas.set<JsonNode>(name, schemaNode)
 
         //FIXME here we are swallowing all error messages in schema
         //FIXME duplicated code
-        val swagger = OpenAPIParser().readContents(schema,null,null)
-        val currentSchema = SchemaOpenAPI(schema,swagger.openAPI, SchemaLocation.MEMORY)
-        val schemaHolder = RestSchema(currentSchema)
+        val (currentSchema, schemaHolder) = buildOpenApiSchema(schemas, "3.0.0")
         val gene = createObjectGene(
             name,
             currentSchema.schemaParsed.components.schemas[name]!!,
@@ -454,7 +473,7 @@ object RestActionBuilderV3 {
      * @return the Gene for [rootName]
      * @throws IllegalArgumentException if [rootName] is not present in [schemasByName]
      */
-    fun createGeneForDTOs(
+    fun createGeneForDTO(
         rootName: String,
         schemasByName: Map<String, JsonNode>,
         options: Options
@@ -464,18 +483,12 @@ object RestActionBuilderV3 {
             throw IllegalArgumentException("Root schema '$rootName' not present among provided schemas")
         }
 
-        val root = mapper.createObjectNode()
-        root.put("openapi", "3.1.0")
-        val schemasNode = root.putObject(OPENAPI_COMPONENT_NAME).putObject(OPENAPI_SCHEMA_NAME)
-        schemasByName.forEach { (name, node) -> schemasNode.set<JsonNode>(name, node) }
+        val schemas = mapper.createObjectNode()
+        schemasByName.forEach { (name, node) -> schemas.set<JsonNode>(name, node) }
+        val (currentSchema, schemaHolder) = buildOpenApiSchema(schemas, "3.1.0")
+        val parsed = currentSchema.schemaParsed
 
-        val schemaText = mapper.writeValueAsString(root)
-
-        val parsed = OpenAPIParser().readContents(schemaText, null, null)
-        val currentSchema = SchemaOpenAPI(schemaText, parsed.openAPI, SchemaLocation.MEMORY)
-        val schemaHolder = RestSchema(currentSchema)
-
-        val schema = parsed.openAPI.components.schemas[rootName]
+        val schema = parsed.components.schemas[rootName]
             ?: throw IllegalStateException("Cannot find schema '$rootName' after parsing")
 
         return getGene(
@@ -1521,7 +1534,7 @@ object RestActionBuilderV3 {
             "sf-decimal" -> return BigDecimalGene(name, precision = 15, scale = 3)
             //time and date-time without/with timezone, reusing the existing datetime genes
             "time" -> return TimeGene(name, format = FormatForDatesAndTimes.RFC3339, onlyValidTimes = !options.invalidData)
-            "time-local" -> return TimeGene(name, format = FormatForDatesAndTimes.ISO_LOCAL, onlyValidTimes = !options.invalidData)
+            "time-local", "local-time" -> return TimeGene(name, format = FormatForDatesAndTimes.ISO_LOCAL, onlyValidTimes = !options.invalidData)
             "date-time-local" -> return DateTimeGene(name, onlyValid = !options.invalidData, format = FormatForDatesAndTimes.ISO_LOCAL)
             //RFC3339 duration (a full ISO-8601 duration)
             "duration" -> return regexGene(name, "^P[1-9][0-9]{0,2}Y[1-9][0-9]{0,2}M[1-9][0-9]{0,2}DT[1-9][0-9]{0,2}H[1-9][0-9]{0,2}M[1-9][0-9]{0,2}S$")

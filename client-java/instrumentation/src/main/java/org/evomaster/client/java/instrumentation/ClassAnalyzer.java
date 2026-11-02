@@ -50,7 +50,6 @@ public class ClassAnalyzer {
             try {
                 ClassLoader loader = UnitsInfoRecorder.getInstance().getFirstClassLoader(name);
                 if (loader == null) {
-                    //could happen in tests
                     loader = ClassAnalyzer.class.getClassLoader();
                     SimpleLogger.warn("No class loader registered for " + name);
                 }
@@ -74,6 +73,50 @@ public class ClassAnalyzer {
             } catch (Exception e) {
                 SimpleLogger.error("Failed to analyze " + name, e);
             }
+        }
+    }
+
+    /**
+     * Reads the Spring Data Neo4j mapping of the given classes, registering an entity for each class
+     * annotated with {@code @Node}. Does nothing if the SUT does not use Spring Data Neo4j.
+     *
+     * @param classNames the classes to look at
+     */
+    public static void doAnalyzeNeo4jEntities(Collection<String> classNames) {
+
+        if (!classesCanBeLoaded(Neo4jEntityAnalyzer.SPRING_DATA_NEO4J_NAMES)) {
+            return;
+        }
+
+        for (String name : classNames) {
+            try {
+                Class<?> klass = loadClass(name);
+                if (klass == null) {
+                    continue;
+                }
+                Neo4jEntity entity = Neo4jEntityAnalyzer.analyze(klass);
+                if (entity != null) {
+                    UnitsInfoRecorder.registerNewNeo4jEntity(entity);
+                }
+            } catch (Exception e) {
+                SimpleLogger.error("Failed to analyze Neo4j mapping of " + name, e);
+            }
+        }
+    }
+
+    /**
+     * @return the class, loaded with the loader it was first seen with, or null if it cannot be loaded
+     */
+    private static Class<?> loadClass(String name) {
+        try {
+            ClassLoader loader = UnitsInfoRecorder.getInstance().getFirstClassLoader(name);
+            if (loader == null) {
+                loader = ClassAnalyzer.class.getClassLoader();
+            }
+            return loader.loadClass(name);
+        } catch (ClassNotFoundException e) {
+            SimpleLogger.error("Failed to load class " + name, e);
+            return null;
         }
     }
 

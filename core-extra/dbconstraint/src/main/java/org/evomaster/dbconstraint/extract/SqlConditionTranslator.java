@@ -165,6 +165,14 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
 
     @Override
     public TableConstraint visit(SqlInCondition inExpression, Void argument) {
+        if (inExpression.isNegated()) {
+            /*
+             * NOT IN excludes the listed values, and there is no constraint for "any value but these".
+             * Reading it as an EnumConstraint would restrict the column to exactly the forbidden values,
+             * so it is left untranslated instead.
+             */
+            throw new SqlCannotBeTranslatedException(inExpression.toSql() + " cannot be translated yet");
+        }
         SqlColumn column = inExpression.getSqlColumn();
         String tableName = getTableName(column);
         String columnName = column.getColumnName();

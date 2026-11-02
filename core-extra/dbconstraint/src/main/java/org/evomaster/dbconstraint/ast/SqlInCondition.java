@@ -8,9 +8,19 @@ public class SqlInCondition extends SqlCondition {
 
     private final /* non-null*/ SqlConditionList literalList;
 
+    /**
+     * True for {@code NOT IN}: the column must differ from every value in the list.
+     */
+    private final boolean negated;
+
     public SqlInCondition(SqlColumn sqlColumn, SqlConditionList literalList) {
+        this(sqlColumn, literalList, false);
+    }
+
+    public SqlInCondition(SqlColumn sqlColumn, SqlConditionList literalList, boolean negated) {
         this.sqlColumn = Objects.requireNonNull(sqlColumn);
         this.literalList = Objects.requireNonNull(literalList);
+        this.negated = negated;
     }
 
 
@@ -19,19 +29,20 @@ public class SqlInCondition extends SqlCondition {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SqlInCondition that = (SqlInCondition) o;
-        return sqlColumn.equals(that.sqlColumn) &&
+        return negated == that.negated &&
+                sqlColumn.equals(that.sqlColumn) &&
                 literalList.equals(that.literalList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sqlColumn, literalList);
+        return Objects.hash(sqlColumn, literalList, negated);
     }
 
     @Override
     public String toSql() {
         return sqlColumn.toSql() +
-                " IN " + literalList.toSql();
+                (negated ? " NOT IN " : " IN ") + literalList.toSql();
     }
 
     @Override
@@ -45,5 +56,9 @@ public class SqlInCondition extends SqlCondition {
 
     public SqlConditionList getLiteralList() {
         return literalList;
+    }
+
+    public boolean isNegated() {
+        return negated;
     }
 }

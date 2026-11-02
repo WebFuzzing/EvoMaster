@@ -148,11 +148,17 @@ public class CqlSessionClassReplacementTest {
         assertTrue(additionalInfoList.get(0).getCqlInfoData().isEmpty());
     }
 
+    /**
+     * The bound values must reach the tracked command, not the {@code ?} placeholders: the CQL
+     * heuristics have no value to measure a row against otherwise. See
+     * {@link org.evomaster.client.java.instrumentation.cassandra.CqlBindMarkerInterpolator}.
+     */
     @Test
     void testExecuteWithPositionalValuesIsTracked() {
         String query = "INSERT INTO " + TABLE + " (id, name, age) VALUES (?, ?, ?)";
+        UUID id = UUID.randomUUID();
 
-        CqlSessionClassReplacement.execute(cqlSession, query, UUID.randomUUID(), "Dave", 40);
+        CqlSessionClassReplacement.execute(cqlSession, query, id, "Dave", 40);
 
         List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
         assertEquals(1, additionalInfoList.size());
@@ -161,7 +167,8 @@ public class CqlSessionClassReplacementTest {
         assertEquals(1, commands.size());
 
         ExecutedCqlCommand cmd = commands.iterator().next();
-        assertEquals(query, cmd.getCqlCommand());
+        assertEquals("INSERT INTO " + TABLE + " (id, name, age) VALUES (" + id + ", 'Dave', 40)",
+                cmd.getCqlCommand());
         assertEquals(KEYSPACE, cmd.getKeyspaceName());
         assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());
@@ -171,8 +178,9 @@ public class CqlSessionClassReplacementTest {
     @Test
     void testExecuteWithNamedValuesIsTracked() {
         String query = "INSERT INTO " + TABLE + " (id, name, age) VALUES (:id, :name, :age)";
+        UUID id = UUID.randomUUID();
         Map<String, Object> values = new HashMap<>();
-        values.put("id", UUID.randomUUID());
+        values.put("id", id);
         values.put("name", "Erin");
         values.put("age", 22);
 
@@ -185,7 +193,8 @@ public class CqlSessionClassReplacementTest {
         assertEquals(1, commands.size());
 
         ExecutedCqlCommand cmd = commands.iterator().next();
-        assertEquals(query, cmd.getCqlCommand());
+        assertEquals("INSERT INTO " + TABLE + " (id, name, age) VALUES (" + id + ", 'Erin', 22)",
+                cmd.getCqlCommand());
         assertEquals(KEYSPACE, cmd.getKeyspaceName());
         assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());
@@ -213,12 +222,39 @@ public class CqlSessionClassReplacementTest {
         assertTrue(cmd.getExecutionTime() >= 0);
     }
 
+    /**
+     * A SimpleStatement can carry positional values of its own, without a PreparedStatement being
+     * involved, and those must be interpolated too.
+     */
+    @Test
+    void testExecuteWithSimpleStatementCarryingValuesIsTracked() {
+        String query = "INSERT INTO " + TABLE + " (id, name, age) VALUES (?, ?, ?)";
+        UUID id = UUID.randomUUID();
+        SimpleStatement statement = SimpleStatement.newInstance(query, id, "Gwen", 51);
+
+        CqlSessionClassReplacement.execute(cqlSession, statement);
+
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+        assertEquals(1, additionalInfoList.size());
+
+        Set<ExecutedCqlCommand> commands = additionalInfoList.get(0).getCqlInfoData();
+        assertEquals(1, commands.size());
+
+        ExecutedCqlCommand cmd = commands.iterator().next();
+        assertEquals("INSERT INTO " + TABLE + " (id, name, age) VALUES (" + id + ", 'Gwen', 51)",
+                cmd.getCqlCommand());
+        assertEquals(KEYSPACE, cmd.getKeyspaceName());
+        assertEquals(TABLE_NAME, cmd.getTableName());
+        assertFalse(cmd.hasThrownCqlException());
+    }
+
     @Test
     void testExecuteWithBoundStatementIsTracked() {
         String query = "INSERT INTO " + TABLE + " (id, name, age) VALUES (?, ?, ?)";
+        UUID id = UUID.randomUUID();
         // Preparing directly on the session so it is NOT intercepted by the replacement
         PreparedStatement prepared = cqlSession.prepare(query);
-        BoundStatement bound = prepared.bind(UUID.randomUUID(), "Frank", 33);
+        BoundStatement bound = prepared.bind(id, "Frank", 33);
 
         CqlSessionClassReplacement.execute(cqlSession, bound);
 
@@ -229,7 +265,8 @@ public class CqlSessionClassReplacementTest {
         assertEquals(1, commands.size());
 
         ExecutedCqlCommand cmd = commands.iterator().next();
-        assertEquals(query, cmd.getCqlCommand());
+        assertEquals("INSERT INTO " + TABLE + " (id, name, age) VALUES (" + id + ", 'Frank', 33)",
+                cmd.getCqlCommand());
         assertEquals(KEYSPACE, cmd.getKeyspaceName());
         assertEquals(TABLE_NAME, cmd.getTableName());
         assertFalse(cmd.hasThrownCqlException());

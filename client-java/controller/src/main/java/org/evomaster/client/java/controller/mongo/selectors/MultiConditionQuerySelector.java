@@ -19,7 +19,7 @@ abstract public class MultiConditionQuerySelector extends QuerySelector {
             return null;
         }
 
-        Object value = getValue(bsonDocument, operator());
+        Object value = documentGetValue(bsonDocument, operator());
         if (value == null) {
             return null;
         }
@@ -38,7 +38,7 @@ abstract public class MultiConditionQuerySelector extends QuerySelector {
     @Override
     protected String extractOperator(Object query) {
         Objects.requireNonNull(query);
-        if (!isBsonDocument(query)) {
+        if (!isDocument(query)) {
             return null;
         } else {
             Set<String> keys = documentKeys(query);
