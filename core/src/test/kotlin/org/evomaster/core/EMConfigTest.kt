@@ -794,18 +794,25 @@ internal class EMConfigTest{
     }
 
     @Test
-    fun testAsyncApiCannotWriteTestsYet(){
+    fun testAsyncApiWritesTestsOnlyInJavaOrKotlin(){
 
-        val parser = EMConfig.getOptionParser()
+        //a parser remembers what it last parsed, so each case gets its own
+        fun parse(vararg args: String) =
+            EMConfig().updateProperties(EMConfig.getOptionParser().parse(*args))
 
-        //createTests is on by default, and there is no test writer for AsyncAPI yet
-        val e = assertThrows<ConfigProblemException> {
-            EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI"))
+        listOf("JS_JEST", "PYTHON_UNITTEST").forEach { format ->
+            val e = assertThrows<ConfigProblemException> {
+                parse("--problemType", "ASYNCAPI", "--outputFormat", format)
+            }
+            assertTrue(e.message!!.contains("Java or Kotlin"), e.message)
         }
-        assertTrue(e.message!!.contains("createTests"), e.message)
 
-        //so a run has to say it only wants the search
-        EMConfig().updateProperties(parser.parse("--problemType", "ASYNCAPI", "--createTests", "false"))
+        parse("--problemType", "ASYNCAPI")
+        parse("--problemType", "ASYNCAPI", "--outputFormat", "JAVA_JUNIT_5")
+        parse("--problemType", "ASYNCAPI", "--outputFormat", "KOTLIN_JUNIT_5")
+
+        //a run that only searches does not write tests
+        parse("--problemType", "ASYNCAPI", "--outputFormat", "JS_JEST", "--createTests", "false")
     }
 
     @Test

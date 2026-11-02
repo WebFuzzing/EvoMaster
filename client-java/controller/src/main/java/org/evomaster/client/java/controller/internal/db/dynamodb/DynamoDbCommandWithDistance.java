@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.dynamodb;
 
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 
 import java.util.Objects;
 
@@ -52,6 +52,7 @@ public final class DynamoDbCommandWithDistance {
      * @return stable identifier used in the extra-heuristic DTO
      */
     public String getHeuristicId() {
-        return command.getOperationName() + ":" + tableName + ":" + String.valueOf(command.getDdbRequest());
+        return command.getOperationName() + ":" + tableName + ":"
+                + (command.getDdbRequest() == null ? null : command.getDdbRequest().predicateSignatureForTable(tableName));
     }
 }

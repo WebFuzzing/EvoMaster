@@ -693,9 +693,6 @@ public class MongoCollectionClassReplacementTest extends MongoCollectionClassRep
     }
 
 
-
-
-
     @Test
     public void testFindOneAndUpdateWithFilterNoMatch() {
         final MongoCollection<Document> collection = getMongoCollection();
