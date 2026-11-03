@@ -180,17 +180,17 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
     }
 
     /**
-     * Removes each main action from [ind] one at a time, starting from 0 up to N, being N the size of [ind]. If
-     * there is any improvement (ie archive.addIfNeeded returns true), then it applies recursively to all
-     * copies with length N-1.
+     * Removes each main action from a copy of [ind] one at a time, starting from 0 up to N, being N its size.
+     * If there is any improvement (i.e. archive.addIfNeeded returns true), then it applies recursively to all its
+     * successful copies of length N-1.
      */
     private fun removeEachMainAction(ind: T) {
-        val n = ind.size()
-        if (n <= 2) { // these reductions were already analyzed when splitting into single calls
+        val originalSize = ind.size()
+        if (originalSize <= 2) { // these reductions were already analyzed when splitting into single calls
             return
         }
 
-        (0 until n).forEach { index ->
+        (0 until originalSize).forEach { index ->
             val copy = ind.copy() as T
 
             if (copy is RestIndividual) {
