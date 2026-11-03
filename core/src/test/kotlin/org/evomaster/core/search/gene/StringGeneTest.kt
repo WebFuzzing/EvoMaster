@@ -28,6 +28,44 @@ internal class StringGeneTest{
         org.junit.jupiter.api.Assertions.assertEquals(first.value, second.value)
     }
 
+    /** Direct call to unsafeCopyValueFrom must retain both directions of each live binding. */
+    @Test
+    fun directUnsafeCopyValueFromKeepsBindings() {
+        val player = StringGene("playerId", "_EM_3_XYZ_")
+        val other = StringGene("player_id", player.value)
+        player.addBindingGene(other)
+        other.addBindingGene(player)
+
+        val source = StringGene("source", "Lionel Messi")
+        player.unsafeCopyValueFrom(source)
+
+        org.junit.jupiter.api.Assertions.assertEquals("Lionel Messi", player.value)
+        assertTrue(player.isDirectBoundWith(other))
+        assertTrue(other.isDirectBoundWith(player))
+
+        // Subsequent mutations propagate through the retained bindings
+        other.value = "Cristiano Ronaldo"
+        other.syncBindingGenesBasedOnThis()
+        org.junit.jupiter.api.Assertions.assertEquals("Cristiano Ronaldo", player.value)
+    }
+
+    /** Calling killAllChildren must clean up children but preserve this gene's own bindings. */
+    @Test
+    fun killAllChildrenPreservesGeneBindings() {
+        val child = org.evomaster.core.search.gene.numeric.IntegerGene("child", 42)
+        val parent = StringGene("parent", "initial", specializationGenes = listOf(child))
+        val bound = StringGene("bound", "initial")
+        parent.addBindingGene(bound)
+        bound.addBindingGene(parent)
+
+        parent.killAllChildren()
+
+        assertTrue(parent.specializationGenes.isEmpty())
+        org.junit.jupiter.api.Assertions.assertNull(child.parent)
+        assertTrue(parent.isDirectBoundWith(bound))
+        assertTrue(bound.isDirectBoundWith(parent))
+    }
+
 
     @Test
     fun slashTest(){
