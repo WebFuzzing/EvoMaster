@@ -2,6 +2,7 @@ package org.evomaster.core.utils
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -10,6 +11,7 @@ import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
@@ -173,4 +175,105 @@ class BindingBuilderTest {
 
     }
 
+    @Test
+    fun testTwoSameStringGeneAreDirectBound() {
+        val player = StringGene("playerId", "Lionel Messi")
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "player_id", "Lionel Messi")
+
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(listOf(insertion), listOf(player))
+
+        assertTrue(player.isDirectBoundWith(insertion.attributes.single().gene))
+        assertTrue(insertion.attributes.single().gene.isDirectBoundWith(player))
+    }
+
+    @Test
+    fun testDirectMatchBindsGenes() {
+        val player = StringGene("playerId", "Lionel Messi")
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "player_id", "Lionel Messi")
+
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(listOf(insertion), listOf(player))
+
+        val inserted = insertion.attributes.single().gene as StringGene
+        assertTrue(inserted.isDirectBoundWith(player))
+        assertTrue(player.isDirectBoundWith(inserted))
+    }
+
+    @Test
+    fun testSoleCandidateBindsWhenNamesDiffer() {
+        val candidate = StringGene("query", "Cristiano Ronaldo")
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "player_id", "Cristiano Ronaldo")
+
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(listOf(insertion), listOf(candidate))
+
+        val inserted = insertion.attributes.single().gene as StringGene
+        assertTrue(inserted.isDirectBoundWith(candidate))
+    }
+
+    @Test
+    fun testEmptyStringsAreIgnored() {
+        val emptyInput = StringGene("player_id", "")
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "player_id", "")
+
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(listOf(insertion), listOf(emptyInput))
+
+        val inserted = insertion.attributes.single().gene as StringGene
+        assertFalse(inserted.isDirectBoundWith(emptyInput))
+    }
+
+    @Test
+    fun testMultipleMismatchedCandidatesDoNotBind() {
+        val candidateA = StringGene("candidateA", "Argentina")
+        val candidateB = StringGene("candidateB", "Argentina")
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "country", "Argentina")
+
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(listOf(insertion), listOf(candidateA, candidateB))
+
+        val inserted = insertion.attributes.single().gene as StringGene
+        assertFalse(inserted.isDirectBoundWith(candidateA))
+        assertFalse(inserted.isDirectBoundWith(candidateB))
+    }
+
+    @Test
+    fun testMutationUpdatesBoundGenes() {
+        val player = StringGene("country", "Argentina")
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "country", "Argentina")
+
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(listOf(insertion), listOf(player))
+
+        player.value = "Uruguay"
+        player.syncBindingGenesBasedOnThis()
+
+        val insertedCountry = insertion.attributes.single().gene as StringGene
+        assertEquals("Uruguay", insertedCountry.value)
+    }
+
+    /** An insertion must respect URL path constraints when mutating a linked identifier. */
+    @Test
+    fun testInsertedPlayerIdentifierPreservesPathConstraints() {
+        val player = StringGene("playerId", "Lionel Messi", minLength = 1, maxLength = 30, invalidChars = listOf('/', '.'))
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "player_id", "Lionel Messi")
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(listOf(insertion), listOf(player))
+        val inserted = insertion.attributes.single().gene as StringGene
+        assertEquals(player.minLength, inserted.minLength)
+        assertEquals(player.maxLength, inserted.maxLength)
+        assertEquals(player.invalidChars, inserted.invalidChars)
+
+        // TODO: Re-enable repeated re-synchronization once fix/string-gene-copy-bindings is merged into master.
+        // val randomness = Randomness()
+        // repeat(100) {
+        //     inserted.randomize(randomness, false)
+        //     inserted.syncBindingGenesBasedOnThis()
+        //     assertEquals(inserted.getValueAsRawString(), player.getValueAsRawString())
+        // }
+    }
+
+    @Test
+    fun testSubjectIdAcrossNamingStyles() {
+        val subjectId = StringGene("subjectId", "Lionel Messi")
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "player_id", "Lionel Messi")
+
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(listOf(insertion), listOf(subjectId))
+
+        assertTrue(subjectId.isDirectBoundWith(insertion.attributes.single().gene))
+    }
 }

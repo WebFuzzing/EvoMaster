@@ -3,7 +3,7 @@ package org.evomaster.core
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Randomness
 
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbAttributeGene
@@ -94,7 +94,7 @@ object TestUtils {
             listOf(
                 DynamoDbAttributeGene(
                     attributeName,
-                    DynamoDbValueTypeDto.STRING,
+                    DynamoDbKeyScalarTypeDto.STRING,
                     StringGene(attributeName, attributeValue)
                 )
             )
