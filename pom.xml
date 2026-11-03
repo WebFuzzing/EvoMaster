@@ -87,6 +87,7 @@
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -103,6 +104,7 @@
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -119,6 +121,7 @@
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -135,6 +138,7 @@
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -151,6 +155,7 @@
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -167,6 +172,7 @@
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -183,6 +189,7 @@
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -199,6 +206,7 @@
                 <skipH2V1>false</skipH2V1> <!-- false -->
                 <skipMiscDB>true</skipMiscDB>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -215,6 +223,7 @@
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>false</skipMiscDB> <!-- false -->
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -236,6 +245,24 @@
                 <skipH2V1>true</skipH2V1>
                 <skipMiscDB>true</skipMiscDB>
                 <skipAsyncApi>false</skipAsyncApi> <!-- false -->
+                <skipCassandraRedis>true</skipCassandraRedis>
+            </properties>
+        </profile>
+        <profile>
+            <id>CassandraRedisTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+                <skipMiscDB>true</skipMiscDB>
+                <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>false</skipCassandraRedis> <!-- false -->
             </properties>
         </profile>
     </profiles>
@@ -347,6 +374,7 @@
         <skipH2V1>false</skipH2V1>
         <skipMiscDB>false</skipMiscDB>
         <skipAsyncApi>false</skipAsyncApi>
+        <skipCassandraRedis>false</skipCassandraRedis>
     </properties>
 
 
