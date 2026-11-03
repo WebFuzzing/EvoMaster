@@ -21,6 +21,7 @@ import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.database.sql.solver.service.SMTLibZ3DbConstraintSolver
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -30,6 +31,7 @@ import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalS
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -649,6 +651,14 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         return addedActions
     }
 
+    /**
+     * Handles failed DynamoDB queries by building insertion actions, adding them as initializing actions,
+     * and binding them to the request inputs that triggered the queries.
+     *
+     * @param ind individual to update with initializing actions
+     * @param failedQueries failed DynamoDB queries captured during evaluation
+     * @return list of newly added DynamoDB environment actions
+     */
     private fun <T : ApiWsIndividual> handleFailedDynamoDbQueries(
         ind: T,
         failedQueries: List<DynamoDbFailedQuery>
@@ -661,11 +671,16 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val addedActions = DynamoDbInsertBuilder.buildInsertActions(
             failedQueries,
-            existingKeys
+            existingKeys,
+            randomness
         )
 
         if (addedActions.isNotEmpty()) {
             ind.addInitializingActions(actions = addedActions)
+            BindingBuilder.bindDynamoDbInsertActionsToInputs(
+                addedActions,
+                ind.seeFullTreeGenes(ActionFilter.NO_INIT)
+            )
             addedActions.forEach { action ->
                 action.seeTopGenes().forEach { gene -> gene.markAllAsInitialized() }
             }
