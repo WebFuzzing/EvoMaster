@@ -434,11 +434,14 @@ public abstract class EnterpriseTestBase {
 
         long start = System.currentTimeMillis();
 
-        CompilerForTestGenerated.INSTANCE.compile(
-                OutputFormat.KOTLIN_JUNIT_5,
-                new File(outputFolderPath(outputFolderName)),
-                new File("target/test-classes")
-        );
+        File folder = new File(outputFolderPath(outputFolderName));
+
+        //the output format is not known here, so it is inferred from the generated files
+        OutputFormat format = !FileUtils.listFiles(folder, new String[]{"java"}, true).isEmpty()
+                ? OutputFormat.JAVA_JUNIT_5
+                : OutputFormat.KOTLIN_JUNIT_5;
+
+        CompilerForTestGenerated.INSTANCE.compile(format, folder, new File("target/test-classes"));
 
         int passed = (int)(System.currentTimeMillis() - start) / 1000;
         System.out.println("Folder compiled in " + passed + " seconds: " + outputFolderName);

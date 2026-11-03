@@ -1,11 +1,13 @@
 package org.evomaster.e2etests.spring.openapi.v3.dto
 
 import com.foo.rest.examples.spring.openapi.v3.dto.DtoController
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class DtoEMTest : SpringTestBase(){
 
@@ -17,14 +19,17 @@ class DtoEMTest : SpringTestBase(){
         }
     }
 
-    @Test
-    fun testRunEM() {
+    @ParameterizedTest
+    @EnumSource(names = ["KOTLIN_JUNIT_5", "JAVA_JUNIT_5"])
+    fun testRunEM(outputFormat: OutputFormat) {
         runTestHandlingFlakyAndCompilation(
-            "DtoEM",
-            "org.foo.DtoEM",
+            "DtoEM_$outputFormat",
+            //DTOs are written next to the suite, so each format needs its own package
+            "org.foo.${outputFormat.name.lowercase()}.DtoEM",
             100,
         ) { args: MutableList<String> ->
 
+            setOption(args,"outputFormat",outputFormat.name)
             setOption(args,"dtoForRequestPayload","true")
 
             val solution = initAndRun(args)
