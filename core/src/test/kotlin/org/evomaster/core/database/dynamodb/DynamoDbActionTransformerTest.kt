@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDb
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.dynamodb.DynamoDbTemplateGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals

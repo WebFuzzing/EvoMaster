@@ -6,7 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDb
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbActionResult
 import org.evomaster.core.database.dynamodb.DynamoDbAttributeGene
-import org.evomaster.core.database.dynamodb.DynamoDbTemplateGene
+import org.evomaster.core.search.gene.dynamodb.DynamoDbTemplateGene
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.search.action.EvaluatedDynamoDbAction
 import org.evomaster.core.search.gene.BooleanGene

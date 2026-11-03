@@ -1,6 +1,8 @@
-package org.evomaster.core.database.dynamodb
+package org.evomaster.core.search.gene.dynamodb
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAttributeGene
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene

@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.dynamodb.DynamoDbTemplateGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness

@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDb
 import org.evomaster.core.search.action.EvaluatedDynamoDbAction
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
-import org.evomaster.core.database.dynamodb.DynamoDbTemplateGene
+import org.evomaster.core.search.gene.dynamodb.DynamoDbTemplateGene
 
 /**
  * Generates DynamoDB initialization code for emitted tests.

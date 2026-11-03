@@ -1,4 +1,4 @@
-package org.evomaster.core.database.dynamodb
+package org.evomaster.core.search.gene.dynamodb
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKeyBuilder
@@ -7,6 +7,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -30,7 +31,7 @@ class DynamoDbTemplateGene @JvmOverloads constructor(
     name: String,
     value: DynamoDbAttributeValueDto,
     childGenes: List<Gene>? = null
-) : Gene(name, mutableListOf()) {
+) : CompositeGene(name, mutableListOf()) {
 
     /**
      * Represents a promoted scalar leaf within the template hierarchy.
@@ -102,7 +103,7 @@ class DynamoDbTemplateGene @JvmOverloads constructor(
 
     override fun requiresRandomInitialization(): Boolean = false
 
-    override fun isPrintable() = false
+    override fun isPrintable() = true
 
     override fun checkForLocallyValidIgnoringChildren() = true
 

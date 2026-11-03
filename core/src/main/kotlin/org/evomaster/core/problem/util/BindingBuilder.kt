@@ -5,7 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.dynamodb.DynamoDbAction
-import org.evomaster.core.database.dynamodb.DynamoDbTemplateGene
+import org.evomaster.core.search.gene.dynamodb.DynamoDbTemplateGene
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil

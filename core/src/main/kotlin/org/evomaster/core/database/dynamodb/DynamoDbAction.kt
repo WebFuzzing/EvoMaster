@@ -8,6 +8,7 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.dynamodb.DynamoDbTemplateGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 
 /**
