@@ -11,7 +11,11 @@ import org.jetbrains.kotlin.config.Services
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
+import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
+import javax.tools.DiagnosticCollector
+import javax.tools.JavaFileObject
+import javax.tools.ToolProvider
 import kotlin.reflect.KClass
 
 
@@ -28,7 +32,12 @@ object CompilerForTestGenerated{
         source.deleteRecursively()
         source.mkdirs()
 
-        val target = source.toPath().resolve(Paths.get("$testClassName.kt")).toFile()
+        val extension = when {
+            format.isKotlin() -> "kt"
+            format.isJava() -> "java"
+            else -> throw IllegalArgumentException("Format $format not supported yet for compilation checks")
+        }
+        val target = source.toPath().resolve(Paths.get("$testClassName.$extension")).toFile()
 
         target.createNewFile()
         target.writeText(code)
@@ -48,21 +57,47 @@ object CompilerForTestGenerated{
             destination: File
     ) {
 
-        /*
-            Handling Java in JDK is doable (can do same as done in EvoSuite), but bit
-            messy/unclean (see all issues with tools.jar).
-            In JDK 11 should be easier (but haven't verified it), and invalidate how done
-            in JKD 8.
-
-            TODO: so, we will support Java only once upgraded to JDK 11
-         */
-
-        when(format){
-            OutputFormat.KOTLIN_JUNIT_5 -> compileKotlin(source, destination)
-            else -> throw IllegalStateException("Format $format not supported yet for compilation checks")
+        when {
+            format.isKotlin() -> compileKotlin(source, destination)
+            format.isJava() -> compileJava(source, destination)
+            else -> throw IllegalArgumentException("Format $format not supported yet for compilation checks")
         }
     }
 
+
+    private fun compileJava(source: File, destination: File){
+
+        val compiler = ToolProvider.getSystemJavaCompiler()
+            ?: throw IllegalStateException("No Java compiler available: a JDK is needed, not a JRE")
+
+        val files = source.walkTopDown().filter { it.isFile && it.name.endsWith(".java") }.toList()
+
+        if (files.isEmpty()) {
+            throw IllegalArgumentException("No Java sources to compile under " + source.absolutePath)
+        }
+
+        destination.mkdirs()
+
+        val diagnostics = DiagnosticCollector<JavaFileObject>()
+
+        compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8).use { manager ->
+
+            val units = manager.getJavaFileObjectsFromFiles(files)
+
+            val options = listOf(
+                "-classpath", System.getProperty("java.class.path"),
+                "-proc:none",
+                "-d", destination.absolutePath
+            )
+
+            val ok = compiler.getTask(null, manager, diagnostics, options, null, units).call()
+
+            if (ok != true) {
+                val errors = diagnostics.diagnostics.joinToString("\n")
+                throw RuntimeException("Failed to compile class. Error:\n" + errors)
+            }
+        }
+    }
 
     private fun compileKotlin(source: File, destination: File){
 
