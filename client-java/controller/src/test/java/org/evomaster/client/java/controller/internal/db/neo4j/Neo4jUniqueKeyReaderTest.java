@@ -66,7 +66,7 @@ public class Neo4jUniqueKeyReaderTest {
         run("CREATE (:Player {id: 1}), (:Player {id: 'two'}), (:Player {name: 'no id'}), "
                 + "(:Match {white: 'a', black: 'b'})");
 
-        Neo4jExistingDataDto dto = new Neo4jUniqueKeyReader().read(client, Collections.emptyList());
+        Neo4jExistingDataDto dto = readKeys(Collections.emptyList());
 
         assertEquals(2, dto.uniqueKeys.size());
 
@@ -84,7 +84,7 @@ public class Neo4jUniqueKeyReaderTest {
         run("CREATE (:Adopter:Person {id: 'gQNkuJUNO_nF', name: 'Ana'}), (:Adopter {id: 'other'}), "
                 + "(:Person {id: 'not an adopter'})");
 
-        Neo4jExistingDataDto dto = new Neo4jUniqueKeyReader().read(client, Collections.singletonList(
+        Neo4jExistingDataDto dto = readKeys(Collections.singletonList(
                 entity(Arrays.asList("Adopter", "Person"), property("id", true), property("name", false))));
 
         assertEquals(1, dto.uniqueKeys.size());
@@ -99,7 +99,7 @@ public class Neo4jUniqueKeyReaderTest {
         run("CREATE CONSTRAINT player_id IF NOT EXISTS FOR (n:Player) REQUIRE n.id IS UNIQUE");
         run("CREATE (:Player {id: 1.5})");
 
-        Neo4jExistingDataDto dto = new Neo4jUniqueKeyReader().read(client, Collections.singletonList(
+        Neo4jExistingDataDto dto = readKeys(Collections.singletonList(
                 entity(Collections.singletonList("Player"), property("id", true))));
 
         assertEquals(1, dto.uniqueKeys.size());
@@ -110,10 +110,15 @@ public class Neo4jUniqueKeyReaderTest {
     public void testValuesOfTypesAnInsertionCannotHoldAreLeftOut() {
         run("CREATE (:Adopter {id: [1, 2]}), (:Adopter {id: date('2026-10-20')}), (:Adopter {id: true})");
 
-        Neo4jExistingDataDto dto = new Neo4jUniqueKeyReader().read(client, Collections.singletonList(
+        Neo4jExistingDataDto dto = readKeys(Collections.singletonList(
                 entity(Collections.singletonList("Adopter"), property("id", true))));
 
         assertEquals(Collections.singletonList("BOOLEAN=true"), render(find(dto, "Adopter")));
+    }
+
+    /** Reads the keys against the graph as it is now, the one every test would start from. */
+    private static Neo4jExistingDataDto readKeys(List<Neo4jEntityDto> entities) {
+        return new Neo4jUniqueKeyReader().read(client, new Neo4jGraphReader().read(client), entities);
     }
 
     private static Neo4jUniqueKeyDto find(Neo4jExistingDataDto dto, String label) {

@@ -55,6 +55,11 @@ public class Neo4jGraphRestorer {
     private final Neo4jGraphReader reader = new Neo4jGraphReader();
 
     /**
+     * The graph as it was read when the snapshot was taken, or null if there is no snapshot.
+     */
+    private Neo4jGraph snapshot;
+
+    /**
      * Key: the {@code elementId} a node had when the snapshot was taken.
      * Value: the node as it was then.
      */
@@ -82,31 +87,43 @@ public class Neo4jGraphRestorer {
      * Reads the whole graph as the state every later restore goes back to, replacing any previous one.
      */
     public void takeSnapshot(ReflectionBasedNeo4jClient client) {
-        Neo4jGraph graph = reader.read(client);
+        snapshot = reader.read(client);
 
         snapshotNodes = new LinkedHashMap<>();
         currentNodeIds = new HashMap<>();
-        for (Neo4jNode node : graph.getNodes()) {
+        for (Neo4jNode node : snapshot.getNodes()) {
             snapshotNodes.put(node.getId(), node);
             currentNodeIds.put(node.getId(), node.getId());
         }
 
         snapshotEdges = new LinkedHashMap<>();
         currentEdgeIds = new HashMap<>();
-        for (Neo4jEdge edge : graph.getEdges()) {
+        for (Neo4jEdge edge : snapshot.getEdges()) {
             snapshotEdges.put(edge.getId(), edge);
             currentEdgeIds.put(edge.getId(), edge.getId());
         }
     }
 
     public boolean hasSnapshot() {
-        return snapshotNodes != null;
+        return snapshot != null;
+    }
+
+    /**
+     * @return the graph every restore goes back to, as it was when the snapshot was taken
+     * @throws IllegalStateException if no snapshot was taken
+     */
+    public Neo4jGraph getSnapshot() {
+        if (!hasSnapshot()) {
+            throw new IllegalStateException("No snapshot of the Neo4j graph was taken");
+        }
+        return snapshot;
     }
 
     /**
      * Forgets the snapshot, so that the next one has to be taken before restoring again.
      */
     public void discardSnapshot() {
+        snapshot = null;
         snapshotNodes = null;
         snapshotEdges = null;
         currentNodeIds = null;

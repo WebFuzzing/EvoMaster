@@ -1,6 +1,8 @@
 package org.evomaster.core.database.neo4j
 
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyDto
+import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto
 
 /**
@@ -29,22 +31,43 @@ class Neo4jUniqueKeys(dto: Neo4jExistingDataDto) {
     val existing: Set<Value>
 
     init {
-        val valid = dto.uniqueKeys
-            .filter { !it.label.isNullOrEmpty() && it.properties.isNotEmpty() }
-            .map { Key(it.label, it.properties.toList()) to it.existingValues }
-        keys = valid.map { it.first }.distinct()
-        existing = valid.flatMap { (key, existingValues) ->
-            existingValues
-                .map { it.properties ?: emptyList() }
-                .filter { entries -> entries.size == key.properties.size && entries.all { it.type != null && it.value != null } }
-                .map { entries -> Value(key, entries.map { it.type to it.value }) }
-        }.toSet()
+        val usableKeys = dto.uniqueKeys.filter { canBindNodes(it) }
+        keys = usableKeys.map { toKey(it) }.distinct()
+        existing = usableKeys.flatMap { existingValuesOf(it) }.toSet()
     }
 
     fun isEmpty() = keys.isEmpty()
 
     /** The keys that bind a node with these labels. */
     fun keysFor(labels: List<String>): List<Key> = keys.filter { it.label in labels }
+
+    /**
+     * Whether [keyDto] names a label and at least one property. Without both, the key cannot bind any
+     * node, so it is ignored.
+     */
+    private fun canBindNodes(keyDto: Neo4jUniqueKeyDto): Boolean =
+        !keyDto.label.isNullOrEmpty() && !keyDto.properties.isNullOrEmpty()
+
+    /** The key [keyDto] describes, as the rest of the search compares keys. */
+    private fun toKey(keyDto: Neo4jUniqueKeyDto) = Key(keyDto.label, keyDto.properties.toList())
+
+    /**
+     * The values of the key of [keyDto] that the database already holds. A value is ignored unless it has
+     * a type and a text for every property of the key: missing one, it cannot be compared with the value
+     * of an inserted node.
+     */
+    private fun existingValuesOf(keyDto: Neo4jUniqueKeyDto): List<Value> {
+        val key = toKey(keyDto)
+        val valuesAsEntries = (keyDto.existingValues ?: emptyList()).map { it.properties ?: emptyList() }
+        val completeValues = valuesAsEntries.filter { entries -> coversEveryProperty(key, entries) }
+        return completeValues.map { entries -> Value(key, entries.map { it.type to it.value }) }
+    }
+
+    /**
+     * Whether [entries] give exactly one type and text for each property of [key].
+     */
+    private fun coversEveryProperty(key: Key, entries: List<Neo4jInsertionEntryDto>): Boolean =
+        entries.size == key.properties.size && entries.all { it.type != null && it.value != null }
 
     companion object {
 

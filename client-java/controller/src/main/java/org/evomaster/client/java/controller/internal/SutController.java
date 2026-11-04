@@ -35,6 +35,7 @@ import org.evomaster.client.java.controller.neo4j.Neo4jEntityDtoBuilder;
 import org.evomaster.client.java.controller.neo4j.Neo4jGraphRestorer;
 import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
+import org.evomaster.client.java.controller.neo4j.data.Neo4jGraph;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
@@ -43,6 +44,7 @@ import org.evomaster.client.java.sql.SqlScriptRunnerCached;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.internal.db.mongo.MongoHandler;
 import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
+import org.evomaster.client.java.controller.internal.db.neo4j.Neo4jGraphReader;
 import org.evomaster.client.java.controller.internal.db.neo4j.Neo4jHandler;
 import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.evomaster.client.java.sql.internal.SqlHandler;
@@ -421,6 +423,35 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             } else {
                 neo4jGraphRestorer.takeSnapshot(connection);
             }
+        } finally {
+            setExecutingInitNeo4j(false);
+        }
+    }
+
+    /**
+     * The Neo4j graph every test starts from, which is what the search has to know about the data
+     * already in the database.
+     * <p>
+     * With {@link #employSmartNeo4jClean()}, it is the snapshot the reset restores before every test. If
+     * the reset has not taken it yet, it is taken here and the reset reuses it, so the graph is read only
+     * once. Without it nothing restores the graph between tests, so it is read as it is now.
+     *
+     * @return the graph, or null if the SUT has no Neo4j connection
+     */
+    public final Neo4jGraph getNeo4jGraphSnapshot() {
+        ReflectionBasedNeo4jClient connection = getNeo4jConnection();
+        if (connection == null) {
+            return null;
+        }
+        try {
+            setExecutingInitNeo4j(true);
+            if (!employSmartNeo4jClean()) {
+                return new Neo4jGraphReader().read(connection);
+            }
+            if (!neo4jGraphRestorer.hasSnapshot()) {
+                neo4jGraphRestorer.takeSnapshot(connection);
+            }
+            return neo4jGraphRestorer.getSnapshot();
         } finally {
             setExecutingInitNeo4j(false);
         }

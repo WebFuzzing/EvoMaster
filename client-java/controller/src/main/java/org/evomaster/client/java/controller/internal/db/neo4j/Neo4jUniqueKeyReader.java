@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Reads which node properties must hold unique values and which of those values the database already
- * holds. A key comes from two places: the uniqueness and node key constraints of the database, and the
- * id the SUT's entities declare, which Spring Data assumes unique without the database enforcing it.
+ * Reads which node properties must hold unique values and which of those values a graph already holds.
+ * A key comes from two places: the uniqueness and node key constraints of the database, and the id the
+ * SUT's entities declare, which Spring Data assumes unique without the database enforcing it.
  */
 public class Neo4jUniqueKeyReader {
 
@@ -49,29 +49,33 @@ public class Neo4jUniqueKeyReader {
     /** Value of the {@code type} column for a node key, which implies uniqueness. */
     private static final String NODE_KEY_TYPE = "NODE_KEY";
 
-    private final Neo4jGraphReader graphReader = new Neo4jGraphReader();
-
     /**
-     * @param client client over the SUT's Neo4j driver
+     * @param client client over the SUT's Neo4j driver, to list the constraints of the database
+     * @param graph the graph every test starts from, whose nodes hold the values already taken
      * @param entities the entities of the SUT, whose ids are unique keys too
-     * @return the unique keys, each with the values the database already holds for it
+     * @return the unique keys, each with the values the graph already holds for it
      */
-    public Neo4jExistingDataDto read(ReflectionBasedNeo4jClient client, List<Neo4jEntityDto> entities) {
-        Map<String, Neo4jUniqueKeyDto> keys = new LinkedHashMap<>();
-        readConstraintKeys(client).forEach(k -> keys.putIfAbsent(identity(k), k));
-        entityKeys(entities).forEach(k -> keys.putIfAbsent(identity(k), k));
+    public Neo4jExistingDataDto read(ReflectionBasedNeo4jClient client, Neo4jGraph graph, List<Neo4jEntityDto> entities) {
+        List<Neo4jUniqueKeyDto> keys = withoutDuplicates(readConstraintKeys(client), entityKeys(entities));
 
         Neo4jExistingDataDto dto = new Neo4jExistingDataDto();
-        if (keys.isEmpty()) {
-            return dto;
-        }
-
-        Neo4jGraph graph = graphReader.read(client);
-        for (Neo4jUniqueKeyDto key : keys.values()) {
+        for (Neo4jUniqueKeyDto key : keys) {
             key.existingValues = existingValues(graph, key);
             dto.uniqueKeys.add(key);
         }
         return dto;
+    }
+
+    /**
+     * The keys of both lists, each one once. A constraint and an entity id often name the same label and
+     * properties, and then the constraint is kept.
+     */
+    private List<Neo4jUniqueKeyDto> withoutDuplicates(List<Neo4jUniqueKeyDto> constraintKeys,
+                                                      List<Neo4jUniqueKeyDto> entityKeys) {
+        Map<String, Neo4jUniqueKeyDto> byIdentity = new LinkedHashMap<>();
+        constraintKeys.forEach(k -> byIdentity.putIfAbsent(identity(k), k));
+        entityKeys.forEach(k -> byIdentity.putIfAbsent(identity(k), k));
+        return new ArrayList<>(byIdentity.values());
     }
 
     /**
@@ -169,6 +173,10 @@ public class Neo4jUniqueKeyReader {
         return values;
     }
 
+    /**
+     * Text that tells keys apart: two keys with the same label and properties, in the same order, are the
+     * same key.
+     */
     private String identity(Neo4jUniqueKeyDto key) {
         return key.label + "|" + String.join("|", key.properties);
     }

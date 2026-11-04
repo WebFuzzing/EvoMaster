@@ -21,6 +21,7 @@ import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExisting
 import org.evomaster.client.java.controller.internal.db.neo4j.Neo4jUniqueKeyReader;
 import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
 import org.evomaster.client.java.controller.neo4j.ReflectionBasedNeo4jClient;
+import org.evomaster.client.java.controller.neo4j.data.Neo4jGraph;
 import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
@@ -1282,7 +1283,8 @@ public class EMController {
 
             UnitsInfoDto unitsInfo = noKillSwitch(() -> sutController.getUnitsInfoDto());
             List<Neo4jEntityDto> entities = unitsInfo == null ? null : unitsInfo.neo4jEntities;
-            Neo4jExistingDataDto existingData = noKillSwitch(() -> new Neo4jUniqueKeyReader().read(connection, entities));
+            Neo4jGraph graph = noKillSwitch(sutController::getNeo4jGraphSnapshot);
+            Neo4jExistingDataDto existingData = noKillSwitch(() -> new Neo4jUniqueKeyReader().read(connection, graph, entities));
             return Response.status(200).entity(WrappedResponseDto.withData(existingData)).build();
 
         } catch (RuntimeException e) {

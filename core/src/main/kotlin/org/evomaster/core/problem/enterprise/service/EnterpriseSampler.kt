@@ -49,8 +49,10 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         protected set
 
     /**
-     * The keys the nodes inserted into Neo4j must not repeat, with the values the database already held
-     * for them when the search started. Null if there are none, or if no Neo4j data is generated.
+     * The keys the nodes inserted into Neo4j must not repeat, with the values the database already holds
+     * for them. The values are read from the snapshot of the graph that the reset restores before every
+     * test, so they are the ones each test starts with. Null if there are no keys, or if no Neo4j data is
+     * generated.
      */
     var existingNeo4jData: Neo4jUniqueKeys? = null
         protected set
