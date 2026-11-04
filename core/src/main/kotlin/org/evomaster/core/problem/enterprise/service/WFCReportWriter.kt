@@ -54,6 +54,8 @@ class WFCReportWriter {
         exportResource(prefix, "/assets/icon.svg", sourcePath = "/icon.svg")
         exportResource(prefix, "/assets/report.js")
         exportResource(prefix, "/assets/report.css")
+        // Node script rendering report.json as Markdown, e.g., for GitHub Actions job summaries
+        exportResource(prefix, "/wfc-summary.cjs")
 
         writeLowCodeIndex(prefix)
     }

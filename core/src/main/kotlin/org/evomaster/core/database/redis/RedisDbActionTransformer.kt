@@ -39,12 +39,12 @@ object RedisDbActionTransformer {
                         it.value = action.memberGene.value
                     }
                 }
-                is RedisQueryAction -> action.fields.map { field ->
+                is RedisQueryAction -> action.fields.flatMap { it.hashEntries() }.map { (fieldName, value) ->
                     RedisInsertionDto().also {
                         it.command = "HSET"
                         it.key = action.key
-                        it.field = field.name
-                        it.value = field.rawValue()
+                        it.field = fieldName
+                        it.value = value
                     }
                 }
             }
