@@ -1,5 +1,6 @@
 package org.evomaster.core
 
+import com.networknt.schema.SpecificationVersion
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import joptsimple.*
@@ -3425,6 +3426,10 @@ class EMConfig {
 
     @Cfg("Allow JSON Schema references to load external resources. Disabled by default to prevent JSON schemas compilation from performing network requests.")
     var allowExternalSchemaReferences = false
+
+    @Cfg("Default JSON Schema dialect for MCP tool output schemas that do not declare a \$schema. " +
+            "MCP specifies Draft 2020-12 as the default; this option can override it for servers using another supported dialect.")
+    var mcpJsonSchemaVersion = SpecificationVersion.DRAFT_2020_12
 
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
     var advancedBlackBoxCoverage = true

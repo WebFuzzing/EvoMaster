@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.api.schema
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.networknt.schema.SpecificationVersion
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -64,6 +65,26 @@ class JsonSchemaValidatorTest {
 
         val falseSchema = compiled(validator.compile(mapper.readTree("false")))
         assertTrue(falseSchema.validate(mapper.readTree("{}")).isNotEmpty())
+    }
+
+    @Test
+    fun `uses configured dialect when schema does not declare one`() {
+        val draft7Validator = JsonSchemaValidator(defaultDialect = SpecificationVersion.DRAFT_7)
+        val schema = mapper.readTree("""{"type":"array","items":[{"type":"string"}]}""")
+        val compiled = compiled(draft7Validator.compile(schema))
+
+        assertTrue(compiled.validate(mapper.readTree("[1]")).any { it.keyword == "type" })
+    }
+
+    @Test
+    fun `schema dialect declaration takes precedence over configured default`() {
+        val draft7Validator = JsonSchemaValidator(defaultDialect = SpecificationVersion.DRAFT_7)
+        val schema = mapper.readTree(
+            """{"${'$'}schema":"https://json-schema.org/draft/2020-12/schema","type":"array","prefixItems":[{"type":"string"}]}"""
+        )
+        val compiled = compiled(draft7Validator.compile(schema))
+
+        assertTrue(compiled.validate(mapper.readTree("[1]")).any { it.keyword == "type" })
     }
 
     @Test

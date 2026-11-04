@@ -122,7 +122,10 @@ class McpSampler : ApiWsSampler<McpIndividual>() {
         resourceActionCluster.clear()
         outputSchemas.clear()
         outputSchemaIssues.clear()
-        schemaValidator = JsonSchemaValidator(config.allowExternalSchemaReferences)
+        schemaValidator = JsonSchemaValidator(
+            allowExternalReferences = config.allowExternalSchemaReferences,
+            defaultDialect = config.mcpJsonSchemaVersion
+        )
 
         // MCP requires initialize handshake before any other call
         try {

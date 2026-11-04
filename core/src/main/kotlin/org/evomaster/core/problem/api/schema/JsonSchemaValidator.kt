@@ -5,21 +5,22 @@ import com.networknt.schema.Schema
 import com.networknt.schema.SchemaRegistry
 import com.networknt.schema.SchemaRegistryConfig
 import com.networknt.schema.SpecificationVersion
-import com.networknt.schema.i18n.ResourceBundleMessageSource
 import com.networknt.schema.path.PathType
 
 /**
- * Compiles and validates JSON Schema draft 2020-12 documents.
+ * Compiles and validates JSON Schema documents, using [defaultDialect] when a schema omits `$schema`.
  */
-class JsonSchemaValidator(allowExternalReferences: Boolean = false) {
+class JsonSchemaValidator(
+    allowExternalReferences: Boolean = false,
+    defaultDialect: SpecificationVersion = SpecificationVersion.DRAFT_2020_12
+) {
 
-    private val registry = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12) { builder ->
+    private val registry = SchemaRegistry.withDefaultDialect(defaultDialect) { builder ->
         builder.schemaRegistryConfig(
             SchemaRegistryConfig.builder()
                 .failFast(false)
                 .typeLoose(false)
                 .formatAssertionsEnabled(false)
-                .messageSource(ResourceBundleMessageSource("org.evomaster.networknt.messages.jsv-messages"))
                 .pathType(PathType.JSON_POINTER)
                 .preloadSchema(true)
                 .build()
