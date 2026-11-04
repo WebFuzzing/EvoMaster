@@ -182,9 +182,8 @@
             <artifactId>swagger-request-validator-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>networknt-schema-validator</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
         </dependency>
 
         <dependency>
@@ -324,12 +323,6 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mockserver</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mock-server</groupId>
-            <artifactId>mockserver-client-java-no-dependencies</artifactId>
             <scope>test</scope>
         </dependency>
 

@@ -298,7 +298,6 @@
         <testcontainers.version>1.21.4</testcontainers.version>
         <kafka-clients.version>3.7.2</kafka-clients.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
-        <mockserver.client.version>5.13.2</mockserver.client.version>
 <!--        <selenium.version>4.31.0</selenium.version>-->
         <!--  TODO 4.11 latest version supporting JDK 8. now on 11. update once update EM-->
         <selenium.version>4.11.0</selenium.version>
@@ -1067,13 +1066,6 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>mockserver</artifactId>
                 <version>${testcontainers.mockerserver.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.mock-server</groupId>
-                <artifactId>mockserver-client-java-no-dependencies</artifactId>
-                <version>${mockserver.client.version}</version>
                 <scope>test</scope>
             </dependency>
 
