@@ -417,7 +417,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
     /**
      * Whether the generated suite has a driver to ask where a server is.
      */
-    private fun suiteHasDriver() = (!config.blackBox || config.bbExperiments) && format.isJavaOrKotlin()
+    private fun suiteHasDriver() = !config.blackBox && format.isJavaOrKotlin()
 
     override fun addTestCommentBlock(lines: Lines, test: TestCase) {
 
