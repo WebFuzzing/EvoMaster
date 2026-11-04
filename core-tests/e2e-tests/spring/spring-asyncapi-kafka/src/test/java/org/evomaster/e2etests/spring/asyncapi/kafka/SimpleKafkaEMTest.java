@@ -42,9 +42,6 @@ public class SimpleKafkaEMTest extends AsyncApiTestBase {
                     //generous for a local round trip, but a GC pause on a loaded CI machine must not miss a reply
                     setOption(args, "asyncApiReplyTimeoutMs", "3000");
 
-                    //the kill switch would stop the service's one consumer thread for good
-                    setOption(args, "killSwitch", "false");
-
                     Solution<AsyncApiIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
@@ -95,7 +92,6 @@ public class SimpleKafkaEMTest extends AsyncApiTestBase {
 
                         //replies are disabled, so this timeout does not decide the outcome
                         setOption(args, "asyncApiReplyTimeoutMs", "250");
-                        setOption(args, "killSwitch", "false");
                         setOption(args, "useExperimentalOracles", "true");
 
                         Solution<AsyncApiIndividual> solution = initAndRun(args);
