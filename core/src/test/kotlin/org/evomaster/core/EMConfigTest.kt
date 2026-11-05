@@ -15,6 +15,18 @@ import java.net.InetAddress
 
 internal class EMConfigTest{
 
+    @Test
+    fun testScheduleInstrumentationCategory() {
+        val config = EMConfig()
+        assertFalse(config.methodReplacementCategories().split(",").contains("SCHEDULE"))
+        val options = EMConfig.getOptionParser().parse("--instrumentMR_SCHEDULE", "true")
+        config.updateProperties(options)
+        assertTrue(config.instrumentMR_SCHEDULE)
+        assertTrue(config.methodReplacementCategories().split(",").contains("SCHEDULE"))
+        config.instrumentMR_SCHEDULE = false
+        assertFalse(config.methodReplacementCategories().split(",").contains("SCHEDULE"))
+    }
+
     private val sutControllerPort = "sutControllerPort"
     private val endpointFocus = "endpointFocus"
     private val endpointPrefix = "endpointPrefix"

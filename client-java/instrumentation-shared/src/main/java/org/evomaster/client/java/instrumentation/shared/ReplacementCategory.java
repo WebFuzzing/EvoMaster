@@ -32,6 +32,9 @@ public enum ReplacementCategory {
      */
     NET,
 
+    /** Preserve scheduling annotations so that the SUT framework can execute scheduled tasks. */
+    SCHEDULE,
+
     /**
      * Replacements to handle MONGO command interceptions
      */
