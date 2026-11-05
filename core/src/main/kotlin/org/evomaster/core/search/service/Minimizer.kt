@@ -125,15 +125,13 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
                 action one at a time, and see if there is any improvement. For example, having size N,
                 remove from 0 to N, one at a time. If any of those is successful (ie addIfNeeded returns true), then
                 re-apply recursively to all the successful copies with length N-1.
-
-                TODO implement such algorithm
              */
+            if (config.enableAdvancedMinimization)
+                removeEachMainAction(it)
 
             printProgress(k,n)
         }
     }
-
-
 
     private fun splitIntoSingleCalls(ind: T) : List<T>{
 
@@ -178,6 +176,39 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
 
         if(ind is RestIndividual){
             ind.removeAllLinks()
+        }
+    }
+
+    /**
+     * Removes each main action from a copy of [ind] one at a time, starting from 0 up to N, being N its size.
+     * If there is any improvement (i.e. archive.addIfNeeded returns true), then it applies recursively to all its
+     * successful copies of length N-1.
+     */
+    private fun removeEachMainAction(ind: T) {
+        val originalSize = ind.size()
+        if (originalSize <= 2) { // these reductions were already analyzed when splitting into single calls
+            return
+        }
+
+        (0 until originalSize).forEach { index ->
+            val copy = ind.copy() as T
+
+            if (copy is RestIndividual) {
+                copy.removeReferencesToResourceIfCreated(index)
+            }
+
+            copy.removeMainExecutableAction(index)
+            copy.fixGeneBindingsIfNeeded()
+
+            if (copy is RestIndividual) {
+                copy.fixResourceForwardLinks()
+            }
+
+            fitness.computeWholeAchievedCoverageForPostProcessing(copy)?.run {
+                if (archive.addIfNeeded(this)) {
+                    removeEachMainAction(this.individual)
+                }
+            }
         }
     }
 
