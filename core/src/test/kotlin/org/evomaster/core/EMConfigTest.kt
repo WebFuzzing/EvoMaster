@@ -520,7 +520,7 @@ internal class EMConfigTest{
         val config = EMConfig()
 
         val options = parser.parse("--configPath", "src/test/resources/config/foo.toml")
-        val t = assertThrows(ConfigProblemException::class.java) {config.updateProperties(options)}
+        val t = assertThrows<ConfigProblemException> {config.updateProperties(options)}
         assertTrue(t.message!!.contains("non-existing properties"), t.message)
     }
 
@@ -617,7 +617,7 @@ internal class EMConfigTest{
     @Test
     fun testInvalidExternalServiceIP() {
         val params = arrayOf("--externalServiceIP", "128.0.0.0")
-        assertThrows(ConfigProblemException::class.java) {
+        assertThrows<ConfigProblemException> {
             EMConfig.validateOptions(params)
         }
     }
@@ -651,7 +651,7 @@ internal class EMConfigTest{
         InetAddress.getByName(ipAddress) // should throw no exception
 
         val params = arrayOf("--externalServiceIP", ipAddress)
-        assertThrows(ConfigProblemException::class.java) {
+        assertThrows<ConfigProblemException> {
             EMConfig.validateOptions(params)
         }
     }
@@ -892,6 +892,61 @@ internal class EMConfigTest{
         rest.problemType = EMConfig.ProblemType.REST
         rest.checkMultiFieldConstraints()
         assertTrue(rest.isKillSwitchOn())
+    }
+
+    @Test
+    fun testSettleOptionsAreRejectedInBlackBox(){
+
+        fun parse(vararg args: String) =
+            EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse(*args)) }
+
+        //a black-box run never keeps an action open
+        assertThrows<ConfigProblemException> {
+            parse("--$blackBox", "true", "--problemType", "ASYNCAPI", "--createTests", "false",
+                "--asyncApiCompletion", "COVERAGE_STABLE")
+        }
+        assertThrows<ConfigProblemException> {
+            parse("--$blackBox", "true", "--problemType", "ASYNCAPI", "--createTests", "false",
+                "--asyncApiSettleMs", "2000")
+        }
+
+        val whiteBox = parse("--$blackBox", "false", "--problemType", "ASYNCAPI",
+            "--asyncApiCompletion", "COVERAGE_STABLE", "--asyncApiSettleMs", "2000")
+        assertEquals(EMConfig.AsyncApiCompletion.COVERAGE_STABLE, whiteBox.asyncApiCompletion)
+        assertEquals(2000, whiteBox.asyncApiSettleMs)
+    }
+
+    @Test
+    fun testAStablePeriodNoShorterThanTheWindowIsAllowed(){
+
+        //it can never end the window early, which is worth a warning, not a failure
+        val config = EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse(
+            "--blackBox", "false", "--problemType", "ASYNCAPI", "--asyncApiCompletion", "COVERAGE_STABLE",
+            "--asyncApiSettleMs", "200", "--asyncApiStableMs", "500")) }
+        assertEquals(EMConfig.AsyncApiCompletion.COVERAGE_STABLE, config.asyncApiCompletion)
+        assertEquals(500, config.asyncApiStableMs)
+    }
+
+    @Test
+    fun testCoverageStableNeedsASettleWindowToEndEarly(){
+
+        //in white-box, as the settle options are ignored in black-box
+        fun parse(vararg args: String) =
+            EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse("--blackBox", "false", *args)) }
+
+        val e = assertThrows<ConfigProblemException> {
+            parse("--problemType", "ASYNCAPI", "--asyncApiCompletion", "COVERAGE_STABLE")
+        }
+        assertTrue(e.message!!.contains("asyncApiSettleMs"), e.message)
+
+        val config = parse("--problemType", "ASYNCAPI",
+            "--asyncApiCompletion", "COVERAGE_STABLE", "--asyncApiSettleMs", "2000")
+        assertEquals(EMConfig.AsyncApiCompletion.COVERAGE_STABLE, config.asyncApiCompletion)
+
+        //and the defaults ask for no wait at all
+        val defaults = parse("--problemType", "ASYNCAPI")
+        assertEquals(0, defaults.asyncApiSettleMs)
+        assertEquals(EMConfig.AsyncApiCompletion.FIXED, defaults.asyncApiCompletion)
     }
 
     @Test

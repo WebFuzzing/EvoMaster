@@ -145,6 +145,18 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final Long getObjectiveUpdateCount() {
+        /*
+            Without the agent nothing is instrumented, and a count stuck at zero would read as a
+            SUT doing nothing new rather than as unknown coverage.
+         */
+        if (!isInstrumentationActivated()) {
+            return null;
+        }
+        return InstrumentationController.getObjectiveUpdateCount();
+    }
+
+    @Override
     public final String getExecutableFullPath(){
         return null; //not needed for embedded
     }
