@@ -67,7 +67,8 @@ open class ArazzoPetCouponsRest {
 
     @PostMapping(path = ["/store/order"], consumes = [MediaType.APPLICATION_JSON_VALUE])
     open fun placeOrder(@RequestBody order: OrderDto): ResponseEntity<OrderDto> {
-        if (executeGetPetCoupons || executeFindPetsByStatus) {
+        // Arazzo branches may reach placeOrder after findByTags only (goto / skip coupons).
+        if (executeGetPetCoupons || executeFindPetsByStatus || executeFindPetsByTags) {
             return ResponseEntity.ok(order.copy(id = 1))
         }
 
