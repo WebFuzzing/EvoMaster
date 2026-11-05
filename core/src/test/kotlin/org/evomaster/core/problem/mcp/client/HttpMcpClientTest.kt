@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
+import org.evomaster.core.problem.mcp.McpConst
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -234,6 +235,44 @@ class HttpMcpClientTest {
 
         assertTrue(result.isError)
         assertTrue(result.content.isEmpty())
+        assertEquals(-32601, result.protocolError?.code)
+        assertEquals("Method not found", result.protocolError?.message)
+    }
+
+    @Test
+    fun testCallToolWithEmptyResponseThrowsDescriptiveException() {
+        stubPost("")
+
+        val error = assertThrows(IllegalStateException::class.java) {
+            client.callTool("foo", emptyMap())
+        }
+
+        assertTrue(error.message!!.contains(McpConst.METHOD_TOOLS_CALL))
+        assertTrue(error.message!!.contains("empty"))
+    }
+
+    @Test
+    fun testCallToolWithMalformedResponseThrowsWithCause() {
+        stubPost("not-json")
+
+        val error = assertThrows(IllegalStateException::class.java) {
+            client.callTool("foo", emptyMap())
+        }
+
+        assertTrue(error.message!!.contains(McpConst.METHOD_TOOLS_CALL))
+        assertNotNull(error.cause)
+    }
+
+    @Test
+    fun testListToolsWithEmptyResponseThrowsDescriptiveException() {
+        stubPost("")
+
+        val error = assertThrows(IllegalStateException::class.java) {
+            client.listTools()
+        }
+
+        assertTrue(error.message!!.contains(McpConst.METHOD_TOOLS_LIST))
+        assertTrue(error.message!!.contains("empty"))
     }
 
     @Test
@@ -281,6 +320,8 @@ class HttpMcpClientTest {
         val result = client.readResource("unknown://uri")
 
         assertTrue(result.contents.isEmpty())
+        assertEquals(-32602, result.protocolError?.code)
+        assertEquals("Invalid params", result.protocolError?.message)
     }
 
     @Test

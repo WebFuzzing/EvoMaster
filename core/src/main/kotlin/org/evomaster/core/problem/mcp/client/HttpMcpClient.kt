@@ -113,20 +113,23 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
 
     /**
      * Send a JSON-RPC request and return the parsed top-level response map (which may carry
-     * either a "result" or a JSON-RPC "error" object). Returns null only when no body could be
-     * read/parsed at all (e.g. a truly unsupported method with an empty response).
+     * either a "result" or a JSON-RPC "error" object. Empty or malformed response bodies are
+     * treated as request failures.
      */
-    private fun post(method: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?>? {
+    private fun post(method: String, params: Map<String, Any?> = emptyMap()): Map<String, Any?> {
         val response = sendJsonRpc(method, params, nextId(), acceptEventStream = true)
-        val responseBody = response.readEntity(String::class.java)
-        if (responseBody.isBlank()) {
-            return null
-        }
         return try {
-            mapper.readValue(responseBody, Map::class.java) as Map<String, Any?>
-        } catch (error: Exception) {
-            log.warn("Failed to deserialize MCP notification response for '$method'", error)
-            null
+            val responseBody = response.readEntity(String::class.java)
+            if (responseBody.isBlank()) {
+                throw IllegalStateException("MCP $method response body is empty")
+            }
+            try {
+                mapper.readValue(responseBody, Map::class.java) as Map<String, Any?>
+            } catch (error: Exception) {
+                throw IllegalStateException("Failed to deserialize MCP response for '$method'", error)
+            }
+        } finally {
+            response.close()
         }
     }
 
@@ -160,7 +163,6 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
             val params = if (cursor != null) mapOf("cursor" to cursor) else emptyMap()
 
             val response = post(method, params)
-                ?: throw IllegalStateException("$method request failed: received null response")
 
             val result = response["result"] as? Map<String, Any?>
                 ?: throw IllegalStateException("$method response missing 'result' field or invalid type")
@@ -177,8 +179,8 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         return results
     }
 
-    private fun getToolResponseContent(name: String, mcpResponse: Map<String, Any?>?) : List<McpToolContent> {
-        val content = mcpResponse?.get("content") as? List<Map<String, Any?>> ?: emptyList()
+    private fun getToolResponseContent(name: String, mcpResponse: Map<String, Any?>) : List<McpToolContent> {
+        val content = mcpResponse["content"] as? List<Map<String, Any?>> ?: emptyList()
         return content.map { item ->
             val type = item["type"] as? String
                 ?: throw IllegalStateException("Tool: $name response content item is missing required 'type' field")
@@ -206,8 +208,8 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
         }
     }
 
-    private fun getResourceResponseContent(mcpResponse: Map<String, Any?>?) : List<McpResourceContent> {
-        val contents = mcpResponse?.get("contents") as? List<Map<String, Any?>> ?: emptyList()
+    private fun getResourceResponseContent(mcpResponse: Map<String, Any?>) : List<McpResourceContent> {
+        val contents = mcpResponse["contents"] as? List<Map<String, Any?>> ?: emptyList()
         return contents.map { parseResourceContent(it) }
     }
 
@@ -255,7 +257,6 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
 
     override fun callTool(name: String, arguments: Map<String, Any?>): McpToolResult {
         val response = post(McpConst.METHOD_TOOLS_CALL, mapOf("name" to name, "arguments" to arguments))
-            ?: return McpToolResult(isError = true)
         val protocolError = extractProtocolError(response)
         if (protocolError != null) {
             return McpToolResult(isError = true, protocolError = protocolError)
@@ -272,7 +273,6 @@ class HttpMcpClient(private val baseUrl: String, readTimeoutMs: Int = 60_000) : 
 
     override fun readResource(uri: String): McpResourceResult {
         val response = post(McpConst.METHOD_RESOURCES_READ, mapOf("uri" to uri))
-            ?: return McpResourceResult()
         val protocolError = extractProtocolError(response)
         if (protocolError != null) {
             return McpResourceResult(protocolError = protocolError)
