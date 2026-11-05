@@ -66,6 +66,11 @@ public class EMController {
     private String baseUrlOfSUT;
 
     /**
+     * Keeps an AsyncAPI action open after the driver has published it, as the core asks.
+     */
+    private final AsyncApiSettle asyncApiSettle;
+
+    /**
      * Keep track of all host:port clients connect so far.
      * This is the mainly done for debugging, to check that we are using
      * a single TCP connection, instead of creating new ones at each request.
@@ -79,7 +84,15 @@ public class EMController {
             new Scanner(EMController.class.getResourceAsStream("/warning.html"), "UTF-8").useDelimiter("\\A").next();
 
     public EMController(SutController sutController) {
+        this(sutController, new AsyncApiSettle());
+    }
+
+    /**
+     * Only for tests, to wait on a clock they control.
+     */
+    EMController(SutController sutController, AsyncApiSettle asyncApiSettle) {
         this.sutController = Objects.requireNonNull(sutController);
+        this.asyncApiSettle = Objects.requireNonNull(asyncApiSettle);
     }
 
     private boolean trackRequestSource(HttpServletRequest request) {
@@ -855,7 +868,6 @@ public class EMController {
 
                 try {
                     sutController.executeAsyncApiAction(dto.asyncApiCall, replyDto);
-                    return Response.status(200).entity(WrappedResponseDto.withData(replyDto)).build();
                 } catch (Exception e) {
                     /*
                         Failing to publish is not a finding about the service, it is a broken
@@ -868,6 +880,26 @@ public class EMController {
                     replyDto.errorMessage = msg;
                     return Response.status(500).entity(WrappedResponseDto.withData(replyDto)).build();
                 }
+
+                if (!Boolean.TRUE.equals(replyDto.published)) {
+                    /*
+                        The driver says the message was not published, or does not say: nothing
+                        to wait for. The core stops the test here, as after a failure.
+                     */
+                    return Response.status(200).entity(WrappedResponseDto.withData(replyDto)).build();
+                }
+
+                /*
+                    The driver is done, but the service may not be: it handles the message on a
+                    thread of its own. The action stays open while it does, so that what it
+                    covers is still credited to this action rather than to the next one, or
+                    lost once the results are collected. Not inside a noKillSwitch: the switch
+                    was already turned off for this action by newAction above, and must stay
+                    off for the service's threads, not only this one.
+                 */
+                asyncApiSettle.settle(dto.asyncApiCall, replyDto);
+
+                return Response.status(200).entity(WrappedResponseDto.withData(replyDto)).build();
             }
         }
 
