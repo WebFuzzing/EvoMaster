@@ -27,6 +27,12 @@ object RegexHandler {
     private val cachePostgresLike : MutableMap<String, RegexGene> = mutableMapOf()
     private val cachePostgresSimilarTo : MutableMap<String, RegexGene> = mutableMapOf()
 
+    /**
+     * Given a JVM regex string constraint (and optionally external regex flags), generate RegexGene for it.
+     * Based on RegexJavaParser.g4 and RegexJavaLexer.g4 files.
+     *
+     * This would throw an exception if regex is invalid, or if it has features we do not support yet.
+     */
     fun createGeneForJVM(regex: String, externalRegexFlags: RegexFlags = RegexFlags()) : RegexGene {
 
         val key = RegexWithExternalFlags(regex, externalRegexFlags)
