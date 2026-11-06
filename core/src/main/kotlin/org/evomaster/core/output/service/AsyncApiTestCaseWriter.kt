@@ -154,6 +154,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
         }
 
         addReplyAssertions(lines, asyncApiResult, index)
+        addSettleWait(lines, asyncApiResult)
     }
 
     /**
@@ -432,5 +433,32 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
                 lines.addBlockCommentLine("$prefix($outcome) ${evaluated.action.getName()}")
             }
         }
+    }
+
+    /**
+     * After a published message, wait for the window the search kept it open, when it did, so
+     * that what the service does handling it does not land on the next message or test.
+     *
+     * The whole window is waited, not what the search ended up waiting: where the window ended
+     * early, it ended on what the instrumentation saw, which a generated test has not got. A
+     * message with a reply is waited on too, as the handler may still be running after it
+     * answered.
+     *
+     * Only for Java and Kotlin: only a white-box run keeps a message open, and those are the
+     * formats it writes.
+     */
+    private fun addSettleWait(lines: Lines, res: AsyncApiCallResult) {
+
+        //only set for a published message the controller was asked to keep open
+        if (res.getSettledMs() == null) {
+            return
+        }
+
+        if (!format.isJavaOrKotlin()) {
+            throw IllegalArgumentException("Unsupported format: $format")
+        }
+
+        lines.addSingleCommentLine("the time the search gave the service to finish with this message")
+        lines.addStatement("Thread.sleep(${config.asyncApiSettleMs})")
     }
 }
