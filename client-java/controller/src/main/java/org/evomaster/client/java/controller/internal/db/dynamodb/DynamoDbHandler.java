@@ -17,7 +17,6 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,7 +47,7 @@ public class DynamoDbHandler {
      * avoiding repeated schema reads when completing inferred insertions. Secondary-index keys are excluded.
      * Cleared by {@link #setDynamoDbClient(Object)} because another client can refer to different table schemas.
      */
-    private final Map<String, DynamoDbPrimaryKey> primaryKeysByTable = new HashMap<>();
+    private final Map<String, DynamoDbPrimaryKey> primaryKeysByTable = new LinkedHashMap<>();
 
     /** Parser used to extract predicates and table names from captured requests. */
     private final DynamoDbRequestParser requestParser = new DynamoDbRequestParser();

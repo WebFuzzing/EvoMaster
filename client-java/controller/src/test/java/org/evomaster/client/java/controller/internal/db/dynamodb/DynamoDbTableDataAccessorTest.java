@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -112,6 +113,29 @@ public class DynamoDbTableDataAccessorTest {
         assertEquals(DynamoDbScalarTypeDto.STRING, primaryKey.getAttributes().get("country"));
         assertEquals(DynamoDbScalarTypeDto.NUMBER, primaryKey.getAttributes().get("fifaId"));
         verify(client).describeTable(any(DescribeTableRequest.class));
+    }
+
+    /**
+     * Verifies the base-table key order even when DescribeTable lists the range key first.
+     */
+    @Test
+    public void testOrdersPrimaryKeyByKeyType() {
+        DynamoDbClient client = mock(DynamoDbClient.class);
+        TableDescription table = TableDescription.builder()
+                .keySchema(
+                        KeySchemaElement.builder().attributeName("fifaId").keyType(KeyType.RANGE).build(),
+                        KeySchemaElement.builder().attributeName("country").keyType(KeyType.HASH).build())
+                .attributeDefinitions(
+                        AttributeDefinition.builder().attributeName("fifaId").attributeType(ScalarAttributeType.N).build(),
+                        AttributeDefinition.builder().attributeName("country").attributeType(ScalarAttributeType.S).build())
+                .build();
+        when(client.describeTable(any(DescribeTableRequest.class)))
+                .thenReturn(DescribeTableResponse.builder().table(table).build());
+
+        DynamoDbPrimaryKey primaryKey = accessor.getPrimaryKeyAttributes(client, TABLE);
+
+        assertEquals(Arrays.asList("country", "fifaId"),
+                new ArrayList<>(primaryKey.getAttributes().keySet()));
     }
 
     @Test

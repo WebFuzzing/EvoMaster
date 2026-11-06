@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -34,6 +35,7 @@ final class DynamoDbTableDataAccessor {
     private static final String ATTRIBUTE_NAME_METHOD = "attributeName";
     private static final String ATTRIBUTE_TYPE_METHOD = "attributeType";
     private static final String KEY_SCHEMA_METHOD = "keySchema";
+    private static final String KEY_TYPE_METHOD = "keyType";
     private static final String ITEMS_METHOD = "items";
     private static final String LAST_EVALUATED_KEY_METHOD = "lastEvaluatedKey";
 
@@ -84,7 +86,7 @@ final class DynamoDbTableDataAccessor {
      *
      * @param client AWS SDK v2 synchronous or asynchronous DynamoDB client
      * @param tableName table whose primary key is needed
-     * @return immutable primary-key definition in schema order
+     * @return immutable primary-key definition with partition key before sort key
      */
     DynamoDbPrimaryKey getPrimaryKeyAttributes(Object client, String tableName) {
         Objects.requireNonNull(client, "DynamoDB client cannot be null");
@@ -113,11 +115,15 @@ final class DynamoDbTableDataAccessor {
                 }
             }
 
+            Collection<?> keySchema = (Collection<?>) table.getClass().getMethod(KEY_SCHEMA_METHOD).invoke(table);
             Map<String, DynamoDbScalarTypeDto> keys = new LinkedHashMap<>();
-            for (Object key : (Collection<?>) table.getClass().getMethod(KEY_SCHEMA_METHOD).invoke(table)) {
-                String name = (String) key.getClass().getMethod(ATTRIBUTE_NAME_METHOD).invoke(key);
-                DynamoDbScalarTypeDto type = definedTypes.get(name);
-                keys.put(name, type);
+            for (String keyType : Arrays.asList("HASH", "RANGE")) {
+                for (Object key : keySchema) {
+                    if (keyType.equals(key.getClass().getMethod(KEY_TYPE_METHOD).invoke(key).toString())) {
+                        String name = (String) key.getClass().getMethod(ATTRIBUTE_NAME_METHOD).invoke(key);
+                        keys.put(name, definedTypes.get(name));
+                    }
+                }
             }
             return new DynamoDbPrimaryKey(keys);
         } catch (InvocationTargetException e) {

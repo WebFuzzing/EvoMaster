@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/** Immutable primary-key attributes supported by DynamoDB insertion generation, in schema order. */
+/** Immutable base-table primary-key attributes for insertion generation, ordered partition key then sort key. */
 final class DynamoDbPrimaryKey {
 
     private final Map<String, DynamoDbScalarTypeDto> attributes;
@@ -15,7 +15,7 @@ final class DynamoDbPrimaryKey {
     /**
      * Copies and validates the primary-key definition independently of its source map.
      *
-     * @param attributes nonempty attribute-name to scalar-type mapping in schema order
+     * @param attributes nonempty attribute-name to scalar-type mapping, partition key before sort key
      * @throws NullPointerException when the mapping is null
      * @throws IllegalArgumentException when the mapping is empty, a name is missing, or a type is unsupported
      */
@@ -39,7 +39,7 @@ final class DynamoDbPrimaryKey {
     /**
      * Returns the attribute names and supported scalar types without exposing mutable state.
      *
-     * @return immutable attribute mapping in schema order
+     * @return immutable attribute mapping, partition key before sort key
      */
     Map<String, DynamoDbScalarTypeDto> getAttributes() {
         return attributes;
