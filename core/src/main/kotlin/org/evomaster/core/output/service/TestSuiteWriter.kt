@@ -717,7 +717,7 @@ class TestSuiteWriter {
         }
 
         if (config.outputFormat.isJava()) {
-            if (!config.blackBox || config.bbExperiments) {
+            if (!config.blackBox) {
                 lines.add("private static final SutHandler $controller = new $controllerName($executable)")
                 lines.append(getJaCoCoInit())
                 lines.append(getJavaCommand())
@@ -750,7 +750,7 @@ class TestSuiteWriter {
                 lines.add("private static RemoteWebDriver $driver;")
             }
         } else if (config.outputFormat.isKotlin()) {
-            if (!config.blackBox || config.bbExperiments) {
+            if (!config.blackBox) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
                 lines.append(getJaCoCoInit())
                 lines.append(getJavaCommand())
@@ -784,7 +784,7 @@ class TestSuiteWriter {
 
         } else if (config.outputFormat.isJavaScript()) {
 
-            if (!config.blackBox || config.bbExperiments) {
+            if (!config.blackBox) {
                 lines.add("const $controller = new $controllerName();")
                 lines.add("let $baseUrlOfSut;")
             } else {

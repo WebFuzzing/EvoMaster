@@ -366,7 +366,7 @@ class Main {
             solution: Solution<*>,
             idMapper: IdMapper
         ) {
-            if (config.usesDriver()) {
+            if (!config.blackBox) {
                 val rc = injector.getInstance(RemoteController::class.java)
                 val unitsInfo = rc.getSutInfo()?.unitsInfoDto
                 val bootTimeInfo = rc.getSutInfo()?.bootTimeInfoDto
@@ -584,7 +584,7 @@ class Main {
             val problemModule = when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     if (config.blackBox) {
-                        BlackBoxRestModule(config.bbExperiments)
+                        BlackBoxRestModule(false)
                     } else if (config.isEnabledResourceStrategy()) {
                         /*
                             default for white-box testing using MIO
@@ -601,7 +601,7 @@ class Main {
 
                 EMConfig.ProblemType.GRAPHQL -> {
                     if (config.blackBox) {
-                        GraphQLBlackBoxModule(config.bbExperiments)
+                        GraphQLBlackBoxModule(false)
                     } else {
                         GraphQLModule()
                     }
