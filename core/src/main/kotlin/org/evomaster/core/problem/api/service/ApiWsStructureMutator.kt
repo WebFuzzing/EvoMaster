@@ -687,12 +687,12 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         uniqueKeys: Neo4jUniqueKeys?
     ): List<EnvironmentAction> {
 
-        val existingKeys = ind.seeInitializingActions()
+        val insertionKeysInTest = ind.seeInitializingActions()
             .filterIsInstance<Neo4jDbAction>()
             .map { it.insertionKey() }
             .toSet()
 
-        val addedActions = Neo4jInsertBuilder.buildInsertActions(failedQueries, existingKeys, schema, uniqueKeys)
+        val addedActions = Neo4jInsertBuilder.buildInsertActions(failedQueries, insertionKeysInTest, schema, uniqueKeys)
 
         if (addedActions.isNotEmpty()) {
             ind.addInitializingActions(actions = addedActions)

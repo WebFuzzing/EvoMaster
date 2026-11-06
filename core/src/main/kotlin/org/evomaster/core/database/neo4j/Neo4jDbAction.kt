@@ -115,7 +115,6 @@ class Neo4jDbAction(
 
     override fun getActionGroupKey(): String = Neo4jDbAction::class.java.name
 
-    /** Stable key used to avoid adding the same inferred insertion twice. */
     /**
      * Identifies the failed query this insertion answers: labels, relationships and the properties the
      * query fixed. The properties added from the schema are left out, so that the key still matches the

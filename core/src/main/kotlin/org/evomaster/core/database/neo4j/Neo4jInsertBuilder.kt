@@ -25,21 +25,22 @@ object Neo4jInsertBuilder {
 
     /**
      * @param failedQueries failed queries reported by the controller
-     * @param existingInsertionKeys keys of the insertions already in the individual
+     * @param insertionKeysInTest keys of the insertions the test already has. Those nodes are not in the
+     *                            database yet, they are inserted when the test runs
      * @param schema what the SUT's entities declare about each label; with it, a node also gets the
      *               properties the query did not fix, with free genes
      * @param uniqueKeys the keys the inserted nodes must not repeat, handed to each action so that it
      *                   can be repaired when it does
-     * @return one action per failed query not already represented by [existingInsertionKeys]
+     * @return one action per failed query not already represented by [insertionKeysInTest]
      */
     fun buildInsertActions(
         failedQueries: List<Neo4jFailedQueryDto>,
-        existingInsertionKeys: Set<String>,
+        insertionKeysInTest: Set<String>,
         schema: Neo4jSchema? = null,
         uniqueKeys: Neo4jUniqueKeys? = null
     ): List<Neo4jDbAction> = failedQueries
         .mapNotNull { toActionOrNull(it, schema, uniqueKeys) }
-        .filterNot { it.insertionKey() in existingInsertionKeys }
+        .filterNot { it.insertionKey() in insertionKeysInTest }
         .distinctBy { it.insertionKey() }
 
     /** Converts one failed query into an action, or returns null when it cannot be inserted as reported. */

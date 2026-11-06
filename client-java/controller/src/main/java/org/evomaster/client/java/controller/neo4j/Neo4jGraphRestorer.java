@@ -61,18 +61,6 @@ public class Neo4jGraphRestorer {
 
     /**
      * Key: the {@code elementId} a node had when the snapshot was taken.
-     * Value: the node as it was then.
-     */
-    private Map<String, Neo4jNode> snapshotNodes;
-
-    /**
-     * Key: the {@code elementId} a relationship had when the snapshot was taken.
-     * Value: the relationship as it was then.
-     */
-    private Map<String, Neo4jEdge> snapshotEdges;
-
-    /**
-     * Key: the {@code elementId} a node had when the snapshot was taken.
      * Value: the {@code elementId} it has now, which differs once it has been recreated.
      */
     private Map<String, String> currentNodeIds;
@@ -88,20 +76,10 @@ public class Neo4jGraphRestorer {
      */
     public void takeSnapshot(ReflectionBasedNeo4jClient client) {
         snapshot = reader.read(client);
-
-        snapshotNodes = new LinkedHashMap<>();
         currentNodeIds = new HashMap<>();
-        for (Neo4jNode node : snapshot.getNodes()) {
-            snapshotNodes.put(node.getId(), node);
-            currentNodeIds.put(node.getId(), node.getId());
-        }
-
-        snapshotEdges = new LinkedHashMap<>();
+        snapshot.getNodes().forEach(node -> currentNodeIds.put(node.getId(), node.getId()));
         currentEdgeIds = new HashMap<>();
-        for (Neo4jEdge edge : snapshot.getEdges()) {
-            snapshotEdges.put(edge.getId(), edge);
-            currentEdgeIds.put(edge.getId(), edge.getId());
-        }
+        snapshot.getEdges().forEach(edge -> currentEdgeIds.put(edge.getId(), edge.getId()));
     }
 
     public boolean hasSnapshot() {
@@ -124,8 +102,6 @@ public class Neo4jGraphRestorer {
      */
     public void discardSnapshot() {
         snapshot = null;
-        snapshotNodes = null;
-        snapshotEdges = null;
         currentNodeIds = null;
         currentEdgeIds = null;
     }
@@ -165,10 +141,11 @@ public class Neo4jGraphRestorer {
     private void deleteRelationshipsNotInSnapshot(ReflectionBasedNeo4jClient client, Object session,
                                                   Map<String, Neo4jEdge> edgesNow) {
         Set<String> kept = new HashSet<>();
-        for (Map.Entry<String, String> e : currentEdgeIds.entrySet()) {
-            Neo4jEdge now = edgesNow.get(e.getValue());
-            if (now != null && isSameRelationship(snapshotEdges.get(e.getKey()), now)) {
-                kept.add(e.getValue());
+        for (Neo4jEdge original : snapshot.getEdges()) {
+            String currentId = currentEdgeIds.get(original.getId());
+            Neo4jEdge now = edgesNow.get(currentId);
+            if (now != null && isSameRelationship(original, now)) {
+                kept.add(currentId);
             }
         }
 
@@ -202,7 +179,7 @@ public class Neo4jGraphRestorer {
     private void restoreNodes(ReflectionBasedNeo4jClient client, Object session, Map<String, Neo4jNode> nodesNow) {
         List<Map<String, Object>> propertyRows = new ArrayList<>();
 
-        for (Neo4jNode original : snapshotNodes.values()) {
+        for (Neo4jNode original : snapshot.getNodes()) {
             String currentId = currentNodeIds.get(original.getId());
             Neo4jNode now = nodesNow.get(currentId);
 
@@ -229,7 +206,7 @@ public class Neo4jGraphRestorer {
                                       Map<String, Neo4jEdge> edgesNow) {
         List<Map<String, Object>> propertyRows = new ArrayList<>();
 
-        for (Neo4jEdge original : snapshotEdges.values()) {
+        for (Neo4jEdge original : snapshot.getEdges()) {
             String currentId = currentEdgeIds.get(original.getId());
             Neo4jEdge now = edgesNow.get(currentId);
 
