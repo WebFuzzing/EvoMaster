@@ -21,6 +21,9 @@ import kotlin.reflect.KClass
 
 object CompilerForTestGenerated{
 
+    private const val KOTLIN_EXTENSION = ".kt"
+    private const val JAVA_EXTENSION = ".java"
+
     fun compile(
             format: OutputFormat,
             code: String,
@@ -33,11 +36,11 @@ object CompilerForTestGenerated{
         source.mkdirs()
 
         val extension = when {
-            format.isKotlin() -> "kt"
-            format.isJava() -> "java"
+            format.isKotlin() -> KOTLIN_EXTENSION
+            format.isJava() -> JAVA_EXTENSION
             else -> throw IllegalArgumentException("Format $format not supported yet for compilation checks")
         }
-        val target = source.toPath().resolve(Paths.get("$testClassName.$extension")).toFile()
+        val target = source.toPath().resolve(Paths.get(testClassName + extension)).toFile()
 
         target.createNewFile()
         target.writeText(code)
@@ -70,7 +73,7 @@ object CompilerForTestGenerated{
         val compiler = ToolProvider.getSystemJavaCompiler()
             ?: throw IllegalStateException("No Java compiler available: a JDK is needed, not a JRE")
 
-        val files = source.walkTopDown().filter { it.isFile && it.name.endsWith(".java") }.toList()
+        val files = source.walkTopDown().filter { it.isFile && it.name.endsWith(JAVA_EXTENSION) }.toList()
 
         if (files.isEmpty()) {
             throw IllegalArgumentException("No Java sources to compile under " + source.absolutePath)
