@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.asyncapi.service
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.NoTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -33,6 +35,9 @@ class AsyncApiModule : EnterpriseModule() {
     override fun configure() {
 
         binder().requireExplicitBindings()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.ASYNCAPI)
+            .forEach { bind(it) }
 
         /*
             No super.configure(): what EnterpriseModule binds there is REST-only, and the RPC,

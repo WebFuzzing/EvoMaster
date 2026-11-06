@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.rest.service.module
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
@@ -26,6 +28,9 @@ class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
         super.configure()
 
         binder().requireExplicitBindings()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.REST)
+            .forEach { bind(it) }
 
         if (bindRemote) {
             bind(RemoteController::class.java)

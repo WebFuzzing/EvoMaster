@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.RPCTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -26,6 +28,9 @@ class RPCModule : EnterpriseModule(){
     override fun configure() {
 
         binder().requireExplicitBindings()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.RPC)
+            .forEach { bind(it) }
 
         bind(object : TypeLiteral<EnterpriseSampler<RPCIndividual>>() {})
             .to(RPCSampler::class.java)

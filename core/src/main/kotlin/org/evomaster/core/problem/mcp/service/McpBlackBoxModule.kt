@@ -2,6 +2,8 @@ package org.evomaster.core.problem.mcp.service
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.NoTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
@@ -21,6 +23,9 @@ class McpBlackBoxModule(
     override fun configure() {
 
         binder().requireExplicitBindings()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.MCP)
+            .forEach { bind(it) }
 
         bind(object : TypeLiteral<EnterpriseSampler<McpIndividual>>() {})
             .to(McpSampler::class.java)

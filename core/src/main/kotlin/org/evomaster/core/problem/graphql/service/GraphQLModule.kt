@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.graphql.service
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.GraphQLTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -23,6 +25,9 @@ class GraphQLModule : EnterpriseModule() {
     override fun configure() {
 
         binder().requireExplicitBindings()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.GRAPHQL)
+            .forEach { bind(it) }
 
         bind(object : TypeLiteral<EnterpriseSampler<GraphQLIndividual>>() {})
             .to(GraphQLSampler::class.java)

@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.webfrontend.service
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.output.service.WebTestCaseWriter
@@ -29,6 +31,9 @@ class WebModule: EnterpriseModule() {
     override fun configure() {
 
         binder().requireExplicitBindings()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.WEBFRONTEND)
+            .forEach { bind(it) }
 
         bind(object : TypeLiteral<EnterpriseSampler<WebIndividual>>() {})
             .to(WebSampler::class.java)

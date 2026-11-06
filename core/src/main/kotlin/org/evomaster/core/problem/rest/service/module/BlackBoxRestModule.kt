@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.rest.service.module
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
@@ -26,6 +28,9 @@ class BlackBoxRestModule(
         super.configure()
 
         binder().requireExplicitBindings()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.REST)
+            .forEach { bind(it) }
 
         bind(object : TypeLiteral<EnterpriseSampler<RestIndividual>>() {})
             .to(RestSampler::class.java)
