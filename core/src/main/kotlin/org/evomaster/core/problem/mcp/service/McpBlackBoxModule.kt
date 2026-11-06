@@ -20,6 +20,8 @@ class McpBlackBoxModule(
 
     override fun configure() {
 
+        binder().requireExplicitBindings()
+
         bind(object : TypeLiteral<EnterpriseSampler<McpIndividual>>() {})
             .to(McpSampler::class.java)
             .asEagerSingleton()

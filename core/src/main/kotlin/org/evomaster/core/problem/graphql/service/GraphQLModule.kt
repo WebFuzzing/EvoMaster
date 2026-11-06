@@ -22,6 +22,8 @@ class GraphQLModule : EnterpriseModule() {
 
     override fun configure() {
 
+        binder().requireExplicitBindings()
+
         bind(object : TypeLiteral<EnterpriseSampler<GraphQLIndividual>>() {})
             .to(GraphQLSampler::class.java)
             .asEagerSingleton()

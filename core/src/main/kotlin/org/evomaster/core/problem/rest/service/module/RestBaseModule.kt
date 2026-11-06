@@ -23,6 +23,8 @@ open class RestBaseModule : EnterpriseModule() {
     override fun configure() {
         super.configure()
 
+        binder().requireExplicitBindings()
+
         bind(TestCaseWriter::class.java)
             .to(RestTestCaseWriter::class.java)
             .asEagerSingleton()

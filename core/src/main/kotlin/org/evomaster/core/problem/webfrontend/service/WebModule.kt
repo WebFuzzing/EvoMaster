@@ -27,6 +27,9 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class WebModule: EnterpriseModule() {
 
     override fun configure() {
+
+        binder().requireExplicitBindings()
+
         bind(object : TypeLiteral<EnterpriseSampler<WebIndividual>>() {})
             .to(WebSampler::class.java)
             .asEagerSingleton()

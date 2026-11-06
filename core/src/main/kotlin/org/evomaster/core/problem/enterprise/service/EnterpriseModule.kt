@@ -11,6 +11,8 @@ abstract class EnterpriseModule : AbstractModule() {
     override fun configure() {
         super.configure()
 
+        binder().requireExplicitBindings()
+
         bind(WFCReportWriter::class.java)
             .asEagerSingleton()
 
