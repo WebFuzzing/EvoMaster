@@ -19,6 +19,7 @@ import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
@@ -691,6 +692,10 @@ abstract class RestIndividualTestBase {
         }
 
         override fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto? {
+            return null
+        }
+
+        override fun getNeo4jExistingData(): Neo4jExistingDataDto? {
             return null
         }
 

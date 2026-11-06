@@ -55,16 +55,9 @@ public class Neo4jGraphRestorer {
     private final Neo4jGraphReader reader = new Neo4jGraphReader();
 
     /**
-     * Key: the {@code elementId} a node had when the snapshot was taken.
-     * Value: the node as it was then.
+     * The graph as it was read when the snapshot was taken, or null if there is no snapshot.
      */
-    private Map<String, Neo4jNode> snapshotNodes;
-
-    /**
-     * Key: the {@code elementId} a relationship had when the snapshot was taken.
-     * Value: the relationship as it was then.
-     */
-    private Map<String, Neo4jEdge> snapshotEdges;
+    private Neo4jGraph snapshot;
 
     /**
      * Key: the {@code elementId} a node had when the snapshot was taken.
@@ -82,33 +75,33 @@ public class Neo4jGraphRestorer {
      * Reads the whole graph as the state every later restore goes back to, replacing any previous one.
      */
     public void takeSnapshot(ReflectionBasedNeo4jClient client) {
-        Neo4jGraph graph = reader.read(client);
-
-        snapshotNodes = new LinkedHashMap<>();
+        snapshot = reader.read(client);
         currentNodeIds = new HashMap<>();
-        for (Neo4jNode node : graph.getNodes()) {
-            snapshotNodes.put(node.getId(), node);
-            currentNodeIds.put(node.getId(), node.getId());
-        }
-
-        snapshotEdges = new LinkedHashMap<>();
+        snapshot.getNodes().forEach(node -> currentNodeIds.put(node.getId(), node.getId()));
         currentEdgeIds = new HashMap<>();
-        for (Neo4jEdge edge : graph.getEdges()) {
-            snapshotEdges.put(edge.getId(), edge);
-            currentEdgeIds.put(edge.getId(), edge.getId());
-        }
+        snapshot.getEdges().forEach(edge -> currentEdgeIds.put(edge.getId(), edge.getId()));
     }
 
     public boolean hasSnapshot() {
-        return snapshotNodes != null;
+        return snapshot != null;
+    }
+
+    /**
+     * @return the graph every restore goes back to, as it was when the snapshot was taken
+     * @throws IllegalStateException if no snapshot was taken
+     */
+    public Neo4jGraph getSnapshot() {
+        if (!hasSnapshot()) {
+            throw new IllegalStateException("No snapshot of the Neo4j graph was taken");
+        }
+        return snapshot;
     }
 
     /**
      * Forgets the snapshot, so that the next one has to be taken before restoring again.
      */
     public void discardSnapshot() {
-        snapshotNodes = null;
-        snapshotEdges = null;
+        snapshot = null;
         currentNodeIds = null;
         currentEdgeIds = null;
     }
@@ -148,10 +141,11 @@ public class Neo4jGraphRestorer {
     private void deleteRelationshipsNotInSnapshot(ReflectionBasedNeo4jClient client, Object session,
                                                   Map<String, Neo4jEdge> edgesNow) {
         Set<String> kept = new HashSet<>();
-        for (Map.Entry<String, String> e : currentEdgeIds.entrySet()) {
-            Neo4jEdge now = edgesNow.get(e.getValue());
-            if (now != null && isSameRelationship(snapshotEdges.get(e.getKey()), now)) {
-                kept.add(e.getValue());
+        for (Neo4jEdge original : snapshot.getEdges()) {
+            String currentId = currentEdgeIds.get(original.getId());
+            Neo4jEdge now = edgesNow.get(currentId);
+            if (now != null && isSameRelationship(original, now)) {
+                kept.add(currentId);
             }
         }
 
@@ -185,7 +179,7 @@ public class Neo4jGraphRestorer {
     private void restoreNodes(ReflectionBasedNeo4jClient client, Object session, Map<String, Neo4jNode> nodesNow) {
         List<Map<String, Object>> propertyRows = new ArrayList<>();
 
-        for (Neo4jNode original : snapshotNodes.values()) {
+        for (Neo4jNode original : snapshot.getNodes()) {
             String currentId = currentNodeIds.get(original.getId());
             Neo4jNode now = nodesNow.get(currentId);
 
@@ -212,7 +206,7 @@ public class Neo4jGraphRestorer {
                                       Map<String, Neo4jEdge> edgesNow) {
         List<Map<String, Object>> propertyRows = new ArrayList<>();
 
-        for (Neo4jEdge original : snapshotEdges.values()) {
+        for (Neo4jEdge original : snapshot.getEdges()) {
             String currentId = currentEdgeIds.get(original.getId());
             Neo4jEdge now = edgesNow.get(currentId);
 

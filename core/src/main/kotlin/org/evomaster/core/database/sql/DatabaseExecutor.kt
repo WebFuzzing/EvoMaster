@@ -1,5 +1,6 @@
 package org.evomaster.core.database.sql
 
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 
 
@@ -52,4 +53,10 @@ interface DatabaseExecutor {
      * Return the result of whether it success
      */
     fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto?
+
+    /**
+     * Read the unique keys of the Neo4j database, with the values its nodes already hold for them.
+     * Return null if they could not be read
+     */
+    fun getNeo4jExistingData(): Neo4jExistingDataDto?
 }

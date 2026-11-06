@@ -3,6 +3,8 @@ package org.evomaster.core.database.neo4j
 import org.evomaster.client.java.controller.api.dto.database.execution.Neo4jFailedQueryDto
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityDto
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jEntityPropertyDto
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jEdgeInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jNodeInsertionDto
@@ -186,5 +188,17 @@ class Neo4jInsertBuilderTest {
         val level = props[2].gene as EnumGene<*>
         assertEquals(listOf("BRONZE", "GOLD"), level.values)
         assertEquals("BRONZE", props[2].valueAsText())
+    }
+
+    @Test
+    fun everyActionGetsTheUniqueKeysAndItsCopiesKeepThem() {
+        val uniqueKeys = Neo4jUniqueKeys(Neo4jExistingDataDto().also {
+            it.uniqueKeys = mutableListOf(Neo4jUniqueKeyDto().also { k -> k.label = "User"; k.properties = mutableListOf("username") })
+        })
+
+        val action = Neo4jInsertBuilder.buildInsertActions(listOf(playerWithUser()), emptySet(), null, uniqueKeys).single()
+
+        assertSame(uniqueKeys, action.uniqueKeys)
+        assertSame(uniqueKeys, (action.copy() as Neo4jDbAction).uniqueKeys)
     }
 }
