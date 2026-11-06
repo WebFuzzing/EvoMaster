@@ -14,7 +14,7 @@ class McpResourceReadAction(
     val uriParams: List<McpUriParam>,
     val isTemplate: Boolean = false
 ) : McpAction(
-    id = "resource",
+    id = "resource:$uriTemplate",
     parameters = uriParams.toMutableList()
 ) {
     override fun getName(): String = "resource:$uriTemplate"
