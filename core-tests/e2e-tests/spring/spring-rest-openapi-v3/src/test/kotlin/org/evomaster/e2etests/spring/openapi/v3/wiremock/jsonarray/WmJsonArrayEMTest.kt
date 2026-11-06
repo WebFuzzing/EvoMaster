@@ -2,11 +2,13 @@ package org.evomaster.e2etests.spring.openapi.v3.wiremock.jsonarray
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.jsonarray.WmJsonArrayController
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class WmJsonArrayEMTest : SpringTestBase() {
 
@@ -20,15 +22,17 @@ class WmJsonArrayEMTest : SpringTestBase() {
         }
     }
 
-    @Test
-    fun testRunEM() {
+    @ParameterizedTest
+    @EnumSource(names = ["KOTLIN_JUNIT_5", "JAVA_JUNIT_5"])
+    fun testRunEM(outputFormat: OutputFormat) {
 
         runTestHandlingFlakyAndCompilation(
-            "WmJsonArrayEM",
-            "org.foo.WmJsonArrayEM",
+            "WmJsonArrayEM_$outputFormat",
+            "org.foo.WmJsonArrayEM_$outputFormat",
             100,
             true,
             { args: MutableList<String> ->
+                setOption(args,"outputFormat",outputFormat.name)
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")

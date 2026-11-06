@@ -1,11 +1,13 @@
 package org.evomaster.e2etests.spring.openapi.v3.logintokensendheader
 
 import com.foo.rest.examples.spring.openapi.v3.logintokensendheader.LoginTokenSendHeaderController
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class LoginTokenSendHeaderEMTest : SpringTestBase(){
 
@@ -17,12 +19,15 @@ class LoginTokenSendHeaderEMTest : SpringTestBase(){
         }
     }
 
-    @Test
-    fun testRunEM() {
+    @ParameterizedTest
+    @EnumSource(names = ["KOTLIN_JUNIT_5", "JAVA_JUNIT_5"])
+    fun testRunEM(outputFormat: OutputFormat) {
         runTestHandlingFlakyAndCompilation(
-                "LoginTokenSendHeaderEM",
+                "LoginTokenSendHeaderEM_$outputFormat",
                 20
-        ) { args: List<String> ->
+        ) { args: MutableList<String> ->
+
+            setOption(args,"outputFormat",outputFormat.name)
 
             val solution = initAndRun(args)
 
