@@ -39,6 +39,14 @@ public class InstrumentationController {
         ObjectiveRecorder.clearFirstTimeEncountered();
     }
 
+    /**
+     * @return how many times an objective was reached or improved in the current test, see
+     * {@link ExecutionTracer#getObjectiveUpdateCount()}
+     */
+    public static long getObjectiveUpdateCount(){
+        return ExecutionTracer.getObjectiveUpdateCount();
+    }
+
     public static void newAction(Action action){
 
         ExecutionTracer.setAction(action);
