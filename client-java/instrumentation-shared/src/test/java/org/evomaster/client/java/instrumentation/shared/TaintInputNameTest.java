@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.shared;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,6 +15,20 @@ public class TaintInputNameTest {
 
         String name = TaintInputName.getTaintName(0);
         assertTrue(TaintInputName.isTaintInput(name));
+    }
+
+    @Test
+    public void testStartsWithTaintPrefix(){
+        assertTrue(TaintInputName.startsWithTaintPrefix(TaintInputName.getTaintName(0).getBytes(StandardCharsets.UTF_8)));
+        assertTrue(TaintInputName.startsWithTaintPrefix("_em_1_xyz_".getBytes(StandardCharsets.UTF_8)));
+        // only the start is checked
+        assertTrue(TaintInputName.startsWithTaintPrefix("_EM_ and anything".getBytes(StandardCharsets.UTF_8)));
+
+        assertFalse(TaintInputName.startsWithTaintPrefix(null));
+        assertFalse(TaintInputName.startsWithTaintPrefix(new byte[0]));
+        assertFalse(TaintInputName.startsWithTaintPrefix("_EM".getBytes(StandardCharsets.UTF_8)));
+        assertFalse(TaintInputName.startsWithTaintPrefix("{\"a\": \"_EM_0_XYZ_\"}".getBytes(StandardCharsets.UTF_8)));
+        assertFalse(TaintInputName.startsWithTaintPrefix("ñ_EM_0_XYZ_".getBytes(StandardCharsets.UTF_8)));
     }
 
     @Test
