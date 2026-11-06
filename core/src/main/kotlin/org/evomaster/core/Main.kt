@@ -13,6 +13,11 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.DocumentationLinks.EM_DOCKER_LINK
 import org.evomaster.core.DocumentationLinks.EM_ISSUES_LINK
 import org.evomaster.core.config.ConfigProblemException
+import org.evomaster.core.llm.LlmProvider
+import org.evomaster.core.llm.orcarouter.OrcaRouterCatalogClient
+import org.evomaster.core.llm.orcarouter.OrcaRouterCredentials
+import org.evomaster.core.llm.orcarouter.OrcaRouterModelSelector
+import org.evomaster.core.llm.orcarouter.OrcaRouterOrigins
 import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteCode
@@ -113,6 +118,11 @@ class Main {
 
                 val config = EMConfig().apply { updateProperties(options) }
 
+                if (config.llm && config.llmListModels) {
+                    listLlmModels(config)
+                    return
+                }
+
                 if (config.runningInDocker) {
                     if (config.blackBox) {
                         LoggingUtil.getInfoLogger().info(
@@ -199,6 +209,39 @@ class Main {
                  */
                 exitProcess(1)
             }
+        }
+
+        /**
+         * Prints the models advertised by the configured LLM provider, without starting a
+         * fuzzing session. This is the command-line equivalent of a model dropdown: the list
+         * comes from the provider's live catalog, and a selected --llmName is validated
+         * against the same catalog before any request is made.
+         */
+        private fun listLlmModels(config: EMConfig) {
+
+            if (config.llmProvider != LlmProvider.ORCAROUTER) {
+                logError(
+                    "Model listing is currently supported only for --llmProvider ORCAROUTER, " +
+                            "but '${config.llmProvider}' was selected"
+                )
+                return
+            }
+
+            val apiKey = OrcaRouterCredentials.resolve(config.llmApiKey)
+            if (apiKey == null) {
+                logError(
+                    "OrcaRouter requires an API key: pass --llmApiKey <sk-orca-…>, " +
+                            "set ORCA_API_KEY, or create one at ${OrcaRouterOrigins.PUBLIC_AUTH_ORIGIN}/console"
+                )
+                return
+            }
+
+            val catalog = OrcaRouterCatalogClient(
+                baseUrl = OrcaRouterOrigins.resolveApiBase(config.llmURL),
+                timeoutSeconds = config.llmTimeoutSeconds.coerceIn(1, 30)
+            ).fetchChat(apiKey)
+
+            println(OrcaRouterModelSelector.render(catalog))
         }
 
         private fun logError(msg: String) {
