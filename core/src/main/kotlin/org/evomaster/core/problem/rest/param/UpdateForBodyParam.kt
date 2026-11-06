@@ -13,13 +13,25 @@ import org.evomaster.core.search.gene.Gene
  * So we add info to modify the individual at its next mutation
  *
  */
-class UpdateForBodyParam(genes: MutableList<Gene>) : Param("updateForBodyParam", genes),
-    UpdateForParam {
+class UpdateForBodyParam(
+    genes: MutableList<Gene>,
+    /**
+     * Non-gene state of the [BodyParam] being replaced.
+     *
+     * [getUpdatedParam] rebuilds a BodyParam from genes alone, so anything that is not a gene has to
+     * be carried explicitly or it is silently dropped. Today this is always empty, because the two
+     * places that create an UpdateForBodyParam are guarded by `none { it is BodyParam }` and build a
+     * fresh JSON body; carrying it is what keeps that from breaking if the mechanism is ever extended
+     * to bodies that already exist.
+     */
+    val parts: Map<String, PartMeta> = mapOf(),
+    private val sourceDescription: String? = null
+) : Param("updateForBodyParam", genes), UpdateForParam {
 
-        constructor(body: BodyParam) : this(body.seeGenes().toMutableList())
+    constructor(body: BodyParam) : this(body.seeGenes().toMutableList(), body.parts, body.description)
 
     override fun copyContent(): Param {
-        return UpdateForBodyParam(seeGenes().map { it.copy() }.toMutableList())
+        return UpdateForBodyParam(seeGenes().map { it.copy() }.toMutableList(), parts, sourceDescription)
     }
 
     override fun isSameTypeWithUpdatedParam(param: Param) : Boolean {
@@ -27,7 +39,8 @@ class UpdateForBodyParam(genes: MutableList<Gene>) : Param("updateForBodyParam",
     }
 
     override fun getUpdatedParam(): Param {
-        return BodyParam(children.map { it.copy() as Gene})
+        return BodyParam(children.map { it.copy() as Gene}, parts)
+            .also { it.description = sourceDescription }
     }
 }
 

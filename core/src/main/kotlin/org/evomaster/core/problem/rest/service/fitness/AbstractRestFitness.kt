@@ -1115,6 +1115,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 body.isXml() -> GeneUtils.EscapeMode.XML
                 body.isForm() -> GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED
                 body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
+                body.isMultipartSupported() -> GeneUtils.EscapeMode.MULTIPART_FORM_DATA
                 else -> {
                     LoggingUtil.uniqueWarn(log,"Cannot handle body type: " + body.contentType() + "." +
                             " It will be treated as TEXT.")
@@ -1125,7 +1126,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val stringToBeSent = body.getRawStringToBeSent(mode = mode, targetFormat = configuration.outputFormat)
             Entity.entity(
                 stringToBeSent,
-                body.contentType()
+                //for multipart, this carries the mandatory "boundary" parameter
+                body.contentTypeHeader()
             )
         } else if (forms != null) {
             Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
