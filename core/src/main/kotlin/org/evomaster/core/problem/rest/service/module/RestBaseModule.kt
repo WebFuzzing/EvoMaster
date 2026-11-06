@@ -29,6 +29,9 @@ open class RestBaseModule : EnterpriseModule() {
             .to(RestTestCaseWriter::class.java)
             .asEagerSingleton()
 
+        bind(RestTestCaseWriter::class.java)
+            .asEagerSingleton()
+
         bind(TestSuiteWriter::class.java)
             .asEagerSingleton()
 

@@ -37,8 +37,12 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModu
             bind(RemoteController::class.java)
                     .to(RemoteControllerImplementation::class.java)
                     .asEagerSingleton()
+            bind(RemoteControllerImplementation::class.java)
+                    .asEagerSingleton()
         }
 
+        bind(ResourceSampleMethodController::class.java)
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<EnterpriseSampler<RestIndividual>>() {})
             .to(ResourceSampler::class.java)
@@ -73,6 +77,8 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModu
                 .to(ResourceRestFitness::class.java)
                 .asEagerSingleton()
 
+        bind(ResourceRestFitness::class.java)
+                .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
                 .to(ResourceRestMutator::class.java)
@@ -88,6 +94,9 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModu
         bind(StructureMutator::class.java)
                 .to(ResourceRestStructureMutator::class.java)
                 .asEagerSingleton()
+
+        bind(ResourceRestStructureMutator::class.java)
+            .asEagerSingleton()
 
         bind(ResourceManageService::class.java)
                 .asEagerSingleton()
