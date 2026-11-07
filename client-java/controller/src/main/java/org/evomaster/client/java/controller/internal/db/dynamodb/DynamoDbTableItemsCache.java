@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.dynamodb;
 
+import org.evomaster.client.java.controller.dynamodb.ReflectionBasedDynamoDbClient;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,7 +20,6 @@ import java.util.Objects;
  */
 final class DynamoDbTableItemsCache {
 
-    private final DynamoDbTableDataAccessor tableDataAccessor;
     private final Object dynamoDbClient;
 
     /**
@@ -29,15 +30,13 @@ final class DynamoDbTableItemsCache {
     private final Map<String, List<Map<String, Object>>> itemsByTable = new HashMap<>();
 
     /**
-     * Creates a cache backed by the given table accessor and DynamoDB client.
+     * Creates a cache backed by the given DynamoDB client.
      *
-     * @param tableDataAccessor accessor used to scan tables on cache misses
      * @param dynamoDbClient SDK v2 synchronous or asynchronous DynamoDB client
      */
-    DynamoDbTableItemsCache(DynamoDbTableDataAccessor tableDataAccessor, Object dynamoDbClient) {
-        this.tableDataAccessor = Objects.requireNonNull(tableDataAccessor,
-                "DynamoDB table data accessor cannot be null");
-        this.dynamoDbClient = dynamoDbClient;
+    DynamoDbTableItemsCache(Object dynamoDbClient) {
+        this.dynamoDbClient = Objects.requireNonNull(dynamoDbClient,
+                "DynamoDB client cannot be null");
     }
 
     /**
@@ -53,7 +52,7 @@ final class DynamoDbTableItemsCache {
         String validTableName = validateTableName(tableName);
         List<Map<String, Object>> items = itemsByTable.get(validTableName);
         if (items == null) {
-            items = validateItems(tableDataAccessor.getItems(dynamoDbClient, validTableName));
+            items = validateItems(new ReflectionBasedDynamoDbClient(dynamoDbClient).getItems(validTableName));
             itemsByTable.put(validTableName, items);
         }
         return items;

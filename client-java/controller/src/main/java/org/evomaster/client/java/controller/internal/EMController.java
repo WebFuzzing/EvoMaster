@@ -12,7 +12,7 @@ import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedPar
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
 import org.evomaster.client.java.controller.cassandra.insertions.CassandraScriptRunner;
-import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
+import org.evomaster.client.java.controller.dynamodb.ReflectionBasedDynamoDbClient;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
@@ -1136,8 +1136,8 @@ public class EMController {
                 return Response.status(400)
                         .entity(WrappedResponseDto.withError("Insertion with no table or attributes")).build();
             }
-            DynamoDbInsertionResultsDto results = DynamoDbCommandExecutor.executeInsert(
-                    connection, dto.insertions);
+            DynamoDbInsertionResultsDto results = new ReflectionBasedDynamoDbClient(connection)
+                    .executeInsertions(dto.insertions);
             return Response.status(200).entity(WrappedResponseDto.withData(results)).build();
         } catch (RuntimeException e) {
             String msg = "Thrown exception: " + e.getMessage();

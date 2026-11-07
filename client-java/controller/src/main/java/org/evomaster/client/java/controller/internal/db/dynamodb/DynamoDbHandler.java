@@ -47,9 +47,6 @@ public class DynamoDbHandler {
     private final DynamoDbHeuristicsCalculator calculator =
             new DynamoDbHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
-    /** Accessor used to load table items through the configured DynamoDB client. */
-    private final DynamoDbTableDataAccessor tableDataAccessor = new DynamoDbTableDataAccessor();
-
     /** Whether captured commands should produce heuristic results. */
     private volatile boolean calculateHeuristics;
 
@@ -140,7 +137,16 @@ public class DynamoDbHandler {
             return Collections.emptyList();
         }
 
-        DynamoDbTableItemsCache itemsCache = new DynamoDbTableItemsCache(tableDataAccessor, dynamoDbClient);
+        if (dynamoDbClient == null) {
+            for (DynamoDbCommand command : commands) {
+                registerFailures(command, command.getTableNames(),
+                        new IllegalStateException("DynamoDB client is not configured"));
+            }
+            commands.clear();
+            return new ArrayList<>(evaluatedCommands);
+        }
+
+        DynamoDbTableItemsCache itemsCache = new DynamoDbTableItemsCache(dynamoDbClient);
         for (DynamoDbCommand command : commands) {
             evaluateCommand(command, itemsCache);
         }

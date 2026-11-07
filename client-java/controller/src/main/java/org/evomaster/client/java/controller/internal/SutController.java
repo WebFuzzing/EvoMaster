@@ -30,7 +30,7 @@ import org.evomaster.client.java.controller.internal.db.cassandra.CassandraHandl
 import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbHandler;
 import org.evomaster.client.java.controller.internal.db.dynamodb.DynamoDbCommandWithDistance;
 import org.evomaster.client.java.controller.cassandra.insertions.CassandraScriptRunner;
-import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
+import org.evomaster.client.java.controller.dynamodb.ReflectionBasedDynamoDbClient;
 import org.evomaster.client.java.controller.neo4j.Neo4jEntityDtoBuilder;
 import org.evomaster.client.java.controller.neo4j.Neo4jGraphRestorer;
 import org.evomaster.client.java.controller.neo4j.Neo4jScriptRunner;
@@ -349,7 +349,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (connection == null) {
             throw new IllegalStateException("No connection to DynamoDB");
         }
-        return DynamoDbCommandExecutor.executeInsert(connection, insertions);
+        return new ReflectionBasedDynamoDbClient(connection).executeInsertions(insertions);
     }
 
     @Override
