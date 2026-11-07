@@ -44,7 +44,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
         client = HttpClientFactory.createTrustingJerseyClient(false, config.tcpTimeoutMs)
 
-        if (!config.blackBox || config.bbExperiments) {
+        if (!config.blackBox) {
             rc.checkConnection()
 
             val started = rc.startSUT()
@@ -87,7 +87,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
     }
 
     protected fun getBaseUrl(): String {
-        var baseUrl = if (!config.blackBox || config.bbExperiments) {
+        var baseUrl = if (!config.blackBox) {
             infoDto.baseUrlOfSUT
         } else {
             BlackBoxUtils.targetUrl(config, sampler)

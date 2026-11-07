@@ -1,6 +1,7 @@
 package org.evomaster.core.output.naming.rest
 
 import org.evomaster.core.output.naming.AmbiguitySolver
+import org.evomaster.core.output.TestWriterUtils.safeVariableName
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.action.Action
@@ -52,7 +53,7 @@ class QueryParamsAmbiguitySolver(private val nameWithQueryParameters: Boolean) :
             if (index != 0) {
                 localTokens.add(and)
             }
-            localTokens.add(queryParam.name)
+            localTokens.add(safeVariableName(queryParam.name))
             localCharsBudget = addNameTokensIfAllowed(result, localTokens, localCharsBudget)
         }
         return localCharsBudget
@@ -67,7 +68,7 @@ class QueryParamsAmbiguitySolver(private val nameWithQueryParameters: Boolean) :
                 localTokens.add(and)
             }
             localTokens.add(negative)
-            localTokens.add(queryParam.name)
+            localTokens.add(safeVariableName(queryParam.name))
             localCharsBudget = addNameTokensIfAllowed(result, localTokens, localCharsBudget)
         }
         return localCharsBudget
@@ -82,7 +83,7 @@ class QueryParamsAmbiguitySolver(private val nameWithQueryParameters: Boolean) :
                 localTokens.add(and)
             }
             localTokens.add(empty)
-            localTokens.add(queryParam.name)
+            localTokens.add(safeVariableName(queryParam.name))
             localCharsBudget = addNameTokensIfAllowed(result, localTokens, localCharsBudget)
         }
     }

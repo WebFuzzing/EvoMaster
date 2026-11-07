@@ -79,9 +79,6 @@ abstract class SpringTestBase : RestTestBase() {
         setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/v3/api-docs")
         setOption(args, "problemType", "REST")
         setOption(args, "outputFormat", outputFormat.toString())
-
-        //this is deprecated
-        setOption(args, "bbExperiments", "false")
     }
 
 
