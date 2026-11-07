@@ -1,6 +1,8 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
+import org.evomaster.core.search.gene.dynamodb.DynamoDbTemplateGene
 import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.collection.*
@@ -195,6 +197,9 @@ object GeneSamplerForTests {
             JsonPatchPathOnlyGene::class  -> sampleJsonPatchPathOnlyGene(rand) as T
             JsonPatchFromPathGene::class  -> sampleJsonPatchFromPathGene(rand) as T
             JsonPatchPathValueGene::class -> sampleJsonPatchPathValueGene(rand) as T
+
+            // DynamoDB genes
+            DynamoDbTemplateGene::class -> sampleDynamoDbTemplateGene(rand) as T
 
             else -> throw IllegalStateException("No sampler for $klass")
         }
@@ -1069,5 +1074,15 @@ object GeneSamplerForTests {
             additionalFields = null,
             attributeNames = attributeNames
         )
+    }
+
+    private fun sampleDynamoDbTemplateGene(rand: Randomness): DynamoDbTemplateGene {
+        val payload = mapOf(
+            "k1" to "v_${rand.nextInt()}",
+            "k2" to rand.nextInt()
+        )
+        val name = "rand_ddb_template_${rand.nextInt()}"
+        val dto = DynamoDbAttributeValueDto.fromPlainValue(name, payload)
+        return DynamoDbTemplateGene(name, dto)
     }
 }

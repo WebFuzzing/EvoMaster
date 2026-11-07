@@ -3,7 +3,9 @@ package org.evomaster.core.database.dynamodb
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbExecutionsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
+import org.evomaster.core.search.gene.dynamodb.DynamoDbTemplateGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -19,7 +21,7 @@ class DynamoDbActionTest {
     fun actionExposesStableMetadataAndCopiesGenesIndependently() {
         val original = DynamoDbAction(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeGene("country", DynamoDbValueTypeDto.STRING, StringGene("country", "Argentina")))
+            listOf(DynamoDbAttributeGene("country", DynamoDbKeyScalarTypeDto.STRING, StringGene("country", "Argentina")))
         )
 
         val copy = original.copy() as DynamoDbAction
@@ -35,10 +37,24 @@ class DynamoDbActionTest {
     }
 
     @Test
+    fun actionComputesInsertionKeyForDocumentAttributesWithoutThrowing() {
+        val mapDto = DynamoDbAttributeValueDto.fromPlainValue("details", mapOf("city" to "Rome"))
+        val action = DynamoDbAction(
+            "Users",
+            listOf(
+                DynamoDbAttributeGene("id", DynamoDbKeyScalarTypeDto.STRING, StringGene("id", "user-1")),
+                DynamoDbAttributeGene("details", DynamoDbValueTypeDto.MAP, DynamoDbTemplateGene("details", mapDto))
+            )
+        )
+        val key = action.insertionKey()
+        assertTrue(key.startsWith("Users|id:STRING=user-1|details:MAP={"))
+    }
+
+    @Test
     fun actionResultTracksInsertionOutcomeAndMatchesDynamoDbActions() {
         val action = DynamoDbAction(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeGene("country", DynamoDbValueTypeDto.STRING, StringGene("country", "Argentina")))
+            listOf(DynamoDbAttributeGene("country", DynamoDbKeyScalarTypeDto.STRING, StringGene("country", "Argentina")))
         )
         val result = DynamoDbActionResult("source")
 
@@ -54,7 +70,7 @@ class DynamoDbActionTest {
     fun executionPreservesFailedQueriesAndAcceptsMissingDto() {
         val query = DynamoDbFailedQuery(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeValueDto("country", DynamoDbValueTypeDto.STRING, "Argentina"))
+            listOf(DynamoDbAttributeValueDto("country", DynamoDbKeyScalarTypeDto.STRING, "Argentina"))
         )
         val dto = DynamoDbExecutionsDto()
         dto.failedQueries.add(query)

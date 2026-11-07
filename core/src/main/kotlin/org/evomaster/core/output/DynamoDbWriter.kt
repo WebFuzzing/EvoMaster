@@ -5,9 +5,11 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDb
 import org.evomaster.core.search.action.EvaluatedDynamoDbAction
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
-import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.dynamodb.DynamoDbTemplateGene
 
-/** Generates DynamoDB initialization code for emitted tests. */
+/**
+ * Generates DynamoDB initialization code for emitted tests.
+ */
 object DynamoDbWriter {
 
     /**
@@ -41,16 +43,21 @@ object DynamoDbWriter {
             action.attributes.forEach { attribute ->
                 val name = "\"${escape(attribute.attributeName, format)}\""
                 val value = when (attribute.type) {
-                    DynamoDbValueTypeDto.STRING -> (attribute.gene as StringGene).getValueAsPrintableString(targetFormat = format)
+                    DynamoDbValueTypeDto.MAP, DynamoDbValueTypeDto.LIST, DynamoDbValueTypeDto.NULL -> {
+                        val plain = (attribute.gene as DynamoDbTemplateGene).toDto().toPlainValue()
+                        val json = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(plain)
+                        "\"${escape(json, format)}\""
+                    }
+                    DynamoDbValueTypeDto.STRING -> {
+                        val literal = "'${attribute.gene.getValueAsRawString().replace("'", "''")}'"
+                        "\"${escape(literal, format)}\""
+                    }
                     DynamoDbValueTypeDto.NUMBER -> "\"${(attribute.gene as BigDecimalGene).value.toPlainString()}\""
-                    DynamoDbValueTypeDto.BOOLEAN -> (attribute.gene as BooleanGene).value.toString()
-                    else -> "\"${escape(attribute.gene.getValueAsRawString(), format)}\""
+                    DynamoDbValueTypeDto.BOOLEAN -> "\"${(attribute.gene as BooleanGene).value}\""
                 }
                 val method = when (attribute.type) {
-                    DynamoDbValueTypeDto.STRING -> "s"
-                    DynamoDbValueTypeDto.NUMBER -> "n"
-                    DynamoDbValueTypeDto.BOOLEAN -> "bool"
-                    else -> "d"
+                    DynamoDbValueTypeDto.MAP, DynamoDbValueTypeDto.LIST, DynamoDbValueTypeDto.NULL -> "json"
+                    DynamoDbValueTypeDto.STRING, DynamoDbValueTypeDto.NUMBER, DynamoDbValueTypeDto.BOOLEAN -> "d"
                 }
                 lines.add(".$method($name, $value)")
             }
@@ -64,6 +71,13 @@ object DynamoDbWriter {
         dynamoDbInsertionVars.add(insertionVar to resultVar)
     }
 
+    /**
+     * Escapes string literals for the target source code format.
+     *
+     * @param value raw string value to escape
+     * @param format target output programming language format
+     * @return escaped string representation
+     */
     private fun escape(value: String, format: OutputFormat): String =
         StringEscapeUtils.escapeJava(value).let { if (format.isKotlin()) it.replace("$", "\\$") else it }
 }

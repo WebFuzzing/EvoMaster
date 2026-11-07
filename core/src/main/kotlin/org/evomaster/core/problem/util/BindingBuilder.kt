@@ -4,6 +4,8 @@ import com.google.common.annotations.VisibleForTesting
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.search.gene.dynamodb.DynamoDbTemplateGene
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
@@ -128,6 +130,65 @@ object BindingBuilder {
         }
 
     }
+
+    /**
+     * Keeps inferred string attributes linked to the inputs that produced the failed read.
+     * Both genes must have the same current value. Prefer inputs with the same attribute name
+     * (allowing, for example, subject_id and subjectId); a differently named input is linked
+     * only when it is the sole match. Empty strings are too common to identify a source.
+     * Adds bidirectional bindings so mutation of either gene updates the other.
+     *
+     * @param actions list of DynamoDB actions whose string attributes should be bound
+     * @param inputGenes list of non-initializing request input genes to bind against
+     */
+    fun bindDynamoDbInsertActionsToInputs(actions: List<DynamoDbAction>, inputGenes: List<Gene>) {
+        val stringsByValue = inputGenes.filterIsInstance<StringGene>()
+            .filter { it.getValueAsRawString().isNotEmpty() }
+            .groupBy { it.getValueAsRawString() }
+
+        actions.forEach { action ->
+            action.attributes.forEachIndexed { attrIndex, attribute ->
+                val stringGenes = attribute.gene.flatView().filterIsInstance<StringGene>()
+                stringGenes.forEach { stringGene ->
+                    var inserted = stringGene
+                    val candidates = stringsByValue[inserted.getValueAsRawString()].orEmpty()
+                    val matchingName = candidates.filter {
+                        normalizedName(it.name) == normalizedName(inserted.name)
+                    }
+                    val sources = matchingName.ifEmpty { candidates.takeIf { it.size == 1 }.orEmpty() }
+                    if (sources.isNotEmpty()) {
+                        // Both sides can mutate: use the intersection of their string constraints.
+                        val constrained = StringGene(inserted.name, inserted.value,
+                            minLength = (sources.map { it.minLength } + inserted.minLength).max(),
+                            maxLength = (sources.map { it.maxLength } + inserted.maxLength).min(),
+                            invalidChars = (sources.flatMap { it.invalidChars } + inserted.invalidChars).distinct())
+                        if (!constrained.copyValueFrom(sources.first())) return@forEach
+                        if (constrained.minLength != inserted.minLength || constrained.maxLength != inserted.maxLength
+                            || constrained.invalidChars != inserted.invalidChars) {
+                            if (attribute.gene is DynamoDbTemplateGene) {
+                                (attribute.gene as DynamoDbTemplateGene).replaceChildGene(inserted, constrained)
+                            } else {
+                                action.replaceAttributeGene(attrIndex, constrained)
+                            }
+                            inserted = constrained
+                        }
+                    }
+                    sources.forEach { input ->
+                        inserted.addBindingGene(input)
+                        input.addBindingGene(inserted)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Compares DynamoDB attribute names with API parameter names across common naming styles.
+     *
+     * @param name raw attribute or parameter name
+     * @return alphanumeric, lowercase normalized string
+     */
+    private fun normalizedName(name: String): String = name.filter(Char::isLetterOrDigit).lowercase()
 
     /**
      *  bind [restAction] with [sqlActions]

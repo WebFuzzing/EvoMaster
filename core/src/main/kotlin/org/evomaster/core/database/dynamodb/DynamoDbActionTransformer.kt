@@ -1,34 +1,25 @@
 package org.evomaster.core.database.dynamodb
 
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbDatabaseCommandsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
-import org.evomaster.core.search.gene.BooleanGene
-import org.evomaster.core.search.gene.numeric.BigDecimalGene
-import org.evomaster.core.search.gene.string.StringGene
 
-/** Transforms DynamoDB actions into controller insertion commands. */
+/**
+ * Transforms DynamoDB actions into controller insertion commands.
+ */
 object DynamoDbActionTransformer {
 
-    /** Converts initialization actions to the controller's DynamoDB insertion DTO. */
+    /**
+     * Transforms evaluated actions into insertion DTOs grouped in a database command payload.
+     *
+     * @param actions list of DynamoDB actions to transform
+     * @return database commands DTO containing all converted insertions
+     */
     fun transform(actions: List<DynamoDbAction>): DynamoDbDatabaseCommandsDto =
         DynamoDbDatabaseCommandsDto().also { commands ->
             commands.insertions = actions.map { action ->
                 DynamoDbInsertionDto().also { insertion ->
                     insertion.tableName = action.tableName
-                    insertion.attributes = action.attributes.map { attribute ->
-                        DynamoDbAttributeValueDto(
-                            attribute.attributeName,
-                            attribute.type,
-                            when (attribute.type) {
-                                DynamoDbValueTypeDto.STRING -> (attribute.gene as StringGene).value
-                                DynamoDbValueTypeDto.NUMBER -> (attribute.gene as BigDecimalGene).value.toPlainString()
-                                DynamoDbValueTypeDto.BOOLEAN -> (attribute.gene as BooleanGene).value.toString()
-                                else -> attribute.gene.getValueAsRawString()
-                            }
-                        )
-                    }
+                    insertion.attributes = action.attributes.map { it.toDto() }
                 }
             }
         }
