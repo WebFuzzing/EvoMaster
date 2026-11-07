@@ -49,7 +49,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
     fun initialize() {
         log.debug("Initializing {}", RPCSampler::class.simpleName)
 
-        if(configuration.blackBox && !configuration.bbExperiments){
+        if(configuration.blackBox){
             throw IllegalStateException("Not support black-box testing for RPC with interface")
         }
 

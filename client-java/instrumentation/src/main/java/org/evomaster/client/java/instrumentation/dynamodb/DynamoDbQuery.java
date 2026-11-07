@@ -20,6 +20,8 @@ import java.util.TreeSet;
 public final class DynamoDbQuery implements Serializable {
 
     private final String tableName;
+    /** Maps each attribute name to its {@link DynamoDbAttributeFormat}. */
+    private final Map<String, DynamoDbAttributeFormat> attributeFormats;
     /** Maps each key attribute name to its typed value. */
     private final Map<String, DynamoDbQueryValue> key;
     /** Maps each table name to its batch-get key collection. */
@@ -33,6 +35,7 @@ public final class DynamoDbQuery implements Serializable {
 
     private DynamoDbQuery(Object request) {
         tableName = readString(request, "tableName");
+        attributeFormats = DynamoDbSchemaRegistry.getFormats(tableName);
         key = snapshotAttributeMap(read(request, "key"));
         batchRequestItems = snapshotRequestItems(read(request, "requestItems"));
         keyConditionExpression = readString(request, "keyConditionExpression");
@@ -52,6 +55,15 @@ public final class DynamoDbQuery implements Serializable {
      */
     public static DynamoDbQuery from(Object request) {
         return request == null ? null : new DynamoDbQuery(request);
+    }
+
+    /**
+     * Returns converter formats captured in the SUT, including for empty tables.
+     *
+     * @return attribute name to attribute format map
+     */
+    public Map<String, DynamoDbAttributeFormat> attributeFormats() {
+        return attributeFormats;
     }
 
     /**
@@ -331,7 +343,10 @@ public final class DynamoDbQuery implements Serializable {
         private final List<Map<String, DynamoDbQueryValue>> keys;
 
         private BatchGetKeys(Object keysAndAttributes) {
-            keys = snapshotBatchKeys(read(keysAndAttributes, "keys"));
+            // The enhanced client emits a null value for a mapped ReadBatch with no get items.
+            // Preserve this as an empty key list, distinct from an unreadable non-null object.
+            keys = keysAndAttributes == null ? Collections.emptyList()
+                    : snapshotBatchKeys(read(keysAndAttributes, "keys"));
         }
 
         /**
