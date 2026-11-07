@@ -3,7 +3,7 @@ package org.evomaster.core.database.dynamodb
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbExecutionsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -19,7 +19,7 @@ class DynamoDbActionTest {
     fun actionExposesStableMetadataAndCopiesGenesIndependently() {
         val original = DynamoDbAction(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.STRING, StringGene("country", "Argentina")))
+            listOf(DynamoDbAttributeGene("country", DynamoDbValueTypeDto.STRING, StringGene("country", "Argentina")))
         )
 
         val copy = original.copy() as DynamoDbAction
@@ -38,7 +38,7 @@ class DynamoDbActionTest {
     fun actionResultTracksInsertionOutcomeAndMatchesDynamoDbActions() {
         val action = DynamoDbAction(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.STRING, StringGene("country", "Argentina")))
+            listOf(DynamoDbAttributeGene("country", DynamoDbValueTypeDto.STRING, StringGene("country", "Argentina")))
         )
         val result = DynamoDbActionResult("source")
 
@@ -54,7 +54,7 @@ class DynamoDbActionTest {
     fun executionPreservesFailedQueriesAndAcceptsMissingDto() {
         val query = DynamoDbFailedQuery(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"))
+            listOf(DynamoDbAttributeValueDto("country", DynamoDbValueTypeDto.STRING, "Argentina"))
         )
         val dto = DynamoDbExecutionsDto()
         dto.failedQueries.add(query)

@@ -2,7 +2,7 @@ package org.evomaster.core.database.dynamodb
 
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -30,15 +30,15 @@ class DynamoDbInsertBuilderTest {
         val valid = validQuery()
         val invalidNumber = DynamoDbFailedQuery(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.NUMBER, "ten"))
+            listOf(DynamoDbAttributeValueDto("fifaId", DynamoDbValueTypeDto.NUMBER, "ten"))
         )
         val blankTable = DynamoDbFailedQuery(
             "",
-            listOf(DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"))
+            listOf(DynamoDbAttributeValueDto("country", DynamoDbValueTypeDto.STRING, "Argentina"))
         )
         val missingType = DynamoDbFailedQuery(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeValueDto("country", null, "Argentina"))
+            listOf(DynamoDbAttributeValueDto("country", null as DynamoDbValueTypeDto?, "Argentina"))
         )
 
         val actions = DynamoDbInsertBuilder.buildInsertActions(
@@ -55,9 +55,9 @@ class DynamoDbInsertBuilderTest {
     private fun validQuery(): DynamoDbFailedQuery = DynamoDbFailedQuery(
         "WorldCupPlayers",
         listOf(
-            DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"),
-            DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.NUMBER, "10.50"),
-            DynamoDbAttributeValueDto("captain", DynamoDbScalarTypeDto.BOOLEAN, "true")
+            DynamoDbAttributeValueDto("country", DynamoDbValueTypeDto.STRING, "Argentina"),
+            DynamoDbAttributeValueDto("fifaId", DynamoDbValueTypeDto.NUMBER, "10.50"),
+            DynamoDbAttributeValueDto("captain", DynamoDbValueTypeDto.BOOLEAN, "true")
         )
     )
 }

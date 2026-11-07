@@ -2,7 +2,7 @@ package org.evomaster.core.database.dynamodb
 
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -43,11 +43,12 @@ object DynamoDbInsertBuilder {
         val type = attribute.type ?: return null
         val value = attribute.value ?: return null
         val gene = when (type) {
-            DynamoDbScalarTypeDto.STRING -> StringGene(attribute.attributeName, value)
-            DynamoDbScalarTypeDto.NUMBER -> value.toBigDecimalOrNull()?.let {
+            DynamoDbValueTypeDto.STRING -> StringGene(attribute.attributeName, value)
+            DynamoDbValueTypeDto.NUMBER -> value.toBigDecimalOrNull()?.let {
                 BigDecimalGene(attribute.attributeName, it)
             } ?: return null
-            DynamoDbScalarTypeDto.BOOLEAN -> BooleanGene(attribute.attributeName, value.toBoolean())
+            DynamoDbValueTypeDto.BOOLEAN -> BooleanGene(attribute.attributeName, value.toBoolean())
+            else -> return null
         }
 
         return DynamoDbAttributeGene(attribute.attributeName, type, gene)

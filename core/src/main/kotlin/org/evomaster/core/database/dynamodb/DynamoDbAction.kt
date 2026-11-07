@@ -2,7 +2,8 @@ package org.evomaster.core.database.dynamodb
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKeyBuilder
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.Gene
@@ -16,9 +17,13 @@ import org.evomaster.core.search.gene.Gene
  */
 data class DynamoDbAttributeGene(
     val attributeName: String,
-    val type: DynamoDbScalarTypeDto,
+    val type: DynamoDbValueTypeDto,
     val gene: Gene
-)
+) {
+    /** Converts scalar key metadata at the attribute boundary. */
+    constructor(attributeName: String, type: DynamoDbKeyScalarTypeDto, gene: Gene) :
+        this(attributeName, DynamoDbValueTypeDto.fromKeyScalar(type), gene)
+}
 
 /**
  * An initialization action that inserts one DynamoDB item.

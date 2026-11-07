@@ -1,6 +1,6 @@
 package org.evomaster.core.output
 
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbActionResult
 import org.evomaster.core.database.dynamodb.DynamoDbAttributeGene
@@ -20,7 +20,7 @@ class DynamoDbWriterTest {
             listOf(
                 DynamoDbAttributeGene(
                     "country",
-                    DynamoDbScalarTypeDto.STRING,
+                    DynamoDbValueTypeDto.STRING,
                     StringGene("country", "Argentina")
                 )
             )

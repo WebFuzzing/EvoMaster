@@ -2,12 +2,14 @@ package org.evomaster.client.java.controller.dynamodb.dsl;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /** Tests the DynamoDB insertion DTOs produced by the generated-test DSL. */
@@ -26,11 +28,11 @@ public class DynamoDbDslTest {
                 .dtos();
 
         assertEquals(2, insertions.size());
-        assertInsertion(insertions.get(0), "WorldCupPlayers", "country", DynamoDbScalarTypeDto.STRING, "Argentina");
-        assertInsertion(insertions.get(0), "WorldCupPlayers", "fifaId", DynamoDbScalarTypeDto.NUMBER, "10");
-        assertInsertion(insertions.get(0), "WorldCupPlayers", "captain", DynamoDbScalarTypeDto.BOOLEAN, "true");
-        assertInsertion(insertions.get(1), "WorldCupPlayers", "country", DynamoDbScalarTypeDto.STRING, "Brazil");
-        assertInsertion(insertions.get(1), "WorldCupPlayers", "fifaId", DynamoDbScalarTypeDto.NUMBER, "1");
+        assertInsertion(insertions.get(0), "WorldCupPlayers", "country", DynamoDbKeyScalarTypeDto.STRING, "Argentina");
+        assertInsertion(insertions.get(0), "WorldCupPlayers", "fifaId", DynamoDbKeyScalarTypeDto.NUMBER, "10");
+        assertInsertion(insertions.get(0), "WorldCupPlayers", "captain", DynamoDbKeyScalarTypeDto.BOOLEAN, "true");
+        assertInsertion(insertions.get(1), "WorldCupPlayers", "country", DynamoDbKeyScalarTypeDto.STRING, "Brazil");
+        assertInsertion(insertions.get(1), "WorldCupPlayers", "fifaId", DynamoDbKeyScalarTypeDto.NUMBER, "1");
     }
 
     @Test
@@ -44,10 +46,10 @@ public class DynamoDbDslTest {
                 .dtos()
                 .get(0);
 
-        assertInsertion(insertion, "WorldCupPlayers", "shirtNumber", DynamoDbScalarTypeDto.STRING, "10");
-        assertInsertion(insertion, "WorldCupPlayers", "captainLabel", DynamoDbScalarTypeDto.STRING, "true");
-        assertInsertion(insertion, "WorldCupPlayers", "goals", DynamoDbScalarTypeDto.NUMBER, "3e1");
-        assertInsertion(insertion, "WorldCupPlayers", "captain", DynamoDbScalarTypeDto.BOOLEAN, "true");
+        assertInsertion(insertion, "WorldCupPlayers", "shirtNumber", DynamoDbKeyScalarTypeDto.STRING, "10");
+        assertInsertion(insertion, "WorldCupPlayers", "captainLabel", DynamoDbKeyScalarTypeDto.STRING, "true");
+        assertInsertion(insertion, "WorldCupPlayers", "goals", DynamoDbKeyScalarTypeDto.NUMBER, "3e1");
+        assertInsertion(insertion, "WorldCupPlayers", "captain", DynamoDbKeyScalarTypeDto.BOOLEAN, "true");
     }
 
     @Test
@@ -63,7 +65,7 @@ public class DynamoDbDslTest {
                 .dtos();
 
         assertEquals(1, current.size());
-        assertInsertion(current.get(0), "WorldCupPlayers", "country", DynamoDbScalarTypeDto.STRING, "Brazil");
+        assertInsertion(current.get(0), "WorldCupPlayers", "country", DynamoDbKeyScalarTypeDto.STRING, "Brazil");
     }
 
     @Test
@@ -88,14 +90,39 @@ public class DynamoDbDslTest {
             DynamoDbInsertionDto insertion,
             String tableName,
             String attributeName,
-            DynamoDbScalarTypeDto type,
+            DynamoDbKeyScalarTypeDto type,
             String value) {
         assertEquals(tableName, insertion.tableName);
         DynamoDbAttributeValueDto attribute = insertion.attributes.stream()
                 .filter(candidate -> attributeName.equals(candidate.attributeName))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Missing attribute " + attributeName));
-        assertEquals(type, attribute.type);
+        assertEquals(DynamoDbValueTypeDto.fromKeyScalar(type), attribute.type);
         assertEquals(value, attribute.value);
+    }
+    /** JSON is parsed once at the DSL boundary into a recursive typed DTO. */
+    @Test
+    public void testJsonBoundaryCreatesTypedPayload() {
+        DynamoDbAttributeValueDto value = DynamoDbDsl.dynamoDb().insertInto("players")
+                .json("profile", "{\"players\":[\"Lionel Messi\",null],\"score\":10.1234567890123456789}")
+                .dtos().get(0).attributes.get(0);
+        assertEquals(DynamoDbValueTypeDto.MAP, value.type);
+        assertNull(value.value);
+        assertEquals("10.1234567890123456789", value.mapValue.get("score").value);
+        assertEquals(DynamoDbValueTypeDto.NULL,
+                value.mapValue.get("players").listValue.get(1).type);
+        assertThrows(IllegalArgumentException.class, () -> DynamoDbDsl.dynamoDb().insertInto("players").json("profile", "{} garbage"));
+    }
+    /** The controller JSON transport retains the typed tree instead of embedding another JSON string. */
+    @Test
+    public void testTypedTransportRoundTrip() throws Exception {
+        DynamoDbAttributeValueDto original = DynamoDbDsl.dynamoDb().insertInto("players")
+                .json("profile", "{\"name\":\"Lionel Messi\",\"teams\":[],\"coach\":null}")
+                .dtos().get(0).attributes.get(0);
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        DynamoDbAttributeValueDto transported = mapper.readValue(mapper.writeValueAsString(original), DynamoDbAttributeValueDto.class);
+        assertEquals(original, transported);
+        assertNull(transported.value);
+        assertEquals("Lionel Messi", transported.mapValue.get("name").value);
     }
 }

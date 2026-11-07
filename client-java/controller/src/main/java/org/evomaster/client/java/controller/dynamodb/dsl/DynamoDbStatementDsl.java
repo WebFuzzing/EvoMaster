@@ -19,6 +19,19 @@ public interface DynamoDbStatementDsl extends DynamoDbSequenceDsl {
      */
     DynamoDbStatementDsl d(String attributeName, String printableValue);
 
-    /** @return the completed insertion DTOs */
+    /**
+     * Adds a nested JSON document with its DynamoDB map, list and scalar types.
+     *
+     * @param attributeName attribute name
+     * @param json serialized document
+     * @return this statement
+     */
+    DynamoDbStatementDsl json(String attributeName, String json);
+
+    /**
+     * Completes this statement and returns all accumulated insertions.
+     *
+     * @return the completed insertion DTOs
+     */
     List<DynamoDbInsertionDto> dtos();
 }

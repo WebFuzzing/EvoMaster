@@ -1,6 +1,6 @@
 package org.evomaster.core.database.dynamodb
 
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -17,9 +17,9 @@ class DynamoDbActionTransformerTest {
         val action = DynamoDbAction(
             "WorldCupPlayers",
             listOf(
-                DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.STRING, StringGene("country", "Argentina")),
-                DynamoDbAttributeGene("fifaId", DynamoDbScalarTypeDto.NUMBER, BigDecimalGene("fifaId", BigDecimal("10.50"))),
-                DynamoDbAttributeGene("captain", DynamoDbScalarTypeDto.BOOLEAN, BooleanGene("captain", true))
+                DynamoDbAttributeGene("country", DynamoDbValueTypeDto.STRING, StringGene("country", "Argentina")),
+                DynamoDbAttributeGene("fifaId", DynamoDbValueTypeDto.NUMBER, BigDecimalGene("fifaId", BigDecimal("10.50"))),
+                DynamoDbAttributeGene("captain", DynamoDbValueTypeDto.BOOLEAN, BooleanGene("captain", true))
             )
         )
 
@@ -30,7 +30,7 @@ class DynamoDbActionTransformerTest {
         assertEquals("10.50", insertion.attributes[1].value)
         assertEquals("true", insertion.attributes[2].value)
         assertEquals(
-            listOf(DynamoDbScalarTypeDto.STRING, DynamoDbScalarTypeDto.NUMBER, DynamoDbScalarTypeDto.BOOLEAN),
+            listOf(DynamoDbValueTypeDto.STRING, DynamoDbValueTypeDto.NUMBER, DynamoDbValueTypeDto.BOOLEAN),
             insertion.attributes.map { it.type }
         )
     }

@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.dynamodb;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionResultsDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -227,9 +227,9 @@ public class ReflectionBasedDynamoDbClientTest {
         DynamoDbInsertionDto dto = new DynamoDbInsertionDto();
         dto.tableName = TABLE;
         dto.attributes = new ArrayList<>();
-        dto.attributes.add(new DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"));
-        dto.attributes.add(new DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.NUMBER, "10"));
-        dto.attributes.add(new DynamoDbAttributeValueDto("captain", DynamoDbScalarTypeDto.BOOLEAN, "true"));
+        dto.attributes.add(new DynamoDbAttributeValueDto("country", DynamoDbKeyScalarTypeDto.STRING, "Argentina"));
+        dto.attributes.add(new DynamoDbAttributeValueDto("fifaId", DynamoDbKeyScalarTypeDto.NUMBER, "10"));
+        dto.attributes.add(new DynamoDbAttributeValueDto("captain", DynamoDbKeyScalarTypeDto.BOOLEAN, "true"));
         return dto;
     }
 }

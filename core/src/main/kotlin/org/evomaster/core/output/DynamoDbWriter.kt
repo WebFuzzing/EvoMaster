@@ -1,7 +1,7 @@
 package org.evomaster.core.output
 
 import org.apache.commons.text.StringEscapeUtils
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.action.EvaluatedDynamoDbAction
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
@@ -41,14 +41,16 @@ object DynamoDbWriter {
             action.attributes.forEach { attribute ->
                 val name = "\"${escape(attribute.attributeName, format)}\""
                 val value = when (attribute.type) {
-                    DynamoDbScalarTypeDto.STRING -> (attribute.gene as StringGene).getValueAsPrintableString(targetFormat = format)
-                    DynamoDbScalarTypeDto.NUMBER -> "\"${(attribute.gene as BigDecimalGene).value.toPlainString()}\""
-                    DynamoDbScalarTypeDto.BOOLEAN -> (attribute.gene as BooleanGene).value.toString()
+                    DynamoDbValueTypeDto.STRING -> (attribute.gene as StringGene).getValueAsPrintableString(targetFormat = format)
+                    DynamoDbValueTypeDto.NUMBER -> "\"${(attribute.gene as BigDecimalGene).value.toPlainString()}\""
+                    DynamoDbValueTypeDto.BOOLEAN -> (attribute.gene as BooleanGene).value.toString()
+                    else -> "\"${escape(attribute.gene.getValueAsRawString(), format)}\""
                 }
                 val method = when (attribute.type) {
-                    DynamoDbScalarTypeDto.STRING -> "s"
-                    DynamoDbScalarTypeDto.NUMBER -> "n"
-                    DynamoDbScalarTypeDto.BOOLEAN -> "bool"
+                    DynamoDbValueTypeDto.STRING -> "s"
+                    DynamoDbValueTypeDto.NUMBER -> "n"
+                    DynamoDbValueTypeDto.BOOLEAN -> "bool"
+                    else -> "d"
                 }
                 lines.add(".$method($name, $value)")
             }
