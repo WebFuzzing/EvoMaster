@@ -46,9 +46,6 @@ abstract class SpringTestBase : GraphQLTestBase() {
         setOption(args, "bbTargetUrl", "$baseUrlOfSut/graphql")
         setOption(args, "problemType", "GRAPHQL")
         setOption(args, "outputFormat", outputFormat.toString())
-
-        //this is deprecated
-        setOption(args, "bbExperiments", "false")
     }
 
     fun executeAndEvaluateBBTest(
