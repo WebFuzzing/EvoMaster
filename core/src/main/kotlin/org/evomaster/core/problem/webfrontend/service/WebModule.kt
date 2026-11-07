@@ -29,6 +29,7 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class WebModule: EnterpriseModule() {
 
     override fun configure() {
+        super.configure()
 
         binder().requireExplicitBindings()
 
@@ -72,6 +73,9 @@ class WebModule: EnterpriseModule() {
             .to(WebFitness::class.java)
             .asEagerSingleton()
 
+        bind(WebFitness::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Archive<WebIndividual>>() {})
             .asEagerSingleton()
 
@@ -85,16 +89,28 @@ class WebModule: EnterpriseModule() {
             .to(RemoteControllerImplementation::class.java)
             .asEagerSingleton()
 
+        bind(RemoteControllerImplementation::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Mutator<WebIndividual>>() {})
             .to(object : TypeLiteral<StandardMutator<WebIndividual>>() {})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<StandardMutator<WebIndividual>>() {})
             .asEagerSingleton()
 
         bind(StructureMutator::class.java)
             .to(WebStructureMutator::class.java)
             .asEagerSingleton()
 
+        bind(WebStructureMutator::class.java)
+            .asEagerSingleton()
+
         bind(TestCaseWriter::class.java)
             .to(WebTestCaseWriter::class.java)
+            .asEagerSingleton()
+
+        bind(WebTestCaseWriter::class.java)
             .asEagerSingleton()
 
         bind(TestSuiteWriter::class.java)

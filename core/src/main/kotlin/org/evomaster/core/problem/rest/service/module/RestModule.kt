@@ -69,19 +69,21 @@ class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
             .to(RestFitness::class.java)
             .asEagerSingleton()
 
+        bind(RestFitness::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
             .to(object : TypeLiteral<StandardMutator<RestIndividual>>() {})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<StandardMutator<RestIndividual>>() {})
             .asEagerSingleton()
 
         bind(StructureMutator::class.java)
             .to(RestStructureMutator::class.java)
             .asEagerSingleton()
 
-        bind(HttpWsExternalServiceHandler::class.java)
+        bind(RestStructureMutator::class.java)
             .asEagerSingleton()
-
-        bind(HarvestActualHttpWsResponseHandler::class.java)
-            .asEagerSingleton()
-
     }
 }

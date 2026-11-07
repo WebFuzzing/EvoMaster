@@ -23,6 +23,7 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class GraphQLModule : EnterpriseModule() {
 
     override fun configure() {
+        super.configure()
 
         binder().requireExplicitBindings()
 
@@ -52,6 +53,9 @@ class GraphQLModule : EnterpriseModule() {
             .to(GraphQLFitness::class.java)
             .asEagerSingleton()
 
+        bind(GraphQLFitness::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
                 .asEagerSingleton()
 
@@ -79,17 +83,29 @@ class GraphQLModule : EnterpriseModule() {
                 .to(RemoteControllerImplementation::class.java)
                 .asEagerSingleton()
 
+        bind(RemoteControllerImplementation::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Mutator<GraphQLIndividual>>() {})
                 .to(object : TypeLiteral<StandardMutator<GraphQLIndividual>>() {})
                 .asEagerSingleton()
+
+        bind(object : TypeLiteral<StandardMutator<GraphQLIndividual>>() {})
+            .asEagerSingleton()
 
         bind(StructureMutator::class.java)
                 .to(GraphQLStructureMutator::class.java)
                 .asEagerSingleton()
 
+        bind(GraphQLStructureMutator::class.java)
+            .asEagerSingleton()
+
         bind(TestCaseWriter::class.java)
                 .to(GraphQLTestCaseWriter::class.java)
                 .asEagerSingleton()
+
+        bind(GraphQLTestCaseWriter::class.java)
+            .asEagerSingleton()
 
         bind(TestSuiteWriter::class.java)
                 .asEagerSingleton()

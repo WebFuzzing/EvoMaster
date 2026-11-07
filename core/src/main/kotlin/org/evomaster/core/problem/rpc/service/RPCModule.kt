@@ -26,6 +26,7 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class RPCModule : EnterpriseModule(){
 
     override fun configure() {
+        super.configure()
 
         binder().requireExplicitBindings()
 
@@ -60,6 +61,9 @@ class RPCModule : EnterpriseModule(){
                 .to(RPCFitness::class.java)
                 .asEagerSingleton()
 
+        bind(RPCFitness::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<FlakinessDetector<RPCIndividual>>(){})
             .asEagerSingleton()
 
@@ -84,17 +88,29 @@ class RPCModule : EnterpriseModule(){
                 .to(RemoteControllerImplementation::class.java)
                 .asEagerSingleton()
 
+        bind(RemoteControllerImplementation::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Mutator<RPCIndividual>>() {})
                 .to(object : TypeLiteral<StandardMutator<RPCIndividual>>(){})
                 .asEagerSingleton()
+
+        bind(object : TypeLiteral<StandardMutator<RPCIndividual>>(){})
+            .asEagerSingleton()
 
         bind(StructureMutator::class.java)
                 .to(RPCStructureMutator::class.java)
                 .asEagerSingleton()
 
+        bind(RPCStructureMutator::class.java)
+            .asEagerSingleton()
+
         bind(TestCaseWriter::class.java)
                 .to(RPCTestCaseWriter::class.java)
                 .asEagerSingleton()
+
+        bind(RPCTestCaseWriter::class.java)
+            .asEagerSingleton()
 
         bind(TestSuiteWriter::class.java)
                 .asEagerSingleton()

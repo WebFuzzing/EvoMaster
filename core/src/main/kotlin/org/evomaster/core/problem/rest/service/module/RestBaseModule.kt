@@ -13,6 +13,7 @@ import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.problem.rest.service.HttpSemanticsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.problem.rest.service.RestSecurityBuilder
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FlakinessDetector
 import org.evomaster.core.search.service.Minimizer
@@ -84,5 +85,8 @@ open class RestBaseModule : EnterpriseModule() {
         bind(ArazzoWorkflowsService::class.java)
             .asEagerSingleton()
 
+        //TODO move upwards once fixed its dependencies to REST
+        bind(SSRFAnalyser::class.java)
+            .asEagerSingleton()
     }
 }

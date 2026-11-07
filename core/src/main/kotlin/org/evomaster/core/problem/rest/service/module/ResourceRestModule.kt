@@ -108,15 +108,5 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModu
 
         bind(ResourceDepManageService::class.java)
                 .asEagerSingleton()
-
-
-        bind(HttpWsExternalServiceHandler::class.java)
-                .asEagerSingleton()
-
-        bind(HarvestActualHttpWsResponseHandler::class.java)
-            .asEagerSingleton()
-
-
-
     }
 }
