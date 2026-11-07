@@ -27,7 +27,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
         log.debug("Initializing {}", GraphQLSampler::class.simpleName)
 
-        if(config.blackBox && !config.bbExperiments){
+        if(config.blackBox){
             initForBlackBox()
             return
         }
