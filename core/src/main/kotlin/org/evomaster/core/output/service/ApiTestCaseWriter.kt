@@ -398,7 +398,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     }
 
                     if (flakyMap == null || flakyMap.containsKey(it.key)) {
-                        handleAssertionsOnField(it.value, flakyMap?.get(it.key), lines, extendedPath, responseVariableName)
+                        handleAssertionsOnField(it.value, flakyMap?.get(it.key), lines, extendedPath, responseVariableName, flakyMap != null)
                     }else{
                         lines.addSingleCommentLine(flakyInfo("mismatched field name", fieldName, "NONE"))
                     }
@@ -460,7 +460,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         }
     }
 
-    private fun handleAssertionsOnField(value: Any?, flakyValue: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
+    private fun handleAssertionsOnField(value: Any?, flakyValue: Any?, lines: Lines, fieldPath: String, responseVariableName: String?, hasFlakyObservation: Boolean = false) {
 
         if (value == null) {
             val field = when {
@@ -489,6 +489,17 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             }else{
                 lines.add(instruction)
             }
+            return
+        }
+
+        // A failed safe cast below must not turn an observed type change into "no observation".
+        // Presence is tracked separately because an observed JSON null is also a type change.
+        if (hasFlakyObservation &&
+            ((value is List<*> && flakyValue !is List<*>) ||
+             (value is Map<*, *> && flakyValue !is Map<*, *>))) {
+            val originalType = if (value is List<*>) "array" else "object"
+            val observedType = if (flakyValue == null) "null" else "non-$originalType"
+            lines.addSingleCommentLine(flakyInfo("type of field $fieldPath", originalType, observedType))
             return
         }
 
@@ -694,7 +705,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             }
             val flakyItem = if (flakyList != null) flakyList[i] else null
 
-            handleAssertionsOnField(list[i], flakyItem, lines, "$fieldPath[$i]", responseVariableName)
+            handleAssertionsOnField(list[i], flakyItem, lines, "$fieldPath[$i]", responseVariableName, flakyList != null)
         }
         if (skipped > 0) {
             lines.addSingleCommentLine("Skipping assertions on the remaining $skipped elements. This limit of $limit elements can be increased in the configurations")
