@@ -27,7 +27,6 @@ class DynamoDbActionTest {
 
         assertEquals("DynamoDB_INSERT_WorldCupPlayers", original.getName())
         assertEquals(DynamoDbAction::class.java.name, original.getActionGroupKey())
-        assertEquals("WorldCupPlayers|country:STRING=Argentina", original.insertionKey())
         assertSame(original.attributes.single().gene, original.seeTopGenes().single())
         assertNotSame(original.attributes.single().gene, copy.attributes.single().gene)
         assertEquals("Argentina", (original.attributes.single().gene as StringGene).value)

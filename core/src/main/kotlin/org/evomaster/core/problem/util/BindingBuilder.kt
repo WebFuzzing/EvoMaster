@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
@@ -128,6 +129,37 @@ object BindingBuilder {
         }
 
     }
+
+    /**
+     * Keeps inferred string attributes linked to the inputs that produced the failed read.
+     * Both genes must have the same current value. Prefer inputs with the same attribute name
+     * (allowing, for example, subject_id and subjectId); a differently named input is linked
+     * only when it is the sole match. Empty strings are too common to identify a source.
+     * Adds bidirectional bindings so mutation of either gene updates the other.
+     */
+    fun bindDynamoDbInsertActionsToInputs(actions: List<DynamoDbAction>, inputGenes: List<Gene>) {
+        val stringsByValue = inputGenes.filterIsInstance<StringGene>()
+            .filter { it.value.isNotEmpty() }
+            .groupBy { it.value }
+
+        actions.forEach { action ->
+            action.attributes.forEach { attribute ->
+                val inserted = attribute.gene as? StringGene ?: return@forEach
+                val candidates = stringsByValue[inserted.value].orEmpty()
+                val matchingName = candidates.filter {
+                    normalizedName(it.name) == normalizedName(attribute.attributeName)
+                }
+                val sources = matchingName.ifEmpty { candidates.takeIf { it.size == 1 }.orEmpty() }
+                sources.forEach { input ->
+                    inserted.addBindingGene(input)
+                    input.addBindingGene(inserted)
+                }
+            }
+        }
+    }
+
+    /** Compares DynamoDB attribute names with API parameter names across common naming styles. */
+    private fun normalizedName(name: String): String = name.filter(Char::isLetterOrDigit).lowercase()
 
     /**
      *  bind [restAction] with [sqlActions]
