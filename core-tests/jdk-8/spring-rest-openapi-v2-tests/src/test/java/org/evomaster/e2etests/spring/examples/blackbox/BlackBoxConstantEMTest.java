@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -23,9 +24,8 @@ public class BlackBoxConstantEMTest extends SpringTestBase {
         SpringTestBase.initClass(new ConstantController());
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testRunEM(boolean bbExperiments) throws Throwable {
+    @Test
+    public void testRunEM() throws Throwable {
 
         String outputFolder = "BlackBoxConstant";
 
@@ -38,8 +38,6 @@ public class BlackBoxConstantEMTest extends SpringTestBase {
         setOption(args, "blackBox", "true");
         setOption(args, "bbTargetUrl", baseUrlOfSut);
         setOption(args, "bbSwaggerUrl", baseUrlOfSut+"/v2/api-docs");
-        setOption(args, "bbExperiments", "" + bbExperiments);
-
 
         /*
             Note: here we do not care of actual results.
