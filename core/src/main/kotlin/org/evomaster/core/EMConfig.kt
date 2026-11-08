@@ -304,6 +304,16 @@ class EMConfig {
     }
 
     /**
+     * The names of the options the user set explicitly, on the command line or in the
+     * configuration file, over every call to [updateProperties]. Values assigned in code do not count.
+     *
+     * A boolean option has no DEFAULT sentinel like an enum, so this is how a default that
+     * depends on the problem type, which may only be resolved from the driver after the
+     * checks here, tells a value the user chose from one left alone.
+     */
+    private val explicitlySetOptions: MutableSet<String> = mutableSetOf()
+
+    /**
      * Update the values of the properties based on the options
      * chosen on the command line
      *
@@ -338,13 +348,14 @@ class EMConfig {
         //why was this done for each updateProperty???
         excludedTargetsForImpactCollection = extractExcludedTargetsForImpactCollection()
 
+        val modifiedOptions = modifiedOptions(options, cff)
+        explicitlySetOptions.addAll(properties.map { it.name }.filter { it in modifiedOptions })
+
         checkMultiFieldConstraints()
 
         handleDeprecated()
 
         handleCreateConfigPathIfMissing(properties)
-
-        val modifiedOptions = modifiedOptions(options, cff)
 
         checkForExperimentalSettings(modifiedOptions.keys)
         checkForInternalSettings(modifiedOptions.keys)
@@ -752,7 +763,7 @@ class EMConfig {
             throw ConfigProblemException("both 'endpointFocus' and 'endpointPrefix' are set")
         }
 
-        if (blackBox && !bbExperiments) {
+        if (blackBox) {
 
             if(problemType == ProblemType.REST && schema == defaultSchema && !Files.exists(Paths.get(defaultSchema))){
                 LoggingUtil.uniqueUserInfo(
@@ -773,10 +784,6 @@ class EMConfig {
             if (problemType == ProblemType.MCP && base.isBlank()) {
                 throw ConfigProblemException("In black-box mode for MCP servers, you must set the base parameter to the server URL")
             }
-        }
-
-        if (!blackBox && bbExperiments) {
-            throw ConfigProblemException("Cannot setup bbExperiments without black-box mode")
         }
 
         if (!blackBox && ratePerMinute > 0) {
@@ -1108,11 +1115,24 @@ class EMConfig {
     /**
      * Whether an EvoMaster Driver takes part in this run.
      *
-     * Always in white-box mode, and in black-box mode only for experiments. AsyncAPI is the
+     * Always in white-box mode, and never in black-box mode. AsyncAPI is the
      * exception: there is no universal wire to speak to a message-driven service, so the driver
      * holds the connection to the broker even when the SUT itself is treated as a black box.
      */
-    fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
+    fun usesDriver() = !blackBox || problemType == ProblemType.ASYNCAPI
+
+    /**
+     * Whether the driver should be asked to stop SUT code still running once the coverage
+     * of a test has been collected. Read this, not [killSwitch], when talking to the driver.
+     *
+     * Off for AsyncAPI unless the user set [killSwitch] explicitly: a message-driven service
+     * typically consumes on long-lived threads, and stopping one stops the service for good.
+     * Decided here rather than while checking the options, as [problemType] may only become
+     * ASYNCAPI once resolved from the driver.
+     */
+    //TODO how the kill switch is handled likely needs refactoring/improvement for async services
+    fun isKillSwitchOn() = killSwitch
+            && (problemType != ProblemType.ASYNCAPI || EMConfig::killSwitch.name in explicitlySetOptions)
 
     /**
      * Check that, for AsyncAPI, tests are written in a supported format (Java or Kotlin).
@@ -2881,11 +2901,6 @@ class EMConfig {
     @Cfg("Maximum length when sampling a new random string. Such limit can be bypassed when a string is mutated.")
     var maxLengthForStringsAtSamplingTime = 16
 
-
-    @Deprecated("Should not use this option any more, but rather run proper BB experiments")
-    @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
-    var bbExperiments = false
-
     @Cfg("Specify whether to export covered targets info")
     var exportCoveredTarget = false
 
@@ -2939,7 +2954,10 @@ class EMConfig {
 
     @Cfg("Try to enforce the stopping of SUT business-level code." +
             " This is needed when TCP connections timeouts, to avoid thread executions" +
-            " from previous HTTP calls affecting the current one")
+            " from previous HTTP calls affecting the current one." +
+            " Off by default when testing an AsyncAPI service, unless set explicitly:" +
+            " a message-driven service typically consumes on long-lived threads," +
+            " which the kill switch would stop for good")
     var killSwitch = true
 
     @Cfg("Number of milliseconds we are going to wait to get a response on a TCP connection, e.g., " +
