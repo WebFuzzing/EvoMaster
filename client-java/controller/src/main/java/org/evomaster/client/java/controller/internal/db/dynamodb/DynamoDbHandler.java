@@ -125,6 +125,7 @@ public class DynamoDbHandler {
      */
     public void setDynamoDbClient(Object dynamoDbClient) {
         this.dynamoDbClient = dynamoDbClient;
+        //primaryKeysByTable is the only schema metadata retained across reset() calls so it needs to be cleared here.
         primaryKeysByTable.clear();
     }
 

@@ -7,7 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/** Immutable base-table primary-key attributes for insertion generation, ordered partition key then sort key. */
+/** Immutable base-table primary-key attributes for insertion generation, ordered partition key then sort key
+ * as it appears in the schema  */
 final class DynamoDbPrimaryKey {
 
     private final Map<String, DynamoDbScalarTypeDto> attributes;
