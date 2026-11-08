@@ -6,6 +6,7 @@ import org.evomaster.core.AlgorithmRegistry
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.NoTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
+import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.mcp.McpIndividual
 import org.evomaster.core.remote.service.RemoteController
@@ -18,11 +19,15 @@ import org.evomaster.core.search.service.Sampler
 
 class McpBlackBoxModule(
     val usingRemoteController: Boolean
-) : AbstractModule() {
+) : EnterpriseModule() {
 
     override fun configure() {
-
+        super.configure()
         binder().requireExplicitBindings()
+
+        if (usingRemoteController) {
+            bindRemoteController()
+        }
 
         AlgorithmRegistry.keys(EMConfig.ProblemType.MCP)
             .forEach { bind(it) }
@@ -72,12 +77,6 @@ class McpBlackBoxModule(
         bind(object : TypeLiteral<FlakinessDetector<*>>() {})
             .to(object : TypeLiteral<FlakinessDetector<McpIndividual>>() {})
             .asEagerSingleton()
-
-        if (usingRemoteController) {
-            bind(RemoteController::class.java)
-                .to(RemoteControllerImplementation::class.java)
-                .asEagerSingleton()
-        }
 
         bind(TestCaseWriter::class.java)
             .to(NoTestCaseWriter::class.java)

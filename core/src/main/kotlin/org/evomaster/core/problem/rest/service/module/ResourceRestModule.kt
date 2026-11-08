@@ -26,24 +26,11 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModule(){
 
     override fun configure() {
-
         super.configure()
-
         binder().requireExplicitBindings()
 
-        AlgorithmRegistry.keys(EMConfig.ProblemType.REST)
-            .forEach { bind(it) }
-
         if(bindRemote){
-            /*
-                Governator does not seem to have a way to override bindings for testing :(
-                so we do it manually
-             */
-            bind(RemoteController::class.java)
-                    .to(RemoteControllerImplementation::class.java)
-                    .asEagerSingleton()
-            bind(RemoteControllerImplementation::class.java)
-                    .asEagerSingleton()
+            bindRemoteController()
         }
 
         bind(ResourceSampleMethodController::class.java)

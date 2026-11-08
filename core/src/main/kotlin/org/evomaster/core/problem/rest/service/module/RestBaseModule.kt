@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.rest.service.module
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -23,8 +25,10 @@ open class RestBaseModule : EnterpriseModule() {
 
     override fun configure() {
         super.configure()
-
         binder().requireExplicitBindings()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.REST)
+            .forEach { bind(it) }
 
         bind(TestCaseWriter::class.java)
             .to(RestTestCaseWriter::class.java)

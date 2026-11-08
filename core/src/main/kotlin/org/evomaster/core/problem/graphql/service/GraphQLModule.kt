@@ -24,8 +24,9 @@ class GraphQLModule : EnterpriseModule() {
 
     override fun configure() {
         super.configure()
-
         binder().requireExplicitBindings()
+
+        bindRemoteController()
 
         AlgorithmRegistry.keys(EMConfig.ProblemType.GRAPHQL)
             .forEach { bind(it) }
@@ -77,13 +78,6 @@ class GraphQLModule : EnterpriseModule() {
 
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
             .to(object : TypeLiteral<FlakinessDetector<GraphQLIndividual>>(){})
-            .asEagerSingleton()
-
-        bind(RemoteController::class.java)
-                .to(RemoteControllerImplementation::class.java)
-                .asEagerSingleton()
-
-        bind(RemoteControllerImplementation::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<GraphQLIndividual>>() {})

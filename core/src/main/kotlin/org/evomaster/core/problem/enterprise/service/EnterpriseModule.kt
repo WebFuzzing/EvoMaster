@@ -7,6 +7,8 @@ import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHt
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
+import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.remote.service.RemoteControllerImplementation
 
 abstract class EnterpriseModule : AbstractModule() {
 
@@ -30,5 +32,17 @@ abstract class EnterpriseModule : AbstractModule() {
         bind(HarvestActualHttpWsResponseHandler::class.java)
             .asEagerSingleton()
 
+    }
+
+    /**
+     * This is not on by default, as subclasses for black-box will not use it
+     */
+    fun bindRemoteController(){
+        bind(RemoteController::class.java)
+            .to(RemoteControllerImplementation::class.java)
+            .asEagerSingleton()
+
+        bind(RemoteControllerImplementation::class.java)
+            .asEagerSingleton()
     }
 }

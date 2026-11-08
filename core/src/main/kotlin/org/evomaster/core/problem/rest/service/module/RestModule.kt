@@ -24,22 +24,11 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
 
     override fun configure() {
-
         super.configure()
-
         binder().requireExplicitBindings()
 
-        AlgorithmRegistry.keys(EMConfig.ProblemType.REST)
-            .forEach { bind(it) }
-
-        //FIXME
         if (bindRemote) {
-            bind(RemoteController::class.java)
-                .to(RemoteControllerImplementation::class.java)
-                .asEagerSingleton()
-
-            bind(RemoteControllerImplementation::class.java)
-                .asEagerSingleton()
+            bindRemoteController()
         }
 
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})

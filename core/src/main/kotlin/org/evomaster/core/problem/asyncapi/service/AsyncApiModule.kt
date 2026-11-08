@@ -41,6 +41,8 @@ class AsyncApiModule : EnterpriseModule() {
         AlgorithmRegistry.keys(EMConfig.ProblemType.ASYNCAPI)
             .forEach { bind(it) }
 
+        bindRemoteController()
+
         bind(object : TypeLiteral<EnterpriseSampler<AsyncApiIndividual>>() {})
             .to(AsyncApiSampler::class.java)
             .asEagerSingleton()
@@ -89,10 +91,6 @@ class AsyncApiModule : EnterpriseModule() {
 
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<AsyncApiIndividual>>() {})
-
-        bind(RemoteController::class.java)
-            .to(RemoteControllerImplementation::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<AsyncApiIndividual>>() {})
             .to(object : TypeLiteral<StandardMutator<AsyncApiIndividual>>() {})

@@ -30,8 +30,9 @@ class WebModule: EnterpriseModule() {
 
     override fun configure() {
         super.configure()
-
         binder().requireExplicitBindings()
+
+        bindRemoteController()
 
         AlgorithmRegistry.keys(EMConfig.ProblemType.WEBFRONTEND)
             .forEach { bind(it) }
@@ -84,13 +85,6 @@ class WebModule: EnterpriseModule() {
 
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<WebIndividual>>() {})
-
-        bind(RemoteController::class.java)
-            .to(RemoteControllerImplementation::class.java)
-            .asEagerSingleton()
-
-        bind(RemoteControllerImplementation::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<WebIndividual>>() {})
             .to(object : TypeLiteral<StandardMutator<WebIndividual>>() {})

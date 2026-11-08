@@ -27,8 +27,9 @@ class RPCModule : EnterpriseModule(){
 
     override fun configure() {
         super.configure()
-
         binder().requireExplicitBindings()
+
+        bindRemoteController()
 
         AlgorithmRegistry.keys(EMConfig.ProblemType.RPC)
             .forEach { bind(it) }
@@ -83,13 +84,6 @@ class RPCModule : EnterpriseModule(){
 
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
-
-        bind(RemoteController::class.java)
-                .to(RemoteControllerImplementation::class.java)
-                .asEagerSingleton()
-
-        bind(RemoteControllerImplementation::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<RPCIndividual>>() {})
                 .to(object : TypeLiteral<StandardMutator<RPCIndividual>>(){})

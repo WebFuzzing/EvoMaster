@@ -2,8 +2,11 @@ package org.evomaster.core.problem.graphql.service
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.GraphQLTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
+import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.remote.service.RemoteController
@@ -16,9 +19,18 @@ import org.evomaster.core.search.service.Sampler
 
 class GraphQLBlackBoxModule(
         val usingRemoteController: Boolean
-): AbstractModule(){
+): EnterpriseModule(){
 
     override fun configure() {
+        super.configure()
+        binder().requireExplicitBindings()
+
+        if(usingRemoteController) {
+            bindRemoteController()
+        }
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.GRAPHQL)
+            .forEach { bind(it) }
 
         bind(object : TypeLiteral<EnterpriseSampler<GraphQLIndividual>>() {})
             .to(GraphQLSampler::class.java)
@@ -65,13 +77,6 @@ class GraphQLBlackBoxModule(
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
             .to(object : TypeLiteral<FlakinessDetector<GraphQLIndividual>>(){})
             .asEagerSingleton()
-
-
-        if(usingRemoteController) {
-            bind(RemoteController::class.java)
-                .to(RemoteControllerImplementation::class.java)
-                .asEagerSingleton()
-        }
 
         bind(TestCaseWriter::class.java)
                 .to(GraphQLTestCaseWriter::class.java)

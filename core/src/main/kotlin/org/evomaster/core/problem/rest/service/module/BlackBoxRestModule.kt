@@ -24,13 +24,12 @@ class BlackBoxRestModule(
 ): RestBaseModule(){
 
     override fun configure() {
-
         super.configure()
-
         binder().requireExplicitBindings()
 
-        AlgorithmRegistry.keys(EMConfig.ProblemType.REST)
-            .forEach { bind(it) }
+        if(usingRemoteController) {
+            bindRemoteController()
+        }
 
         bind(object : TypeLiteral<EnterpriseSampler<RestIndividual>>() {})
             .to(RestSampler::class.java)
@@ -72,13 +71,6 @@ class BlackBoxRestModule(
 
         bind(BlackBoxRestFitness::class.java)
             .asEagerSingleton()
-
-        //FIXME remove
-        if(usingRemoteController) {
-            bind(RemoteController::class.java)
-                    .to(RemoteControllerImplementation::class.java)
-                    .asEagerSingleton()
-        }
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
             .to(object : TypeLiteral<StandardMutator<RestIndividual>>() {})
