@@ -29,6 +29,18 @@ class GeneRegexEcma262VisitorExclusiveTest : RegexTestTemplate() {
     }
 
     @Test
+    fun testSpaceEscape() {
+        // ECMA262 and Java's escape sets are different
+        val ecmaSpaces = (listOf(
+            ' ', '\t', '\n', '\u000b', '\u000c', '\r', '\u00a0', '\u1680', '\u2028', '\u2029', '\u202f', '\u205f',
+            '\u3000', '\ufeff'
+        ) + ('\u2000'..'\u200a')).map { it.toString() }
+        checkSamplesExactly("""^\s$""", ecmaSpaces, tries = 3000)
+        checkSamplesExactly("""^[\s]$""", ecmaSpaces, tries = 3000)
+        checkSamplesExactly("""^[^\S]$""", ecmaSpaces, tries = 3000)
+    }
+
+    @Test
     fun testUnsatisfiableClassWithOptionalQuantifier(){
         // not having to appear at all makes it satisfiable
         checkSamplesExactly("""^a[]*b$""", "ab")

@@ -4,13 +4,14 @@ import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbE
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +50,20 @@ public class DynamoDbHandlerTest {
         }
     }
 
+    /** Equivalent query predicates produce one diagnostic ID despite different player values. */
+    @Test
+    public void testHeuristicIdGroupsEquivalentQueries() {
+        DynamoDbDistanceWithMetrics distance = new DynamoDbDistanceWithMetrics(0.0d, 0, false);
+        String messiId = new DynamoDbCommandWithDistance(queryCommand("Lionel Messi"), TABLE, distance)
+                .getHeuristicId();
+        String maradonaId = new DynamoDbCommandWithDistance(queryCommand("Diego Maradona"), TABLE, distance)
+                .getHeuristicId();
+
+        assertEquals(messiId, maradonaId);
+        assertTrue(messiId.startsWith("Query:" + TABLE + ":"));
+        assertFalse(messiId.contains("Lionel Messi"));
+    }
+
     @Test
     public void testAsyncClient() {
         AsyncDynamoDbClient client = new AsyncDynamoDbClient();
@@ -61,6 +76,28 @@ public class DynamoDbHandlerTest {
         assertTrue(evaluated.get(0).getDistanceWithMetrics().getDistance() > 0.0d);
         assertTrue(evaluated.get(0).getDistanceWithMetrics().getDistance() < 1.0d);
         assertEquals(1, evaluated.get(0).getDistanceWithMetrics().getNumberOfEvaluatedItems());
+    }
+
+    @Test
+    public void testFailedConditionalPutItemIsEvaluated() {
+        SyncDynamoDbClient client = new SyncDynamoDbClient();
+        DynamoDbHandler handler = enabledHandler(client);
+        Map<String, AttributeValue> values = new HashMap<>();
+        values.put(":player", AttributeValue.builder().s("Lionel Scaloni").build());
+        PutItemRequest request = PutItemRequest.builder()
+                .tableName(TABLE)
+                .item(item("Argentina", "Lionel Messi"))
+                .conditionExpression("playerName = :player")
+                .expressionAttributeValues(values)
+                .build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.PUT_ITEM,
+                request, false, 1L));
+
+        List<DynamoDbCommandWithDistance> evaluated = handler.getEvaluatedDynamoDbCommands();
+
+        assertEquals(1, evaluated.size());
+        assertTrue(evaluated.get(0).getDistanceWithMetrics().getDistance() > 0.0d);
+        assertTrue(evaluated.get(0).getDistanceWithMetrics().getDistance() < 1.0d);
     }
 
     @Test

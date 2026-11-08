@@ -304,6 +304,16 @@ class EMConfig {
     }
 
     /**
+     * The names of the options the user set explicitly, on the command line or in the
+     * configuration file, over every call to [updateProperties]. Values assigned in code do not count.
+     *
+     * A boolean option has no DEFAULT sentinel like an enum, so this is how a default that
+     * depends on the problem type, which may only be resolved from the driver after the
+     * checks here, tells a value the user chose from one left alone.
+     */
+    private val explicitlySetOptions: MutableSet<String> = mutableSetOf()
+
+    /**
      * Update the values of the properties based on the options
      * chosen on the command line
      *
@@ -338,13 +348,14 @@ class EMConfig {
         //why was this done for each updateProperty???
         excludedTargetsForImpactCollection = extractExcludedTargetsForImpactCollection()
 
+        val modifiedOptions = modifiedOptions(options, cff)
+        explicitlySetOptions.addAll(properties.map { it.name }.filter { it in modifiedOptions })
+
         checkMultiFieldConstraints()
 
         handleDeprecated()
 
         handleCreateConfigPathIfMissing(properties)
-
-        val modifiedOptions = modifiedOptions(options, cff)
 
         checkForExperimentalSettings(modifiedOptions.keys)
         checkForInternalSettings(modifiedOptions.keys)
@@ -722,7 +733,11 @@ class EMConfig {
                         " 'problemType'. The system will default to RESTful API testing.")
                 problemType = ProblemType.REST
             }
-            if (outputFormat == OutputFormat.DEFAULT) {
+            /*
+                AsyncAPI uses a driver in black-box too, as there is no universal client for a
+                broker, so the format is resolved from the driver as in white-box.
+             */
+            if (outputFormat == OutputFormat.DEFAULT && problemType != ProblemType.ASYNCAPI) {
                 LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
                         " 'outputFormat'. The system will default to $defaultOutputFormatForBlackBox.")
                 outputFormat = defaultOutputFormatForBlackBox
@@ -748,7 +763,7 @@ class EMConfig {
             throw ConfigProblemException("both 'endpointFocus' and 'endpointPrefix' are set")
         }
 
-        if (blackBox && !bbExperiments) {
+        if (blackBox) {
 
             if(problemType == ProblemType.REST && schema == defaultSchema && !Files.exists(Paths.get(defaultSchema))){
                 LoggingUtil.uniqueUserInfo(
@@ -769,10 +784,6 @@ class EMConfig {
             if (problemType == ProblemType.MCP && base.isBlank()) {
                 throw ConfigProblemException("In black-box mode for MCP servers, you must set the base parameter to the server URL")
             }
-        }
-
-        if (!blackBox && bbExperiments) {
-            throw ConfigProblemException("Cannot setup bbExperiments without black-box mode")
         }
 
         if (!blackBox && ratePerMinute > 0) {
@@ -875,10 +886,7 @@ class EMConfig {
             throw ConfigProblemException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
 
-        if (problemType == ProblemType.ASYNCAPI && createTests) {
-            throw ConfigProblemException("Test generation for AsyncAPI services is not available yet." +
-                    " For the time being, run with '--createTests false' to only search for faults.")
-        }
+        checkAsyncApiOutputFormat()
 
         if (problemType == ProblemType.ASYNCAPI && seedTestCases) {
             throw ConfigProblemException("Seeding test cases is not supported for AsyncAPI services yet")
@@ -1107,11 +1115,41 @@ class EMConfig {
     /**
      * Whether an EvoMaster Driver takes part in this run.
      *
-     * Always in white-box mode, and in black-box mode only for experiments. AsyncAPI is the
+     * Always in white-box mode, and never in black-box mode. AsyncAPI is the
      * exception: there is no universal wire to speak to a message-driven service, so the driver
      * holds the connection to the broker even when the SUT itself is treated as a black box.
      */
-    fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
+    fun usesDriver() = !blackBox || problemType == ProblemType.ASYNCAPI
+
+    /**
+     * Whether the driver should be asked to stop SUT code still running once the coverage
+     * of a test has been collected. Read this, not [killSwitch], when talking to the driver.
+     *
+     * Off for AsyncAPI unless the user set [killSwitch] explicitly: a message-driven service
+     * typically consumes on long-lived threads, and stopping one stops the service for good.
+     * Decided here rather than while checking the options, as [problemType] may only become
+     * ASYNCAPI once resolved from the driver.
+     */
+    //TODO how the kill switch is handled likely needs refactoring/improvement for async services
+    fun isKillSwitchOn() = killSwitch
+            && (problemType != ProblemType.ASYNCAPI || EMConfig::killSwitch.name in explicitlySetOptions)
+
+    /**
+     * Check that, for AsyncAPI, tests are written in a supported format (Java or Kotlin).
+     *
+     * Called when options are validated, and again once a DEFAULT format has been resolved from
+     * the driver.
+     */
+    fun checkAsyncApiOutputFormat() {
+
+        if (problemType == ProblemType.ASYNCAPI
+                && createTests
+                && outputFormat != OutputFormat.DEFAULT
+                && !outputFormat.isJavaOrKotlin()) {
+            throw ConfigProblemException("Tests for AsyncAPI services can only be written in Java or Kotlin." +
+                    " Was: $outputFormat")
+        }
+    }
 
     fun activatedExperimentalFeatures(): List<String> {
 
@@ -1406,7 +1444,9 @@ class EMConfig {
     @Important(2.0)
     @Cfg("Specify in which format the tests should be outputted." +
             " If left on `DEFAULT`, for white-box testing then the value specified in the _EvoMaster Driver_ will be used." +
-            " On the other hand, for black-box testing it will default to a predefined type (e.g., Python).")
+            " On the other hand, for black-box testing it will default to a predefined type (e.g., Python)." +
+            " For AsyncAPI, a driver is used in black-box too, so `DEFAULT` is resolved from the driver in" +
+            " both modes, and only Java and Kotlin are supported.")
     var outputFormat = OutputFormat.DEFAULT
 
     @Important(2.1)
@@ -1610,7 +1650,8 @@ class EMConfig {
             " If left to DEFAULT, the type will be inferred from the EM Driver." +
             " However, in case of ambiguities (e.g., the driver specifies more than one type)," +
             " then this field must be set with a specific type." +
-            " This is also the case for Black-Box testing where there is no EM Driver." +
+            " This is also the case for Black-Box testing, where there is usually no EM Driver" +
+            " (AsyncAPI is the exception: see outputFormat)." +
             " In this latter case, the system defaults to handle REST APIs.")
     var problemType = ProblemType.DEFAULT
 
@@ -2860,11 +2901,6 @@ class EMConfig {
     @Cfg("Maximum length when sampling a new random string. Such limit can be bypassed when a string is mutated.")
     var maxLengthForStringsAtSamplingTime = 16
 
-
-    @Deprecated("Should not use this option any more, but rather run proper BB experiments")
-    @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
-    var bbExperiments = false
-
     @Cfg("Specify whether to export covered targets info")
     var exportCoveredTarget = false
 
@@ -2918,7 +2954,10 @@ class EMConfig {
 
     @Cfg("Try to enforce the stopping of SUT business-level code." +
             " This is needed when TCP connections timeouts, to avoid thread executions" +
-            " from previous HTTP calls affecting the current one")
+            " from previous HTTP calls affecting the current one." +
+            " Off by default when testing an AsyncAPI service, unless set explicitly:" +
+            " a message-driven service typically consumes on long-lived threads," +
+            " which the kill switch would stop for good")
     var killSwitch = true
 
     @Cfg("Number of milliseconds we are going to wait to get a response on a TCP connection, e.g., " +
@@ -3123,6 +3162,10 @@ class EMConfig {
     @DependsOnTrueFor("handleFlakiness")
     @Cfg("Specify the number of re-executions for detecting flakiness in tests. Set to 0 to disable re-execution based flakiness detection.")
     var execNumForDetectFlakiness = 1
+
+    @Experimental
+    @Cfg("Specify whether to use an unbounded time budget for flakiness detection.")
+    var unboundBudgetForFlakiness = false
 
     @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +

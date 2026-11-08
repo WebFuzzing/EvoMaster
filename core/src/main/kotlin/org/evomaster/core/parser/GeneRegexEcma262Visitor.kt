@@ -452,7 +452,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         val res = VisitResult()
         res.data = when {
             ctx.CharacterClassEscape() != null ->
-                CharacterClassEscapeRxGene(ctx.text.substring(1)).multiCharRange.ranges
+                CharacterClassEscapeRxGene(ctx.text.substring(1), regexType = RegexType.ECMA_262).multiCharRange.ranges
             ctx.CharacterEscape() != null ->
                 resolveCharacterEscapeString(ctx.text, inCharClass = true).map { CharacterRange(it, it) }
             else -> listOf(CharacterRange(8, 8)) // backspace char
@@ -464,7 +464,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         val txt = ctx.text
 
         if (ctx.CharacterClassEscape() != null) {
-            return VisitResult(CharacterClassEscapeRxGene(txt.substring(1)))
+            return VisitResult(CharacterClassEscapeRxGene(txt.substring(1), regexType = RegexType.ECMA_262))
         }
         if (ctx.BackReference() != null) {
             // Back references in ECMA are never unsatisfiable, if the group did not capture input when the reference

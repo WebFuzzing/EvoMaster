@@ -4,6 +4,7 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.AlgorithmRegistry
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.NoTestCaseWriter
+import org.evomaster.core.output.service.AsyncApiTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
@@ -27,8 +28,8 @@ import org.evomaster.core.search.service.mutator.StructureMutator
  * it is what holds the connection to the broker, so it takes part either way (see
  * [org.evomaster.core.EMConfig.usesDriver]).
  *
- * No test cases are written yet, which [org.evomaster.core.EMConfig] enforces by requiring
- * `--createTests false`.
+ * The tests a run writes are the [org.evomaster.core.output.service.AsyncApiTestCaseWriter]'s,
+ * which publishes with a client of the transport rather than through the driver.
  */
 class AsyncApiModule : EnterpriseModule() {
 
@@ -108,10 +109,7 @@ class AsyncApiModule : EnterpriseModule() {
             .asEagerSingleton()
 
         bind(TestCaseWriter::class.java)
-            .to(NoTestCaseWriter::class.java)
-            .asEagerSingleton()
-
-        bind(NoTestCaseWriter::class.java)
+            .to(AsyncApiTestCaseWriter::class.java)
             .asEagerSingleton()
 
         bind(TestSuiteWriter::class.java)

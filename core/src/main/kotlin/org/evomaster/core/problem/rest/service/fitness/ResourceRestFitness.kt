@@ -119,10 +119,13 @@ class ResourceRestFitness : AbstractRestFitness() {
         /*
             TODO: Man shall we update the action cluster based on expanded action?
          */
-        individual.seeMainExecutableActions().forEach {
+        individual.seeMainExecutableActions().forEachIndexed { index, action ->
+            val path = if (action.isDirectLocationAction())
+                individual.getSourcePathOfLocationFollowUpAction(index)
+            else action.path
             //synthetic actions from post-search oracles might not be in the cluster
-            val node = rm.findResourceNodeFromCluster(it.path.toString()) ?: return@forEach
-            node.updateActionsWithAdditionalParams(it)
+            val node = rm.findResourceNodeFromCluster(path.toString()) ?: return@forEachIndexed
+            node.updateActionsWithAdditionalParams(action)
         }
 
         /*

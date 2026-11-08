@@ -269,4 +269,29 @@ internal class RestCallResultTest {
 
         assertEquals("first", original.getMergedFlakyBody())
     }
+
+    @Test
+    fun testArraySizeChangesStillMergeElementDifferences() {
+        val scenarios = listOf(
+            Triple("[1]", "[9,2]", "[9]"),
+            Triple("[9,2]", "[1]", "[9]"),
+            Triple("[1,2,3]", "[9,2]", "[9,2,3]"),
+            Triple("[9,2]", "[1,2,3]", "[9,2,3]"),
+            Triple("[]", "[9,2]", "[]")
+        )
+        for ((first, second, expected) in scenarios) {
+            val original = createCallResult("[1,2]")
+            original.recordFlakyObservation(createCallResult(first), 1)
+            original.recordFlakyObservation(createCallResult(second), 2)
+            assertEquals(expected, original.getMergedFlakyBody(), "$first then $second")
+        }
+    }
+
+    @Test
+    fun testShortArrayKeepsNestedDifferencesFromBothObservations() {
+        val original = createCallResult("""[{"a":1,"b":2},0]""")
+        original.recordFlakyObservation(createCallResult("""[{"a":9,"b":2}]"""), 1)
+        original.recordFlakyObservation(createCallResult("""[{"a":1,"b":8},0]"""), 2)
+        assertEquals("""[{"a":9,"b":8}]""", original.getMergedFlakyBody())
+    }
 }

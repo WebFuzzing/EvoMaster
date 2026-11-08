@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation;
+package org.evomaster.client.java.instrumentation.dynamodb;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -7,8 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Info related to DynamoDB command execution. We made the decision to store the whole DynamoDB request object.
- * See DynamoDbBaseApiMethodParser for more details.
+ * Info related to DynamoDB command execution.
  */
 public class DynamoDbCommand implements Serializable {
 
@@ -22,9 +21,9 @@ public class DynamoDbCommand implements Serializable {
      */
     private final DynamoDbOperationNames operationName;
     /**
-     * Actual executed operation
+     * Serializable query data copied from the executed SDK request
      */
-    private final Object ddbRequest;
+    private final DynamoDbQuery ddbRequest;
     /**
      * If the operation was successfully executed
      */
@@ -39,7 +38,7 @@ public class DynamoDbCommand implements Serializable {
                 ? Collections.emptyList()
                 : Collections.unmodifiableList(new ArrayList<>(tableNames));
         this.operationName = Objects.requireNonNull(operationName, "operationName cannot be null");
-        this.ddbRequest = ddbRequest;
+        this.ddbRequest = DynamoDbQuery.from(ddbRequest);
         this.successfullyExecuted = successfullyExecuted;
         this.executionTime = executionTime;
     }
@@ -52,7 +51,7 @@ public class DynamoDbCommand implements Serializable {
         return operationName;
     }
 
-    public Object getDdbRequest() {
+    public DynamoDbQuery getDdbRequest() {
         return ddbRequest;
     }
 
