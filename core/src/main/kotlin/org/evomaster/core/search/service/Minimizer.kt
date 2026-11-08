@@ -195,6 +195,7 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
 
             if (copy is RestIndividual) {
                 copy.removeReferencesToResourceIfCreated(index)
+                copy.removeBackwardLinksToAction(index)
             }
 
             copy.removeMainExecutableAction(index)

@@ -280,6 +280,29 @@ class RestIndividual(
         }
     }
 
+    /**
+     *  Remove references to the links of main action at [index] made by the backward links of subsequent actions.
+     *
+     *  Used in minimization phase when the main action at [index] will be removed.
+     */
+    fun removeBackwardLinksToAction(index: Int) {
+        val actions = seeMainExecutableActions()
+
+        if (index !in actions.indices) {
+            throw IllegalArgumentException("Index is out of main actions list bounds")
+        }
+
+        if (index == actions.indices.last || actions[index].links.isEmpty()) {
+            return
+        }
+
+        for (i in index + 1 until actions.size) {
+           if (actions[i].backwardLinkReference?.actualSourceActionLocalId == actions[index].getLocalId()) {
+                actions[i].backwardLinkReference = null
+            }
+        }
+    }
+
     //FIXME refactor
     override fun isValidInitializationActions(errors: MutableList<String>?): Boolean {
         return SqlActionUtils.isValidActions(
