@@ -33,16 +33,12 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class AsyncApiModule : EnterpriseModule() {
 
     override fun configure() {
+        super.configure()
 
         binder().requireExplicitBindings()
 
         AlgorithmRegistry.keys(EMConfig.ProblemType.ASYNCAPI)
             .forEach { bind(it) }
-
-        /*
-            No super.configure(): what EnterpriseModule binds there is REST-only, and the RPC,
-            GraphQL and Web modules leave it out the same way.
-         */
 
         bind(object : TypeLiteral<EnterpriseSampler<AsyncApiIndividual>>() {})
             .to(AsyncApiSampler::class.java)
@@ -65,6 +61,9 @@ class AsyncApiModule : EnterpriseModule() {
 
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
             .to(AsyncApiFitness::class.java)
+            .asEagerSingleton()
+
+        bind(AsyncApiFitness::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<AsyncApiIndividual>>() {})
@@ -98,12 +97,21 @@ class AsyncApiModule : EnterpriseModule() {
             .to(object : TypeLiteral<StandardMutator<AsyncApiIndividual>>() {})
             .asEagerSingleton()
 
+        bind(object : TypeLiteral<StandardMutator<AsyncApiIndividual>>() {})
+            .asEagerSingleton()
+
         bind(StructureMutator::class.java)
             .to(AsyncApiStructureMutator::class.java)
             .asEagerSingleton()
 
+        bind(AsyncApiStructureMutator::class.java)
+            .asEagerSingleton()
+
         bind(TestCaseWriter::class.java)
             .to(NoTestCaseWriter::class.java)
+            .asEagerSingleton()
+
+        bind(NoTestCaseWriter::class.java)
             .asEagerSingleton()
 
         bind(TestSuiteWriter::class.java)
