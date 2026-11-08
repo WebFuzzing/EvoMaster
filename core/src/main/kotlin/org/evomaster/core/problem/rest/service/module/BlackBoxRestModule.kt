@@ -61,14 +61,6 @@ class BlackBoxRestModule(
             .to(BlackBoxRestFitness::class.java)
             .asEagerSingleton()
 
-        //FIXME should rather fix HttpSemanticsService
-        // Post-search oracle phases (e.g. HttpSemanticsService) inject the concrete
-        // RestFitness to evaluate synthetic individuals. In black-box mode there is no
-        // RemoteController, so route it to BlackBoxRestFitness to avoid using 'rc'.
-        bind(RestFitness::class.java)
-            .to(BlackBoxRestFitness::class.java)
-            .asEagerSingleton()
-
         bind(BlackBoxRestFitness::class.java)
             .asEagerSingleton()
 
