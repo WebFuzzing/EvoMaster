@@ -32,9 +32,13 @@ class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
         AlgorithmRegistry.keys(EMConfig.ProblemType.REST)
             .forEach { bind(it) }
 
+        //FIXME
         if (bindRemote) {
             bind(RemoteController::class.java)
                 .to(RemoteControllerImplementation::class.java)
+                .asEagerSingleton()
+
+            bind(RemoteControllerImplementation::class.java)
                 .asEagerSingleton()
         }
 
