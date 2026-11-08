@@ -112,6 +112,9 @@ class AsyncApiModule : EnterpriseModule() {
             .to(AsyncApiTestCaseWriter::class.java)
             .asEagerSingleton()
 
+        bind(AsyncApiTestCaseWriter::class.java)
+            .asEagerSingleton()
+
         bind(TestSuiteWriter::class.java)
             .asEagerSingleton()
     }
