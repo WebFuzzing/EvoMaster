@@ -93,13 +93,11 @@ class AsyncApiModule : EnterpriseModule() {
 
         bind(StructureMutator::class.java)
             .to(AsyncApiStructureMutator::class.java)
-
         bind(AsyncApiStructureMutator::class.java)
             .asEagerSingleton()
 
         bind(TestCaseWriter::class.java)
             .to(AsyncApiTestCaseWriter::class.java)
-
         bind(AsyncApiTestCaseWriter::class.java)
             .asEagerSingleton()
 

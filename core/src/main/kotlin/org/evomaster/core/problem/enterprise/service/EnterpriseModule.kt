@@ -3,6 +3,7 @@ package org.evomaster.core.problem.enterprise.service
 import com.google.inject.AbstractModule
 import org.evomaster.core.llm.service.DictionaryService
 import org.evomaster.core.llm.service.LlmService
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.security.service.SSRFAnalyser
@@ -31,7 +32,6 @@ abstract class EnterpriseModule : AbstractModule() {
 
         bind(HarvestActualHttpWsResponseHandler::class.java)
             .asEagerSingleton()
-
     }
 
     /**

@@ -36,15 +36,10 @@ class RPCModule : EnterpriseModule(){
 
         bind(object : TypeLiteral<EnterpriseSampler<RPCIndividual>>() {})
             .to(RPCSampler::class.java)
-            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<RPCIndividual>>() {})
             .to(RPCSampler::class.java)
-            .asEagerSingleton()
-
         bind(object : TypeLiteral<Sampler<*>>() {})
                 .to(RPCSampler::class.java)
-                .asEagerSingleton()
-
         bind(RPCSampler::class.java)
                 .asEagerSingleton()
 
@@ -53,60 +48,42 @@ class RPCModule : EnterpriseModule(){
 
         bind(object : TypeLiteral<Minimizer<RPCIndividual>>(){})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<Minimizer<*>>(){})
             .to(object : TypeLiteral<Minimizer<RPCIndividual>>(){})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<RPCIndividual>>() {})
                 .to(RPCFitness::class.java)
-                .asEagerSingleton()
-
+        bind(object : TypeLiteral<FitnessFunction<*>>() {})
+            .to(RPCFitness::class.java)
         bind(RPCFitness::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<RPCIndividual>>(){})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
             .to(object : TypeLiteral<FlakinessDetector<RPCIndividual>>(){})
-            .asEagerSingleton()
 
-        bind(object : TypeLiteral<FitnessFunction<*>>() {})
-            .to(RPCFitness::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<RPCIndividual>>() {})
                 .asEagerSingleton()
-
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
-
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
 
         bind(object : TypeLiteral<Mutator<RPCIndividual>>() {})
                 .to(object : TypeLiteral<StandardMutator<RPCIndividual>>(){})
-                .asEagerSingleton()
-
         bind(object : TypeLiteral<StandardMutator<RPCIndividual>>(){})
             .asEagerSingleton()
 
         bind(StructureMutator::class.java)
                 .to(RPCStructureMutator::class.java)
-                .asEagerSingleton()
-
         bind(RPCStructureMutator::class.java)
             .asEagerSingleton()
 
         bind(TestCaseWriter::class.java)
                 .to(RPCTestCaseWriter::class.java)
-                .asEagerSingleton()
-
         bind(RPCTestCaseWriter::class.java)
             .asEagerSingleton()
-
-        bind(TestSuiteWriter::class.java)
-                .asEagerSingleton()
     }
 }

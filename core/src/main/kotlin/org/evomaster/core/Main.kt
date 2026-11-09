@@ -656,6 +656,7 @@ class Main {
 
                 throw e
             }
+            Lazy.assert { ServiceStarter.verifyActualSingletons(injector); true }
             ServiceStarter.startAllServices(injector)
 
             val cfg = injector.getInstance(EMConfig::class.java)

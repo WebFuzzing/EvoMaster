@@ -33,27 +33,17 @@ class GraphQLModule : EnterpriseModule() {
 
         bind(object : TypeLiteral<EnterpriseSampler<GraphQLIndividual>>() {})
             .to(GraphQLSampler::class.java)
-            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<GraphQLIndividual>>() {})
             .to(GraphQLSampler::class.java)
-            .asEagerSingleton()
-
         bind(object : TypeLiteral<Sampler<*>>() {})
                 .to(GraphQLSampler::class.java)
-                .asEagerSingleton()
-
         bind(GraphQLSampler::class.java)
                 .asEagerSingleton()
 
-
         bind(object : TypeLiteral<FitnessFunction<GraphQLIndividual>>() {})
                 .to(GraphQLFitness::class.java)
-                .asEagerSingleton()
-
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
             .to(GraphQLFitness::class.java)
-            .asEagerSingleton()
-
         bind(GraphQLFitness::class.java)
             .asEagerSingleton()
 
@@ -66,38 +56,28 @@ class GraphQLModule : EnterpriseModule() {
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
 
-        bind(object : TypeLiteral<Minimizer<GraphQLIndividual>>(){})
-                .asEagerSingleton()
-
         bind(object : TypeLiteral<Minimizer<*>>(){})
-                .to(object : TypeLiteral<Minimizer<GraphQLIndividual>>(){})
+            .to(object : TypeLiteral<Minimizer<GraphQLIndividual>>(){})
+        bind(object : TypeLiteral<Minimizer<GraphQLIndividual>>(){})
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<GraphQLIndividual>>(){})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
             .to(object : TypeLiteral<FlakinessDetector<GraphQLIndividual>>(){})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<GraphQLIndividual>>() {})
                 .to(object : TypeLiteral<StandardMutator<GraphQLIndividual>>() {})
-                .asEagerSingleton()
-
         bind(object : TypeLiteral<StandardMutator<GraphQLIndividual>>() {})
             .asEagerSingleton()
 
         bind(StructureMutator::class.java)
                 .to(GraphQLStructureMutator::class.java)
-                .asEagerSingleton()
-
         bind(GraphQLStructureMutator::class.java)
             .asEagerSingleton()
 
         bind(TestCaseWriter::class.java)
                 .to(GraphQLTestCaseWriter::class.java)
-                .asEagerSingleton()
-
         bind(GraphQLTestCaseWriter::class.java)
             .asEagerSingleton()
 

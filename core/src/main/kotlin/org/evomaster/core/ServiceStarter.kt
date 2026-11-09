@@ -4,6 +4,7 @@ import com.google.inject.Injector
 import com.google.inject.Scope
 import com.google.inject.Scopes
 import com.google.inject.spi.BindingScopingVisitor
+import org.evomaster.core.utils.CollectionUtils
 import java.lang.reflect.Method
 import javax.inject.Singleton
 
@@ -123,6 +124,22 @@ object ServiceStarter {
                 method.isAccessible = true
                 method.invoke(instance)
             }
+        }
+    }
+
+    /**
+     *  Verify that no singleton is duplicated...
+     *  In Guice, it is possible that the same class is used in 2 different singletons based on
+     *  different keys.
+     *  This counter-intuitive default behavior has bitten us in the ass in the past, pretty badly.
+     *  There are zero cases we want this in EvoMaster, so we crash if detected
+     */
+    fun verifyActualSingletons(injector: Injector) {
+        val instances = singletonInstances(injector)
+        val names = instances.map{it.javaClass.simpleName}
+        val duplicates = CollectionUtils.duplicates(names)
+        if(duplicates.isNotEmpty()) {
+            throw IllegalArgumentException("Duplicate singleton instances detected: $duplicates")
         }
     }
 }
