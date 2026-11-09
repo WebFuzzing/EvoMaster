@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.Lazy
+import org.evomaster.core.StartService
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
@@ -57,6 +58,7 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.ExecutionStats
+import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.WarningsAggregator
 import org.evomaster.core.search.warning.GeneralWarning
 import org.evomaster.core.search.warning.WarningCategory
@@ -118,7 +120,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
      */
     private lateinit var actionDefinitions: List<RestCallAction>
 
-    @PostConstruct
+//    @PostConstruct
+    @StartService([Sampler::class])
     fun initBean(){
         schemaOracle = RestSchemaOracle((sampler as AbstractRestSampler).schemaHolder)
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
