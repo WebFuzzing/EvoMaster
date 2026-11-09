@@ -13,6 +13,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 import com.google.inject.Inject
+import org.evomaster.core.StartService
 
 class WebSampler : EnterpriseSampler<WebIndividual>() {
 
@@ -25,7 +26,7 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
 
 
 
-    @PostConstruct
+    @StartService([])
     fun initialize() {
 
         log.debug("Initializing {}", WebSampler::class.simpleName)
