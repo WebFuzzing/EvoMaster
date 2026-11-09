@@ -18,6 +18,7 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -189,6 +190,24 @@ class RedisInsertBuilderTest {
         )
 
         assertTrue((actions[0] as RedisQueryAction).fields.all { it.valueGene != null })
+    }
+
+    @Test
+    fun testInitializeGenesMakesValidTheOnesThatAreNotAsBuilt() {
+        val schema = ClassToSchema.getOrDeriveSchemaWithItsRef(RedisHashEmailEntity::class.java, false, RedisTypeToOasConverter.defaults())
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(hgetallCommand("users:1", entityType = schema)), emptySet()
+        )
+        val email = (actions[0] as RedisQueryAction).fields.first { it.name == "email" }.valueGene!!
+
+        // an email is a regex, and a regex has not got its minimum number of atoms until randomized
+        assertTrue(email.flatView().any { it is RegexGene })
+        assertFalse(email.isGloballyValid())
+
+        val randomness = Randomness().apply { updateSeed(42) }
+        RedisInsertBuilder.initializeGenes(actions, randomness)
+
+        assertTrue(actions.flatMap { it.seeTopGenes() }.all { it.isGloballyValid() && it.initialized })
     }
 
     @Test
@@ -537,6 +556,14 @@ class RedisHashTestEntity {
     var age: Int = 0
     var address: String? = null
 }
+/**
+ * The name of the property makes it an email, which is generated from a regex.
+ */
+class RedisHashEmailEntity {
+    var id: String? = null
+    var email: String? = null
+}
+
 class RedisHashTestAddress {
     var city: String? = null
     var zip: Int? = null
