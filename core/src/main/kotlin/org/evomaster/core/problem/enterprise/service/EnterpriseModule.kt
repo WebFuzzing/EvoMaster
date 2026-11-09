@@ -40,7 +40,6 @@ abstract class EnterpriseModule : AbstractModule() {
     fun bindRemoteController(){
         bind(RemoteController::class.java)
             .to(RemoteControllerImplementation::class.java)
-            .asEagerSingleton()
 
         bind(RemoteControllerImplementation::class.java)
             .asEagerSingleton()

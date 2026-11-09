@@ -45,26 +45,21 @@ class AsyncApiModule : EnterpriseModule() {
 
         bind(object : TypeLiteral<EnterpriseSampler<AsyncApiIndividual>>() {})
             .to(AsyncApiSampler::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Sampler<AsyncApiIndividual>>() {})
             .to(AsyncApiSampler::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Sampler<*>>() {})
             .to(AsyncApiSampler::class.java)
-            .asEagerSingleton()
 
         bind(AsyncApiSampler::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {})
             .to(AsyncApiFitness::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
             .to(AsyncApiFitness::class.java)
-            .asEagerSingleton()
 
         bind(AsyncApiFitness::class.java)
             .asEagerSingleton()
@@ -74,14 +69,12 @@ class AsyncApiModule : EnterpriseModule() {
 
         bind(object : TypeLiteral<Minimizer<*>>() {})
             .to(object : TypeLiteral<Minimizer<AsyncApiIndividual>>() {})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<AsyncApiIndividual>>() {})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<*>>() {})
             .to(object : TypeLiteral<FlakinessDetector<AsyncApiIndividual>>() {})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<AsyncApiIndividual>>() {})
             .asEagerSingleton()
@@ -94,21 +87,18 @@ class AsyncApiModule : EnterpriseModule() {
 
         bind(object : TypeLiteral<Mutator<AsyncApiIndividual>>() {})
             .to(object : TypeLiteral<StandardMutator<AsyncApiIndividual>>() {})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<StandardMutator<AsyncApiIndividual>>() {})
             .asEagerSingleton()
 
         bind(StructureMutator::class.java)
             .to(AsyncApiStructureMutator::class.java)
-            .asEagerSingleton()
 
         bind(AsyncApiStructureMutator::class.java)
             .asEagerSingleton()
 
         bind(TestCaseWriter::class.java)
             .to(AsyncApiTestCaseWriter::class.java)
-            .asEagerSingleton()
 
         bind(AsyncApiTestCaseWriter::class.java)
             .asEagerSingleton()
