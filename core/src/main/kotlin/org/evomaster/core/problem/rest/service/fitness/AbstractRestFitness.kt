@@ -70,8 +70,7 @@ import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import javax.annotation.PostConstruct
-import javax.inject.Inject
+import com.google.inject.Inject
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation

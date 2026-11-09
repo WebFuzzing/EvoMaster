@@ -12,7 +12,7 @@ import org.evomaster.core.remote.SutProblemException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
-import javax.inject.Inject
+import com.google.inject.Inject
 
 class WebSampler : EnterpriseSampler<WebIndividual>() {
 
