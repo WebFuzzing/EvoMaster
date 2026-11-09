@@ -1,5 +1,6 @@
 package org.evomaster.core
 
+import com.google.inject.Guice
 import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
@@ -655,6 +656,7 @@ class Main {
 
                 throw e
             }
+            ServiceStarter.startAllServices(injector)
 
             val cfg = injector.getInstance(EMConfig::class.java)
             cfg.problemType = config.problemType
