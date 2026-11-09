@@ -32,9 +32,23 @@ object ServiceStarter {
             .map { it.provider.get() }
             .distinctBy { System.identityHashCode(it) }
 
-    /** All methods on [instance]'s class hierarchy annotated with @StartService. */
-    private fun startMethods(instance: Any): List<Method> =
-        instance.javaClass.methods.filter { it.isAnnotationPresent(StartService::class.java) }
+
+    private fun startMethods(instance: Any): List<Method> {
+        val seen = mutableSetOf<String>()
+        val result = mutableListOf<Method>()
+        var cls: Class<*>? = instance.javaClass
+        while (cls != null && cls != Any::class.java) {
+            for (m in cls.declaredMethods) {
+                if (!m.isAnnotationPresent(StartService::class.java)) continue
+                val sig = m.name + m.parameterTypes.joinToString(",") { it.name }
+                if (!seen.add(sig)) continue
+                m.isAccessible = true
+                result.add(m)
+            }
+            cls = cls.superclass
+        }
+        return result
+    }
 
     /**
      * For each singleton that has at least one @StartService method, collect the set of
