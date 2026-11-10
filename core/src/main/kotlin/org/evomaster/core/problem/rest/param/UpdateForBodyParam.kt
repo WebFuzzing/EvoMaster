@@ -16,13 +16,7 @@ import org.evomaster.core.search.gene.Gene
 class UpdateForBodyParam(
     genes: MutableList<Gene>,
     /**
-     * Non-gene state of the [BodyParam] being replaced.
-     *
-     * [getUpdatedParam] rebuilds a BodyParam from genes alone, so anything that is not a gene has to
-     * be carried explicitly or it is silently dropped. Today this is always empty, because the two
-     * places that create an UpdateForBodyParam are guarded by `none { it is BodyParam }` and build a
-     * fresh JSON body; carrying it is what keeps that from breaking if the mechanism is ever extended
-     * to bodies that already exist.
+     * Not a gene, so it must be kept to rebuild the [BodyParam] in [getUpdatedParam]
      */
     val parts: Map<String, PartMeta> = mapOf(),
     private val sourceDescription: String? = null

@@ -17,11 +17,6 @@ import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-/**
- * End-to-end check of the builder side of multipart support: that the per-part metadata is extracted
- * from the schema, that `encoding[prop].contentType` is read, and that the whole thing is gated by the
- * experimental flag.
- */
 class MultipartBuilderTest {
 
     private val schemaText = """
@@ -124,7 +119,7 @@ class MultipartBuilderTest {
 
         assertTrue(body.parts.isEmpty())
         assertFalse(body.isMultipartSupported())
-        //multipart keeps being reported as unsupported, as before the feature
+        //multipart still unsupported
         assertTrue(body.notSupportedContentTypes.any { it.contains("multipart") })
     }
 
@@ -142,10 +137,7 @@ class MultipartBuilderTest {
         val randomness = Randomness().apply { updateSeed(42) }
         body.seeGenes().forEach { it.doInitialize(randomness) }
 
-        /*
-            The builder offers both content types, and doInitialize randomizes the choice, so multipart
-            has to be selected AFTER initialization — as the search itself would, by mutating that gene.
-         */
+        //doInitialize randomizes the content type, so select multipart afterwards
         val i = body.contentTypeGene.values.indexOfFirst { it.contains("multipart") }
         assertTrue(i >= 0, "multipart not among ${body.contentTypeGene.values}")
         body.contentTypeGene.index = i
@@ -171,17 +163,13 @@ class MultipartBuilderTest {
             assertTrue(out.contains("Content-Type: application/json"), out)
         }
 
-        //the header announces the very boundary the envelope uses
+        //same boundary in header and body
         assertEquals("multipart/form-data; boundary=$boundary", body.contentTypeHeader())
     }
 
     @Test
     fun testBinaryFormatOnArrayItemsMakesThePropertyAFile() {
-        /*
-            For an array property, `format: binary` is declared on its items rather than on the
-            property. Reading only the property would leave a list of uploads without any filename,
-            which for the server means it is not a file at all.
-         */
+        //for arrays, `format: binary` is on the items
         val body = buildBody(flag = true, path = "/api/albums")
 
         assertEquals(setOf("attachments", "tags"), body.parts.keys)
@@ -196,11 +184,6 @@ class MultipartBuilderTest {
 
     @Test
     fun testEnvelopeFromARealSchemaRepeatsTheNameOfAnArrayProperty() {
-        /*
-            Closes the loop between the two halves of the array handling: the builder must read
-            `format: binary` off the items, and the serializer must expand the elements into one part
-            each. Either one alone produces a body no server accepts.
-         */
         val body = buildBody(flag = true, path = "/api/albums")
 
         val randomness = Randomness().apply { updateSeed(42) }
@@ -208,11 +191,11 @@ class MultipartBuilderTest {
         body.contentTypeGene.index = body.contentTypeGene.values.indexOfFirst { it.contains("multipart") }
 
         val obj = body.primaryGene().getWrappedGene(ObjectGene::class.java)!!
-        //whether a non-required property is expressed at all is itself under search
+        //activate all optional fields
         obj.fixedFields.filterIsInstance<OptionalGene>().forEach { it.isActive = true }
 
         val arr = obj.fixedFields.first { it.name == "attachments" }.getLeafGene() as ArrayGene<*>
-        //the size the search happened to pick is irrelevant here, so fix it at two
+        //fix size to two
         arr.killAllChildren()
         listOf("AAA", "BBB").forEach { v ->
             val e = StringGene("attachments")

@@ -1126,7 +1126,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val stringToBeSent = body.getRawStringToBeSent(mode = mode, targetFormat = configuration.outputFormat)
             Entity.entity(
                 stringToBeSent,
-                //for multipart, this carries the mandatory "boundary" parameter
+                //includes the boundary for multipart
                 body.contentTypeHeader()
             )
         } else if (forms != null) {

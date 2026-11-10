@@ -866,12 +866,6 @@ object RestActionBuilderV3 {
 
         val contentTypeGene = EnumGene<String>(RestGeneSpecialNames.CONTENT_TYPE.name, bodies.keys)
 
-        /*
-            The per-part metadata of a multipart body cannot be derived from the gene tree later on, so it
-            is computed here, where the schema is still at hand, and carried by the BodyParam.
-            A non-empty map is also what enables the multipart serialization, so with the experimental
-            support disabled the behaviour is exactly the one before this feature.
-         */
         val multipartParts = if (options.enableMultipartFormDataSupport) {
             extractMultipartParts(bodies, schemaHolder, currentSchema, messages)
         } else {
@@ -891,19 +885,8 @@ object RestActionBuilderV3 {
     }
 
     /**
-     * For a multipart/form-data body, each property of the schema is one part. This extracts what the
-     * serializer will need and cannot work out on its own:
-     *
-     *  - which properties are files (`format: binary`), because a file part must carry a "filename"
-     *    parameter in its Content-Disposition, and a StringGene carries no such marker;
-     *  - the Content-Type of each part, declared in `encoding[<property>].contentType`. This is the
-     *    only field of the OpenAPI Encoding object read here, and it pays for itself immediately: it
-     *    also decides the extension of the emitted filename, which many endpoints filter on before
-     *    looking at the content.
-     *
-     * Note that the multipart media type is looked up explicitly rather than taken from
-     * `bodies.values.first()`: an endpoint can declare several media types, and only the multipart one
-     * carries the relevant `encoding`.
+     * In multipart/form-data, each property of the schema is a part.
+     * For each one, extract whether it is a file (`format: binary`) and its declared `encoding` content type.
      */
     private fun extractMultipartParts(
         bodies: Map<String, MediaType>,
@@ -927,15 +910,10 @@ object RestActionBuilderV3 {
         }
 
         return properties.entries.associate { (name, propertySchema) ->
-            //a comma-separated list is allowed; the first entry is used
+            //can be a comma-separated list, take the first
             val declared = multipart.encoding?.get(name)?.contentType
                 ?.substringBefore(",")?.trim()?.takeIf { it.isNotEmpty() }
-            /*
-                For a property declared as an array, `format: binary` sits on its `items` and not on
-                the property itself, since RFC 7578 sends such a property as one file part per element.
-                Missing this would leave every list of uploads without a filename, i.e. not a file at
-                all as far as the server is concerned.
-             */
+            //for arrays, `format: binary` is on the items
             val isFile = propertySchema?.format.equals("binary", ignoreCase = true)
                     || propertySchema?.items?.format.equals("binary", ignoreCase = true)
             name to PartMeta(isFile = isFile, contentType = declared)

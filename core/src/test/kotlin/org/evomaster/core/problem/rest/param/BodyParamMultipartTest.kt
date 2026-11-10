@@ -23,11 +23,7 @@ class BodyParamMultipartTest {
         val typeGene = EnumGene("contentType", listOf(contentType))
         typeGene.index = 0
         val b = BodyParam(ObjectGene("body", fields), typeGene, null, parts)
-        /*
-            BodyParam adds application/x-www-form-urlencoded next to multipart, and EnumGene SORTS its
-            values, so index 0 of the resulting gene is the urlencoded one. The content type under test
-            therefore has to be selected explicitly.
-         */
+        //urlencoded is added next to multipart and EnumGene sorts values, so select it explicitly
         val i = b.contentTypeGene.values.indexOf(contentType)
         assertTrue(i >= 0, "content type $contentType not among ${b.contentTypeGene.values}")
         b.contentTypeGene.index = i
@@ -150,7 +146,7 @@ class BodyParamMultipartTest {
         assertNotEquals(BodyParam.DEFAULT_BOUNDARY, boundary)
         assertTrue(boundary.startsWith(BodyParam.DEFAULT_BOUNDARY))
 
-        // and the envelope must use the very same one it announces
+        // same boundary in header and body
         val out = render(b)
         assertTrue(out.startsWith("--$boundary$CRLF"))
         assertTrue(b.contentTypeHeader().endsWith("boundary=$boundary"))
@@ -165,7 +161,7 @@ class BodyParamMultipartTest {
             "multipart/form-data; boundary=${BodyParam.DEFAULT_BOUNDARY}",
             b.contentTypeHeader()
         )
-        //the predicates must keep working off the bare media type
+        //without parameters
         assertTrue(b.isMultipartForm())
         assertFalse(b.isJson())
         assertFalse(b.isForm())
@@ -183,11 +179,6 @@ class BodyParamMultipartTest {
 
     @Test
     fun testPartsSurviveTheUpdateForBodyParamRoundTrip() {
-        /*
-            getUpdatedParam() rebuilds a BodyParam from genes alone, so any non-gene state has to be
-            carried explicitly. Today the mechanism is only ever used for bodies EvoMaster invents, but
-            the round trip must not lose anything if that is extended.
-         */
         val b = simpleBody()
         b.description = "a multipart upload"
 
@@ -197,7 +188,7 @@ class BodyParamMultipartTest {
         assertEquals(b.parts, rebuilt.parts)
         assertEquals("a multipart upload", rebuilt.description)
 
-        //and it must also survive a copy of the update itself
+        //also after copying the update
         val rebuiltFromCopy = (update.copy() as UpdateForBodyParam).getUpdatedParam() as BodyParam
         assertEquals(b.parts, rebuiltFromCopy.parts)
         assertEquals("a multipart upload", rebuiltFromCopy.description)
@@ -205,12 +196,12 @@ class BodyParamMultipartTest {
 
     @Test
     fun testWithoutPartsTheBehaviourIsUnchanged() {
-        //this is how the BodyParam is built when the experimental flag is off
+        //as built when the flag is off
         val b = body(mapOf(), listOf(str("title", "t")))
 
         assertFalse(b.isMultipartSupported())
         assertTrue(b.isMultipartForm())
-        //multipart stays reported as unsupported, as before the feature
+        //multipart still unsupported
         assertTrue(b.notSupportedContentTypes.contains("multipart/form-data"))
         //and the header carries no boundary
         assertEquals("multipart/form-data", b.contentTypeHeader())
@@ -239,13 +230,7 @@ class BodyParamMultipartTest {
     }
 
 
-    /*
-        Repeated part names.
-
-        RFC 7578 has no syntax for a collection inside one part: several files in one field are sent
-        as several parts sharing a name. OpenAPI expresses that with a single property of type array,
-        so the duplication lives inside an ArrayGene, one level below the fields of the ObjectGene.
-     */
+    // array properties: one part per element, all with the same name
 
     private fun arrayField(name: String, values: List<String>): ArrayGene<StringGene> {
         val arr = ArrayGene(name, StringGene(name))
@@ -263,7 +248,6 @@ class BodyParamMultipartTest {
 
         assertEquals(3, Regex("name=\"attachments\"").findAll(out).count(), out)
 
-        //and NOT the single part holding the array printed as text that a plain map would produce
         assertFalse(out.contains("["), out)
         assertFalse(out.contains("AAA, BBB"), out)
 
@@ -280,14 +264,14 @@ class BodyParamMultipartTest {
         )
         val out = render(b)
 
-        //the name is shared, so only the index keeps the filenames apart
+        //same name, so the index keeps filenames distinct
         assertTrue(out.contains("name=\"attachments\"; filename=\"attachments_0.pdf\""), out)
         assertTrue(out.contains("name=\"attachments\"; filename=\"attachments_1.pdf\""), out)
     }
 
     @Test
     fun testPlainFilePartKeepsItsUnsuffixedFilename() {
-        //the index suffix must not leak into the non-array case
+        //no index suffix outside arrays
         assertTrue(render(simpleBody()).contains("filename=\"file.png\""))
     }
 
@@ -299,11 +283,7 @@ class BodyParamMultipartTest {
         )
         val out = render(b)
 
-        /*
-            The OpenAPI encoding object is keyed by property name, so there is no way to declare a
-            different content type per element: the N parts necessarily share it. This is why the
-            metadata stays a Map keyed by property, rather than a list parallel to the parts.
-         */
+        //encoding is per property, so all elements share the content type
         assertEquals(2, Regex("Content-Type: text/csv").findAll(out).count(), out)
     }
 
@@ -354,7 +334,7 @@ class BodyParamMultipartTest {
             listOf(arrayField("files", listOf("ok", "zz${BodyParam.DEFAULT_BOUNDARY}zz")))
         )
 
-        //the collision check must look into the expanded elements, not at the array as a whole
+        //collision check looks into each element
         assertEquals("${BodyParam.DEFAULT_BOUNDARY}2", b.multipartBoundary())
         assertTrue(render(b).startsWith("--${BodyParam.DEFAULT_BOUNDARY}2$CRLF"))
     }
