@@ -29,6 +29,8 @@ import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.ServiceStarter
+import org.evomaster.core.StartService
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlInsertBuilder
 import org.evomaster.core.database.sql.schema.ColumnDataType
@@ -303,6 +305,7 @@ abstract class RestIndividualTestBase {
         searchTimeController = injector.getInstance(SearchTimeController::class.java)
 
         initService(injector)
+        ServiceStarter.startAllServices(injector)
 
         sqlInsertBuilder = getSampler().sqlInsertBuilder
 

@@ -3,7 +3,7 @@ package org.evomaster.core.search.service.time
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.utils.TimeUtils
-import javax.inject.Inject
+import com.google.inject.Inject
 
 /**
  * Service used to keep track of which phase of the fuzzing we are currently in,

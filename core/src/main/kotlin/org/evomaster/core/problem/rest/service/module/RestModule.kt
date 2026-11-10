@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.rest.service.module
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
@@ -22,13 +24,11 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
 
     override fun configure() {
-
         super.configure()
+        binder().requireExplicitBindings()
 
         if (bindRemote) {
-            bind(RemoteController::class.java)
-                .to(RemoteControllerImplementation::class.java)
-                .asEagerSingleton()
+            bindRemoteController()
         }
 
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})
@@ -55,26 +55,28 @@ class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
             .asEagerSingleton()
 
         bind(object : TypeLiteral<AbstractRestFitness>() {})
-            .to(ResourceRestFitness::class.java)
+            .to(RestFitness::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
             .to(RestFitness::class.java)
             .asEagerSingleton()
 
+        bind(RestFitness::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
             .to(object : TypeLiteral<StandardMutator<RestIndividual>>() {})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<StandardMutator<RestIndividual>>() {})
             .asEagerSingleton()
 
         bind(StructureMutator::class.java)
             .to(RestStructureMutator::class.java)
             .asEagerSingleton()
 
-        bind(HttpWsExternalServiceHandler::class.java)
+        bind(RestStructureMutator::class.java)
             .asEagerSingleton()
-
-        bind(HarvestActualHttpWsResponseHandler::class.java)
-            .asEagerSingleton()
-
     }
 }
