@@ -6,6 +6,7 @@ import org.evomaster.core.AlgorithmRegistry
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.GraphQLTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
@@ -34,52 +35,46 @@ class GraphQLBlackBoxModule(
 
         bind(object : TypeLiteral<EnterpriseSampler<GraphQLIndividual>>() {})
             .to(GraphQLSampler::class.java)
-            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<GraphQLIndividual>>() {})
                 .to(GraphQLSampler::class.java)
-                .asEagerSingleton()
-
         bind(object : TypeLiteral<Sampler<*>>() {})
             .to(GraphQLSampler::class.java)
-            .asEagerSingleton()
-
         bind(GraphQLSampler::class.java)
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<GraphQLIndividual>>() {})
                 .to(GraphQLBlackBoxFitness::class.java)
-                .asEagerSingleton()
-
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
             .to(GraphQLBlackBoxFitness::class.java)
+        bind(GraphQLFitness::class.java)
+            .to(GraphQLBlackBoxFitness::class.java)
+        bind(GraphQLBlackBoxFitness::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
                 .asEagerSingleton()
-
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
-
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
 
+
         bind(object : TypeLiteral<Minimizer<GraphQLIndividual>>(){})
                 .asEagerSingleton()
-
         bind(object : TypeLiteral<Minimizer<*>>(){})
             .to(object : TypeLiteral<Minimizer<GraphQLIndividual>>() {})
-            .asEagerSingleton()
-
 
         bind(object : TypeLiteral<FlakinessDetector<GraphQLIndividual>>(){})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
             .to(object : TypeLiteral<FlakinessDetector<GraphQLIndividual>>(){})
-            .asEagerSingleton()
 
         bind(TestCaseWriter::class.java)
                 .to(GraphQLTestCaseWriter::class.java)
-                .asEagerSingleton()
+        bind(GraphQLTestCaseWriter::class.java)
+            .asEagerSingleton()
+
+        bind(TestSuiteWriter::class.java)
+            .asEagerSingleton()
     }
 }
