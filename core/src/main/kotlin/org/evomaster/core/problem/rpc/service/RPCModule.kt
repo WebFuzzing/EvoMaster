@@ -9,8 +9,6 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.rpc.RPCIndividual
-import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.FlakinessDetector
@@ -84,6 +82,9 @@ class RPCModule : EnterpriseModule(){
         bind(TestCaseWriter::class.java)
                 .to(RPCTestCaseWriter::class.java)
         bind(RPCTestCaseWriter::class.java)
+            .asEagerSingleton()
+
+        bind(TestSuiteWriter::class.java)
             .asEagerSingleton()
     }
 }

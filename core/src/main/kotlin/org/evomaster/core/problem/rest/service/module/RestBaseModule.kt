@@ -32,8 +32,6 @@ open class RestBaseModule : EnterpriseModule() {
 
         bind(TestCaseWriter::class.java)
             .to(RestTestCaseWriter::class.java)
-            .asEagerSingleton()
-
         bind(RestTestCaseWriter::class.java)
             .asEagerSingleton()
 
@@ -48,28 +46,20 @@ open class RestBaseModule : EnterpriseModule() {
 
         bind(object : TypeLiteral<Minimizer<RestIndividual>>(){})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<Minimizer<*>>(){})
             .to(object : TypeLiteral<Minimizer<RestIndividual>>(){})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<RestIndividual>>(){})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
             .to(object : TypeLiteral<FlakinessDetector<RestIndividual>>(){})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<RestIndividual>>() {})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<Archive<*>>() {})
             .to(object : TypeLiteral<Archive<RestIndividual>>() {})
-            .asEagerSingleton()
-
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<RestIndividual>>() {})
-            .asEagerSingleton()
 
         bind(HttpSemanticsService::class.java)
             .asEagerSingleton()
