@@ -67,8 +67,7 @@ class BodyParam(gene: Gene,
         }
     }
 
-    constructor(genes: List<Gene>, parts: Map<String, PartMeta> = mapOf())
-            : this(genes[0], genes[1] as EnumGene<String>, genes[2] as CustomMutationRateGene<BooleanGene>?, parts){
+    constructor(genes: List<Gene>) : this(genes[0], genes[1] as EnumGene<String>, genes[2] as CustomMutationRateGene<BooleanGene>?){
         if(genes.size != 3){
             throw IllegalArgumentException("Must get 3 genes as input, got ${genes.size}")
         }

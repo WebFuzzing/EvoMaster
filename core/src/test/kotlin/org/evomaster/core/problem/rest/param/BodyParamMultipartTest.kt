@@ -178,23 +178,6 @@ class BodyParamMultipartTest {
     }
 
     @Test
-    fun testPartsSurviveTheUpdateForBodyParamRoundTrip() {
-        val b = simpleBody()
-        b.description = "a multipart upload"
-
-        val update = UpdateForBodyParam(b)
-        val rebuilt = update.getUpdatedParam() as BodyParam
-
-        assertEquals(b.parts, rebuilt.parts)
-        assertEquals("a multipart upload", rebuilt.description)
-
-        //also after copying the update
-        val rebuiltFromCopy = (update.copy() as UpdateForBodyParam).getUpdatedParam() as BodyParam
-        assertEquals(b.parts, rebuiltFromCopy.parts)
-        assertEquals("a multipart upload", rebuiltFromCopy.description)
-    }
-
-    @Test
     fun testWithoutPartsTheBehaviourIsUnchanged() {
         //as built when the flag is off
         val b = body(mapOf(), listOf(str("title", "t")))

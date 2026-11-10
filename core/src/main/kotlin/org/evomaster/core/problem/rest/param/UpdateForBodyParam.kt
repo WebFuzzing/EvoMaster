@@ -13,19 +13,13 @@ import org.evomaster.core.search.gene.Gene
  * So we add info to modify the individual at its next mutation
  *
  */
-class UpdateForBodyParam(
-    genes: MutableList<Gene>,
-    /**
-     * Not a gene, so it must be kept to rebuild the [BodyParam] in [getUpdatedParam]
-     */
-    val parts: Map<String, PartMeta> = mapOf(),
-    private val sourceDescription: String? = null
-) : Param("updateForBodyParam", genes), UpdateForParam {
+class UpdateForBodyParam(genes: MutableList<Gene>) : Param("updateForBodyParam", genes),
+    UpdateForParam {
 
-    constructor(body: BodyParam) : this(body.seeGenes().toMutableList(), body.parts, body.description)
+        constructor(body: BodyParam) : this(body.seeGenes().toMutableList())
 
     override fun copyContent(): Param {
-        return UpdateForBodyParam(seeGenes().map { it.copy() }.toMutableList(), parts, sourceDescription)
+        return UpdateForBodyParam(seeGenes().map { it.copy() }.toMutableList())
     }
 
     override fun isSameTypeWithUpdatedParam(param: Param) : Boolean {
@@ -33,8 +27,7 @@ class UpdateForBodyParam(
     }
 
     override fun getUpdatedParam(): Param {
-        return BodyParam(children.map { it.copy() as Gene}, parts)
-            .also { it.description = sourceDescription }
+        return BodyParam(children.map { it.copy() as Gene})
     }
 }
 
