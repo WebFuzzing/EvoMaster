@@ -3,8 +3,17 @@ package org.evomaster.core.problem.asyncapi.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Injector
 import com.webfuzzing.asyncapi.access.AsyncApiAccess
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.StringSpecializationInfoDto
+import org.evomaster.client.java.controller.api.dto.TargetInfoDto
+import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.client.java.instrumentation.shared.TaintType
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
@@ -17,6 +26,8 @@ import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.problem.asyncapi.service.AsyncApiTestInjector.DOUBLE_RESULT
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -31,6 +42,33 @@ class AsyncApiFitnessTest {
         private const val EXPERIMENTAL_ORACLES = "--useExperimentalOracles=true"
 
         private const val ERROR = """{"error": {"code": 400, "message": "n must be >= 3"}}"""
+
+        private const val BLACK_BOX = "--blackBox"
+
+        /**
+         * A line of the SUT, as an instrumented driver would report it once a message reached it.
+         */
+        private const val SUT_LINE = "${ObjectiveNaming.LINE}_at_com.foo.NcsService_00042"
+
+        /**
+         * The numeric id the driver gives [SUT_LINE].
+         */
+        private const val SUT_LINE_ID = 1
+
+        /**
+         * The payload field of [EVENTS] that taint analysis is checked on.
+         */
+        private const val PAYLOAD_FIELD = "id"
+
+        /**
+         * What the service compared the tainted payload field with, in the tests on taint.
+         */
+        private const val COMPARED_WITH = "order-created"
+
+        /**
+         * A value taint analysis would recognise as its own once the service reports it back.
+         */
+        private val TAINTED = TaintInputName.getTaintName(0)
 
         /**
          * One operation that expects nothing back, and one whose message carries a header
@@ -128,7 +166,9 @@ class AsyncApiFitnessTest {
     ) {
 
         driver = FakeAsyncApiDriver(AsyncApiTestInjector.sutInfo(schemaText), answer)
-        injector = AsyncApiTestInjector.create(driver, "--blackBox=false", *options)
+        //white-box unless a test asks otherwise: EMConfig refuses an option given twice
+        val mode = if (options.any { it.startsWith("$BLACK_BOX=") }) arrayOf() else arrayOf("$BLACK_BOX=false")
+        injector = AsyncApiTestInjector.create(driver, *mode, *options)
 
         sampler = injector.getInstance(AsyncApiSampler::class.java)
         idMapper = injector.getInstance(IdMapper::class.java)
@@ -151,6 +191,151 @@ class AsyncApiFitnessTest {
 
     private fun results(evaluated: EvaluatedIndividual<AsyncApiIndividual>): List<AsyncApiCallResult> =
         evaluated.evaluatedMainActions().map { it.result as AsyncApiCallResult }
+
+    /**
+     * What an instrumented driver reports once a message reached [SUT_LINE].
+     */
+    private fun lineReached() = TestResultsDto().apply {
+        targets.add(TargetInfoDto().apply {
+            id = SUT_LINE_ID
+            descriptiveId = SUT_LINE
+            value = 1.0
+            actionIndex = 0
+        })
+    }
+
+    @Test
+    fun testAWhiteBoxRunReadsTheCoverageOfTheService() {
+
+        startNcs { replied(DOUBLE_RESULT) }
+        driver.testResults = { lineReached() }
+
+        val evaluated = evaluate("bessj")
+        val covered = coveredIds(evaluated)
+
+        assertTrue(driver.testResultsRequests > 0, "the coverage of the service was never asked for")
+        assertTrue(covered.contains(SUT_LINE), "$covered")
+        assertTrue(covered.contains("ASYNCAPI_OUTCOME:REPLIED:bessj"), "$covered")
+    }
+
+    @Test
+    fun testABlackBoxRunReadsNoCoverage() {
+
+        /*
+            The driver is there only to reach the broker. Even an instrumented one is never
+            asked for lines: the targets come from the replies.
+         */
+        startNcs("$BLACK_BOX=true") { replied(DOUBLE_RESULT) }
+        driver.testResults = { lineReached() }
+
+        val evaluated = evaluate("bessj", "expint")
+        val covered = coveredIds(evaluated)
+
+        assertEquals(0, driver.testResultsRequests, "a black-box run asked the driver for coverage")
+        assertFalse(covered.contains(SUT_LINE), "$covered")
+        assertTrue(covered.contains("ASYNCAPI_OUTCOME:REPLIED:bessj"), "$covered")
+        assertTrue(covered.contains("ASYNCAPI_REPLY:doubleResult:expint"), "$covered")
+        assertEquals(2, driver.published.size)
+    }
+
+    /**
+     * The [PAYLOAD_FIELD] string gene in the payload of the action at [index].
+     */
+    private fun payloadField(individual: AsyncApiIndividual, index: Int = 0): StringGene =
+        individual.seeMainExecutableActions()[index].seeTopGenes()
+            .flatMap { it.flatView() }
+            .filterIsInstance<StringGene>()
+            .single { it.name == PAYLOAD_FIELD }
+
+    /**
+     * What an instrumented driver reports for an action where the service compared [TAINTED]
+     * with [COMPARED_WITH].
+     */
+    private fun comparedWithAConstant() = AdditionalInfoDto().apply {
+        stringSpecializations[TAINTED] = listOf(StringSpecializationInfoDto(
+            StringSpecialization.CONSTANT.name, COMPARED_WITH, TaintType.FULL_MATCH.name))
+    }
+
+    /**
+     * Evaluates [count] messages of [EVENTS], the first of which carries [TAINTED] in its payload,
+     * with the driver reporting [perAction] as what the service did with its inputs.
+     */
+    private fun evaluateTainted(count: Int, vararg perAction: AdditionalInfoDto): EvaluatedIndividual<AsyncApiIndividual> {
+
+        driver.testResults = { TestResultsDto().apply { additionalInfoList.addAll(perAction) } }
+
+        val individual = AsyncApiTestInjector.individualOf(injector, *Array(count) { "publishEvent" })
+        payloadField(individual).value = TAINTED
+
+        return AsyncApiTestInjector.evaluate(injector, individual)
+    }
+
+    private fun startTheSearch() =
+        injector.getInstance(ExecutionPhaseController::class.java).markStartingSearch()
+
+    private fun specializationsOf(gene: StringGene) = gene.specializationGenes.map { it.getValueAsRawString() }
+
+    @Test
+    fun testAPayloadStringLearnsWhatTheServiceComparedItWith() {
+
+        start(EVENTS) { fireAndForget() }
+        startTheSearch()
+
+        val evaluated = evaluateTainted(1, comparedWithAConstant())
+
+        //the tainted value went out inside the message, which is how the service got to see it
+        assertTrue(driver.published.single().payload.contains(TAINTED), driver.published.single().payload)
+        assertEquals(listOf(COMPARED_WITH), specializationsOf(payloadField(evaluated.individual)))
+    }
+
+    @Test
+    fun testATestThatStoppedAtAFailedPublishIsStillAnalysed() {
+
+        /*
+            The second publish fails, so the controller reports two entries for three actions.
+            That is what a test that stops early looks like, not an inconsistency.
+         */
+        var sent = 0
+        start(EVENTS) {
+            sent++
+            if (sent == 1) fireAndForget() else AsyncApiReplyDto().apply { published = false }
+        }
+        startTheSearch()
+
+        val evaluated = evaluateTainted(3, comparedWithAConstant(), AdditionalInfoDto())
+
+        assertEquals(2, driver.published.size)
+        assertTrue(results(evaluated)[1].stopping)
+        assertEquals(listOf(COMPARED_WITH), specializationsOf(payloadField(evaluated.individual)))
+    }
+
+    @Test
+    fun testABlackBoxRunNeverRunsTaintAnalysis() {
+
+        /*
+            MIO turns taint analysis on even in black-box mode, but there is nothing to analyse
+            without asking the driver what the service did, and a black-box run does not ask.
+         */
+        start(EVENTS, "$BLACK_BOX=true", "--algorithm=MIO") { fireAndForget() }
+        startTheSearch()
+        assertTrue(injector.getInstance(EMConfig::class.java).isEnabledTaintAnalysis())
+
+        val evaluated = evaluateTainted(1, comparedWithAConstant())
+
+        assertEquals(0, driver.testResultsRequests)
+        assertTrue(specializationsOf(payloadField(evaluated.individual)).isEmpty())
+    }
+
+    @Test
+    fun testTaintAnalysisRunsOnlyDuringTheSearch() {
+
+        start(EVENTS) { fireAndForget() }
+
+        val evaluated = evaluateTainted(1, comparedWithAConstant())
+
+        assertTrue(driver.testResultsRequests > 0)
+        assertTrue(specializationsOf(payloadField(evaluated.individual)).isEmpty())
+    }
 
     @Test
     fun testTheDriverIsToldEverythingItNeeds() {
