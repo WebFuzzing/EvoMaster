@@ -38,23 +38,14 @@ class MultipartEMTest : SpringTestBase() {
         ) { args: MutableList<String> ->
 
             setOption(args, "enableMultipartFormDataSupport", "true")
-            /*
-                These SUTs have no authentication and the POSTs return 2xx, so the security oracle would
-                report fault 208 (anonymous modifications). Irrelevant to what is asserted here.
-             */
+            //no auth in this SUT, so the security oracle would flag the POSTs
             setOption(args, "security", "false")
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
 
-            //the envelope itself: several text parts, correctly parsed by Spring
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/form", null)
-
-            /*
-                the upload chain: a filename must be there, with an extension, and that extension must
-                match the one declared via encoding. A 200 proves all three.
-             */
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/upload", null)
         }
     }

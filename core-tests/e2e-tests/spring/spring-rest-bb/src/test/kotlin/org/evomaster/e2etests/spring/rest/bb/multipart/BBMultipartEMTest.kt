@@ -63,46 +63,14 @@ class BBMultipartEMTest : SpringTestBase() {
 
             assertTrue(solution.individuals.size >= 1)
 
-            /*
-                1. Text parts only. Isolates the envelope itself: a 200 here means the multipart body is
-                   well formed, independently of anything to do with filenames.
-             */
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bbmp/text", null)
-
-            /*
-                2. Store-only upload. Spring injects a MultipartFile only if the part carries a filename,
-                   so a 200 here proves the Content-Disposition was emitted correctly.
-                   This is the case the whole feature bets on.
-             */
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bbmp/store", null)
-
-            /*
-                4. Parses the content. The content of a part is arbitrary text, never a real image, so
-                   this must NOT get past validation. Asserting the 400 documents that limitation with
-                   evidence instead of prose.
-             */
             assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/bbmp/validate", null)
-
-            /*
-                5. Accepts only multipart: with urlencoded, Spring answers 415 before reaching the
-                   method. A 200 is therefore the direct proof that a real multipart request is sent,
-                   and that the old substitution to urlencoded no longer applies.
-             */
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bbmp/multipart-only", null)
-
-            /*
-                3. Extension whitelist. The schema declares encoding.contentType = image/png for the
-                   file part, so the derived filename is "file.png" and the whitelist accepts it.
-             */
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bbmp/whitelist", null)
         }
     }
 
-    /**
-     * With the flag off, the behaviour must be the one from before the feature: the content type gene
-     * still offers multipart, but the body is serialized as TEXT with no boundary, so every multipart
-     * endpoint rejects it. The point is that nothing crashes and no coverage is gained.
-     */
     @Test
     fun testBlackBoxWithoutMultipartSupport() {
 
