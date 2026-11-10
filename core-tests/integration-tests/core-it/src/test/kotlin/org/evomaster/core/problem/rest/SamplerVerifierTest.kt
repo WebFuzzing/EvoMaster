@@ -496,6 +496,7 @@ class SamplerVerifierTest {
                 .withModules(base, problemModule, faker)
                 .build()
                 .createInjector()
+            .apply { ServiceStarter.startAllServices(this) }
     }
 
     private class FakeModule(val sutInfoDto: SutInfoDto?,

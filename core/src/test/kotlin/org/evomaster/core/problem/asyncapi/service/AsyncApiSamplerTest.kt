@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.AsyncApiProblemDto
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.ServiceStarter
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.param.AsyncApiParam
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -74,6 +75,7 @@ class AsyncApiSamplerTest {
         })
 
         return LifecycleInjector.builder().withModules(modules).build().createInjector()
+            .apply { ServiceStarter.startAllServices(this) }
     }
 
     private fun sampler(info: SutInfoDto, vararg options: String): AsyncApiSampler =
