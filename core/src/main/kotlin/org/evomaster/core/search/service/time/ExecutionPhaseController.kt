@@ -48,6 +48,10 @@ class ExecutionPhaseController {
             throw IllegalArgumentException("Cannot query timeout for a non time-boxed phase: $target")
         }
 
+        // unbounded time budget
+        if (target == Phase.FLAKINESS && config.unboundBudgetForFlakiness)
+            return false
+
         if(config.stoppingCriterion != EMConfig.StoppingCriterion.TIME){
             //timeouts are defined only when we run base search on time, which is the default
             return false

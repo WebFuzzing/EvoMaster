@@ -3,6 +3,7 @@ package org.evomaster.core.database.sql.solver
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.dbconstraint.ast.*
+import org.evomaster.dbconstraint.parser.jsql.JSqlVisitor
 import org.evomaster.solver.smtlib.AssertSMTNode
 import org.evomaster.solver.smtlib.EmptySMTNode
 import org.evomaster.solver.smtlib.SMTNode
@@ -129,8 +130,8 @@ class SMTConditionVisitor(
         if (condition.leftOperand is SqlNullLiteralValue || condition.rightOperand is SqlNullLiteralValue) {
             return EmptySMTNode() // TODO: Change this when we add support for nullable columns in the db schema
         }
-        val left = getVariableAndLiteral(condition.leftOperand)
-        val right = getVariableAndLiteral(condition.rightOperand)
+        val left = comparisonOperand(condition.leftOperand, condition.rightOperand)
+        val right = comparisonOperand(condition.rightOperand, condition.leftOperand)
 
         return when (val comparator = getSMTComparator(condition.sqlComparisonOperator.toString())) {
             "=" -> AssertSMTNode(EqualsAssertion(listOf(left, right)))
@@ -248,6 +249,42 @@ class SMTConditionVisitor(
         operand.equals("true", ignoreCase = true) || operand.equals("false", ignoreCase = true)
 
     /**
+     * Translates one operand of a comparison (`a op b`), given the operand it is compared with.
+     *
+     * A DATE or TIMESTAMP column is encoded as epoch seconds (an SMT Int), and a typed literal such as
+     * `DATE '2024-01-01'` already arrives as one. A plain string literal, `'2024-01-01'`, does not:
+     * written as an SMT string, it made Z3 compare an Int with a String and reject the formula, so the
+     * query got no data. It is read as a date or timestamp instead; if it is neither, the
+     * DateTimeParseException drops the condition like any other untranslatable one.
+     */
+    private fun comparisonOperand(operand: SqlCondition, other: SqlCondition): String =
+        if (operand is SqlStringLiteralValue && other is SqlColumn && isTemporalColumn(other)) {
+            temporalLiteral(operand)
+        } else {
+            getVariableAndLiteral(operand)
+        }
+
+    private fun temporalLiteral(literal: SqlStringLiteralValue): String {
+        val epochSeconds = JSqlVisitor.toEpochSeconds(literal.stringValue)
+        // SMT-LIB has no negative numerals: a date before 1970 is written as a negation
+        return if (epochSeconds < 0) "(- ${-epochSeconds})" else epochSeconds.toString()
+    }
+
+    /**
+     * Whether a column reference is to a DATE or TIMESTAMP column of the schema.
+     */
+    private fun isTemporalColumn(column: SqlColumn): Boolean {
+        val tableName = column.tableName?.let { tableAliases[it] ?: it } ?: defaultTableName
+        val type = tables
+            .firstOrNull { convertToAscii(it.id.name).equals(convertToAscii(tableName), ignoreCase = true) }
+            ?.columns?.firstOrNull { it.name.equals(column.columnName, ignoreCase = true) }
+            ?.type
+            ?: return false
+        return type.equals(SmtLibGenerator.DATE_TYPE, ignoreCase = true) ||
+            type.equals(SmtLibGenerator.TIMESTAMP_TYPE, ignoreCase = true)
+    }
+
+    /**
      * Whether any table in the schema declares a column with this name.
      *
      * Deliberately broader than the resolution rules for an unqualified column, which would look only
@@ -292,20 +329,19 @@ class SMTConditionVisitor(
 
     override fun visit(condition: SqlInCondition, parameter: Void?): SMTNode {
         val left = getVariableAndLiteral(condition.sqlColumn)
+        val temporal = isTemporalColumn(condition.sqlColumn)
+        val literals = condition.literalList.sqlConditionExpressions
+            .map { if (temporal && it is SqlStringLiteralValue) temporalLiteral(it) else asLiteral(it) }
         if (condition.isNegated) {
             // NOT IN: the column must differ from every value in the list
-            val conditions = condition.literalList.sqlConditionExpressions
-                .map { DistinctAssertion(listOf(left, asLiteral(it))) }
+            val conditions = literals.map { DistinctAssertion(listOf(left, it)) }
             return if (conditions.size == 1) {
                 AssertSMTNode(conditions[0])
             } else {
                 AssertSMTNode(AndAssertion(conditions))
             }
         }
-        val conditions = condition.literalList.sqlConditionExpressions
-            .map {
-                AssertSMTNode(EqualsAssertion(listOf(left, asLiteral(it))))
-            }
+        val conditions = literals.map { AssertSMTNode(EqualsAssertion(listOf(left, it))) }
         return if (conditions.size == 1) {
             conditions[0]
         } else {
@@ -320,13 +356,29 @@ class SMTConditionVisitor(
      * is kept. A double quote is written as "", the SMT-LIB escape; left as is, it would end the
      * literal early and Z3 would reject the whole formula. A value wrapped in double quotes, as in
      * '"x"', is still read as x.
+     *
+     * A character outside printable ASCII is written as the SMT-LIB escape \u{X}, with X its code
+     * point in hex. Z3 reads a string literal byte by byte, so written as is, the UTF-8 encoding of
+     * 'ORDINÆR' became a different, longer string, and a row satisfying it broke the very CHECK it
+     * came from. A backslash is escaped too, since followed by "u{" it would start an escape.
      */
     private fun stringLiteral(literal: SqlStringLiteralValue): String {
         var value = literal.stringValue
         if (value.length >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
             value = value.substring(1, value.length - 1)
         }
-        return "\"${value.replace("\"", "\"\"")}\""
+        val escaped = StringBuilder()
+        value.codePoints().forEach { cp ->
+            when {
+                cp == '"'.code -> escaped.append("\"\"")
+                // 0x20 (space) to 0x7E (~) is printable ASCII, the only range Z3 reads as is.
+                // Below 0x20 are control characters (e.g., tab, newline), and above 0x7E are DEL
+                // and every non-ASCII code point, so all of them are written as \u{X}
+                cp == '\\'.code || cp < 0x20 || cp > 0x7E -> escaped.append("\\u{").append(Integer.toHexString(cp)).append('}')
+                else -> escaped.appendCodePoint(cp)
+            }
+        }
+        return "\"$escaped\""
     }
 
     private fun asLiteral(expression: SqlCondition?): String {

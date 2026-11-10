@@ -486,4 +486,28 @@ class RestIndividual(
             it.verb == actionVerb && it.path.isEquivalent(path)
         }
     }
+
+    /**
+     * Follows location bindings to the first source action with a schema path.
+     */
+    fun getSourcePathOfLocationFollowUpAction(index: Int): RestPath?{
+        if (index == 0) return null
+        var cur = index
+        val seq = seeMainExecutableActions()
+        while (cur > 0){
+            val locationId = seq[cur].usePreviousLocationId
+            cur = (cur - 1 downTo 0).firstOrNull {
+                val candidate = seq[it]
+                // TODO: RestCallAction.creationLocationId() currently supports only POST/PUT and throws for other verbs.
+                //  Guard calls with isPotentialActionForCreation() when matching location IDs.
+                candidate.isPotentialActionForCreation() &&
+                    candidate.creationLocationId() == locationId
+            } ?: throw IllegalStateException("No previous action with location id $locationId before action $cur")
+
+            val source = seq[cur]
+            if (!source.isDirectLocationAction())
+                return source.path
+        }
+        throw IllegalStateException("No schema path found in location chain for action $index")
+    }
 }

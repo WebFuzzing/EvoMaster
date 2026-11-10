@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.param
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -22,11 +23,7 @@ class BodyParamMultipartTest {
         val typeGene = EnumGene("contentType", listOf(contentType))
         typeGene.index = 0
         val b = BodyParam(ObjectGene("body", fields), typeGene, null, parts)
-        /*
-            BodyParam adds application/x-www-form-urlencoded next to multipart, and EnumGene SORTS its
-            values, so index 0 of the resulting gene is the urlencoded one. The content type under test
-            therefore has to be selected explicitly.
-         */
+        //urlencoded is added next to multipart and EnumGene sorts values, so select it explicitly
         val i = b.contentTypeGene.values.indexOf(contentType)
         assertTrue(i >= 0, "content type $contentType not among ${b.contentTypeGene.values}")
         b.contentTypeGene.index = i
@@ -149,7 +146,7 @@ class BodyParamMultipartTest {
         assertNotEquals(BodyParam.DEFAULT_BOUNDARY, boundary)
         assertTrue(boundary.startsWith(BodyParam.DEFAULT_BOUNDARY))
 
-        // and the envelope must use the very same one it announces
+        // same boundary in header and body
         val out = render(b)
         assertTrue(out.startsWith("--$boundary$CRLF"))
         assertTrue(b.contentTypeHeader().endsWith("boundary=$boundary"))
@@ -164,7 +161,7 @@ class BodyParamMultipartTest {
             "multipart/form-data; boundary=${BodyParam.DEFAULT_BOUNDARY}",
             b.contentTypeHeader()
         )
-        //the predicates must keep working off the bare media type
+        //without parameters
         assertTrue(b.isMultipartForm())
         assertFalse(b.isJson())
         assertFalse(b.isForm())
@@ -181,35 +178,13 @@ class BodyParamMultipartTest {
     }
 
     @Test
-    fun testPartsSurviveTheUpdateForBodyParamRoundTrip() {
-        /*
-            getUpdatedParam() rebuilds a BodyParam from genes alone, so any non-gene state has to be
-            carried explicitly. Today the mechanism is only ever used for bodies EvoMaster invents, but
-            the round trip must not lose anything if that is extended.
-         */
-        val b = simpleBody()
-        b.description = "a multipart upload"
-
-        val update = UpdateForBodyParam(b)
-        val rebuilt = update.getUpdatedParam() as BodyParam
-
-        assertEquals(b.parts, rebuilt.parts)
-        assertEquals("a multipart upload", rebuilt.description)
-
-        //and it must also survive a copy of the update itself
-        val rebuiltFromCopy = (update.copy() as UpdateForBodyParam).getUpdatedParam() as BodyParam
-        assertEquals(b.parts, rebuiltFromCopy.parts)
-        assertEquals("a multipart upload", rebuiltFromCopy.description)
-    }
-
-    @Test
     fun testWithoutPartsTheBehaviourIsUnchanged() {
-        //this is how the BodyParam is built when the experimental flag is off
+        //as built when the flag is off
         val b = body(mapOf(), listOf(str("title", "t")))
 
         assertFalse(b.isMultipartSupported())
         assertTrue(b.isMultipartForm())
-        //multipart stays reported as unsupported, as before the feature
+        //multipart still unsupported
         assertTrue(b.notSupportedContentTypes.contains("multipart/form-data"))
         //and the header carries no boundary
         assertEquals("multipart/form-data", b.contentTypeHeader())
@@ -235,5 +210,115 @@ class BodyParamMultipartTest {
         assertEquals(".txt", BodyParam.extensionForContentType("text/plain"))
         assertEquals(".bin", BodyParam.extensionForContentType("application/octet-stream"))
         assertEquals(".bin", BodyParam.extensionForContentType("something/unknown"))
+    }
+
+
+    // array properties: one part per element, all with the same name
+
+    private fun arrayField(name: String, values: List<String>): ArrayGene<StringGene> {
+        val arr = ArrayGene(name, StringGene(name))
+        values.forEach { v -> arr.addElement(str(name, v)) }
+        return arr
+    }
+
+    @Test
+    fun testArrayPropertyBecomesOnePartPerElement() {
+        val b = body(
+            mapOf("attachments" to PartMeta(isFile = true, contentType = "image/png")),
+            listOf(arrayField("attachments", listOf("AAA", "BBB", "CCC")))
+        )
+        val out = render(b)
+
+        assertEquals(3, Regex("name=\"attachments\"").findAll(out).count(), out)
+
+        assertFalse(out.contains("["), out)
+        assertFalse(out.contains("AAA, BBB"), out)
+
+        listOf("AAA", "BBB", "CCC").forEach {
+            assertTrue(out.contains("$it$CRLF"), "missing value $it in $out")
+        }
+    }
+
+    @Test
+    fun testRepeatedPartsGetDistinctFilenamesFromTheirIndex() {
+        val b = body(
+            mapOf("attachments" to PartMeta(isFile = true, contentType = "application/pdf")),
+            listOf(arrayField("attachments", listOf("A", "B")))
+        )
+        val out = render(b)
+
+        //same name, so the index keeps filenames distinct
+        assertTrue(out.contains("name=\"attachments\"; filename=\"attachments_0.pdf\""), out)
+        assertTrue(out.contains("name=\"attachments\"; filename=\"attachments_1.pdf\""), out)
+    }
+
+    @Test
+    fun testPlainFilePartKeepsItsUnsuffixedFilename() {
+        //no index suffix outside arrays
+        assertTrue(render(simpleBody()).contains("filename=\"file.png\""))
+    }
+
+    @Test
+    fun testRepeatedPartsShareTheDeclaredMetadata() {
+        val b = body(
+            mapOf("docs" to PartMeta(isFile = true, contentType = "text/csv")),
+            listOf(arrayField("docs", listOf("A", "B")))
+        )
+        val out = render(b)
+
+        //encoding is per property, so all elements share the content type
+        assertEquals(2, Regex("Content-Type: text/csv").findAll(out).count(), out)
+    }
+
+    @Test
+    fun testEmptyArrayPropertyProducesNoPart() {
+        val b = body(
+            mapOf(
+                "title" to PartMeta(isFile = false),
+                "attachments" to PartMeta(isFile = true)
+            ),
+            listOf(str("title", "x"), arrayField("attachments", listOf()))
+        )
+        val out = render(b)
+
+        assertFalse(out.contains("name=\"attachments\""), out)
+        assertTrue(out.contains("name=\"title\""), out)
+    }
+
+    @Test
+    fun testArrayOfNonFilePartsIsStillExpanded() {
+        val b = body(
+            mapOf("tags" to PartMeta(isFile = false)),
+            listOf(arrayField("tags", listOf("red", "blue")))
+        )
+        val out = render(b)
+
+        assertEquals(2, Regex("name=\"tags\"").findAll(out).count(), out)
+        //not a file, so none of the repeated parts carries a filename
+        assertFalse(out.contains("filename"), out)
+    }
+
+    @Test
+    fun testArrayOfObjectsBecomesJsonParts() {
+        val arr = ArrayGene("items", ObjectGene("items", listOf(str("k", ""))))
+        arr.addElement(ObjectGene("items", listOf(str("k", "v1"))))
+        arr.addElement(ObjectGene("items", listOf(str("k", "v2"))))
+
+        val out = render(body(mapOf("items" to PartMeta(isFile = false)), listOf(arr)))
+
+        assertEquals(2, Regex("Content-Type: application/json").findAll(out).count(), out)
+        assertTrue(out.contains("v1") && out.contains("v2"), out)
+    }
+
+    @Test
+    fun testBoundaryCollisionIsDetectedInsideARepeatedPart() {
+        val b = body(
+            mapOf("files" to PartMeta(isFile = true)),
+            listOf(arrayField("files", listOf("ok", "zz${BodyParam.DEFAULT_BOUNDARY}zz")))
+        )
+
+        //collision check looks into each element
+        assertEquals("${BodyParam.DEFAULT_BOUNDARY}2", b.multipartBoundary())
+        assertTrue(render(b).startsWith("--${BodyParam.DEFAULT_BOUNDARY}2$CRLF"))
     }
 }

@@ -745,15 +745,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 else -> lines.add(".$send(\"$escapedXml\")")
             }
         } else if (bodyParam.isMultipartSupported()) {
-
-            /*
-                The envelope is assembled by BodyParam, which is the only object holding both the gene
-                tree and the per-part metadata. No library-specific multipart API is used: the body is a
-                plain string sent through the same command as every other content type.
-
-                Unlike the other content types, though, the envelope contains CRLFs and double quotes,
-                so it needs escaping to survive as a string literal in the generated test.
-             */
             val body = escapeForStringLiteral(
                 bodyParam.getValueAsPrintableString(
                     mode = GeneUtils.EscapeMode.MULTIPART_FORM_DATA,
@@ -779,9 +770,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     }
 
     /**
-     * Escapes a payload so that it can be embedded as a double-quoted string literal in any of the
-     * supported output formats. Java, Kotlin, JavaScript and Python all use the same escapes for these
-     * four characters.
+     * Escapes a payload to be used inside a double-quoted string literal (same escapes in all output formats)
      */
     private fun escapeForStringLiteral(payload: String): String =
         payload.replace("\\", "\\\\")

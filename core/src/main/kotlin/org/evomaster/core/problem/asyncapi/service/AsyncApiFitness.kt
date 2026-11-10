@@ -6,8 +6,10 @@ import com.google.inject.Inject
 import com.webfuzzing.asyncapi.models.AsyncApiChannel
 import com.webfuzzing.asyncapi.models.AsyncApiCorrelationId
 import com.webfuzzing.asyncapi.models.AsyncApiReply
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsFitness
@@ -23,6 +25,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -55,6 +58,15 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         private const val TARGET_SEPARATOR = ":"
 
         private const val CORRELATION_SEPARATOR = "-"
+
+        /**
+         * What the variable holding a reply is called, before the action's index. The same
+         * `res_0` every other problem type writes.
+         *
+         * Named here rather than by the writer because it is part of what a driver is asked to
+         * render against, so it has to be settled while the search runs. RPC does the same.
+         */
+        private const val REPLY_VARIABLE_PREFIX = "res_"
 
         private const val DEFAULT_CONTENT_TYPE = "application/json"
 
@@ -131,14 +143,31 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         /*
             There is no separate black-box fitness here, unlike REST and GraphQL: AsyncAPI publishes
-            through the driver in both modes, which is what EMConfig.usesDriver() states. What
-            changes is only what this call adds on top of the outcome and reply targets above: an
-            instrumented SUT reports the lines and branches the messages reached, an uninstrumented
-            one reports none.
+            through the driver in both modes (see EMConfig.usesDriver()). Only in white-box mode is
+            the coverage of the SUT read on top of the outcome and reply targets. In black-box mode,
+            as for REST, it is not: it would add whatever the driver instruments to the targets,
+            and, with the kill switch on, stop the service's threads after every test.
          */
-        val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
-            ?: return null
-        handleExtra(dto, fv)
+        if (!config.blackBox) {
+            val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
+                ?: return null
+            handleExtra(dto, fv)
+
+            if (epc.isInSearch() && config.isEnabledTaintAnalysis()) {
+                /*
+                    A tainted string in a payload or a header reaches the service inside the
+                    message. The analysis matches what the service reports against the genes of
+                    every action, so nested fields are covered, whichever thread consumed it.
+
+                    At most one entry per result, not exactly one as GraphQL asserts: a driver that
+                    could not be reached records no entry for its message.
+
+                    Only during the search, as for REST and GraphQL: nothing mutates the genes later.
+                 */
+                Lazy.assert { dto.additionalInfoList.size <= actionResults.count { it is AsyncApiCallResult } }
+                TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config)
+            }
+        }
 
         return EvaluatedIndividual(
             fv,
@@ -166,7 +195,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         actionResults.add(result)
 
         val dto = getActionDto(action, index)
-        dto.asyncApiCall = toDto(action)
+        dto.asyncApiCall = toDto(action, index)
 
         val reply = rc.executeNewAsyncApiActionAndGetReply(dto)
 
@@ -183,6 +212,10 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         }
 
         val outcome = record(reply, result)
+        if (dto.asyncApiCall.replyVariable != null) {
+            result.setReplyVariableName(dto.asyncApiCall.replyVariable)
+            recordWhatWasPublished(action, dto.asyncApiCall, result)
+        }
         handleTargets(fv, action, result, outcome, index)
 
         return true
@@ -206,6 +239,10 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         result.setOutcome(outcome)
         reply.waitedMs?.let { result.setWaitedMs(it) }
+
+        //what the generated test will publish with, when the driver rendered it
+        //lines that are all blank are no script: the writer would publish nothing and assert on it
+        reply.testScript?.takeIf { lines -> lines.any { it.isNotBlank() } }?.let { result.setTestScript(it) }
 
         if (outcome == AsyncApiOutcome.REPLIED) {
             reply.replyPayload?.let { result.setReplyPayload(it) }
@@ -342,7 +379,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
      * Everything the driver needs to publish the message and wait for its reply, resolved
      * against the document so that the driver never has to read it.
      */
-    private fun toDto(action: AsyncApiAction): AsyncApiActionDto {
+    private fun toDto(action: AsyncApiAction, index: Int): AsyncApiActionDto {
 
         val document = asyncApiSampler.document
         val message = document.messages[action.messageId]
@@ -359,6 +396,19 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             ?.gene?.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = null)
         dto.contentType = message?.contentType ?: document.defaultContentType ?: DEFAULT_CONTENT_TYPE
         dto.headers = LinkedHashMap(buildHeaders(action))
+
+        if (config.createTests) {
+            /*
+                A transport the contract cannot describe is published by lines the driver renders
+                while the search runs, so it is told which language to render them in. Not asked
+                for when no test will be written, so a driver need not spend time on it.
+                The reply variable is named by the core, whoever writes the lines that assign to it.
+             */
+            dto.outputFormat = SutInfoDto.OutputFormat.values()
+                .firstOrNull { it.name == config.outputFormat.name }
+
+            dto.replyVariable = REPLY_VARIABLE_PREFIX + index
+        }
 
         dto.correlationId = runId + CORRELATION_SEPARATOR + published++
         message?.correlationId?.let {
@@ -378,6 +428,47 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
         }
 
         return dto
+    }
+
+    /**
+     * Keep on the result what a generated test needs to publish this message again, so that the
+     * writer does not resolve the document a second time. Only when a test will be written.
+     */
+    private fun recordWhatWasPublished(
+        action: AsyncApiAction,
+        call: AsyncApiActionDto,
+        result: AsyncApiCallResult
+    ) {
+        val server = asyncApiSampler.document.channels[action.channelName]?.let { serverOf(it) }
+
+        result.setPublishDetails(
+            serverName = server?.name,
+            serverHost = server?.host,
+            protocol = server?.protocol,
+            address = call.address,
+            replyAddress = call.replyAddress,
+            payload = call.payload,
+            headersAsJson = mapper.writeValueAsString(call.headers ?: emptyMap<String, String>()),
+            correlationHeader = correlationHeaderOf(action),
+            replyTimeoutMs = call.replyTimeoutMs
+        )
+    }
+
+    /**
+     * The header the correlation id goes in, when the document puts it in one. Null when it goes
+     * in the payload, or in a nested header field, which a generated Kafka call cannot set.
+     */
+    private fun correlationHeaderOf(action: AsyncApiAction): String? {
+
+        val correlation = asyncApiSampler.document.messages[action.messageId]?.correlationId
+            ?: return null
+
+        if (correlation.source != AsyncApiCorrelationId.Source.HEADER) {
+            return null
+        }
+
+        //the same field the gene builder leaves out of the headers the search varies
+        return correlation.fieldName
     }
 
     /**
@@ -444,6 +535,12 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
     }
 
     /**
+     * The server a channel is published to: the first the document lists for it.
+     */
+    private fun serverOf(channel: AsyncApiChannel) =
+        asyncApiSampler.document.serversOf(channel).firstOrNull()
+
+    /**
      * Where a message on [channel] actually goes on the wire.
      *
      * Usually the channel's address, but a protocol binding may override it: the Kafka binding
@@ -460,7 +557,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             return channelName
         }
 
-        val protocol = asyncApiSampler.document.serversOf(channel).firstOrNull()?.protocol
+        val protocol = serverOf(channel)?.protocol
 
         /*
             A channel that declares no address of its own is normal for Kafka, where the topic

@@ -27,6 +27,7 @@ public class ReplacementList {
             listCache = Arrays.asList(
                     new AbstractEndpointClassReplacement(),
                     new Base64DecoderClassReplacement(),
+                    new BasicRedisPersistentEntityClassReplacement(),
                     new BooleanClassReplacement(),
                     new ByteClassReplacement(),
                     new CharacterClassReplacement(),
@@ -59,6 +60,8 @@ public class ReplacementList {
                     new MessageBodyReaderClassReplacement(),
                     new MethodClassReplacement(),
                     new MongoCollectionClassReplacement(),
+                    new MongoCollectionLegacyCountClassReplacement(),
+                    new MongoCollectionPipelineUpdateClassReplacement(),
                     new MongoTemplateClassReplacement(),
                     new OpenSearchClientClassReplacement(),
                     new Neo4JSessionClassReplacement(),

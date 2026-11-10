@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.RedisSear
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.controller.redis.RedisIndexInfo;
 import org.evomaster.client.java.instrumentation.RedisCommand;
+import org.evomaster.client.java.instrumentation.RedisHashSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -74,6 +75,91 @@ class RedisHandlerTest {
         handler.reset();
 
         assertTrue(handler.getExecutionDto().failedCommands.isEmpty());
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // HGETALL: the Java type captured for a key's keyspace, if any
+    // ---------------------------------------------------------------------------------------
+
+    @Test
+    void testHgetallFailedCommandCarriesEntityTypeForKnownKeyspace() {
+        ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
+        when(client.getKeysByType("hash")).thenReturn(Collections.emptySet());
+        handler.setRedisClient(client);
+
+        String schema = "\"com.foo.Entity\":{\"com.foo.Entity\":{\"type\":\"object\"}}";
+        handler.handle(new RedisHashSchema("entities", schema));
+
+        RedisCommand cmd = new RedisCommand(RedisCommand.RedisCommandType.HGETALL, new String[]{"entities:1"}, true, 1);
+        handler.handle(cmd);
+        handler.getEvaluatedRedisCommands();
+
+        List<RedisFailedCommand> failed = handler.getExecutionDto().failedCommands;
+        assertEquals(1, failed.size());
+        assertEquals(schema, failed.get(0).entityType);
+    }
+
+    @Test
+    void testHgetallFailedCommandCarriesIdFieldOfKnownKeyspace() {
+        ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
+        when(client.getKeysByType("hash")).thenReturn(Collections.emptySet());
+        handler.setRedisClient(client);
+
+        handler.handle(new RedisHashSchema("entities", "{}", "id"));
+
+        RedisCommand cmd = new RedisCommand(RedisCommand.RedisCommandType.HGETALL, new String[]{"entities:1"}, true, 1);
+        handler.handle(cmd);
+        handler.getEvaluatedRedisCommands();
+
+        List<RedisFailedCommand> failed = handler.getExecutionDto().failedCommands;
+        assertEquals(1, failed.size());
+        assertEquals("id", failed.get(0).entityIdField);
+    }
+
+    @Test
+    void testHgetallFailedCommandHasNullIdFieldWhenSchemaHasNone() {
+        ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
+        when(client.getKeysByType("hash")).thenReturn(Collections.emptySet());
+        handler.setRedisClient(client);
+
+        handler.handle(new RedisHashSchema("entities", "{}"));
+
+        RedisCommand cmd = new RedisCommand(RedisCommand.RedisCommandType.HGETALL, new String[]{"entities:1"}, true, 1);
+        handler.handle(cmd);
+        handler.getEvaluatedRedisCommands();
+
+        assertNull(handler.getExecutionDto().failedCommands.get(0).entityIdField);
+    }
+
+    @Test
+    void testHgetallFailedCommandHasNullEntityTypeForUnknownKeyspace() {
+        ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
+        when(client.getKeysByType("hash")).thenReturn(Collections.emptySet());
+        handler.setRedisClient(client);
+
+        RedisCommand cmd = new RedisCommand(RedisCommand.RedisCommandType.HGETALL, new String[]{"unknown:1"}, true, 1);
+        handler.handle(cmd);
+        handler.getEvaluatedRedisCommands();
+
+        List<RedisFailedCommand> failed = handler.getExecutionDto().failedCommands;
+        assertEquals(1, failed.size());
+        assertNull(failed.get(0).entityType);
+    }
+
+    @Test
+    void testHgetallFailedCommandHasNullEntityTypeForKeyWithNoKeyspace() {
+        ReflectionBasedRedisClient client = mock(ReflectionBasedRedisClient.class);
+        when(client.getKeysByType("hash")).thenReturn(Collections.emptySet());
+        handler.setRedisClient(client);
+
+        // a bare key, with no ":" separator, has no keyspace of its own
+        RedisCommand cmd = new RedisCommand(RedisCommand.RedisCommandType.HGETALL, new String[]{"bareKey"}, true, 1);
+        handler.handle(cmd);
+        handler.getEvaluatedRedisCommands();
+
+        List<RedisFailedCommand> failed = handler.getExecutionDto().failedCommands;
+        assertEquals(1, failed.size());
+        assertNull(failed.get(0).entityType);
     }
 
     // ---------------------------------------------------------------------------------------

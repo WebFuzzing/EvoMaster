@@ -53,6 +53,16 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     }
 
     @Test
+    fun testQuotedBackslash(){
+        checkSameAsJava("""\Q\\E""")
+        checkSameAsJava("""\Qa\\\Eb""")
+        checkSameAsJava("""\Q\\Eb\Qx\Qy\E""")
+        checkSameAsJava("""\Q\a\b\x\y\z\0\E""")
+        checkSameAsJava("""\Qabc\""")
+        checkSameAsJava("""^((f|F)(u|U)\Q\\E)$""")
+    }
+
+    @Test
     fun testMultipleQuotes(){
         checkSameAsJava("^(\\Q6\\E(n|N)(u|U)(a|A)(q|Q)(w|W)(b|B)\\Q51\\E(y|Y)(w|W)\\Q1\\E(e|E)(r|R)(n|N))$")
         checkSameAsJava("^((z|Z)(l|L)(q|Q)\\Q9\\E(r|R)(e|E)(k|K)(q|Q)(b|B)\\Q6\\E(e|E)(q|Q)(u|U))$")
@@ -726,5 +736,31 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("(?s)^\\Z.*")
         checkCanSample("(?s)^\\Z.*", listOf("", "\n", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 1000)
         checkCanSample("(?s)^\\Z(.?){5}", listOf("", "\n", "\r", "\u0085", "\u2028", "\u2029", "\r\n"), 1000)
+    }
+
+    @Test
+    fun testCapturesAreNotResetInEachRepetition(){
+        // in Java, a group keeps the value of the last repetition in which it took part (so "abac" matches),
+        // and a group that never took part makes the backreference fail (so no "bc")
+        checkSamplesExactly("""^(?:(a)|b){1,2}\1c$""", "aac", "aaac", "abac", "baac")
+        checkSameAsJava("""^(?:(a)|b){1,2}\1c$""")
+    }
+
+    @Test
+    fun testBackreferenceToGroupThatDidNotTakePart(){
+        // in Java a backreference to a group that did not take part fails to match
+        assertThrows<IllegalStateException> { checkSameAsJava("""^([^\s\S])*\1$""") }
+        assertThrows<IllegalStateException> { checkSameAsJava("""^(?:([^\s\S])|a)\1$""") }
+        checkSamplesExactly("""^(a)?\1$""", "aa")
+    }
+
+    @Test
+    fun testTermThatCannotMatchAfterFlagScopeMakesAlternativeUnsatisfiable(){
+        assertThrows<IllegalStateException> { createGene("""(?i)[a&&b]+(a)""") }
+        assertThrows<IllegalStateException> { createGene("""(?i)a[a&&b]+""") }
+        // but it can be skipped when it is optional
+        checkSamplesExactly("""^(?i)[a&&b]*a$""", "a", "A")
+        // and a term that can match after the flag scope is still there
+        checkSamplesExactly("""^(?i)a[b-c]$""", "ab", "Ab", "ac", "Ac", "aB", "AB", "aC", "AC")
     }
 }

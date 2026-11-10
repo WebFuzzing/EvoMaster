@@ -235,6 +235,39 @@ public class SMTResultParserTest {
         assertEquals("z", ((StringValue) t2.getField("TXT")).getValue());
     }
 
+    /**
+     * Two tables with the same columns share a constructor name, and Z3 then qualifies it with its sort.
+     * This is the exact output of the Z3 image for two such tables.
+     */
+    @Test
+    public void testParseComposedTypeWithQualifiedConstructor() {
+        String response = "sat\n((doc__1 ((as id-body DocRow) (- 2) \"\")))\n((note__1 ((as id-body NoteRow) 1 \"a b\")))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue doc1 = (StructValue) result.get("doc__1");
+        assertEquals(2, doc1.getFields().size());
+        assertEquals(-2, ((LongValue) doc1.getField("ID")).getValue());
+        assertEquals("", ((StringValue) doc1.getField("BODY")).getValue());
+        StructValue note1 = (StructValue) result.get("note__1");
+        assertEquals(1, ((LongValue) note1.getField("ID")).getValue());
+        assertEquals("a b", ((StringValue) note1.getField("BODY")).getValue());
+    }
+
+    @Test
+    public void testParseComposedTypeWithExtraWhitespace() {
+        // Z3 does not print these spaces, but SMT-LIB allows whitespace between any two tokens
+        String response = "sat\n(  (   doc__1   (  ( as   id-body   DocRow )   (- 2)   \"x\" )  ) )\n"
+                + "( ( note__1\n   (  id-body 1\n \"a b\" ) ) )";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue doc1 = (StructValue) result.get("doc__1");
+        assertEquals(-2, ((LongValue) doc1.getField("ID")).getValue());
+        assertEquals("x", ((StringValue) doc1.getField("BODY")).getValue());
+        StructValue note1 = (StructValue) result.get("note__1");
+        assertEquals(1, ((LongValue) note1.getField("ID")).getValue());
+        assertEquals("a b", ((StringValue) note1.getField("BODY")).getValue());
+    }
+
     @Test
     public void testParseComposedTypeWithRationalValue() {
         // Z3 prints a Real that is not an integer as a division, e.g. for PRICE = 19.99
@@ -264,5 +297,15 @@ public class SMTResultParserTest {
 
         StructValue t1 = (StructValue) result.get("t__1");
         assertEquals("say \"hi\" O'Brien", ((StringValue) t1.getField("TXT")).getValue());
+    }
+
+    @Test
+    public void testParseComposedTypeWithUnicodeEscapes() {
+        // Z3 writes every character outside printable ASCII as a unicode escape
+        String response = "sat\n((t__1 (id-txt 0 \"ORDIN\\u{c6}R E\\u{d8}S \\u{1f600} a\\u{5c}b\")))";
+        Z3Solution result = SMTResultParser.parseZ3Response(response);
+
+        StructValue t1 = (StructValue) result.get("t__1");
+        assertEquals("ORDIN\u00c6R E\u00d8S \ud83d\ude00 a\\b", ((StringValue) t1.getField("TXT")).getValue());
     }
 }

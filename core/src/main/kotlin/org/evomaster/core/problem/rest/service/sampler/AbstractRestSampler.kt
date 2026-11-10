@@ -100,7 +100,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         log.debug("Initializing {}", AbstractRestSampler::class.simpleName)
 
-        if(configuration.blackBox && !configuration.bbExperiments){
+        if(configuration.blackBox){
             initForBlackBox()
             return
         }
@@ -292,7 +292,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      */
     private fun addCallToSwagger() : RestCallAction?{
 
-        if (configuration.blackBox && !configuration.bbExperiments) {
+        if (configuration.blackBox) {
             return if (configuration.bbSwaggerUrl.startsWith("http", true)){
                 buildActionBasedOnUrl(BlackBoxUtils.targetUrl(config,this), CALL_TO_SWAGGER_ID, HttpVerb.GET, configuration.bbSwaggerUrl, true)
             } else

@@ -48,4 +48,11 @@ class StringLiteralTranslationTest {
         assertTrue(smt.contains("\"O'Brien\"")) { "expected the apostrophe to be kept in:\n$smt" }
         assertTrue(smt.contains("\"say \"\"hi\"\"\"")) { "expected the escaped literal in:\n$smt" }
     }
+
+    @Test
+    fun `a character outside printable ASCII is written as a unicode escape`() {
+        val smt = generate("SELECT ID FROM ACCOUNT WHERE NAME = 'ORDINÆR \\ 😀'")
+
+        assertTrue(smt.contains("\"ORDIN\\u{c6}R \\u{5c} \\u{1f600}\"")) { "expected the escaped literal in:\n$smt" }
+    }
 }

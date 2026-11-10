@@ -168,6 +168,12 @@ class Statistics : SearchListener {
     //how long time spent in choosing names for the generated test cases
     private var timeSpentChoosingTestNamesMs = 0L
 
+    /**
+     * Wall-clock time, in milliseconds, for each complete test-suite re-execution
+     * round done during flakiness detection.
+     */
+    private val reExecutionTimesMs = mutableListOf<Long>()
+
    class Pair(val header: String, val element: String)
 
 
@@ -329,6 +335,13 @@ class Statistics : SearchListener {
             throw IllegalArgumentException("Passed time cannot be negative: $ms")
         }
         timeSpentChoosingTestNamesMs += ms
+    }
+
+    fun reportReExecutionTime(ms: Long) {
+        if (ms < 0) {
+            throw IllegalArgumentException("Passed time cannot be negative: $ms")
+        }
+        reExecutionTimesMs.add(ms)
     }
 
     fun reportTimeout() {
@@ -524,6 +537,8 @@ class Statistics : SearchListener {
     internal fun getSqlZ3SolveTimeMs() = sqlZ3SolveTimeMs
     internal fun getSqlInsertionExecutionTimeMs() = sqlInsertionExecutionTimeMs
     internal fun getSqlInsertionExecutionCount() = sqlInsertionExecutionCount
+    internal fun getAllReExecutionTimesMs(): List<Long> = reExecutionTimesMs.toList()
+    internal fun getSumOfReExecutionTimesMs() = reExecutionTimesMs.sum()
 
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
 
@@ -596,7 +611,7 @@ class Statistics : SearchListener {
 
     fun getData(solution: Solution<*>): List<Pair> {
 
-        val sutInfo : SutInfoDto? = if(config.usesDriver()) {
+        val sutInfo : SutInfoDto? = if(!config.blackBox) {
             remoteController?.getSutInfo()
         } else {
             null
@@ -696,6 +711,9 @@ class Statistics : SearchListener {
             add(Pair("coverageFailures", "$coverageFailures"))
             add(Pair("clusteringTime", "${solution.clusteringTime}"))
             add(Pair("id", config.statisticsColumnId))
+            add(Pair("flakinessDetectionReExecutionCount", "${reExecutionTimesMs.size}"))
+            add(Pair("flakinessDetectionReExecutionTotalMs", "${reExecutionTimesMs.sum()}"))
+            add(Pair("flakinessDetectionReExecutionTimesMs", reExecutionTimesMs.joinToString("|")))
 
             // statistics info for Mongo Heuristics
             add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristics","${averageNumberOfEvaluatedDocumentsForMongoHeuristics()}"))
@@ -987,7 +1005,7 @@ class Statistics : SearchListener {
 
 
         // append boot-time targets
-        if(config.usesDriver()) {
+        if(!config.blackBox) {
             remoteController?.getSutInfo()?.bootTimeInfoDto?.targets?.map { it.descriptiveId }?.sorted()?.apply {
                 if (isNotEmpty()){
                     content.add(System.lineSeparator())

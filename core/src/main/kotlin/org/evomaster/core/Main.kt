@@ -366,7 +366,7 @@ class Main {
             solution: Solution<*>,
             idMapper: IdMapper
         ) {
-            if (config.usesDriver()) {
+            if (!config.blackBox) {
                 val rc = injector.getInstance(RemoteController::class.java)
                 val unitsInfo = rc.getSutInfo()?.unitsInfoDto
                 val bootTimeInfo = rc.getSutInfo()?.bootTimeInfoDto
@@ -572,22 +572,6 @@ class Main {
                     config.problemType = EMConfig.ProblemType.WEBFRONTEND
                 } else if (info.asyncApiProblem != null) {
                     config.problemType = EMConfig.ProblemType.ASYNCAPI
-                    if (config.createTests) {
-                        /*
-                            There is no test writer for AsyncAPI yet, and the constraints checked
-                            below refuse the combination. As the problem type was inferred rather
-                            than asked for, turning test generation off is better than failing.
-
-                            TODO remove this block once there is a test writer for AsyncAPI: the
-                            combination will be valid then, and silently switching test generation
-                            off would hide it.
-                         */
-                        LoggingUtil.uniqueUserWarn(
-                            "The driver describes an AsyncAPI service, for which test generation is not" +
-                                    " available yet. Continuing with 'createTests' off."
-                        )
-                        config.createTests = false
-                    }
                 } else {
                     throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
                 }
@@ -600,7 +584,7 @@ class Main {
             val problemModule = when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     if (config.blackBox) {
-                        BlackBoxRestModule(config.bbExperiments)
+                        BlackBoxRestModule(false)
                     } else if (config.isEnabledResourceStrategy()) {
                         /*
                             default for white-box testing using MIO
@@ -617,7 +601,7 @@ class Main {
 
                 EMConfig.ProblemType.GRAPHQL -> {
                     if (config.blackBox) {
-                        GraphQLBlackBoxModule(config.bbExperiments)
+                        GraphQLBlackBoxModule(false)
                     } else {
                         GraphQLModule()
                     }
