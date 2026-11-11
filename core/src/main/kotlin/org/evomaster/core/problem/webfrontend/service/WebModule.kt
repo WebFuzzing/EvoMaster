@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.webfrontend.service
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.output.service.WebTestCaseWriter
@@ -27,6 +29,14 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class WebModule: EnterpriseModule() {
 
     override fun configure() {
+        super.configure()
+        binder().requireExplicitBindings()
+
+        bindRemoteController()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.WEBFRONTEND)
+            .forEach { bind(it) }
+
         bind(object : TypeLiteral<EnterpriseSampler<WebIndividual>>() {})
             .to(WebSampler::class.java)
             .asEagerSingleton()
@@ -64,6 +74,9 @@ class WebModule: EnterpriseModule() {
             .to(WebFitness::class.java)
             .asEagerSingleton()
 
+        bind(WebFitness::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Archive<WebIndividual>>() {})
             .asEagerSingleton()
 
@@ -73,20 +86,25 @@ class WebModule: EnterpriseModule() {
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<WebIndividual>>() {})
 
-        bind(RemoteController::class.java)
-            .to(RemoteControllerImplementation::class.java)
-            .asEagerSingleton()
-
         bind(object : TypeLiteral<Mutator<WebIndividual>>() {})
             .to(object : TypeLiteral<StandardMutator<WebIndividual>>() {})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<StandardMutator<WebIndividual>>() {})
             .asEagerSingleton()
 
         bind(StructureMutator::class.java)
             .to(WebStructureMutator::class.java)
             .asEagerSingleton()
 
+        bind(WebStructureMutator::class.java)
+            .asEagerSingleton()
+
         bind(TestCaseWriter::class.java)
             .to(WebTestCaseWriter::class.java)
+            .asEagerSingleton()
+
+        bind(WebTestCaseWriter::class.java)
             .asEagerSingleton()
 
         bind(TestSuiteWriter::class.java)

@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rpc.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.StartService
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
@@ -45,11 +46,11 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
     protected val scheduleActionCluster: MutableMap<String, Action> = mutableMapOf()
 
 
-    @PostConstruct
+    @StartService([])
     fun initialize() {
         log.debug("Initializing {}", RPCSampler::class.simpleName)
 
-        if(configuration.blackBox && !configuration.bbExperiments){
+        if(configuration.blackBox){
             throw IllegalStateException("Not support black-box testing for RPC with interface")
         }
 

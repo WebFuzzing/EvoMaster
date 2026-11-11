@@ -36,16 +36,6 @@ class BlackBoxRestFitness : RestFitness() {
         val cookies = mutableMapOf<String, List<NewCookie>>()
         val tokens = mutableMapOf<String, String>()
 
-        if(config.bbExperiments){
-            /*
-                If we have a controller, we MUST reset the SUT at each test execution.
-                This is to avoid memory leaks in the dat structures used by EM.
-                Eg, this was a huge problem for features-service with AdditionalInfo having a
-                memory leak
-             */
-            rc.resetSUT()
-        }
-
         val placeholders = AuthUtils.createUsers(client, getBaseUrl(), individual)
         cookies.putAll(AuthUtils.getCookies(client, getBaseUrl(), individual, placeholders))
         tokens.putAll(AuthUtils.getTokens(client, getBaseUrl(), individual, placeholders))

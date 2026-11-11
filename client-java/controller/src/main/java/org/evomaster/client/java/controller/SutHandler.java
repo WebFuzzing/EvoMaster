@@ -149,6 +149,21 @@ public interface SutHandler {
 
     /**
      * <p>
+     * Where the AsyncAPI server called {@code serverName} can actually be reached, now.
+     * </p>
+     *
+     * The address in the document is where the service was deployed, not where a system started
+     * for testing is: a broker in a container binds a port chosen at start-up. A generated suite
+     * that carries the driver asks this when it starts, as it takes the base URL of a REST
+     * system from {@link #startSut()}.
+     *
+     * @param serverName the key of the server in the document
+     * @return where to reach it, or null to use the address the document declares
+     */
+    default String getAsyncApiServerAddress(String serverName) {return null;}
+
+    /**
+     * <p>
      * execute an RPC endpoint with evomaster driver
      * </p>
      *

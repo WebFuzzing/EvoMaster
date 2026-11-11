@@ -7,6 +7,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.sql.schema.TableId
 import org.evomaster.core.llm.service.LlmService
 import org.evomaster.core.output.*
+import org.evomaster.core.output.asyncapi.KafkaTestClientEmitter
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoWriter
@@ -478,6 +479,11 @@ class TestSuiteWriter {
             addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
 
+            if (config.problemType == EMConfig.ProblemType.ASYNCAPI
+                    && KafkaTestClientEmitter.resultsIn(solution).isNotEmpty()) {
+                addImport(KafkaTestClientEmitter.UTILS_CLASS + ".*", lines, true)
+            }
+
             // BigInteger and BigDecimal
             addImport("java.math.BigDecimal", lines)
             addImport("java.math.BigInteger", lines)
@@ -711,7 +717,7 @@ class TestSuiteWriter {
         }
 
         if (config.outputFormat.isJava()) {
-            if (!config.blackBox || config.bbExperiments) {
+            if (!config.blackBox) {
                 lines.add("private static final SutHandler $controller = new $controllerName($executable)")
                 lines.append(getJaCoCoInit())
                 lines.append(getJavaCommand())
@@ -744,7 +750,7 @@ class TestSuiteWriter {
                 lines.add("private static RemoteWebDriver $driver;")
             }
         } else if (config.outputFormat.isKotlin()) {
-            if (!config.blackBox || config.bbExperiments) {
+            if (!config.blackBox) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
                 lines.append(getJaCoCoInit())
                 lines.append(getJavaCommand())
@@ -778,7 +784,7 @@ class TestSuiteWriter {
 
         } else if (config.outputFormat.isJavaScript()) {
 
-            if (!config.blackBox || config.bbExperiments) {
+            if (!config.blackBox) {
                 lines.add("const $controller = new $controllerName();")
                 lines.add("let $baseUrlOfSut;")
             } else {

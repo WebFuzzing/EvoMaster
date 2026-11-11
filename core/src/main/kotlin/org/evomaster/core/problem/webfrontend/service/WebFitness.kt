@@ -16,7 +16,7 @@ import java.net.MalformedURLException
 import java.net.URI
 import java.net.URISyntaxException
 import java.net.URL
-import javax.inject.Inject
+import com.google.inject.Inject
 
 
 class WebFitness : EnterpriseFitness<WebIndividual>() {

@@ -4,6 +4,8 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.parser.RegexType
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -88,5 +90,69 @@ class CharacterClassEscapeRxGeneTest {
         }
     }
 
+    @Test
+    fun testEcma262SpaceHasExpectedCharacters() {
+        val ecma262Spaces = listOf(
+            ' ', '\t', '\n', '\u000b', '\u000c', '\r', '\u00a0', '\u1680', '\u2028', '\u2029', '\u202f', '\u205f',
+            '\u3000', '\ufeff'
+        ) + ('\u2000'..'\u200a')
 
+        val space = CharacterClassEscapeRxGene("s", regexType = RegexType.ECMA_262).multiCharRange
+        val nonSpace = CharacterClassEscapeRxGene("S", regexType = RegexType.ECMA_262).multiCharRange
+
+        ecma262Spaces.forEach {
+            assertTrue(space.contains(it), "\\s should contain ${it.code}")
+            assertFalse(nonSpace.contains(it), "\\S should not contain ${it.code}")
+        }
+        // not white space in ECMA
+        listOf('\u0085', '\u180e', '\u200b', '\u2060').forEach {
+            assertFalse(space.contains(it), "\\s should not contain ${it.code}")
+            assertTrue(nonSpace.contains(it), "\\S should contain ${it.code}")
+        }
+    }
+
+    @Test
+    fun testJavaSpaceIsNotChanged() {
+        val space = CharacterClassEscapeRxGene("s").multiCharRange
+        val nonSpace = CharacterClassEscapeRxGene("S").multiCharRange
+        assertEquals(6, space.charCount)
+        assertFalse(space.contains('\u00a0'))
+        assertFalse(space.contains('\u2028'))
+        assertTrue(nonSpace.contains('\u00a0'))
+    }
+
+    @Test
+    fun testEcma262SpaceValidityDoesNotUseJava() {
+        val space = CharacterClassEscapeRxGene("s", regexType = RegexType.ECMA_262)
+        val nonSpace = CharacterClassEscapeRxGene("S", regexType = RegexType.ECMA_262)
+
+        // java.util.regex would say the opposite for all of these
+        listOf('\u00a0', '\u2003', '\ufeff').forEach {
+            space.setValueWithRawString(it.toString())
+            nonSpace.setValueWithRawString(it.toString())
+            assertTrue(space.isLocallyValid(), "\\s should accept ${it.code}")
+            assertFalse(nonSpace.isLocallyValid(), "\\S should not accept ${it.code}")
+        }
+        listOf('a', '\u0085', '\u180e').forEach {
+            space.setValueWithRawString(it.toString())
+            nonSpace.setValueWithRawString(it.toString())
+            assertFalse(space.isLocallyValid(), "\\s should not accept ${it.code}")
+            assertTrue(nonSpace.isLocallyValid(), "\\S should accept ${it.code}")
+        }
+        space.setValueWithRawString("  ")
+        assertFalse(space.isLocallyValid())
+    }
+
+    @Test
+    fun testEcma262SpaceIsKeptWhenCopied() {
+        val randomness = Randomness().apply { updateSeed(42) }
+        val gene = CharacterClassEscapeRxGene("s", regexType = RegexType.ECMA_262)
+        repeat(100) {
+            gene.randomize(randomness, false)
+            val copy = gene.copy() as CharacterClassEscapeRxGene
+            assertEquals(RegexType.ECMA_262, copy.regexType)
+            assertEquals(gene.getValueAsRawString(), copy.getValueAsRawString())
+            assertTrue(copy.isLocallyValid())
+        }
+    }
 }

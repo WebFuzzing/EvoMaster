@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.rest.service.module
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -13,6 +15,7 @@ import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.problem.rest.service.HttpSemanticsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.problem.rest.service.RestSecurityBuilder
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FlakinessDetector
 import org.evomaster.core.search.service.Minimizer
@@ -22,9 +25,14 @@ open class RestBaseModule : EnterpriseModule() {
 
     override fun configure() {
         super.configure()
+        binder().requireExplicitBindings()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.REST)
+            .forEach { bind(it) }
 
         bind(TestCaseWriter::class.java)
             .to(RestTestCaseWriter::class.java)
+        bind(RestTestCaseWriter::class.java)
             .asEagerSingleton()
 
         bind(TestSuiteWriter::class.java)
@@ -38,28 +46,20 @@ open class RestBaseModule : EnterpriseModule() {
 
         bind(object : TypeLiteral<Minimizer<RestIndividual>>(){})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<Minimizer<*>>(){})
             .to(object : TypeLiteral<Minimizer<RestIndividual>>(){})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<RestIndividual>>(){})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
             .to(object : TypeLiteral<FlakinessDetector<RestIndividual>>(){})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<RestIndividual>>() {})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<Archive<*>>() {})
             .to(object : TypeLiteral<Archive<RestIndividual>>() {})
-            .asEagerSingleton()
-
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<RestIndividual>>() {})
-            .asEagerSingleton()
 
         bind(HttpSemanticsService::class.java)
             .asEagerSingleton()
@@ -79,5 +79,8 @@ open class RestBaseModule : EnterpriseModule() {
         bind(ArazzoWorkflowsService::class.java)
             .asEagerSingleton()
 
+        //TODO move upwards once fixed its dependencies to REST
+        bind(SSRFAnalyser::class.java)
+            .asEagerSingleton()
     }
 }

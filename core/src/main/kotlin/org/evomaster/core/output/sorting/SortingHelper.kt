@@ -8,6 +8,9 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rpc.RPCCallAction
+import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
+import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult
+import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.search.EvaluatedIndividual
@@ -106,6 +109,23 @@ class SortingHelper {
             (ind.evaluatedMainActions().last().action as GraphQLAction).parameters.size
         }
 
+    /**
+     * Groups the tests of one operation together, then orders them by what publishing did: a
+     * reply that arrived comes before silence, and within that by the declared message it was
+     * recognised as. This is the AsyncAPI stand-in for ordering REST by status code.
+     */
+    private val asyncApiComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
+        (ind.evaluatedMainActions().last().action as AsyncApiAction).operationId
+    }
+        .thenBy { ind ->
+            //an action with no outcome recorded never ran, so it belongs after the ones that did
+            (ind.evaluatedMainActions().last().result as AsyncApiCallResult).getOutcome()?.ordinal
+                ?: Int.MAX_VALUE
+        }
+        .thenBy { ind ->
+            (ind.evaluatedMainActions().last().result as AsyncApiCallResult).getReplyMessage() ?: ""
+        }
+
     private val rpcComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
         (ind.evaluatedMainActions().last().action as RPCCallAction).getSimpleClassName()
     }
@@ -173,6 +193,7 @@ class SortingHelper {
             tests.any { it.individual is RestIndividual } -> restComparator
             tests.any { it.individual is GraphQLIndividual } -> graphQLComparator
             tests.any { it.individual is RPCIndividual } -> rpcComparator
+            tests.any { it.individual is AsyncApiIndividual } -> asyncApiComparator
             tests.any { it.individual is WebIndividual } -> {
                 log.warn("Web individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
                 statusCode

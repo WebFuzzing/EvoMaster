@@ -1,7 +1,10 @@
 package org.evomaster.core.problem.asyncapi.service
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.NoTestCaseWriter
+import org.evomaster.core.output.service.AsyncApiTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
@@ -25,39 +28,40 @@ import org.evomaster.core.search.service.mutator.StructureMutator
  * it is what holds the connection to the broker, so it takes part either way (see
  * [org.evomaster.core.EMConfig.usesDriver]).
  *
- * No test cases are written yet, which [org.evomaster.core.EMConfig] enforces by requiring
- * `--createTests false`.
+ * The tests a run writes are the [org.evomaster.core.output.service.AsyncApiTestCaseWriter]'s,
+ * which publishes with a client of the transport rather than through the driver.
  */
 class AsyncApiModule : EnterpriseModule() {
 
     override fun configure() {
+        super.configure()
 
-        /*
-            No super.configure(): what EnterpriseModule binds there is REST-only, and the RPC,
-            GraphQL and Web modules leave it out the same way.
-         */
+        binder().requireExplicitBindings()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.ASYNCAPI)
+            .forEach { bind(it) }
+
+        bindRemoteController()
 
         bind(object : TypeLiteral<EnterpriseSampler<AsyncApiIndividual>>() {})
             .to(AsyncApiSampler::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Sampler<AsyncApiIndividual>>() {})
             .to(AsyncApiSampler::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Sampler<*>>() {})
             .to(AsyncApiSampler::class.java)
-            .asEagerSingleton()
 
         bind(AsyncApiSampler::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<AsyncApiIndividual>>() {})
             .to(AsyncApiFitness::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
             .to(AsyncApiFitness::class.java)
+
+        bind(AsyncApiFitness::class.java)
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<AsyncApiIndividual>>() {})
@@ -65,14 +69,12 @@ class AsyncApiModule : EnterpriseModule() {
 
         bind(object : TypeLiteral<Minimizer<*>>() {})
             .to(object : TypeLiteral<Minimizer<AsyncApiIndividual>>() {})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<AsyncApiIndividual>>() {})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<*>>() {})
             .to(object : TypeLiteral<FlakinessDetector<AsyncApiIndividual>>() {})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<AsyncApiIndividual>>() {})
             .asEagerSingleton()
@@ -83,20 +85,20 @@ class AsyncApiModule : EnterpriseModule() {
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<AsyncApiIndividual>>() {})
 
-        bind(RemoteController::class.java)
-            .to(RemoteControllerImplementation::class.java)
-            .asEagerSingleton()
-
         bind(object : TypeLiteral<Mutator<AsyncApiIndividual>>() {})
             .to(object : TypeLiteral<StandardMutator<AsyncApiIndividual>>() {})
+
+        bind(object : TypeLiteral<StandardMutator<AsyncApiIndividual>>() {})
             .asEagerSingleton()
 
         bind(StructureMutator::class.java)
             .to(AsyncApiStructureMutator::class.java)
+        bind(AsyncApiStructureMutator::class.java)
             .asEagerSingleton()
 
         bind(TestCaseWriter::class.java)
-            .to(NoTestCaseWriter::class.java)
+            .to(AsyncApiTestCaseWriter::class.java)
+        bind(AsyncApiTestCaseWriter::class.java)
             .asEagerSingleton()
 
         bind(TestSuiteWriter::class.java)

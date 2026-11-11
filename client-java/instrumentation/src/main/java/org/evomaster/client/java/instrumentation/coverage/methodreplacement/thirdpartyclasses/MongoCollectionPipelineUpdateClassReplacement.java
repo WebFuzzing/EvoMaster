@@ -114,6 +114,11 @@ public class MongoCollectionPipelineUpdateClassReplacement extends MongoOperatio
         return handleEagerQuery(singleton,"findOneAndUpdateBsonPipeline", mongoCollection, Arrays.asList(filter, pipeline), filter);
     }
 
+    /**
+     * Replacement for {@code MongoCollection.findOneAndUpdate(Bson, List<? extends Bson>)}.
+     * <p>
+     * Present in the MongoDB Java driver from 3.11.0 (not present in 3.10.2).
+     */
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findOneAndUpdateBsonPipelineFindOneAndUpdateOptions", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO)
     public static Object findOneAndUpdate(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, List<?> pipeline, @ThirdPartyCast(actualType = "com.mongodb.client.model.FindOneAndUpdateOptions") Object options) {
         return handleEagerQuery(singleton,"findOneAndUpdateBsonPipelineFindOneAndUpdateOptions", mongoCollection, Arrays.asList(filter, pipeline, options), filter);

@@ -4,8 +4,8 @@ import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbE
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
-import org.evomaster.client.java.instrumentation.DynamoDbCommand;
-import org.evomaster.client.java.instrumentation.DynamoDbOperationNames;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
@@ -48,6 +48,20 @@ public class DynamoDbHandlerTest {
             assertEquals(2, result.getDistanceWithMetrics().getNumberOfEvaluatedItems());
             assertFalse(result.getDistanceWithMetrics().isEvaluationFailure());
         }
+    }
+
+    /** Equivalent query predicates produce one diagnostic ID despite different player values. */
+    @Test
+    public void testHeuristicIdGroupsEquivalentQueries() {
+        DynamoDbDistanceWithMetrics distance = new DynamoDbDistanceWithMetrics(0.0d, 0, false);
+        String messiId = new DynamoDbCommandWithDistance(queryCommand("Lionel Messi"), TABLE, distance)
+                .getHeuristicId();
+        String maradonaId = new DynamoDbCommandWithDistance(queryCommand("Diego Maradona"), TABLE, distance)
+                .getHeuristicId();
+
+        assertEquals(messiId, maradonaId);
+        assertTrue(messiId.startsWith("Query:" + TABLE + ":"));
+        assertFalse(messiId.contains("Lionel Messi"));
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import org.evomaster.core.problem.rest.data.RestCallAction;
 import org.evomaster.core.problem.rest.data.RestIndividual;
+import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness;
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler;
 import org.evomaster.core.problem.rest.service.fitness.RestFitness;
 import org.evomaster.core.problem.rest.service.sampler.RestSampler;
@@ -66,9 +67,9 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
                             new TypeLiteral<Archive<RestIndividual>> () {}));
                     assertNotNull(archive);
 
-                    RestFitness ff = injector.getInstance(RestFitness.class);
+                    AbstractRestFitness ff = injector.getInstance(AbstractRestFitness.class);
 
-                    RestSampler sampler = injector.getInstance(RestSampler.class);
+                    AbstractRestSampler sampler = injector.getInstance(AbstractRestSampler.class);
                     RestIndividual ind = sampler.sample(false);
                     int count = 0;
                     while (ind.seeMainExecutableActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)) && count < 3){

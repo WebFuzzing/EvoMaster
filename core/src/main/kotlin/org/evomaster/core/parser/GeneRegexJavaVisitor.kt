@@ -484,7 +484,7 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
 
         if(ctx.quote() != null){
 
-            val block = ctx.quote().QUOTE_CONTENT()?.text ?: ""
+            val block = ctx.quote().QUOTE_CONTENT().joinToString("") { it.text }
 
             val name = if(block.isBlank()) "blankBlock" else block
 
