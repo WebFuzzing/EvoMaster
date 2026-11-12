@@ -224,6 +224,26 @@ public abstract class EnterpriseTestBase {
             boolean handleFlakyWithTests,
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable{
+
+        runTestHandlingFlaky(
+                new E2ETestConfig(outputFolderName, fullClassName, iterations)
+                        .withTerminations(terminations)
+                        .withCreateTests(createTests)
+                        .withHandleFlakyWithTests(handleFlakyWithTests)
+                        .withTimeoutMinutes(timeoutMinutes),
+                lambda);
+    }
+
+    protected void runTestHandlingFlaky(E2ETestConfig config, Consumer<List<String>> lambda) throws Throwable{
+        runTestHandlingFlaky(config, config.isHandleFlakyWithTests(), lambda);
+    }
+
+    private void runTestHandlingFlaky(E2ETestConfig config, boolean handleFlakyWithTests, Consumer<List<String>> lambda) throws Throwable{
+
+        String outputFolderName = config.getOutputFolderName();
+        String fullClassName = config.getFullClassName();
+        List<String> terminations = config.getTerminations();
+
         List<ClassName> classNames = new ArrayList<>();
 
         String splitType = "";
@@ -243,18 +263,19 @@ public abstract class EnterpriseTestBase {
             https://github.com/junit-team/junit5/issues/80
          */
         String finalSplitType = splitType;
-        assertTimeoutPreemptively(Duration.ofMinutes(timeoutMinutes), () -> {
+        assertTimeoutPreemptively(Duration.ofMinutes(config.getTimeoutMinutes()), () -> {
             ClassName className = new ClassName(fullClassName);
             clearGeneratedFiles(outputFolderName, classNames);
 
             handleFlaky(
                     () -> {
-                        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests, finalSplitType, "FALSE");
+                        List<String> args = getArgsWithCompilation(config.getIterations(), outputFolderName, className, config.isCreateTests(), finalSplitType, "FALSE");
+                        setOption(args, "outputFormat", config.getOutputFormat().name());
                         defaultSeed++;
                         lambda.accept(new ArrayList<>(args));
 
-                        if (createTests && handleFlakyWithTests)
-                            runTests(outputFolderName, fullClassName, terminations);
+                        if (config.isCreateTests() && handleFlakyWithTests)
+                            runTests(outputFolderName, fullClassName, terminations, config.getOutputFormat());
                     }
             );
         });
@@ -317,18 +338,46 @@ public abstract class EnterpriseTestBase {
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable {
 
-        runTestHandlingFlaky(outputFolderName, fullClassName, terminations, iterations, createTests, false, lambda, timeoutMinutes);
+        runTestHandlingFlakyAndCompilation(
+                new E2ETestConfig(outputFolderName, fullClassName, iterations)
+                        .withTerminations(terminations)
+                        .withCreateTests(createTests)
+                        .withHandleFlakyWithTests(handleFlakyWithTests)
+                        .withTimeoutMinutes(timeoutMinutes),
+                lambda);
+    }
 
+    protected void runTestHandlingFlakyAndCompilation(E2ETestConfig config, Consumer<List<String>> lambda) throws Throwable {
+
+        boolean compileTests = config.isCreateTests() && !config.isHandleFlakyWithTests();
+
+        runTestHandlingFlaky(config, false, args -> {
+            lambda.accept(args);
+            if (compileTests) {
+                //the tests are compiled in the format of the config, so the lambda must not change it
+                assertEquals(config.getOutputFormat().name(), args.get(args.indexOf("--outputFormat") + 1),
+                        "The output format must be set in the config, not in the arguments");
+            }
+        });
+
+        List<String> terminations = config.getTerminations();
         if (terminations == null) terminations = Arrays.asList("");
         //BMR: this is where I should handle multiples???
-        if (createTests && !handleFlakyWithTests){
-            runTests(outputFolderName, fullClassName, terminations);
+        if (compileTests){
+            runTests(config.getOutputFolderName(), config.getFullClassName(), terminations, config.getOutputFormat());
         }
     }
 
     protected void runTests(String outputFolderName,
                             String fullClassName,
                             List<String> terminations){
+        runTests(outputFolderName, fullClassName, terminations, OutputFormat.KOTLIN_JUNIT_5);
+    }
+
+    protected void runTests(String outputFolderName,
+                            String fullClassName,
+                            List<String> terminations,
+                            OutputFormat format){
         MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
 
         for (String termination : terminations) {
@@ -336,7 +385,7 @@ public abstract class EnterpriseTestBase {
                 ClassName className = new ClassName(fullClassName + termination);
                 clearCompiledFiles(className);
                 //the first one goes through, but for the second generated files appear to not be clean.
-                compileRunAndVerifyTests(outputFolderName, className);
+                compileRunAndVerifyTests(outputFolderName, className, format);
             });
         }
     }
@@ -349,26 +398,25 @@ public abstract class EnterpriseTestBase {
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable {
 
-        runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests,lambda, timeoutMinutes);
-
-        if (createTests){
-            MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
-
-            assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
-                ClassName className = new ClassName(fullClassName);
-                compileRunAndVerifyTests(outputFolderName, className);
-            });
-        }
+        runTestHandlingFlakyAndCompilation(
+                new E2ETestConfig(outputFolderName, fullClassName, iterations)
+                        .withCreateTests(createTests)
+                        .withTimeoutMinutes(timeoutMinutes),
+                lambda);
     }
 
     protected void compileRunAndVerifyTests(String outputFolderName, ClassName className){
+        compileRunAndVerifyTests(outputFolderName, className, OutputFormat.KOTLIN_JUNIT_5);
+    }
+
+    protected void compileRunAndVerifyTests(String outputFolderName, ClassName className, OutputFormat format){
 
         ExecutionTracer.setKillSwitch(false); //make sure it is not on
 
         Class<?> klass = loadClass(className);
         assertNull(klass);
 
-        compile(outputFolderName);
+        compile(outputFolderName, format);
         klass = loadClass(className);
         assertNotNull(klass, "Failed to load generated test suite class after compilation: " + className);
 
@@ -431,17 +479,14 @@ public abstract class EnterpriseTestBase {
     }
 
     protected void compile(String outputFolderName){
+        compile(outputFolderName, OutputFormat.KOTLIN_JUNIT_5);
+    }
+
+    protected void compile(String outputFolderName, OutputFormat format){
 
         long start = System.currentTimeMillis();
 
-        File folder = new File(outputFolderPath(outputFolderName));
-
-        //the output format is not known here, so it is inferred from the generated files
-        OutputFormat format = !FileUtils.listFiles(folder, new String[]{"java"}, true).isEmpty()
-                ? OutputFormat.JAVA_JUNIT_5
-                : OutputFormat.KOTLIN_JUNIT_5;
-
-        CompilerForTestGenerated.INSTANCE.compile(format, folder, new File("target/test-classes"));
+        CompilerForTestGenerated.INSTANCE.compile(format, new File(outputFolderPath(outputFolderName)), new File("target/test-classes"));
 
         int passed = (int)(System.currentTimeMillis() - start) / 1000;
         System.out.println("Folder compiled in " + passed + " seconds: " + outputFolderName);

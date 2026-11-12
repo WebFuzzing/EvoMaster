@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
+import org.evomaster.e2etests.utils.E2ETestConfig
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.params.ParameterizedTest
@@ -27,26 +28,21 @@ class WmJsonArrayEMTest : SpringTestBase() {
     fun testRunEM(outputFormat: OutputFormat) {
 
         runTestHandlingFlakyAndCompilation(
-            "WmJsonArrayEM_$outputFormat",
-            "org.foo.WmJsonArrayEM_$outputFormat",
-            100,
-            true,
-            { args: MutableList<String> ->
-                setOption(args,"outputFormat",outputFormat.name)
-                args.add("--externalServiceIPSelectionStrategy")
-                args.add("USER")
-                args.add("--externalServiceIP")
-                args.add("127.0.0.26")
+            E2ETestConfig("WmJsonArrayEM_$outputFormat", "org.foo.WmJsonArrayEM_$outputFormat", 100)
+                .withOutputFormat(outputFormat)
+        ) { args: MutableList<String> ->
+            args.add("--externalServiceIPSelectionStrategy")
+            args.add("USER")
+            args.add("--externalServiceIP")
+            args.add("127.0.0.26")
 
-                val solution = initAndRun(args)
+            val solution = initAndRun(args)
 
-                assertTrue(solution.individuals.size >= 1)
+            assertTrue(solution.individuals.size >= 1)
 
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X")
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
-            },
-            3
-        )
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X")
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
+        }
     }
 
 }

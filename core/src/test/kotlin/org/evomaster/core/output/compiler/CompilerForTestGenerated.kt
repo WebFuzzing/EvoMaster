@@ -83,6 +83,7 @@ object CompilerForTestGenerated{
 
         val diagnostics = DiagnosticCollector<JavaFileObject>()
 
+        //generated tests are written in UTF-8, whatever the default charset of the JVM
         compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8).use { manager ->
 
             val units = manager.getJavaFileObjectsFromFiles(files)
