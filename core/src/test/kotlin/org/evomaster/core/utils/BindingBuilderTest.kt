@@ -2,6 +2,7 @@ package org.evomaster.core.utils
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -11,6 +12,7 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
@@ -33,6 +35,34 @@ class BindingBuilderTest {
         }
     }
 
+
+    @Test
+    fun testPlayerCountryFollowsTheRestInputWhenItChanges() {
+        val country = StringGene("country", "Argentina")
+        val otherCountry = StringGene("country", "Brazil")
+        val requestId = StringGene("requestId", "Argentina")
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "country", "Argentina")
+
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(listOf(insertion), listOf(country, otherCountry, requestId))
+
+        val insertedCountry = insertion.attributes.first().gene as StringGene
+        assertTrue(country.isDirectBoundWith(insertedCountry))
+        assertFalse(otherCountry.isDirectBoundWith(insertedCountry))
+        assertFalse(requestId.isDirectBoundWith(insertedCountry))
+        country.value = "Uruguay"
+        country.syncBindingGenesBasedOnThis()
+        assertEquals("Uruguay", insertedCountry.value)
+    }
+
+    @Test
+    fun testSubjectIdAcrossNamingStyles() {
+        val subjectId = StringGene("subjectId", "Lionel Messi")
+        val insertion = TestUtils.generateFakeDynamoDbAction("WorldCupPlayers", "subject_id", "Lionel Messi")
+
+        BindingBuilder.bindDynamoDbInsertActionsToInputs(listOf(insertion), listOf(subjectId))
+
+        assertTrue(subjectId.isDirectBoundWith(insertion.attributes.single().gene))
+    }
 
     @Test
     fun testBindingInOneAction(){

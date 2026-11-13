@@ -1,6 +1,9 @@
 package org.evomaster.core.database.dynamodb
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -38,5 +41,22 @@ class DynamoDbActionTransformerTest {
     @Test
     fun transformsAnEmptyActionList() {
         assertTrue(DynamoDbActionTransformer.transform(emptyList()).insertions.isEmpty())
+    }
+    @Test
+    fun transformsGeneratedWorldCupKeysAndPreservesTemplateValues() {
+        val query = DynamoDbFailedQuery("WorldCupRecords", listOf(
+            DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"),
+            DynamoDbAttributeValueDto("purpose", DynamoDbScalarTypeDto.STRING, "World Cup tickets")
+        ), linkedMapOf("recordKey" to DynamoDbScalarTypeDto.STRING, "matchNumber" to DynamoDbScalarTypeDto.NUMBER))
+        val action = DynamoDbInsertBuilder.buildInsertActions(listOf(query), Randomness()).single()
+        val copy = action.copy() as DynamoDbAction
+        val insertion = DynamoDbActionTransformer.transform(listOf(copy)).insertions.single()
+        val attributes = insertion.attributes.associateBy { it.attributeName }
+
+        assertEquals("Argentina", attributes.getValue("country").value)
+        assertEquals("World Cup tickets", attributes.getValue("purpose").value)
+        assertTrue(attributes.getValue("recordKey").value.isNotEmpty())
+        assertEquals(DynamoDbScalarTypeDto.NUMBER, attributes.getValue("matchNumber").type)
+        assertTrue(attributes.getValue("matchNumber").value.toBigDecimal().precision() <= 38)
     }
 }
