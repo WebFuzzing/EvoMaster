@@ -85,8 +85,9 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
-                <skipMiscDB>true</skipMiscDB>
+                <skipDynamoDBNeo4jOpenSearch>true</skipDynamoDBNeo4jOpenSearch>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -101,8 +102,9 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
-                <skipMiscDB>true</skipMiscDB>
+                <skipDynamoDBNeo4jOpenSearch>true</skipDynamoDBNeo4jOpenSearch>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -117,8 +119,9 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
-                <skipMiscDB>true</skipMiscDB>
+                <skipDynamoDBNeo4jOpenSearch>true</skipDynamoDBNeo4jOpenSearch>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -133,8 +136,9 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
-                <skipMiscDB>true</skipMiscDB>
+                <skipDynamoDBNeo4jOpenSearch>true</skipDynamoDBNeo4jOpenSearch>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -149,8 +153,9 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
-                <skipMiscDB>true</skipMiscDB>
+                <skipDynamoDBNeo4jOpenSearch>true</skipDynamoDBNeo4jOpenSearch>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -165,8 +170,9 @@
                 <skipGraphQL>false</skipGraphQL> <!-- false -->
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
-                <skipMiscDB>true</skipMiscDB>
+                <skipDynamoDBNeo4jOpenSearch>true</skipDynamoDBNeo4jOpenSearch>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -181,8 +187,9 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>false</skipMongo> <!-- false -->
                 <skipH2V1>true</skipH2V1>
-                <skipMiscDB>true</skipMiscDB>
+                <skipDynamoDBNeo4jOpenSearch>true</skipDynamoDBNeo4jOpenSearch>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -197,12 +204,13 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>false</skipH2V1> <!-- false -->
-                <skipMiscDB>true</skipMiscDB>
+                <skipDynamoDBNeo4jOpenSearch>true</skipDynamoDBNeo4jOpenSearch>
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
-            <id>MiscDB</id>
+            <id>DynamoDBNeo4jOpenSearchTests</id>
             <properties>
                 <skipTests>true</skipTests>
                 <!-- Specific modules -->
@@ -213,8 +221,9 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
-                <skipMiscDB>false</skipMiscDB> <!-- false -->
+                <skipDynamoDBNeo4jOpenSearch>false</skipDynamoDBNeo4jOpenSearch> <!-- false -->
                 <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>true</skipCassandraRedis>
             </properties>
         </profile>
         <profile>
@@ -234,8 +243,26 @@
                 <skipGraphQL>true</skipGraphQL>
                 <skipMongo>true</skipMongo>
                 <skipH2V1>true</skipH2V1>
-                <skipMiscDB>true</skipMiscDB>
+                <skipDynamoDBNeo4jOpenSearch>true</skipDynamoDBNeo4jOpenSearch>
                 <skipAsyncApi>false</skipAsyncApi> <!-- false -->
+                <skipCassandraRedis>true</skipCassandraRedis>
+            </properties>
+        </profile>
+        <profile>
+            <id>CassandraRedisTests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <!-- Specific modules -->
+                <skipCore>true</skipCore>
+                <skipCoreIT>true</skipCoreIT>
+                <skipOAV3>true</skipOAV3>
+                <skipOAV2>true</skipOAV2>
+                <skipGraphQL>true</skipGraphQL>
+                <skipMongo>true</skipMongo>
+                <skipH2V1>true</skipH2V1>
+                <skipDynamoDBNeo4jOpenSearch>true</skipDynamoDBNeo4jOpenSearch>
+                <skipAsyncApi>true</skipAsyncApi>
+                <skipCassandraRedis>false</skipCassandraRedis> <!-- false -->
             </properties>
         </profile>
     </profiles>
@@ -345,8 +372,9 @@
         <skipGraphQL>false</skipGraphQL>
         <skipMongo>false</skipMongo>
         <skipH2V1>false</skipH2V1>
-        <skipMiscDB>false</skipMiscDB>
+        <skipDynamoDBNeo4jOpenSearch>false</skipDynamoDBNeo4jOpenSearch>
         <skipAsyncApi>false</skipAsyncApi>
+        <skipCassandraRedis>false</skipCassandraRedis>
     </properties>
 
 
