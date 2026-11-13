@@ -41,6 +41,7 @@ class TupleGeneImpact (
         if (gc.previous == null){
             gc.current.elements.forEach { gene ->
                 val fImpact = elements.getValue(gene.name) as? GeneImpact ?:throw IllegalArgumentException("impact should be gene impact")
+                if (!fImpact.validate(gene)) return@forEach
                 val mutatedGeneWithContext = MutatedGeneWithContext(
                     current =  gene,
                     actionName = "none",
@@ -63,6 +64,7 @@ class TupleGeneImpact (
 
         mutatedElements.forEach { g->
             val fImpact = elements.getValue(g.first.name) as? GeneImpact ?:throw IllegalArgumentException("impact should be gene impact")
+            if (!fImpact.validate(g.first) || !fImpact.validate(g.second)) return@forEach
             val mutatedGeneWithContext = MutatedGeneWithContext(
                 current =  g.first,
                 actionName = "none",
