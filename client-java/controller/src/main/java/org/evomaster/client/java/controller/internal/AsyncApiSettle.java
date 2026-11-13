@@ -49,7 +49,7 @@ public class AsyncApiSettle {
 
     /**
      * Wait as long as {@link AsyncApiActionDto#settleMs} asks, and record in
-     * {@link AsyncApiReplyDto#settledMs} how long that actually was. Nothing is waited, and
+     * {@link AsyncApiReplyDto#settleWaitedMs} how long that actually was. Nothing is waited, and
      * nothing recorded, when no wait is asked for.
      *
      * The thread calling this is a request thread of the controller, whose code is never
@@ -75,6 +75,6 @@ public class AsyncApiSettle {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        reply.settledMs = clock.nowMs() - start;
+        reply.settleWaitedMs = clock.nowMs() - start;
     }
 }

@@ -89,7 +89,7 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
     protected void assertEverySettled(Solution<AsyncApiIndividual> solution) {
         List<AsyncApiCallResult> results = allResultsOf(solution);
         assertTrue(!results.isEmpty(), "With seed " + defaultSeed + ": nothing was published");
-        long unsettled = results.stream().filter(r -> r.getSettledMs() == null).count();
+        long unsettled = results.stream().filter(r -> r.getSettleWaitedMs() == null).count();
         assertTrue(unsettled == 0, "With seed " + defaultSeed + ": " + unsettled + " of " + results.size()
                 + " published messages were not kept open after the driver returned");
     }

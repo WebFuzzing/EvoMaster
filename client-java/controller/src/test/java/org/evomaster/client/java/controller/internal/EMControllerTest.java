@@ -82,7 +82,7 @@ public class EMControllerTest {
 
         AsyncApiReplyDto reply = replyIn(response);
         assertTrue(reply.published);
-        assertEquals(300L, reply.settledMs);
+        assertEquals(300L, reply.settleWaitedMs);
     }
 
     @Test
@@ -92,7 +92,7 @@ public class EMControllerTest {
 
         assertEquals(OK, response.getStatus());
         assertEquals(1, events.size(), events.toString());
-        assertNull(replyIn(response).settledMs);
+        assertNull(replyIn(response).settleWaitedMs);
     }
 
     @Test
@@ -111,7 +111,7 @@ public class EMControllerTest {
 
         AsyncApiReplyDto reply = replyIn(response);
         assertFalse(reply.published);
-        assertNull(reply.settledMs);
+        assertNull(reply.settleWaitedMs);
     }
 
     @Test
@@ -143,7 +143,7 @@ public class EMControllerTest {
 
             AsyncApiReplyDto reply = replyIn(response);
             assertEquals(published, reply.published);
-            assertNull(reply.settledMs, "published=" + published);
+            assertNull(reply.settleWaitedMs, "published=" + published);
         }
     }
 

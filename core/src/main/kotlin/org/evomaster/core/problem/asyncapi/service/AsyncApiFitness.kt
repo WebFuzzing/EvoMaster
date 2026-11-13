@@ -239,7 +239,7 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         result.setOutcome(outcome)
         reply.waitedMs?.let { result.setWaitedMs(it) }
-        reply.settledMs?.let { result.setSettledMs(it) }
+        reply.settleWaitedMs?.let { result.setSettleWaitedMs(it) }
 
         //what the generated test will publish with, when the driver rendered it
         //lines that are all blank are no script: the writer would publish nothing and assert on it

@@ -73,8 +73,10 @@ public class AsyncApiReplyDto {
      *
      * Filled in by the controller rather than by the driver, which never sees this field set.
      * Null when no wait was asked for, or when the message could not be published.
+     *
+     * Not to be confused with {@link #waitedMs}, which is how long the driver waited for a reply.
      */
-    public Long settledMs;
+    public Long settleWaitedMs;
 
     /**
      * Why publishing failed, when it did.

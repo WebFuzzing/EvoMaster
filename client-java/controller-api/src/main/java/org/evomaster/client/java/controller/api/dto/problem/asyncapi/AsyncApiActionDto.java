@@ -101,6 +101,9 @@ public class AsyncApiActionDto {
      *
      * The wait is done by the controller, so drivers need not implement it. Null, zero or
      * negative mean no wait. Only set when the SUT is instrumented.
+     *
+     * This is the wait asked for. How long the controller actually waited is reported back in
+     * {@link AsyncApiReplyDto#settleWaitedMs}.
      */
     public Long settleMs;
 

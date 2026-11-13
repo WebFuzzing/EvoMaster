@@ -51,7 +51,7 @@ public class AsyncApiSettleTest {
 
         assertEquals(1, sleeps.size());
         assertEquals(250L, sleeps.get(0));
-        assertEquals(250L, reply.settledMs);
+        assertEquals(250L, reply.settleWaitedMs);
     }
 
     @Test
@@ -62,7 +62,7 @@ public class AsyncApiSettleTest {
         for (Long none : new Long[]{null, 0L, -5L}) {
             AsyncApiReplyDto reply = new AsyncApiReplyDto();
             settle.settle(asking(none), reply);
-            assertNull(reply.settledMs, "a wait was recorded for settleMs=" + none);
+            assertNull(reply.settleWaitedMs, "a wait was recorded for settleMs=" + none);
         }
 
         assertTrue(sleeps.isEmpty(), "slept although no wait was asked for: " + sleeps);
@@ -84,7 +84,7 @@ public class AsyncApiSettleTest {
         settle.settle(asking(250L), reply);
 
         assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
-        assertEquals(40L, reply.settledMs, "what was recorded is not the time actually waited");
+        assertEquals(40L, reply.settleWaitedMs, "what was recorded is not the time actually waited");
     }
 
     @Test
@@ -101,7 +101,7 @@ public class AsyncApiSettleTest {
         assertTrue(reply.published);
         assertTrue(reply.replyReceived);
         assertEquals(12L, reply.waitedMs, "the driver's wait for the reply is not the controller's settle");
-        assertEquals(100L, reply.settledMs);
+        assertEquals(100L, reply.settleWaitedMs);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class AsyncApiSettleTest {
 
         new AsyncApiSettle().settle(asking(1L), reply);
 
-        assertNotNull(reply.settledMs);
-        assertTrue(reply.settledMs >= 0, "negative wait: " + reply.settledMs);
+        assertNotNull(reply.settleWaitedMs);
+        assertTrue(reply.settleWaitedMs >= 0, "negative wait: " + reply.settleWaitedMs);
     }
 }

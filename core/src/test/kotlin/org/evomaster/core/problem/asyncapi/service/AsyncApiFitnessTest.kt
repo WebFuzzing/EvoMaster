@@ -774,11 +774,11 @@ class AsyncApiFitnessTest {
     @Test
     fun testHowLongTheControllerWaitedIsKeptOnTheResult() {
 
-        startNcs("--asyncApiSettleMs=250") { fireAndForget().apply { settledMs = 251 } }
+        startNcs("--asyncApiSettleMs=250") { fireAndForget().apply { settleWaitedMs = 251 } }
 
         val evaluated = evaluate("bessj")
 
-        assertEquals(251L, results(evaluated).single().getSettledMs())
+        assertEquals(251L, results(evaluated).single().getSettleWaitedMs())
     }
 
     @Test
@@ -788,6 +788,6 @@ class AsyncApiFitnessTest {
 
         val evaluated = evaluate("bessj")
 
-        assertNull(results(evaluated).single().getSettledMs())
+        assertNull(results(evaluated).single().getSettleWaitedMs())
     }
 }

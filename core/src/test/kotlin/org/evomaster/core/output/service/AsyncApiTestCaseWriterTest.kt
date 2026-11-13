@@ -117,7 +117,7 @@ class AsyncApiTestCaseWriterTest {
     @Test
     fun testEachPublishedMessageIsGivenTheWholeSettleWindow() {
         val run = compiledSettleTest("EachMessage", 200, 2) {
-            FakeAsyncApiDriver.fireAndForget().apply { settledMs = 50L }
+            FakeAsyncApiDriver.fireAndForget().apply { settleWaitedMs = 50L }
         }
         val calls = run()
         assertEquals(3, calls.size)
@@ -130,7 +130,7 @@ class AsyncApiTestCaseWriterTest {
     fun testMessagesWithRepliesOrTimeoutsAreGivenTheSettleWindow() {
         listOf(FakeAsyncApiDriver.replied(AsyncApiTestInjector.DOUBLE_RESULT), FakeAsyncApiDriver.silence())
             .forEachIndexed { index, reply ->
-                val run = compiledSettleTest("Reply$index", 200) { reply.apply { settledMs = 50L } }
+                val run = compiledSettleTest("Reply$index", 200) { reply.apply { settleWaitedMs = 50L } }
                 val calls = run()
                 assertEquals(2, calls.size)
                 assertTrue(calls.last() - calls.first() >= 200_000_000L)
