@@ -24,7 +24,7 @@ class LoginTokenSendHeaderEMTest : SpringTestBase(){
     @EnumSource(names = ["KOTLIN_JUNIT_5", "JAVA_JUNIT_5"])
     fun testRunEM(outputFormat: OutputFormat) {
         runTestHandlingFlakyAndCompilation(
-                E2ETestConfig.forLabel("LoginTokenSendHeaderEM_$outputFormat", 20)
+                E2ETestConfig("LoginTokenSendHeaderEM_$outputFormat", 20)
                         .withOutputFormat(outputFormat)
         ) { args: MutableList<String> ->
 

@@ -212,7 +212,7 @@ public abstract class EnterpriseTestBase {
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable{
 
-        runTestHandlingFlaky(outputFolderName, fullClassName, null, iterations, createTests, false, lambda, timeoutMinutes);
+        runTestHandlingFlaky(outputFolderName, fullClassName, null, iterations, createTests, lambda, timeoutMinutes);
     }
 
     protected void runTestHandlingFlaky(
@@ -221,7 +221,6 @@ public abstract class EnterpriseTestBase {
             List<String> terminations,
             int iterations,
             boolean createTests,
-            boolean handleFlakyWithTests,
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable{
 
@@ -229,16 +228,11 @@ public abstract class EnterpriseTestBase {
                 new E2ETestConfig(outputFolderName, fullClassName, iterations)
                         .withTerminations(terminations)
                         .withCreateTests(createTests)
-                        .withHandleFlakyWithTests(handleFlakyWithTests)
                         .withTimeoutMinutes(timeoutMinutes),
                 lambda);
     }
 
     protected void runTestHandlingFlaky(E2ETestConfig config, Consumer<List<String>> lambda) throws Throwable{
-        runTestHandlingFlaky(config, config.isHandleFlakyWithTests(), lambda);
-    }
-
-    private void runTestHandlingFlaky(E2ETestConfig config, boolean handleFlakyWithTests, Consumer<List<String>> lambda) throws Throwable{
 
         String outputFolderName = config.getOutputFolderName();
         String fullClassName = config.getFullClassName();
@@ -273,9 +267,6 @@ public abstract class EnterpriseTestBase {
                         setOption(args, "outputFormat", config.getOutputFormat().name());
                         defaultSeed++;
                         lambda.accept(new ArrayList<>(args));
-
-                        if (config.isCreateTests() && handleFlakyWithTests)
-                            runTests(outputFolderName, fullClassName, terminations, config.getOutputFormat());
                     }
             );
         });
@@ -351,7 +342,7 @@ public abstract class EnterpriseTestBase {
 
         boolean compileTests = config.isCreateTests() && !config.isHandleFlakyWithTests();
 
-        runTestHandlingFlaky(config, false, args -> {
+        runTestHandlingFlaky(config, args -> {
             lambda.accept(args);
             if (compileTests) {
                 //the tests are compiled in the format of the config, so the lambda must not change it

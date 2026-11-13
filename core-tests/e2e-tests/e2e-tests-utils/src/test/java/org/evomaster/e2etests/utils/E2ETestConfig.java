@@ -31,8 +31,8 @@ public class E2ETestConfig {
     /**
      * The label is used as output folder, and as test class name in the "org.bar" package
      */
-    public static E2ETestConfig forLabel(String label, int iterations) {
-        return new E2ETestConfig(label, "org.bar." + label, iterations);
+    public E2ETestConfig(String label, int iterations) {
+        this(label, "org.bar." + label, iterations);
     }
 
     /**
@@ -49,8 +49,9 @@ public class E2ETestConfig {
     }
 
     /**
-     * Whether the generated tests are compiled and run as part of each flaky attempt,
-     * instead of only once at the end
+     * The generated tests might contain flaky assertions, so they are not compiled nor run.
+     * Unlike in the BB tests, they cannot be run in each flaky attempt, as a test class
+     * loaded in this JVM cannot be compiled and loaded again.
      */
     public E2ETestConfig withHandleFlakyWithTests(boolean handleFlakyWithTests) {
         this.handleFlakyWithTests = handleFlakyWithTests;
@@ -67,6 +68,7 @@ public class E2ETestConfig {
      */
     public E2ETestConfig withOutputFormat(OutputFormat outputFormat) {
         if (!outputFormat.isJavaOrKotlin() || !outputFormat.isJUnit5()) {
+            //JUnit 4 would need the vintage engine, which is not on the e2e classpath, so the tests would compile but none would be run
             throw new IllegalArgumentException("Only JUnit 5 tests in Java or Kotlin can be compiled and run: " + outputFormat);
         }
         this.outputFormat = outputFormat;
