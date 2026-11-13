@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.rest.service.module
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
@@ -22,8 +24,12 @@ class BlackBoxRestModule(
 ): RestBaseModule(){
 
     override fun configure() {
-
         super.configure()
+        binder().requireExplicitBindings()
+
+        if(usingRemoteController) {
+            bindRemoteController()
+        }
 
         bind(object : TypeLiteral<EnterpriseSampler<RestIndividual>>() {})
             .to(RestSampler::class.java)
@@ -55,26 +61,21 @@ class BlackBoxRestModule(
             .to(BlackBoxRestFitness::class.java)
             .asEagerSingleton()
 
-        // Post-search oracle phases (e.g. HttpSemanticsService) inject the concrete
-        // RestFitness to evaluate synthetic individuals. In black-box mode there is no
-        // RemoteController, so route it to BlackBoxRestFitness to avoid using 'rc'.
-        bind(RestFitness::class.java)
-            .to(BlackBoxRestFitness::class.java)
+        bind(BlackBoxRestFitness::class.java)
             .asEagerSingleton()
-
-        if(usingRemoteController) {
-            bind(RemoteController::class.java)
-                    .to(RemoteControllerImplementation::class.java)
-                    .asEagerSingleton()
-        }
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
             .to(object : TypeLiteral<StandardMutator<RestIndividual>>() {})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<StandardMutator<RestIndividual>>() {})
             .asEagerSingleton()
 
         bind(StructureMutator::class.java)
             .to(RestStructureMutator::class.java)
             .asEagerSingleton()
 
+        bind(RestStructureMutator::class.java)
+            .asEagerSingleton()
     }
 }

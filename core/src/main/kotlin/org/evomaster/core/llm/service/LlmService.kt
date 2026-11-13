@@ -2,6 +2,7 @@ package org.evomaster.core.llm.service
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.inject.Inject
 import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.chat.StreamingChatModel
 import org.evomaster.core.EMConfig
@@ -15,7 +16,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import javax.annotation.PostConstruct
-import javax.inject.Inject
+
 
 class LlmService {
 

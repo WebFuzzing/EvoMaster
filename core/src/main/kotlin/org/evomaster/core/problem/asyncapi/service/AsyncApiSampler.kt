@@ -6,6 +6,7 @@ import com.webfuzzing.asyncapi.parser.AsyncApiParsingException
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.AsyncApiProblemDto
 import org.evomaster.core.AnsiColor
+import org.evomaster.core.StartService
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.asyncapi.builder.AsyncApiActionBuilder
@@ -52,7 +53,7 @@ class AsyncApiSampler : ApiWsSampler<AsyncApiIndividual>() {
      * Start the service through the driver, read its document, and build one action per
      * publishable message. Anything the parser or the builder had to skip is reported.
      */
-    @PostConstruct
+    @StartService([])
     fun initialize() {
 
         log.debug("Initializing {}", AsyncApiSampler::class.simpleName)

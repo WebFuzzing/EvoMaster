@@ -12,6 +12,7 @@ import org.evomaster.client.java.controller.api.dto.problem.AsyncApiProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.BaseModule
+import org.evomaster.core.ServiceStarter
 import org.evomaster.core.problem.asyncapi.data.AsyncApiAction
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual
 import org.evomaster.core.problem.enterprise.SampleType
@@ -86,6 +87,7 @@ object AsyncApiTestInjector {
         return LifecycleInjector.builder()
             .withModules(listOf(BaseModule(args), Modules.override(AsyncApiModule()).with(fake)))
             .build().createInjector()
+            .apply { ServiceStarter.startAllServices(this) }
     }
 
     /**

@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
+import org.evomaster.core.StartService
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.llm.FieldInfo
 import org.evomaster.core.llm.service.DictionaryService
@@ -38,6 +39,7 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.ArazzoWorkflowsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
@@ -95,7 +97,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         private set
 
 
-    @PostConstruct
+//    @PostConstruct
+    @StartService([])
     open fun initialize() {
 
         log.debug("Initializing {}", AbstractRestSampler::class.simpleName)

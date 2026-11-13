@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.httpws.service
 
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.core.StartService
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.database.sql.SqlActionTransformer
@@ -37,7 +38,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
     protected lateinit var client : Client
 
 
-    @PostConstruct
+    @StartService([])
     protected fun initialize() {
 
         log.debug("Initializing {}", HttpWsFitness::class.simpleName)

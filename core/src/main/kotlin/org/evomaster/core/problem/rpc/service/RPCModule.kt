@@ -1,14 +1,14 @@
 package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.RPCTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.rpc.RPCIndividual
-import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.FlakinessDetector
@@ -24,17 +24,20 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class RPCModule : EnterpriseModule(){
 
     override fun configure() {
+        super.configure()
+        binder().requireExplicitBindings()
+
+        bindRemoteController()
+
+        AlgorithmRegistry.keys(EMConfig.ProblemType.RPC)
+            .forEach { bind(it) }
+
         bind(object : TypeLiteral<EnterpriseSampler<RPCIndividual>>() {})
             .to(RPCSampler::class.java)
-            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<RPCIndividual>>() {})
             .to(RPCSampler::class.java)
-            .asEagerSingleton()
-
         bind(object : TypeLiteral<Sampler<*>>() {})
                 .to(RPCSampler::class.java)
-                .asEagerSingleton()
-
         bind(RPCSampler::class.java)
                 .asEagerSingleton()
 
@@ -43,52 +46,45 @@ class RPCModule : EnterpriseModule(){
 
         bind(object : TypeLiteral<Minimizer<RPCIndividual>>(){})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<Minimizer<*>>(){})
             .to(object : TypeLiteral<Minimizer<RPCIndividual>>(){})
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<RPCIndividual>>() {})
                 .to(RPCFitness::class.java)
-                .asEagerSingleton()
+        bind(object : TypeLiteral<FitnessFunction<*>>() {})
+            .to(RPCFitness::class.java)
+        bind(RPCFitness::class.java)
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<RPCIndividual>>(){})
             .asEagerSingleton()
-
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
             .to(object : TypeLiteral<FlakinessDetector<RPCIndividual>>(){})
-            .asEagerSingleton()
 
-        bind(object : TypeLiteral<FitnessFunction<*>>() {})
-            .to(RPCFitness::class.java)
-            .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<RPCIndividual>>() {})
                 .asEagerSingleton()
-
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
-
         bind(Archive::class.java)
             .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
 
-        bind(RemoteController::class.java)
-                .to(RemoteControllerImplementation::class.java)
-                .asEagerSingleton()
-
         bind(object : TypeLiteral<Mutator<RPCIndividual>>() {})
                 .to(object : TypeLiteral<StandardMutator<RPCIndividual>>(){})
-                .asEagerSingleton()
+        bind(object : TypeLiteral<StandardMutator<RPCIndividual>>(){})
+            .asEagerSingleton()
 
         bind(StructureMutator::class.java)
                 .to(RPCStructureMutator::class.java)
-                .asEagerSingleton()
+        bind(RPCStructureMutator::class.java)
+            .asEagerSingleton()
 
         bind(TestCaseWriter::class.java)
                 .to(RPCTestCaseWriter::class.java)
-                .asEagerSingleton()
+        bind(RPCTestCaseWriter::class.java)
+            .asEagerSingleton()
 
         bind(TestSuiteWriter::class.java)
-                .asEagerSingleton()
+            .asEagerSingleton()
     }
 }
