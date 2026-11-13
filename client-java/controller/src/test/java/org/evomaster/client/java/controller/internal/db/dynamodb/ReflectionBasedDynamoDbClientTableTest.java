@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.dynamodb;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.dynamodb.ReflectionBasedDynamoDbClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -37,11 +38,11 @@ import static org.mockito.Mockito.when;
 /**
  * Tests reflective DynamoDB table access independently of command heuristic processing.
  */
-public class DynamoDbTableDataAccessorTest {
+public class ReflectionBasedDynamoDbClientTableTest {
 
     private static final String TABLE = "WorldCupPlayers";
 
-    private final DynamoDbTableDataAccessor accessor = new DynamoDbTableDataAccessor();
+
 
     @Test
     public void testReadsAndNormalizesAllSynchronousPages() {
@@ -58,7 +59,7 @@ public class DynamoDbTableDataAccessorTest {
                 .build();
         when(client.scan(any(ScanRequest.class))).thenReturn(firstPage, secondPage);
 
-        List<Map<String, Object>> items = accessor.getItems(client, TABLE);
+        List<Map<String, Object>> items = new ReflectionBasedDynamoDbClient(client).getItems(TABLE);
 
         assertEquals(2, items.size());
         assertEquals("Diego Maradona", items.get(0).get("playerName"));
@@ -84,7 +85,7 @@ public class DynamoDbTableDataAccessorTest {
         when(client.scan(any(ScanRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(response));
 
-        List<Map<String, Object>> items = accessor.getItems(client, TABLE);
+        List<Map<String, Object>> items = new ReflectionBasedDynamoDbClient(client).getItems(TABLE);
 
         assertEquals(1, items.size());
         assertEquals("Argentina", items.get(0).get("country"));
@@ -107,7 +108,7 @@ public class DynamoDbTableDataAccessorTest {
         when(client.describeTable(any(DescribeTableRequest.class)))
                 .thenReturn(DescribeTableResponse.builder().table(table).build());
 
-        DynamoDbPrimaryKey primaryKey = accessor.getPrimaryKeyAttributes(client, TABLE);
+        DynamoDbPrimaryKey primaryKey = new DynamoDbPrimaryKey(new ReflectionBasedDynamoDbClient(client).getPrimaryKeyAttributes(TABLE));
 
         assertEquals(2, primaryKey.getAttributes().size());
         assertEquals(DynamoDbScalarTypeDto.STRING, primaryKey.getAttributes().get("country"));
@@ -132,7 +133,7 @@ public class DynamoDbTableDataAccessorTest {
         when(client.describeTable(any(DescribeTableRequest.class)))
                 .thenReturn(DescribeTableResponse.builder().table(table).build());
 
-        DynamoDbPrimaryKey primaryKey = accessor.getPrimaryKeyAttributes(client, TABLE);
+        DynamoDbPrimaryKey primaryKey = new DynamoDbPrimaryKey(new ReflectionBasedDynamoDbClient(client).getPrimaryKeyAttributes(TABLE));
 
         assertEquals(Arrays.asList("country", "fifaId"),
                 new ArrayList<>(primaryKey.getAttributes().keySet()));
@@ -149,7 +150,7 @@ public class DynamoDbTableDataAccessorTest {
         when(client.describeTable(any(DescribeTableRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(DescribeTableResponse.builder().table(table).build()));
 
-        DynamoDbPrimaryKey primaryKey = accessor.getPrimaryKeyAttributes(client, TABLE);
+        DynamoDbPrimaryKey primaryKey = new DynamoDbPrimaryKey(new ReflectionBasedDynamoDbClient(client).getPrimaryKeyAttributes(TABLE));
 
         assertEquals(Collections.singletonMap("country", DynamoDbScalarTypeDto.STRING), primaryKey.getAttributes());
         verify(client).describeTable(any(DescribeTableRequest.class));
@@ -167,7 +168,7 @@ public class DynamoDbTableDataAccessorTest {
                 .thenReturn(DescribeTableResponse.builder().table(table).build());
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> accessor.getPrimaryKeyAttributes(client, TABLE));
+                () -> new DynamoDbPrimaryKey(new ReflectionBasedDynamoDbClient(client).getPrimaryKeyAttributes(TABLE)));
 
         assertTrue(exception.getMessage().contains("playerId"));
     }
@@ -184,7 +185,7 @@ public class DynamoDbTableDataAccessorTest {
         when(client.scan(any(ScanRequest.class))).thenReturn(response);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> accessor.getItems(client, TABLE));
+                () -> new ReflectionBasedDynamoDbClient(client).getItems(TABLE));
 
         assertEquals("DynamoDB scan returned the same pagination key twice", exception.getMessage());
         verify(client, times(2)).scan(any(ScanRequest.class));
@@ -199,7 +200,7 @@ public class DynamoDbTableDataAccessorTest {
             when(client.scan(any(ScanRequest.class))).thenThrow(scanFailure);
 
             exception = assertThrows(RuntimeException.class,
-                    () -> accessor.getItems(client, TABLE));
+                    () -> new ReflectionBasedDynamoDbClient(client).getItems(TABLE));
         }
 
         assertSame(scanFailure, exception.getCause());
@@ -213,11 +214,11 @@ public class DynamoDbTableDataAccessorTest {
     @Test
     public void testRejectsNullArguments() {
         NullPointerException nullClient = assertThrows(NullPointerException.class,
-                () -> accessor.getItems(null, TABLE));
+                () -> new ReflectionBasedDynamoDbClient(null).getItems(TABLE));
         assertEquals("DynamoDB client cannot be null", nullClient.getMessage());
 
         NullPointerException nullTable = assertThrows(NullPointerException.class,
-                () -> accessor.getItems(mock(DynamoDbClient.class), null));
+                () -> new ReflectionBasedDynamoDbClient(mock(DynamoDbClient.class)).getItems(null));
         assertEquals("DynamoDB table name cannot be null", nullTable.getMessage());
     }
 
@@ -227,7 +228,7 @@ public class DynamoDbTableDataAccessorTest {
     @Test
     public void testRejectsClientWithoutScanMethod() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> accessor.getItems(new Object(), TABLE));
+                () -> new ReflectionBasedDynamoDbClient(new Object()).getItems(TABLE));
 
         assertEquals("The provided client does not expose scan(ScanRequest)", exception.getMessage());
     }

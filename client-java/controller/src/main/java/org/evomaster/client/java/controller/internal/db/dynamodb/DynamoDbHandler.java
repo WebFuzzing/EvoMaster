@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbF
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKeyBuilder;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.dynamodb.ReflectionBasedDynamoDbClient;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbRequestParser;
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
 import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
@@ -55,9 +56,6 @@ public class DynamoDbHandler {
     /** Calculator used to measure how close table items are to satisfying a request. */
     private final DynamoDbHeuristicsCalculator calculator =
             new DynamoDbHeuristicsCalculator(new TaintHandlerExecutionTracer());
-
-    /** Accessor used to load table items through the configured DynamoDB client. */
-    private final DynamoDbTableDataAccessor tableDataAccessor = new DynamoDbTableDataAccessor();
 
     /** Whether captured commands should produce heuristic results. */
     private volatile boolean calculateHeuristics;
@@ -151,7 +149,16 @@ public class DynamoDbHandler {
             return Collections.emptyList();
         }
 
-        DynamoDbTableItemsCache itemsCache = new DynamoDbTableItemsCache(tableDataAccessor, dynamoDbClient);
+        if (dynamoDbClient == null) {
+            for (DynamoDbCommand command : commands) {
+                registerFailures(command, command.getTableNames(),
+                        new IllegalStateException("DynamoDB client is not configured"));
+            }
+            commands.clear();
+            return new ArrayList<>(evaluatedCommands);
+        }
+
+        DynamoDbTableItemsCache itemsCache = new DynamoDbTableItemsCache(dynamoDbClient);
         for (DynamoDbCommand command : commands) {
             evaluateCommand(command, itemsCache);
         }
@@ -254,7 +261,8 @@ public class DynamoDbHandler {
     private DynamoDbPrimaryKey getPrimaryKey(String tableName) {
         try {
             return primaryKeysByTable.computeIfAbsent(tableName,
-                    name -> tableDataAccessor.getPrimaryKeyAttributes(dynamoDbClient, name));
+                    name -> new DynamoDbPrimaryKey(
+                            new ReflectionBasedDynamoDbClient(dynamoDbClient).getPrimaryKeyAttributes(name)));
         } catch (RuntimeException e) {
             SimpleLogger.uniqueWarn("Failed to inspect DynamoDB primary key for table " + tableName
                     + ": " + e.getMessage());

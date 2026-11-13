@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbF
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
-import org.evomaster.client.java.controller.dynamodb.DynamoDbCommandExecutor;
+import org.evomaster.client.java.controller.dynamodb.ReflectionBasedDynamoDbClient;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.junit.jupiter.api.AfterAll;
@@ -98,7 +98,7 @@ public class DynamoDbInsertionTemplateTest {
         insertion.attributes.add(new DynamoDbAttributeValueDto("record_key", DynamoDbScalarTypeDto.STRING,
                 "messi-final-ticket"));
 
-        assertEquals(Collections.singletonList(true), DynamoDbCommandExecutor.executeInsert(client,
+        assertEquals(Collections.singletonList(true), new ReflectionBasedDynamoDbClient(client).executeInsertions(
                 Collections.singletonList(insertion)).executionResults);
         Map<String, AttributeValue> record = client.query(query).items().get(0);
         Map<String, AttributeValue> policy = client.getItem(GetItemRequest.builder().tableName("WorldCupPolicies")
