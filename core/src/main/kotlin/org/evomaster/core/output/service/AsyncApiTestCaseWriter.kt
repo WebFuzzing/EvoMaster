@@ -154,6 +154,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
         }
 
         addReplyAssertions(lines, asyncApiResult, index)
+        addSettleWait(lines, asyncApiResult)
     }
 
     /**
@@ -189,7 +190,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
 
         //the assertions below are written for Java and Kotlin only
         if (!format.isJavaOrKotlin()) {
-            throw IllegalArgumentException("Unsupported format: $format")
+            throw IllegalArgumentException("Unsupported format for reply assertions: $format")
         }
 
         if (!config.enableBasicAssertions) {
@@ -237,7 +238,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
         when {
             format.isJava() -> lines.add("com.fasterxml.jackson.databind.JsonNode $bodyVariable = new $read;")
             format.isKotlin() -> lines.add("val $bodyVariable = $read")
-            else -> throw IllegalArgumentException("Unsupported format: $format")
+            else -> throw IllegalArgumentException("Unsupported format for parsing the reply: $format")
         }
     }
 
@@ -359,7 +360,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
             when {
                 format.isJava() -> lines.add("private static String ${serverVariableFor(name)};")
                 format.isKotlin() -> lines.add("private lateinit var ${serverVariableFor(name)}: String")
-                else -> throw IllegalArgumentException("Unsupported format: $format")
+                else -> throw IllegalArgumentException("Unsupported format for server address variables: $format")
             }
         }
         lines.addEmpty()
@@ -391,7 +392,7 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
                     lines.add("}")
                 }
                 format.isKotlin() -> lines.add("$variable = $askDriver ?: $fallback")
-                else -> throw IllegalArgumentException("Unsupported format: $format")
+                else -> throw IllegalArgumentException("Unsupported format for initializing server addresses: $format")
             }
         }
     }
@@ -432,5 +433,33 @@ class AsyncApiTestCaseWriter : ApiTestCaseWriter {
                 lines.addBlockCommentLine("$prefix($outcome) ${evaluated.action.getName()}")
             }
         }
+    }
+
+    /**
+     * After a published message, wait for the window the search kept it open, when it did, so
+     * that what the service does handling it does not land on the next message or test.
+     *
+     * The whole window is waited, not what the search ended up waiting: where the window ended
+     * early, it ended on what the instrumentation saw, which a generated test has not got. A
+     * message with a reply is waited on too, as the handler may still be running after it
+     * answered.
+     *
+     * Only for Java and Kotlin: only a white-box run keeps a message open, and those are the
+     * formats it writes.
+     */
+    private fun addSettleWait(lines: Lines, res: AsyncApiCallResult) {
+
+        //only set for a published message the controller was asked to keep open.
+        //how long it actually waited is not used, the test waits the whole window
+        if (res.getSettleWaitedMs() == null) {
+            return
+        }
+
+        if (!format.isJavaOrKotlin()) {
+            throw IllegalArgumentException("Unsupported format for settle wait: $format")
+        }
+
+        lines.addSingleCommentLine("the time the search gave the service to finish with this message")
+        lines.addStatement("Thread.sleep(${config.asyncApiSettleMs})")
     }
 }

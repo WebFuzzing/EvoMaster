@@ -67,6 +67,18 @@ public class AsyncApiReplyDto {
     public Long waitedMs;
 
     /**
+     * How long the controller kept the action open after the driver returned, in milliseconds,
+     * as asked by {@link AsyncApiActionDto#settleMs}. It can be shorter than what was asked when
+     * the wait was interrupted.
+     *
+     * Filled in by the controller rather than by the driver, which never sees this field set.
+     * Null when no wait was asked for, or when the message could not be published.
+     *
+     * Not to be confused with {@link #waitedMs}, which is how long the driver waited for a reply.
+     */
+    public Long settleWaitedMs;
+
+    /**
      * Why publishing failed, when it did.
      */
     public String errorMessage;
