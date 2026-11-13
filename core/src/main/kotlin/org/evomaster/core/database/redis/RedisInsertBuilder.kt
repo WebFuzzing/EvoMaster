@@ -11,6 +11,7 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -218,7 +219,7 @@ object RedisInsertBuilder {
 
     /**
      * When a HGETALL failed command carries the schema of the Java type observed for its keyspace
-     * (captured by BasicRedisPersistentEntityClassReplacement when a Spring Data Redis
+     * (captured by AbstractBasicRedisPersistentEntityClassReplacement when a Spring Data Redis
      * `@RedisHash` repository bootstraps), builds one [RedisQueryField] per declared field of that
      * type, reusing the same OpenAPI-schema-to-Gene engine already used for REST DTO bodies
      * ([RestActionBuilderV3.createGeneForDTO]), instead of a single placeholder field/value that
@@ -254,6 +255,23 @@ object RedisInsertBuilder {
             } else {
                 RedisQueryField(it.name, valueGene = it)
             }
+        }
+    }
+
+    /**
+     * Marks as initialized the genes of the [actions] built by [buildInsertActions], first randomizing
+     * those that are not valid as built.
+     *
+     * Most genes start with a usable default value, but not all of them: the gene derived for an
+     * entity field named `email`, or for a FT.SEARCH prefix term, is a regex, which has no atoms (and so
+     * does not even have its minimum length) until randomized, and cannot be mutated like that.
+     */
+    fun initializeGenes(actions: List<RedisDbAction>, randomness: Randomness) {
+        actions.flatMap { it.seeTopGenes() }.forEach { gene ->
+            if (!gene.isGloballyValid()) {
+                gene.randomize(randomness, false)
+            }
+            gene.markAllAsInitialized()
         }
     }
 

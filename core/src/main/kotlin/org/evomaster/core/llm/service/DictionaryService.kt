@@ -2,6 +2,7 @@ package org.evomaster.core.llm.service
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.llm.DictionarySearchResult
 import org.evomaster.core.llm.FieldInfo
@@ -9,7 +10,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.service.DataPool
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.inject.Inject
+
 
 
 class DictionaryService {

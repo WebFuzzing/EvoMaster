@@ -642,9 +642,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         if (addedActions.isNotEmpty()) {
             ind.addInitializingActions(actions = addedActions)
-            addedActions.forEach { action ->
-                action.seeTopGenes().forEach { gene -> gene.markAllAsInitialized() }
-            }
+            RedisInsertBuilder.initializeGenes(addedActions, randomness)
         }
 
         return addedActions
