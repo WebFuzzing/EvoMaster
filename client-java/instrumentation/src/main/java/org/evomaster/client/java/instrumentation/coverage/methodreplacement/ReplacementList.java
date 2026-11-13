@@ -51,6 +51,7 @@ public class ReplacementList {
                     new InetSocketAddressClassReplacement(),
                     new KotlinIntrinsicsClassReplacement(),
                     new JacksonObjectMapperClassReplacement(),
+                    new LegacyBasicRedisPersistentEntityClassReplacement(),
                     new LocalDateClassReplacement(),
                     new LocalDateTimeClassReplacement(),
                     new LocalTimeClassReplacement(),
@@ -191,7 +192,10 @@ public class ReplacementList {
                 )
                 .collect(Collectors.toList());
 
-        assert !strict || (list.size() <= 1); //if strict, at most 1 class can match
+        //if strict, at most 1 class can match, unless it is a third-party library that has a replacement for
+        //each of its versions (eg, as the signature of a constructor changes), in which case the right one is
+        //chosen by the signature, see ReplacementUtils.chooseMethodFromCandidateReplacement
+        assert !strict || (list.size() <= 1) || list.stream().allMatch(t -> t instanceof ThirdPartyMethodReplacementClass);
 
         return list;
     }
