@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.asyncapi.data
 
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.search.action.Action
 
@@ -15,6 +16,7 @@ class AsyncApiCallResult : EnterpriseActionResult {
         const val CORRELATION_MATCHED = "CORRELATION_MATCHED"
         const val WAITED_MS = "WAITED_MS"
         const val SETTLE_WAITED_MS = "SETTLE_WAITED_MS"
+        const val SETTLE_ENDED_BY = "SETTLE_ENDED_BY"
         const val TEST_SCRIPT = "TEST_SCRIPT"
 
         /*
@@ -87,14 +89,24 @@ class AsyncApiCallResult : EnterpriseActionResult {
     /**
      * How long the action was actually kept open after the driver returned, so that what the
      * service did with the message was still credited to it. It can be shorter than the
-     * [org.evomaster.core.EMConfig.asyncApiSettleMs] that was asked for. Absent when no such wait
-     * was asked for, or when the message could not be published.
+     * [org.evomaster.core.EMConfig.asyncApiSettleMs] that was asked for, see [getSettleEndedBy].
+     * Absent when no such wait was asked for, or when the message could not be published.
      */
     fun setSettleWaitedMs(ms: Long) {
         addResultValue(SETTLE_WAITED_MS, ms.toString())
     }
 
     fun getSettleWaitedMs(): Long? = getResultValue(SETTLE_WAITED_MS)?.toLong()
+
+    /**
+     * Why the controller stopped keeping the action open. Absent when no wait was asked for.
+     */
+    fun setSettleEndedBy(end: AsyncApiReplyDto.SettleEndReason) {
+        addResultValue(SETTLE_ENDED_BY, end.name)
+    }
+
+    fun getSettleEndedBy(): AsyncApiReplyDto.SettleEndReason? =
+        getResultValue(SETTLE_ENDED_BY)?.let { AsyncApiReplyDto.SettleEndReason.valueOf(it) }
 
     /**
      * The lines the driver rendered for a generated test, or empty when it rendered none.
