@@ -38,6 +38,8 @@ public class ControllerConstants {
 
     public static final String NEO4J_INSERTION = "/neo4jInsertion";
 
+    public static final String NEO4J_EXISTING_DATA = "/neo4jExistingData";
+
     public static final String POST_SEARCH_ACTION = "/postSearchAction";
 
     public static final String DERIVE_PARAMS = "/deriveParams";

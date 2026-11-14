@@ -92,6 +92,36 @@ public class Neo4jInsertionTemplateBuilder {
     }
 
     /**
+     * @param propertyKey name of the property
+     * @param value a property value as the driver returns it
+     * @return the entry an insertion would carry for it, or {@code null} for a value the insertion cannot carry
+     */
+    public static Neo4jInsertionEntryDto entryOf(String propertyKey, Object value) {
+        Neo4jPropertyTypeDto type = typeOf(value);
+        if (type == null) {
+            return null;
+        }
+        return new Neo4jInsertionEntryDto(propertyKey, type, String.valueOf(value));
+    }
+
+    /** @return the type a value is stored with, or {@code null} for a value the insertion cannot carry */
+    private static Neo4jPropertyTypeDto typeOf(Object value) {
+        if (value instanceof String) {
+            return Neo4jPropertyTypeDto.STRING;
+        }
+        if (value instanceof Long || value instanceof Integer || value instanceof Short || value instanceof Byte) {
+            return Neo4jPropertyTypeDto.INTEGER;
+        }
+        if (value instanceof Double || value instanceof Float) {
+            return Neo4jPropertyTypeDto.FLOAT;
+        }
+        if (value instanceof Boolean) {
+            return Neo4jPropertyTypeDto.BOOLEAN;
+        }
+        return null;
+    }
+
+    /**
      * Walks the conditions and writes what each one pins down into the node or relationship it names.
      * The first label, type or property value found for an element wins over later ones.
      */
@@ -210,8 +240,8 @@ public class Neo4jInsertionTemplateBuilder {
         }
 
         private void setProperty(String variable, String key, Object value) {
-            Neo4jPropertyTypeDto type = typeOf(value);
-            if (type == null) {
+            Neo4jInsertionEntryDto entry = entryOf(key, value);
+            if (entry == null) {
                 return;
             }
             List<Neo4jInsertionEntryDto> properties = propertiesOf(variable);
@@ -223,7 +253,7 @@ public class Neo4jInsertionTemplateBuilder {
                     return;
                 }
             }
-            properties.add(new Neo4jInsertionEntryDto(key, type, String.valueOf(value)));
+            properties.add(entry);
         }
 
         /** @return the properties of the node or relationship named {@code variable}, or {@code null} if there is none */
@@ -234,23 +264,6 @@ public class Neo4jInsertionTemplateBuilder {
             }
             Neo4jEdgeInsertionDto edge = edges.get(variable);
             return edge != null ? edge.properties : null;
-        }
-
-        /** @return the type a value is stored with, or {@code null} for a value the insertion cannot carry */
-        private static Neo4jPropertyTypeDto typeOf(Object value) {
-            if (value instanceof String) {
-                return Neo4jPropertyTypeDto.STRING;
-            }
-            if (value instanceof Long || value instanceof Integer || value instanceof Short || value instanceof Byte) {
-                return Neo4jPropertyTypeDto.INTEGER;
-            }
-            if (value instanceof Double || value instanceof Float) {
-                return Neo4jPropertyTypeDto.FLOAT;
-            }
-            if (value instanceof Boolean) {
-                return Neo4jPropertyTypeDto.BOOLEAN;
-            }
-            return null;
         }
     }
 }
