@@ -20,7 +20,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.net.URISyntaxException
 import org.junit.jupiter.api.assertThrows
-import org.mockserver.configuration.Configuration.configuration
 
 internal class RestPathTest{
 

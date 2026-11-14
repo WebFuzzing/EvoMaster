@@ -54,11 +54,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import org.mockserver.client.MockServerClient
-import org.mockserver.model.HttpRequest.request
-import org.mockserver.model.HttpResponse.response
 import org.testcontainers.containers.MockServerContainer
 import org.testcontainers.utility.DockerImageName
+import java.net.HttpURLConnection
+import java.net.URL
 import java.sql.Connection
 import java.sql.DriverManager
 import java.util.stream.Stream
@@ -119,17 +118,33 @@ abstract class RestIndividualTestBase {
 
                 https://www.mock-server.com/mock_server/creating_expectations.html
              */
-            MockServerClient(mockServer.host, mockServer.serverPort)
-                .`when`(
-                    request().withPath("/api.*")
-                )
-                .respond(
-                    response()
-                        .withHeader("Content-Type", "plain/text")
-                        .withStatusCode(500)
-                        .withBody("Mocked-response")
-                )
             sutAddress = "http://${mockServer.host}:${mockServer.serverPort}"
+            configureMockServerExpectation()
+        }
+
+        private fun configureMockServerExpectation() {
+            val connection = URL("$sutAddress/mockserver/expectation").openConnection() as HttpURLConnection
+            try {
+                connection.requestMethod = "PUT"
+                connection.doOutput = true
+                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+                    writer.write(
+                        """{"httpRequest":{"path":"/api.*"},"httpResponse":{"statusCode":500,"headers":{"Content-Type":["plain/text"]},"body":"Mocked-response"}}"""
+                    )
+                }
+
+                val status = connection.responseCode
+                val responseBody = (if (status in 200..299) connection.inputStream else connection.errorStream)
+                    ?.bufferedReader(Charsets.UTF_8)
+                    ?.use { it.readText() }
+                    .orEmpty()
+                check(status in 200..299) {
+                    "Failed to configure MockServer expectation: HTTP $status $responseBody"
+                }
+            } finally {
+                connection.disconnect()
+            }
         }
 
         private val budget = arrayOf(10, 100, 1000)
