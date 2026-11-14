@@ -745,11 +745,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 else -> lines.add(".$send(\"$escapedXml\")")
             }
         } else if (bodyParam.isMultipartSupported()) {
-            val body = escapeForStringLiteral(
+            //same escapes as a text body, eg, $ in Kotlin
+            val body = GeneUtils.applyEscapes(
                 bodyParam.getValueAsPrintableString(
                     mode = GeneUtils.EscapeMode.MULTIPART_FORM_DATA,
                     targetFormat = format
-                )
+                ),
+                mode = GeneUtils.EscapeMode.TEXT,
+                format = format
             )
 
             when {
@@ -768,15 +771,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
 
     }
-
-    /**
-     * Escapes a payload to be used inside a double-quoted string literal (same escapes in all output formats)
-     */
-    private fun escapeForStringLiteral(payload: String): String =
-        payload.replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\r", "\\r")
-            .replace("\n", "\\n")
 
     private fun handleTextBody(
         bodyParam: BodyParam,
