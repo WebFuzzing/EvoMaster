@@ -60,6 +60,11 @@ class BodyParam(gene: Gene,
             contentType.contains("application/pdf", true) -> ".pdf"
             contentType.contains("text/csv", true) -> ".csv"
             contentType.contains("zip", true) -> ".zip"
+            //Office types contain "openxmlformats", so they must come before the "xml" check
+            contentType.contains("spreadsheetml", true) -> ".xlsx"
+            contentType.contains("wordprocessingml", true) -> ".docx"
+            contentType.contains("presentationml", true) -> ".pptx"
+            contentType.contains("ms-excel", true) -> ".xls"
             contentType.contains("json", true) -> ".json"
             contentType.contains("xml", true) -> ".xml"
             contentType.contains("text/plain", true) -> ".txt"
