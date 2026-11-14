@@ -286,7 +286,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
 
         if (format.isPlaywright() && bodyParam != null) {
-            val contentType = bodyParam.contentType()
+            val contentType = bodyParam.contentTypeHeader()
             if (contentType != null) {
                 lines.add("'Content-Type': '$contentType',")
             }
@@ -692,12 +692,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val send = sendBodyCommand()
 
         when {
-            format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
-            format.isJavaScript() && !format.isPlaywright() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
+            format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentTypeHeader()}\")")
+            format.isJavaScript() && !format.isPlaywright() -> lines.add(".set('Content-Type','${bodyParam.contentTypeHeader()}')")
             format.isPlaywright() -> {
                 // handled in makeHttpCall through options object
             }
-            format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
+            format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentTypeHeader()}\"")
         }
 
         if (bodyParam.isJson()) {
@@ -744,6 +744,23 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 }
                 else -> lines.add(".$send(\"$escapedXml\")")
             }
+        } else if (bodyParam.isMultipartSupported()) {
+            val body = escapeForStringLiteral(
+                bodyParam.getValueAsPrintableString(
+                    mode = GeneUtils.EscapeMode.MULTIPART_FORM_DATA,
+                    targetFormat = format
+                )
+            )
+
+            when {
+                format.isPython() -> {
+                    lines.add("body = \"$body\"")
+                }
+                format.isPlaywright() -> {
+                    lines.add("data: \"$body\",")
+                }
+                else -> lines.add(".$send(\"$body\")")
+            }
         } else {
             LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType() +
                     ". It will be handled as TEXT")
@@ -751,6 +768,15 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
 
     }
+
+    /**
+     * Escapes a payload to be used inside a double-quoted string literal (same escapes in all output formats)
+     */
+    private fun escapeForStringLiteral(payload: String): String =
+        payload.replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\r", "\\r")
+            .replace("\n", "\\n")
 
     private fun handleTextBody(
         bodyParam: BodyParam,

@@ -35,6 +35,7 @@ import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.evomaster.core.problem.rest.schema.SchemaUtils
 import org.evomaster.core.problem.util.ActionBuilderUtil
+import org.evomaster.core.problem.util.HttpWsUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
@@ -864,7 +865,14 @@ object RestActionBuilderV3 {
         }
 
         val contentTypeGene = EnumGene<String>(RestGeneSpecialNames.CONTENT_TYPE.name, bodies.keys)
-        val bodyParam = BodyParam(gene, contentTypeGene)
+
+        val multipartParts = if (options.enableMultipartFormDataSupport) {
+            extractMultipartParts(bodies, schemaHolder, currentSchema, messages)
+        } else {
+            mapOf()
+        }
+
+        val bodyParam = BodyParam(gene, contentTypeGene, parts = multipartParts)
             .apply { this.description = description }
 
         val ns = bodyParam.notSupportedContentTypes
@@ -874,6 +882,42 @@ object RestActionBuilderV3 {
         }
 
         params.add(bodyParam)
+    }
+
+    /**
+     * In multipart/form-data, each property of the schema is a part.
+     * For each one, extract whether it is a file (`format: binary`) and its declared `encoding` content type.
+     */
+    private fun extractMultipartParts(
+        bodies: Map<String, MediaType>,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        messages: MutableList<String>
+    ): Map<String, PartMeta> {
+
+        val multipart = bodies.entries.find { HttpWsUtil.isContentTypeMultipartForm(it.key) }?.value
+            ?: return mapOf()
+
+        val schema = multipart.schema?.`$ref`
+            ?.let { SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, it, messages) }
+            ?: multipart.schema
+            ?: return mapOf()
+
+        val properties = schema.properties
+        if (properties.isNullOrEmpty()) {
+            messages.add("A multipart/form-data body has no properties in its schema, so it has no parts.")
+            return mapOf()
+        }
+
+        return properties.entries.associate { (name, propertySchema) ->
+            //can be a comma-separated list, take the first
+            val declared = multipart.encoding?.get(name)?.contentType
+                ?.substringBefore(",")?.trim()?.takeIf { it.isNotEmpty() }
+            //for arrays, `format: binary` is on the items
+            val isFile = propertySchema?.format.equals("binary", ignoreCase = true)
+                    || propertySchema?.items?.format.equals("binary", ignoreCase = true)
+            name to PartMeta(isFile = isFile, contentType = declared)
+        }
     }
 
     private fun possiblyOptional(gene: Gene, required: Boolean?): Gene {

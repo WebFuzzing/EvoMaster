@@ -68,6 +68,7 @@ object GeneUtils {
         BODY,
         NONE,
         X_WWW_FORM_URLENCODED,
+        MULTIPART_FORM_DATA,
         BOOLEAN_SELECTION_MODE,
         BOOLEAN_SELECTION_NESTED_MODE,
         GQL_INPUT_MODE,
@@ -184,6 +185,8 @@ object GeneUtils {
             EscapeMode.TEXT -> applyTextEscapes(string, format)
             EscapeMode.NONE,
             EscapeMode.X_WWW_FORM_URLENCODED,
+            //handled in BodyParam
+            EscapeMode.MULTIPART_FORM_DATA,
             EscapeMode.BOOLEAN_SELECTION_MODE,
             EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE,
             EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE,
