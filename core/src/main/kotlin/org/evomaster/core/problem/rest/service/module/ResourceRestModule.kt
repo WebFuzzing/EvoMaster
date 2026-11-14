@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.rest.service.module
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.AlgorithmRegistry
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
@@ -24,19 +26,15 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModule(){
 
     override fun configure() {
-
         super.configure()
+        binder().requireExplicitBindings()
 
         if(bindRemote){
-            /*
-                Governator does not seem to have a way to override bindings for testing :(
-                so we do it manually
-             */
-            bind(RemoteController::class.java)
-                    .to(RemoteControllerImplementation::class.java)
-                    .asEagerSingleton()
+            bindRemoteController()
         }
 
+        bind(ResourceSampleMethodController::class.java)
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<EnterpriseSampler<RestIndividual>>() {})
             .to(ResourceSampler::class.java)
@@ -71,6 +69,8 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModu
                 .to(ResourceRestFitness::class.java)
                 .asEagerSingleton()
 
+        bind(ResourceRestFitness::class.java)
+                .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
                 .to(ResourceRestMutator::class.java)
@@ -87,20 +87,13 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModu
                 .to(ResourceRestStructureMutator::class.java)
                 .asEagerSingleton()
 
+        bind(ResourceRestStructureMutator::class.java)
+            .asEagerSingleton()
+
         bind(ResourceManageService::class.java)
                 .asEagerSingleton()
 
         bind(ResourceDepManageService::class.java)
                 .asEagerSingleton()
-
-
-        bind(HttpWsExternalServiceHandler::class.java)
-                .asEagerSingleton()
-
-        bind(HarvestActualHttpWsResponseHandler::class.java)
-            .asEagerSingleton()
-
-
-
     }
 }

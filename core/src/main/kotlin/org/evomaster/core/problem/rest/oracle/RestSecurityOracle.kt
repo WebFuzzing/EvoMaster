@@ -19,7 +19,7 @@ import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.inject.Inject
+import com.google.inject.Inject
 
 
 /**

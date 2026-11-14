@@ -49,12 +49,12 @@
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
-                <version>5.0.1</version>
+                <version>7.0.0</version>
             </dependency>
             <dependency> <!-- This is needed as Guice has no LifeCycle management -->
                 <groupId>com.netflix.governator</groupId>
                 <artifactId>governator</artifactId>
-                <version>1.17.12</version>
+                <version>1.17.13</version>
                 <exclusions>
                     <!--It looks like it uses quite a few old versions -->
                     <exclusion>

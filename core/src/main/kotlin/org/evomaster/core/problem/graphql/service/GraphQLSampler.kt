@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.graphql.service
 
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.core.StartService
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
@@ -22,7 +23,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
     }
 
 
-    @PostConstruct
+    @StartService([])
     fun initialize() {
 
         log.debug("Initializing {}", GraphQLSampler::class.simpleName)
