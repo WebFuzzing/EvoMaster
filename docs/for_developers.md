@@ -120,6 +120,15 @@ There is no auto-discovery of beans. This is done manually.
 The reason is that, depending on configurations, we can have many different context initializations.
 For example, the beans used for testing REST APIs would not be needed when testing GraphQL ones.  
 
+Note that Governator does NOT guarantee the ordering of execution of `@PostConstruct` methods. 
+As anyway we have cycles in the dependencies, this problem cannot be directly solved. 
+The issue is that, if a singleton needs to use another singleton in its `@PostConstruct`, there is no guarantee at all that the other injected singleton is initialized. 
+
+To somehow address this problem, we introduced a new custom annotation called `@StartService`.
+Methods with this annotation are started _after_ an injector is created, by using `ServiceStarter`.  
+To guarantee an ordering of execution (if needed), it is possible to specify depenencies of service starts.
+However, in those cases of methods annotated with `@StartService`, no cycle is allowed (application will immediately crash if any cycle is detected). 
+
 
 ### HOW TO WRITE UNIT TEST CASES
 
