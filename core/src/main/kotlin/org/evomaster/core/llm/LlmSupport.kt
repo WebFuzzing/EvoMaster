@@ -16,6 +16,9 @@ import dev.langchain4j.model.openai.OpenAiChatModel
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel
 import org.evomaster.core.llm.mock.MockChatModel
 import org.evomaster.core.llm.mock.MockStreamingChatModel
+import org.evomaster.core.llm.orcarouter.OrcaRouterCredentials
+import org.evomaster.core.llm.orcarouter.OrcaRouterDefaults
+import org.evomaster.core.llm.orcarouter.OrcaRouterOrigins
 import java.util.concurrent.CompletableFuture
 
 
@@ -115,6 +118,22 @@ object LlmSupport {
                 //.accumulateToolCallId(false) //needed for DeepSeek?
                 .build()
 
+            LlmProvider.ORCAROUTER -> {
+                /*
+                    OrcaRouter is an OpenAI-compatible gateway. The key is validated for shape only;
+                    whether it is accepted is decided by the first real request.
+                 */
+                val key = OrcaRouterCredentials.requireValid(apiKey)
+                OpenAiChatModel.builder()
+                    .apiKey(key)
+                    .baseUrl(OrcaRouterOrigins.resolveApiBase(url))
+                    .modelName(modelName ?: OrcaRouterDefaults.DEFAULT_MODEL)
+                    .temperature(temperature)
+                    .timeout(java.time.Duration.ofSeconds(timeoutSeconds))
+                    .responseFormat(ResponseFormat.JSON)
+                    .build()
+            }
+
             LlmProvider.OLLAMA -> OllamaChatModel.builder()
                 .baseUrl(url ?: "http://localhost:11434")
                 .modelName(modelName ?: "deepseek-r1:70b")
@@ -178,6 +197,18 @@ object LlmSupport {
                 .responseFormat(ResponseFormat.JSON)
                 .accumulateToolCallId(false) //needed for DeepSeek?
                 .build()
+
+            LlmProvider.ORCAROUTER -> {
+                val key = OrcaRouterCredentials.requireValid(apiKey)
+                OpenAiStreamingChatModel.builder()
+                    .apiKey(key)
+                    .baseUrl(OrcaRouterOrigins.resolveApiBase(url))
+                    .modelName(modelName ?: OrcaRouterDefaults.DEFAULT_MODEL)
+                    .temperature(temperature)
+                    .timeout(java.time.Duration.ofSeconds(timeoutSeconds))
+                    .responseFormat(ResponseFormat.JSON)
+                    .build()
+            }
 
             LlmProvider.OLLAMA -> OllamaStreamingChatModel.builder()
                 .baseUrl(url ?: "http://localhost:11434")
