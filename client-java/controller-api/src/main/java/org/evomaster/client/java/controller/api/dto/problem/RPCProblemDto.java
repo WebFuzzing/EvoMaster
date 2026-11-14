@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.api.dto.problem;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto;
 
 import java.util.List;
 import java.util.Map;
@@ -36,4 +37,9 @@ public class RPCProblemDto extends ProblemInfoDto{
      */
     public Map<String, RPCTestDto> seededTestDtos;
 
+    /**
+     * key is schedule task type name plus task name
+     * value is a dto info presenting schedule task
+     */
+    public Map<String, ScheduleTaskInvocationDto> scheduleTaskInvocations;
 }
