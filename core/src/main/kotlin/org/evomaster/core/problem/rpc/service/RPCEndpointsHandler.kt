@@ -1356,8 +1356,8 @@ class RPCEndpointsHandler {
                     }
 
                     if (param.pattern != null){
-                        try {
-                            val regex = RegexHandler.createGeneForEcma262(param.pattern).apply {this.name = param.name}
+                        val regex = RegexHandler.attemptToCreateGeneForEcma262(param.pattern)?.apply {this.name = param.name}
+                        if (regex != null) {
                             /*
                                 if there only exists pattern, we recognize it as regexgene
                                 otherwise put the regex as part of specialization
@@ -1366,8 +1366,6 @@ class RPCEndpointsHandler {
                                 strGene.addChild(regex)
                             }else
                                 strGene = regex
-                        } catch (e: Exception) {
-                            LoggingUtil.uniqueWarn(log, "Cannot handle regex: ${param.pattern}")
                         }
                     }
 
