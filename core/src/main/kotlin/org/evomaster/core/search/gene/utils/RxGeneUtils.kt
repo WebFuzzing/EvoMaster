@@ -1,7 +1,10 @@
 package org.evomaster.core.search.gene.utils
 
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.regex.AssertionRxGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
+import org.evomaster.core.search.gene.regex.DisjunctionRxGene
+import org.evomaster.core.search.gene.regex.PatternCharacterBlockGene
 import org.evomaster.core.search.gene.regex.QuantifierRxGene
 import org.evomaster.core.search.gene.regex.RxTerm
 
@@ -26,6 +29,19 @@ object RxGeneUtils {
         flatViewWithQuantifierTemplates(gene)
             .mapNotNull { (it as? DisjunctionListRxGene)?.captureGroupIndex }
             .toSet()
+
+    /**
+     * Whether [gene] can always match the empty string regardless of what is around it. Unlike [RxTerm.canBeZeroWidth],
+     * this can be false for assertions. For use in detecting unsatisfiable negative lookarounds, like "(?!a*)".
+     */
+    fun canAlwaysMatchEmpty(gene: Gene): Boolean = when (gene) {
+        is DisjunctionListRxGene -> gene.disjunctions.any { canAlwaysMatchEmpty(it) }
+        is DisjunctionRxGene -> gene.terms.all { canAlwaysMatchEmpty(it) }
+        is QuantifierRxGene -> gene.min == 0 || canAlwaysMatchEmpty(gene.template)
+        is AssertionRxGene -> gene.innerGene?.let { canAlwaysMatchEmpty(it) } ?: false
+        is PatternCharacterBlockGene -> gene.canBeZeroWidth
+        else -> false
+    }
 
     private fun expand(gene: Gene): List<Gene> =
         gene.flatView().flatMap { g ->

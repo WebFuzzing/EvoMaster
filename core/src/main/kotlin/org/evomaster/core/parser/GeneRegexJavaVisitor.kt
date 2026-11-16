@@ -3,6 +3,7 @@ package org.evomaster.core.parser
 import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.search.gene.utils.RxGeneUtils
 import org.evomaster.core.utils.CharacterRange
 import org.evomaster.core.utils.MultiCharacterRange
 import org.evomaster.core.utils.ParsedFlagExpression
@@ -366,13 +367,17 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 val groupsBefore = captureGroupUnsatisfiable.size
                 // visit the inner so that capture groups do not get shifted
                 // we add this visit since negative lookarounds usesInnerGene = false, no need to save this gene for now
-                buildDisjunctionList(assertionCtx.disjunction())
+                val negated = buildDisjunctionList(assertionCtx.disjunction())
                 // mark the groups inside the negative lookarounds as unsatisfiable to avoid backreferences to them.
                 // these may not be truly unsatisfiable on some cases, but since we will not be able to sample the group
                 // values we mark them as such. this should not be common, as referencing the captured values
                 // of groups within negative lookarounds does not make much sense.
                 for (i in groupsBefore until captureGroupUnsatisfiable.size) {
                     captureGroupUnsatisfiable[i] = true
+                }
+                if (negated != null && RxGeneUtils.canAlwaysMatchEmpty(negated)) {
+                    // what is negated can always match, so the lookaround is unsatisfiable
+                    return VisitResult()
                 }
             }
 
