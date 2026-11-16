@@ -203,6 +203,16 @@ public class ReplacementUtils {
                 .filter(m -> m.getDeclaredAnnotation(Replacement.class) != null)
                 .filter(m -> {
                     Replacement br = m.getAnnotation(Replacement.class);
+                    ReplacementCallSites callSites = m.getAnnotation(ReplacementCallSites.class);
+                    if (callSites != null) {
+                        if (contextClassName == null) {
+                            return false;
+                        }
+                        String callerClass = ClassName.get(contextClassName).getFullNameWithDots();
+                        if (Arrays.stream(callSites.value()).noneMatch(callerClass::equals)) {
+                            return false;
+                        }
+                    }
                     if(isInSUT && br.usageFilter() == UsageFilter.ONLY_THIRD_PARTY){
                         return false;
                     }

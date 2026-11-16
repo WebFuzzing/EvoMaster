@@ -9,6 +9,7 @@ import com.webfuzzing.asyncapi.models.AsyncApiReply
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsFitness
@@ -24,6 +25,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -141,14 +143,31 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         /*
             There is no separate black-box fitness here, unlike REST and GraphQL: AsyncAPI publishes
-            through the driver in both modes, which is what EMConfig.usesDriver() states. What
-            changes is only what this call adds on top of the outcome and reply targets above: an
-            instrumented SUT reports the lines and branches the messages reached, an uninstrumented
-            one reports none.
+            through the driver in both modes (see EMConfig.usesDriver()). Only in white-box mode is
+            the coverage of the SUT read on top of the outcome and reply targets. In black-box mode,
+            as for REST, it is not: it would add whatever the driver instruments to the targets,
+            and, with the kill switch on, stop the service's threads after every test.
          */
-        val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
-            ?: return null
-        handleExtra(dto, fv)
+        if (!config.blackBox) {
+            val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
+                ?: return null
+            handleExtra(dto, fv)
+
+            if (epc.isInSearch() && config.isEnabledTaintAnalysis()) {
+                /*
+                    A tainted string in a payload or a header reaches the service inside the
+                    message. The analysis matches what the service reports against the genes of
+                    every action, so nested fields are covered, whichever thread consumed it.
+
+                    At most one entry per result, not exactly one as GraphQL asserts: a driver that
+                    could not be reached records no entry for its message.
+
+                    Only during the search, as for REST and GraphQL: nothing mutates the genes later.
+                 */
+                Lazy.assert { dto.additionalInfoList.size <= actionResults.count { it is AsyncApiCallResult } }
+                TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config)
+            }
+        }
 
         return EvaluatedIndividual(
             fv,

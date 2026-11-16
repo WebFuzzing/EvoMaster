@@ -46,9 +46,6 @@ class AuthenticatedSwaggerEndpointEMTest : SpringTestBase(){
             setOption(args, "bbTargetUrl", baseUrlOfSut)
             setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/v3/api-docs")
 
-            args.add("--bbExperiments")
-            args.add("false")
-
             args.add("--configPath")
             args.add("src/main/resources/config/authenticatedswagger.toml")
 

@@ -2,6 +2,7 @@ package org.evomaster.core.output.naming
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
+import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.ensureGeneValue
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getBooleanQueryParam
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndividualWith
@@ -11,10 +12,13 @@ import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallActio
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getStringQueryParam
 import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
 import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.Collections.singletonList
+import javax.lang.model.SourceVersion
 
 class TestCaseDisambiguationTest {
 
@@ -237,6 +241,32 @@ class TestCaseDisambiguationTest {
         assertEquals(2, testCases.size)
         assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_1_getOnLanguagesWithQueryParamEmptyNameReturnsEmpty", testCases[1].name)
+    }
+
+    /** Query syntax belongs in the request, while generated identifiers must be valid source code. */
+    @Test
+    fun queryParameterPunctuationProducesCompilableNames() {
+        for (format in listOf(OutputFormat.JAVA_JUNIT_5, OutputFormat.KOTLIN_JUNIT_5)) {
+            val countries = getEvaluatedIndividualWith(getRestCallAction("/countries"))
+            val qualifiedCountries = getEvaluatedIndividualWith(getRestCallAction("/countries", parameters = mutableListOf(
+                getBooleanQueryParam("is-qualified"), getIntegerQueryParam("rank.limit"), getStringQueryParam("teams[]"))))
+            ensureGeneValue(qualifiedCountries, "is-qualified", "true")
+            ensureGeneValue(qualifiedCountries, "rank.limit", "-1")
+            ensureGeneValue(qualifiedCountries, "teams[]", "")
+            val solution = Solution(mutableListOf(countries, qualifiedCountries), "suitePrefix", "suiteSuffix",
+                Termination.NONE, emptyList(), emptyList())
+            val names = RestActionTestCaseNamingStrategy(solution, LanguageConventionFormatter(format), true, 200)
+                .getTestCases().map { it.name }
+            assertEquals("test_1_getOnCountriesWithQueryParamsIs_qualifiedNegativeRank_limitEmptyTeams__ReturnsEmpty", names[1])
+            if (format.isJava()) {
+                assertTrue(SourceVersion.isIdentifier(names[1]) && !SourceVersion.isKeyword(names[1]))
+            } else {
+                CompilerForTestGenerated.compile(format, "class WorldCupKotlinNames { fun ${names[1]}() {} }", "WorldCupKotlinNames")
+            }
+            assertEquals(listOf("is-qualified", "rank.limit", "teams[]"),
+                (qualifiedCountries.individual.seeMainExecutableActions().single() as RestCallAction)
+                    .parameters.map { it.name })
+        }
     }
 
     @Test
