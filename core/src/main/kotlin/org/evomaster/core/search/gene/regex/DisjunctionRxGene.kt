@@ -405,6 +405,9 @@ class DisjunctionRxGene(
                 repairBidirectional(assertion, nonWordBoundaryBranches, idx, randomness)
             AssertionType.END_OF_INPUT_OR_FINAL_LINE_TERMINATOR ->
                 repairZAssertion(assertion, genesAfter(idx), randomness)
+            // nothing we can repair here, so we just return SUCCESS and then check with if the value matches
+            AssertionType.NEGATIVE_LOOKAHEAD, AssertionType.NEGATIVE_LOOKBEHIND ->
+                AssertionRepairResult.SUCCESS
         }
 
     /**

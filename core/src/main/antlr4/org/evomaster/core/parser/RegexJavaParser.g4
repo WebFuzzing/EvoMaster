@@ -51,7 +51,8 @@ assertion
  | DOLLAR
  | PAREN_open QUESTION EQUAL disjunction PAREN_close                  // lookahead (?=...)
  | PAREN_open QUESTION LESS_THAN EQUAL disjunction PAREN_close        // lookbehind (?<=...)
-//// | '(' '?' '!' disjunction ')'
+ | PAREN_open QUESTION EXCLAMATION disjunction PAREN_close                  // negative lookahead (?!...)
+ | PAREN_open QUESTION LESS_THAN EXCLAMATION disjunction PAREN_close        // negative lookbehind (?<!...)
  | StartOfInputAssertion // \A
  | EndOfInputAssertion // \z
  | EndOfInputOrFinalLineTerminatorAssertion // \Z
@@ -119,7 +120,7 @@ patternCharacter
  // These are also allowed as literals when no matching pair exists
  | BRACE_close
  | BRACKET_close
- | COLON | EQUAL | LESS_THAN
+ | COLON | EQUAL | LESS_THAN | EXCLAMATION
  ;
 
 

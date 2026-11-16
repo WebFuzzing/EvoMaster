@@ -18,6 +18,8 @@ import org.evomaster.core.utils.RegexFlags
 enum class AssertionType(val usesInnerGene: Boolean) {
     LOOKAHEAD(usesInnerGene = true),
     LOOKBEHIND(usesInnerGene = true),
+    NEGATIVE_LOOKAHEAD(usesInnerGene = false), // since we do not sample from negative lookarounds we do not need inner
+    NEGATIVE_LOOKBEHIND(usesInnerGene = false),
     START_OF_INPUT(usesInnerGene = false),
     END_OF_INPUT(usesInnerGene = false),
     CARET(usesInnerGene = false),

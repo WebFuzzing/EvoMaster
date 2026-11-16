@@ -137,6 +137,12 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
         return false
     }
 
+    private fun isLookaround(ctx: RegexJavaParser.AssertionContext): Boolean =
+        ctx.QUESTION() != null
+
+    private fun isNegativeLookaround(ctx: RegexJavaParser.AssertionContext): Boolean =
+        isLookaround(ctx) && ctx.EXCLAMATION() != null
+
     /**
      * Shared code for `AtomEscape` and `ClassEscape`, resolving `CharacterEscape`s into the required string.
      */
@@ -337,6 +343,9 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 "Nested assertions are not currently supported."
             }
 
+            val isLookaround = isLookaround(assertionCtx)
+            val isNegativeLookaround = isNegativeLookaround(assertionCtx)
+
             val assertionType = when{
                 assertionCtx.WordBoundaryAssertion() != null -> AssertionType.WORD_BOUNDARY
                 assertionCtx.NonWordBoundaryAssertion() != null -> AssertionType.NON_WORD_BOUNDARY
@@ -345,10 +354,19 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
                 assertionCtx.EndOfInputOrFinalLineTerminatorAssertion() != null -> AssertionType.END_OF_INPUT_OR_FINAL_LINE_TERMINATOR
                 assertionCtx.CARET() != null -> AssertionType.CARET
                 assertionCtx.DOLLAR() != null -> AssertionType.DOLLAR
-                assertionCtx.LESS_THAN() != null -> AssertionType.LOOKBEHIND
-                else -> AssertionType.LOOKAHEAD
+                isNegativeLookaround && assertionCtx.LESS_THAN() != null -> AssertionType.NEGATIVE_LOOKBEHIND
+                isNegativeLookaround -> AssertionType.NEGATIVE_LOOKAHEAD
+                isLookaround && assertionCtx.LESS_THAN() != null -> AssertionType.LOOKBEHIND
+                isLookaround && assertionCtx.EQUAL() != null -> AssertionType.LOOKAHEAD
+                else -> throw IllegalStateException("Unsupported assertion: ${assertionCtx.text}")
             }
             val innerGene = if (assertionType.usesInnerGene) buildDisjunctionList(assertionCtx.disjunction()) else null
+
+            if (isNegativeLookaround) {
+                // visit the inner so that capture groups do not get shifted
+                // we add this visit since negative lookarounds usesInnerGene = false, no need to save this gene for now
+                buildDisjunctionList(assertionCtx.disjunction())
+            }
 
             val gene = AssertionRxGene(innerGene, assertionType, currentFlags)
             res.genes.add(gene)
