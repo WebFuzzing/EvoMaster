@@ -53,7 +53,8 @@ class GenePostgresLikeVisitor : PostgresLikeBaseVisitor<VisitResult>() {
         } else {
 
             val block = ctx.baseSymbol().map { it.text }.joinToString("")
-            return VisitResult(PatternCharacterBlockGene(block, block))
+            val name = block.ifBlank { "blankBlock" }
+            return VisitResult(PatternCharacterBlockGene(name, block))
         }
 
     }
