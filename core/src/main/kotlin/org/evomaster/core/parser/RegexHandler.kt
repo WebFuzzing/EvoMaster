@@ -2,10 +2,13 @@ package org.evomaster.core.parser
 
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.utils.ParsedFlagExpression
 import org.evomaster.core.utils.RegexFlags
 import org.evomaster.core.utils.RegexWithExternalFlags
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -14,7 +17,11 @@ import org.evomaster.core.utils.RegexWithExternalFlags
  * The parers/lexers for the grammars are generated with Antlr4 Maven Plugin,
  * as part of the build.
  * So, first time opened in an IDE like IntelliJ, need to run a "mvn compile"
- * first to generate those needed files.
+ * first to generate those needed files. Can also use "mvn antlr4:antlr4 -DskipTests".
+ *
+ * There are 2 kinds of functions for each regex type:
+ * - `createGeneFor*`: throws if the regex cannot be handled. For constants written by us.
+ * - `attemptToCreateGeneFor*`: returns null if the regex cannot be handled, logging a warning. For inputs from users.
  */
 object RegexHandler {
 
@@ -27,11 +34,14 @@ object RegexHandler {
     private val cachePostgresLike : MutableMap<String, RegexGene> = mutableMapOf()
     private val cachePostgresSimilarTo : MutableMap<String, RegexGene> = mutableMapOf()
 
+    private val log: Logger = LoggerFactory.getLogger(RegexHandler::class.java)
+
     /**
      * Given a JVM regex string constraint (and optionally external regex flags), generate RegexGene for it.
      * Based on RegexJavaParser.g4 and RegexJavaLexer.g4 files.
      *
      * This would throw an exception if regex is invalid, or if it has features we do not support yet.
+     * @see attemptToCreateGeneForJVM
      */
     fun createGeneForJVM(regex: String, externalRegexFlags: RegexFlags = RegexFlags()) : RegexGene {
 
@@ -55,6 +65,14 @@ object RegexHandler {
         val gene= res.genes.first() as RegexGene
         cacheJVM[key] = gene.copy() as RegexGene
         return gene
+    }
+
+    /**
+     * Same as [createGeneForJVM], but returning null and logging the failure instead of throwing an exception
+     * when the regex cannot be handled.
+     */
+    fun attemptToCreateGeneForJVM(regex: String, externalRegexFlags: RegexFlags = RegexFlags()) : RegexGene? {
+        return attempt(RegexType.JVM, regex) { createGeneForJVM(regex, externalRegexFlags) }
     }
 
     /**
@@ -176,6 +194,7 @@ object RegexHandler {
      *
      * This would throw an exception if regex is invalid, or if it
      * has features we do not support yet
+     * @see attemptToCreateGeneForEcma262
      */
     fun createGeneForEcma262(regex: String): RegexGene {
 
@@ -199,11 +218,20 @@ object RegexHandler {
     }
 
     /**
+     * Same as [createGeneForEcma262], but returning null and logging the failure instead of throwing an exception
+     * when the regex cannot be handled.
+     */
+    fun attemptToCreateGeneForEcma262(regex: String): RegexGene? {
+        return attempt(RegexType.ECMA_262, regex) { createGeneForEcma262(regex) }
+    }
+
+    /**
      * Given a Postgres LIKE string constraint, generate RegexGene for it.
      * Based on PostgresLike.g4 file.
      *
      * This would throw an exception if regex is invalid, or if it
      * has features we do not support yet
+     * @see attemptToCreateGeneForPostgresLike
      */
     fun createGeneForPostgresLike(regex: String): RegexGene {
 
@@ -227,11 +255,20 @@ object RegexHandler {
     }
 
     /**
+     * Same as [createGeneForPostgresLike], but returning null and logging the failure instead of throwing an exception
+     * when the regex cannot be handled.
+     */
+    fun attemptToCreateGeneForPostgresLike(regex: String): RegexGene? {
+        return attempt(RegexType.POSTGRES_LIKE, regex) { createGeneForPostgresLike(regex) }
+    }
+
+    /**
      * Given a Postgres SIMILAR TO string constraint, generate RegexGene for it.
      * Based on PostgresSimilarTo.g4 file.
      *
      * This would throw an exception if regex is invalid, or if it
      * has features we do not support yet
+     * @see attemptToCreateGeneForPostgresSimilarTo
      */
     fun createGeneForPostgresSimilarTo(regex: String): RegexGene {
 
@@ -252,6 +289,29 @@ object RegexHandler {
         val gene= res.genes.first() as RegexGene
         cachePostgresSimilarTo[regex] = gene.copy() as RegexGene
         return gene
+    }
+
+    /**
+     * Same as [createGeneForPostgresSimilarTo], but returning null and logging the failure instead of throwing an exception
+     * when the regex cannot be handled.
+     */
+    fun attemptToCreateGeneForPostgresSimilarTo(regex: String): RegexGene? {
+        return attempt(RegexType.POSTGRES_SIMILAR_TO, regex) { createGeneForPostgresSimilarTo(regex) }
+    }
+
+    /**
+     * Run [create], returning null (and logging a warning) if it fails.
+     */
+    private fun attempt(type: RegexType, regex: String, create: () -> RegexGene): RegexGene? {
+        return try {
+            create()
+        } catch (e: Exception) {
+            LoggingUtil.uniqueWarn(log, "Failed to handle $type regex: $regex . Cause: ${e.javaClass.simpleName}: ${e.message}")
+            null
+        } catch (_: StackOverflowError) {
+            LoggingUtil.uniqueWarn(log, "Failed to handle $type regex, as it gives a stack overflow error: $regex")
+            null
+        }
     }
 
     private fun prepareLexer(lexer: Lexer) : CommonTokenStream{
