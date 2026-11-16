@@ -1561,6 +1561,8 @@ object RestActionBuilderV3 {
      * Build a gene that samples strings matching the given JVM regex.
      * Used for advanced string formats where we only need to produce syntactically valid values,
      * not to strictly validate every RFC edge case.
+     * Since [org.evomaster.core.parser.RegexHandler.createGeneForJVM] can throw on unsupported regexes,
+     * this method can also throw. This should only be used for constants defined by us.
      */
     private fun regexGene(name: String, regex: String): Gene {
         return RegexHandler.createGeneForJVM(regex).apply { this.name = name }
