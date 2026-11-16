@@ -712,12 +712,8 @@ class SqlActionGeneBuilder {
                 buildLikeRegexGene(columnName, likePattern, databaseType = column.databaseType)
             } else if (column.javaRegExPattern != null) {
 
-                try {
-                    buildJavaRegexGene(column.name, column.javaRegExPattern)
-                } catch (e: Exception){
-                    LoggingUtil.uniqueWarn(log, "Failed to handle regex: ${column.javaRegExPattern}")
-                    buildStringGene(isFixedLength, column)
-                }
+                attemptToBuildJavaRegexGene(column.name, column.javaRegExPattern)
+                    ?: buildStringGene(isFixedLength, column)
                 /*
                     TODO in those cases of regex, shouldn't still check for size constraints?
                  */
@@ -751,10 +747,14 @@ class SqlActionGeneBuilder {
         return StringGene(name = column.name, minLength = columnMinLength, maxLength = columnMaxLength)
     }
 
-    private fun buildJavaRegexGene(name: String, javaRegExPattern: String): RegexGene {
+    /**
+     * Attempts to build a RegexGene using a name and a Java pattern.
+     * Returns null if regex is unsupported/invalid.
+     */
+    private fun attemptToBuildJavaRegexGene(name: String, javaRegExPattern: String): RegexGene? {
         val fullMatchRegex = RegexSharedUtils.forceFullMatch(javaRegExPattern)
-        val gene = RegexHandler.createGeneForJVM(fullMatchRegex)
-        gene.name = name
+        val gene = RegexHandler.attemptToCreateGeneForJVM(fullMatchRegex)
+        gene?.name = name
         return gene
     }
 
