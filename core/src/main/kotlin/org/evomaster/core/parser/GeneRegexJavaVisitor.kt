@@ -363,9 +363,17 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
             val innerGene = if (assertionType.usesInnerGene) buildDisjunctionList(assertionCtx.disjunction()) else null
 
             if (isNegativeLookaround) {
+                val groupsBefore = captureGroupUnsatisfiable.size
                 // visit the inner so that capture groups do not get shifted
                 // we add this visit since negative lookarounds usesInnerGene = false, no need to save this gene for now
                 buildDisjunctionList(assertionCtx.disjunction())
+                // mark the groups inside the negative lookarounds as unsatisfiable to avoid backreferences to them.
+                // these may not be truly unsatisfiable on some cases, but since we will not be able to sample the group
+                // values we mark them as such. this should not be common, as referencing the captured values
+                // of groups within negative lookarounds does not make much sense.
+                for (i in groupsBefore until captureGroupUnsatisfiable.size) {
+                    captureGroupUnsatisfiable[i] = true
+                }
             }
 
             val gene = AssertionRxGene(innerGene, assertionType, currentFlags)
