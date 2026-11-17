@@ -15,6 +15,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvo
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.BaseModule
 import org.evomaster.core.Main
+import org.evomaster.core.ServiceStarter
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
 import org.evomaster.core.problem.rest.service.module.ResourceRestModule
@@ -158,6 +159,9 @@ class SamplerVerifierTest {
         return target.walk()
                 .filter { it.isFile }
                 .filter { !skipSchema(it.path) }
+                .filter{ it.path.endsWith("json", ignoreCase = true)
+                        || it.path.endsWith("yaml", ignoreCase = true)
+                        || it.path.endsWith("yml", ignoreCase = true)}
                 .map {
                     val s = Path(it.absolutePath).toAbsolutePath().normalize().toString()
                     s
@@ -407,6 +411,7 @@ class SamplerVerifierTest {
                     || (contains("xero.com") && contains("xero_bankfeeds") && contains("2.9.4"))
                     || (contains("dataflowkit.com")  && contains("1.3"))
                     || (contains("rebilly.com")  && contains("2.1"))
+                    || (contains("azure.com") && contains("web-WebApps"))
         }
     }
 
@@ -440,6 +445,7 @@ class SamplerVerifierTest {
             }
             throw e
         }
+        ServiceStarter.startAllServices(injector)
 
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
 
@@ -492,6 +498,7 @@ class SamplerVerifierTest {
                 .withModules(base, problemModule, faker)
                 .build()
                 .createInjector()
+            .apply { ServiceStarter.startAllServices(this) }
     }
 
     private class FakeModule(val sutInfoDto: SutInfoDto?,

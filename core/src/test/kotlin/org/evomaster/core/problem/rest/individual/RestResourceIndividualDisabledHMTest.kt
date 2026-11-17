@@ -46,7 +46,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
 
     private lateinit var sampler : ResourceSampler
     private lateinit var mutator : ResourceRestMutator
-    private lateinit var ff : RestFitness
+    private lateinit var ff : AbstractRestFitness
     private lateinit var rm : ResourceManageService
     private lateinit var cluster : ResourceCluster
 
@@ -74,7 +74,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
 
         sampler = injector.getInstance(ResourceSampler::class.java)
         mutator = injector.getInstance(ResourceRestMutator::class.java)
-        ff = injector.getInstance(RestFitness::class.java)
+        ff = injector.getInstance(AbstractRestFitness::class.java)
         rm = injector.getInstance(ResourceManageService::class.java)
         cluster = rm.cluster
     }

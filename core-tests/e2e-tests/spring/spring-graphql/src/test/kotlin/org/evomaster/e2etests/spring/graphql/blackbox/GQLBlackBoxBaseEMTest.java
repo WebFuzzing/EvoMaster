@@ -6,6 +6,7 @@ import org.evomaster.core.problem.graphql.GraphQLIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.graphql.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -21,9 +22,8 @@ public class GQLBlackBoxBaseEMTest extends SpringTestBase {
         SpringTestBase.initClass(new BaseController());
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testRunEM(boolean bbExperiments) throws Throwable {
+    @Test
+    public void testRunEM() throws Throwable {
 
         String outputFolder = "GQLBlackBoxBase";
 
@@ -35,10 +35,7 @@ public class GQLBlackBoxBaseEMTest extends SpringTestBase {
 
         setOption(args, "blackBox", "true");
         setOption(args, "bbTargetUrl", baseUrlOfSut+"/graphql");
-        args.add("--problemType");
-        args.add("GRAPHQL");
-        args.add("--bbExperiments");
-        args.add("" + bbExperiments);
+        setOption(args, "problemType", "GRAPHQL");
 
         /*
             Note: here we do not care of actual results.

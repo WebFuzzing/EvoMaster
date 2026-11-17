@@ -16,6 +16,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvo
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.BaseModule
 import org.evomaster.core.Main
+import org.evomaster.core.ServiceStarter
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.service.ArazzoWorkflowsService
@@ -214,6 +215,7 @@ class SamplerWithArazzoVerifierTest {
         )
 
         val injector = getInjector(sutInfo, controllerInfo, args)
+        ServiceStarter.startAllServices(injector)
         return TestContext(
             sampler = injector.getInstance(RestSampler::class.java),
             arazzoService = injector.getInstance(ArazzoWorkflowsService::class.java),

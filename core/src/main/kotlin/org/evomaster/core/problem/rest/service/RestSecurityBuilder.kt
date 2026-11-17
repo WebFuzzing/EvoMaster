@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.EMConfig
+import org.evomaster.core.StartService
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
@@ -31,6 +32,7 @@ import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.time.TimeBoxedPhase
@@ -106,7 +108,7 @@ class RestSecurityBuilder : TimeBoxedPhase {
      * Function called after init. This function initializes REST sampler definitions
      * and authentication settings.
      */
-    @PostConstruct
+    @StartService([Sampler::class])
     private fun postInit() {
 
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>

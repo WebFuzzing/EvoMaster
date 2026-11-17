@@ -26,16 +26,6 @@ class GraphQLBlackBoxFitness : GraphQLFitness() {
         descriptiveIds: Boolean,
     ): EvaluatedIndividual<GraphQLIndividual>? {
 
-        if(config.bbExperiments){
-            /*
-                If we have a controller, we MUST reset the SUT at each test execution.
-                This is to avoid memory leaks in the dat structures used by EM.
-                Eg, this was a huge problem for features-service with AdditionalInfo having a
-                memory leak
-             */
-            rc.resetSUT()
-        }
-
         val fv = FitnessValue(individual.size().toDouble())
 
         val actionResults: MutableList<ActionResult> = mutableListOf()

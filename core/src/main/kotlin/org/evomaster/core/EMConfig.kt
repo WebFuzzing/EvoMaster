@@ -763,7 +763,7 @@ class EMConfig {
             throw ConfigProblemException("both 'endpointFocus' and 'endpointPrefix' are set")
         }
 
-        if (blackBox && !bbExperiments) {
+        if (blackBox) {
 
             if(problemType == ProblemType.REST && schema == defaultSchema && !Files.exists(Paths.get(defaultSchema))){
                 LoggingUtil.uniqueUserInfo(
@@ -784,10 +784,6 @@ class EMConfig {
             if (problemType == ProblemType.MCP && base.isBlank()) {
                 throw ConfigProblemException("In black-box mode for MCP servers, you must set the base parameter to the server URL")
             }
-        }
-
-        if (!blackBox && bbExperiments) {
-            throw ConfigProblemException("Cannot setup bbExperiments without black-box mode")
         }
 
         if (!blackBox && ratePerMinute > 0) {
@@ -1119,11 +1115,11 @@ class EMConfig {
     /**
      * Whether an EvoMaster Driver takes part in this run.
      *
-     * Always in white-box mode, and in black-box mode only for experiments. AsyncAPI is the
+     * Always in white-box mode, and never in black-box mode. AsyncAPI is the
      * exception: there is no universal wire to speak to a message-driven service, so the driver
      * holds the connection to the broker even when the SUT itself is treated as a black box.
      */
-    fun usesDriver() = !blackBox || bbExperiments || problemType == ProblemType.ASYNCAPI
+    fun usesDriver() = !blackBox || problemType == ProblemType.ASYNCAPI
 
     /**
      * Whether the driver should be asked to stop SUT code still running once the coverage
@@ -2905,11 +2901,6 @@ class EMConfig {
     @Cfg("Maximum length when sampling a new random string. Such limit can be bypassed when a string is mutated.")
     var maxLengthForStringsAtSamplingTime = 16
 
-
-    @Deprecated("Should not use this option any more, but rather run proper BB experiments")
-    @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
-    var bbExperiments = false
-
     @Cfg("Specify whether to export covered targets info")
     var exportCoveredTarget = false
 
@@ -3032,6 +3023,15 @@ class EMConfig {
             " treating it as unanswered, in milliseconds.")
     @Min(1.0)
     var asyncApiReplyTimeoutMs = 5000
+
+    @Experimental
+    @Cfg("When testing an AsyncAPI service in white-box mode, how long to keep each published message's action" +
+            " open after the driver has returned, in milliseconds, so that the code the service runs to handle it" +
+            " is still credited to that action. A message-driven service handles a message on a thread of its own," +
+            " which may still be running once the driver has seen it published, or its reply arrive." +
+            " The wait happens in the driver's controller. 0 means no wait.")
+    @Min(0.0)
+    var asyncApiSettleMs = 0
 
     @Experimental
     @Cfg("When testing an AsyncAPI service, the probability of publishing a message's declared example as it is," +

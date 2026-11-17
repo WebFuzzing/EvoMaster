@@ -1,6 +1,7 @@
 package org.evomaster.core.seeding.service.rest
 
 import com.google.inject.Inject
+import org.evomaster.core.StartService
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -10,6 +11,7 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.gene.wrapper.OptionalGene
+import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.seeding.service.PirToIndividual
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -34,7 +36,7 @@ class PirToRest: PirToIndividual(){
      */
     private lateinit var actionDefinitions : List<RestCallAction>
 
-    @PostConstruct
+    @StartService([Sampler::class])
     fun initialize() {
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
         authSettings = sampler.authentications

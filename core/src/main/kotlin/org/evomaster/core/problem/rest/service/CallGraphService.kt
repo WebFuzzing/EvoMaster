@@ -1,11 +1,13 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.StartService
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.search.service.Sampler
 import javax.annotation.PostConstruct
 import kotlin.math.abs
 
@@ -26,7 +28,7 @@ class CallGraphService {
 
     private lateinit var endpointsInUse: Set<Endpoint>
 
-    @PostConstruct
+    @StartService([Sampler::class])
     private fun init() {
 
         val calls = sampler.seeAvailableActions()
