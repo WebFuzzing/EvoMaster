@@ -7,6 +7,7 @@ import org.evomaster.core.utils.FlakinessInferenceUtil.UUID_MARKER
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -41,6 +42,27 @@ internal class RestCallResultTest {
             )
 
         }
+    }
+
+    @Test
+    fun missingValuesAreStoredAndSurviveCopyAndLaterMatchingRounds() {
+        val original = RestCallResult("1").apply {
+            setStatusCode(401)
+            setBody("body")
+            setBodyType(MediaType.TEXT_PLAIN_TYPE)
+            setErrorMessage("error")
+            setHeaders(mapOf("WWW-Authenticate" to listOf("Basic"), "Upgrade" to listOf("TLS/1.2")))
+        }
+        val stable = original.copy()
+        original.recordFlakyObservation(RestCallResult("1"), 1)
+        original.recordFlakyObservation(stable, 2)
+        val copy = original.copy()
+        for (field in ResponseField.values()) {
+            assertTrue(copy.hasFlakyField(field), field.name)
+            assertEquals(listOf<String?>(null), copy.getFlakyValues(field), field.name)
+            assertEquals(mapOf<Int, String?>(1 to null), copy.getFlakyVariation(field)!!.valuesByExecIndex)
+        }
+        assertTrue(stable.getFlakyValues(ResponseField.BODY).isEmpty())
     }
 
     @Test

@@ -1,20 +1,19 @@
-package org.evomaster.core.output
+package org.evomaster.core.output.service
 
-import org.evomaster.core.output.compiler.CompilerForTestGenerated
-import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.output.service.RestTestCaseWriter
+import org.evomaster.core.output.Lines
+import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.WriterTestBase
+import org.evomaster.core.output.compiler.GeneratedRegressionCompiler
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import java.lang.reflect.InvocationTargetException
-import java.net.URLClassLoader
-import java.nio.file.Files
 import java.nio.file.Path
-import javax.tools.ToolProvider
 
-class CumulativeFlakyAssertionsExecutionTest : WriterTestBase() {
+/** Execute generated JVM assertions against all observations and a stable-field negative control. */
+class ApiTestCaseWriterExecutionTest : WriterTestBase() {
 
     @TempDir
     lateinit var directory: Path
@@ -57,18 +56,7 @@ class CumulativeFlakyAssertionsExecutionTest : WriterTestBase() {
                 }
             }
         """.trimIndent()
-        val source = directory.resolve(className + if (format.isJava()) ".java" else ".kt")
-        Files.writeString(source, code)
-        if (format.isJava()) {
-            val compiler = ToolProvider.getSystemJavaCompiler()
-            assertNotNull(compiler, "A JDK is required to compile generated Java assertions")
-            assertEquals(0, compiler.run(null, null, null, "-classpath", System.getProperty("java.class.path"),
-                "-d", directory.toString(), source.toString()), code)
-        } else {
-            CompilerForTestGenerated.compile(format, source.toFile(), directory.toFile())
-        }
-        URLClassLoader(arrayOf(directory.toUri().toURL()), javaClass.classLoader).use { loader ->
-            val klass = loader.loadClass(className)
+        GeneratedRegressionCompiler.withClass(directory, format, className, code) { klass ->
             val instance = klass.getDeclaredConstructor().newInstance()
             val verify = klass.getMethod("verify", String::class.java)
             for (body in listOf(original) + observations) verify.invoke(instance, body)

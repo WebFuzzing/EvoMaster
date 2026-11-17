@@ -3,6 +3,7 @@ package org.evomaster.core.output
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.sql.SqlScriptRunner
+import org.evomaster.core.output.compiler.GeneratedRegressionCompiler
 import org.evomaster.core.database.sql.*
 import org.evomaster.core.database.sql.schema.*
 import org.evomaster.core.search.action.EvaluatedDbAction
@@ -17,8 +18,10 @@ import java.nio.file.Path
 import java.sql.DriverManager
 import java.util.UUID
 
-class SqlForeignKeyWriterRegressionTest {
-    @TempDir lateinit var directory: Path
+/** Compile and execute SQL initialization for explicit, generated and existing primary keys. */
+class SqlWriterForeignKeyTest {
+    @TempDir
+    lateinit var directory: Path
 
     @ParameterizedTest
     @EnumSource(OutputFormat::class, names = ["JAVA_JUNIT_5", "KOTLIN_JUNIT_5"])

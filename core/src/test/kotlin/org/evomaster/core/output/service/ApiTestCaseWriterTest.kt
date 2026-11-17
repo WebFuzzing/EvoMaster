@@ -1,7 +1,10 @@
-package org.evomaster.core.output
+package org.evomaster.core.output.service
 
-import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.output.service.RestTestCaseWriter
+import org.evomaster.core.output.EvaluatedIndividualBuilder
+import org.evomaster.core.output.Lines
+import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestCase
+import org.evomaster.core.output.WriterTestBase
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestPath
@@ -12,7 +15,8 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 
-class CumulativeFlakyAssertionsTest : WriterTestBase() {
+/** Verify that cumulative observations suppress only contradicted response assertions. */
+class ApiTestCaseWriterTest : WriterTestBase() {
 
     private fun emit(format: OutputFormat, body: String, observations: List<String>, static: Boolean = false): String {
         val result = RestCallResult("action", false).apply { setBody(body) }
@@ -46,7 +50,9 @@ class CumulativeFlakyAssertionsTest : WriterTestBase() {
         result.setBody("""{"items":[1,2],"stable":7}""")
         listOf("""{"items":0,"stable":7}""", """{"items":[3,2],"stable":7}""").forEachIndexed { i, body ->
             result.recordFlakyObservation(RestCallResult(action.getLocalId()).apply {
-                setStatusCode(200); setBodyType(MediaType.APPLICATION_JSON_TYPE); setBody(body)
+                setStatusCode(200)
+                setBodyType(MediaType.APPLICATION_JSON_TYPE)
+                setBody(body)
             }, i + 1)
         }
         val writer = RestTestCaseWriter(getConfig(format).apply { handleFlakiness = true }, PartialOracles())

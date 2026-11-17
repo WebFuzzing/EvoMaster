@@ -1019,13 +1019,21 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    /**
+     * Resolve a foreign-key table name to its schema-qualified key in {@code fkMap}.
+     * Bare names are accepted only when unambiguous across schemas.
+     */
     private String resolveFkTable(String tableName) {
         Optional<String> exact = fkMap.keySet().stream()
                 .filter(k -> k.equalsIgnoreCase(tableName)).findFirst();
-        if (exact.isPresent()) return exact.get();
+        if (exact.isPresent()) {
+            return exact.get();
+        }
         // A qualified name must never be matched to another schema, or to a
         // table whose name merely ends in the same characters.
-        if (tableName.contains(".")) return null;
+        if (tableName.contains(".")) {
+            return null;
+        }
         List<String> candidates = fkMap.keySet().stream()
                 .filter(k -> k.substring(k.lastIndexOf('.') + 1).equalsIgnoreCase(tableName))
                 .collect(Collectors.toList());

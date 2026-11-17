@@ -1,25 +1,28 @@
-package org.evomaster.core.output
+package org.evomaster.core.output.service
 
 import com.sun.net.httpserver.HttpServer
 import org.evomaster.core.database.sql.SqlAction
-import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.output.service.RestTestCaseWriter
-import org.evomaster.core.problem.httpws.HttpWsCallResult.ResponseField
+import org.evomaster.core.output.EvaluatedIndividualBuilder
+import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestCase
+import org.evomaster.core.output.WriterTestBase
+import org.evomaster.core.output.compiler.GeneratedRegressionCompiler
 import org.evomaster.core.problem.rest.data.*
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
-import java.net.InetSocketAddress
 import java.lang.reflect.InvocationTargetException
+import java.net.InetSocketAddress
 import java.nio.file.Path
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import javax.ws.rs.core.MediaType
 
-class RequestAndObservationRegressionTest : WriterTestBase() {
-    @TempDir lateinit var directory: Path
+/** Check generated request fidelity and response assertions using local HTTP replay. */
+class RestTestCaseWriterTest : WriterTestBase() {
+    @TempDir
+    lateinit var directory: Path
 
     @ParameterizedTest
     @EnumSource(OutputFormat::class, names = ["JAVA_JUNIT_5", "KOTLIN_JUNIT_5"])
@@ -55,25 +58,6 @@ class RequestAndObservationRegressionTest : WriterTestBase() {
         }
     }
 
-    @Test
-    fun missingValuesAreStoredAndSurviveCopyAndLaterMatchingRounds() {
-        val original = RestCallResult("1").apply {
-            setStatusCode(401); setBody("body"); setBodyType(MediaType.TEXT_PLAIN_TYPE)
-            setErrorMessage("error")
-            setHeaders(mapOf("WWW-Authenticate" to listOf("Basic"), "Upgrade" to listOf("TLS/1.2")))
-        }
-        val stable = original.copy()
-        original.recordFlakyObservation(RestCallResult("1"), 1)
-        original.recordFlakyObservation(stable, 2)
-        val copy = original.copy()
-        for (field in ResponseField.values()) {
-            assertTrue(copy.hasFlakyField(field), field.name)
-            assertEquals(listOf<String?>(null), copy.getFlakyValues(field), field.name)
-            assertEquals(mapOf<Int, String?>(1 to null), copy.getFlakyVariation(field)!!.valuesByExecIndex)
-        }
-        assertTrue(stable.getFlakyValues(ResponseField.BODY).isEmpty())
-    }
-
     private fun emit(format: OutputFormat, original: RestCallResult, observations: List<RestCallResult>): String {
         val action = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
         val (_, baseUrl, individual) = EvaluatedIndividualBuilder.buildResourceEvaluatedIndividual(
@@ -98,7 +82,9 @@ class RequestAndObservationRegressionTest : WriterTestBase() {
     @EnumSource(OutputFormat::class, names = ["JAVA_JUNIT_5", "KOTLIN_JUNIT_5"])
     fun completeGeneratedTestCompilesAndRunsWithMissingResponseFields(format: OutputFormat) {
         val original = RestCallResult("1").apply {
-            setStatusCode(401); setBodyType(MediaType.APPLICATION_JSON_TYPE); setBody("{\"items\":[1]}")
+            setStatusCode(401)
+            setBodyType(MediaType.APPLICATION_JSON_TYPE)
+            setBody("{\"items\":[1]}")
             setHeaders(mapOf("WWW-Authenticate" to listOf("Basic realm=original")))
         }
         val missing = RestCallResult("1").apply { setStatusCode(401) }
@@ -177,7 +163,8 @@ class RequestAndObservationRegressionTest : WriterTestBase() {
     fun missingBodyAndTypeDoNotLeaveActiveAssertions(format: OutputFormat) {
         for (body in listOf("{\"items\":[1]}", "[1]", "42", "true", "null", "\"text\"", "plain text")) {
             val original = RestCallResult("1").apply {
-                setStatusCode(200); setBody(body)
+                setStatusCode(200)
+                setBody(body)
                 setBodyType(if (body == "plain text") MediaType.TEXT_PLAIN_TYPE else MediaType.APPLICATION_JSON_TYPE)
             }
             val observed = RestCallResult("1").apply { setStatusCode(200) }

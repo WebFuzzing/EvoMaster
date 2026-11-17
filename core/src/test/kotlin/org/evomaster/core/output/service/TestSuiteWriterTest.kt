@@ -5,35 +5,36 @@ import com.google.inject.Guice
 import com.google.inject.Injector
 import com.google.inject.Provider
 import com.netflix.governator.guice.LifecycleInjector
+import com.sun.net.httpserver.HttpServer
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
-import org.evomaster.core.output.GeneratedRegressionCompiler
-import com.sun.net.httpserver.HttpServer
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.io.TempDir
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
-import java.net.InetSocketAddress
-import java.nio.file.Path
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.TimeUnit
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
+import org.evomaster.core.output.compiler.GeneratedRegressionCompiler
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.Solution
 import org.evomaster.test.utils.py.PyLoader
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
+import java.net.InetSocketAddress
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 
 class TestSuiteWriterTest{
 
-    @TempDir lateinit var temporaryDirectory: Path
+    @TempDir
+    lateinit var temporaryDirectory: Path
 
     @ParameterizedTest
     @EnumSource(OutputFormat::class, names = ["JAVA_JUNIT_5", "KOTLIN_JUNIT_5"])

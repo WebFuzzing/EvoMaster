@@ -13,6 +13,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/** Verify dependency ordering and repeated seed restoration with a real H2 database. */
 class H2SeedRestoreOrderTest {
 
     @SuppressWarnings("unchecked")

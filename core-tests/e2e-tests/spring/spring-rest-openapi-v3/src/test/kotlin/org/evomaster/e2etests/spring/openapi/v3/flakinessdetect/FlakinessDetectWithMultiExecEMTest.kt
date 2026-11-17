@@ -37,8 +37,18 @@ class FlakinessDetectWithMultiExecEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.isNotEmpty())
-            assertTextInTests(outputFolder, outputClass, "Flaky value of field \"'first'\"")
-            assertTextInTests(outputFolder, outputClass, "Flaky value of field \"'second'\"")
+            for (field in listOf("first", "second")) {
+                assertTextInTests(outputFolder, outputClass, "Flaky value of field '$field'")
+                assertTextInTests(outputFolder, outputClass) { line ->
+                    line.trim().startsWith("// .body(\"'$field'\"")
+                }
+            }
+            // Different test cases can observe different values in the finite replay budget.
+            // Do not require every assertion on these fields in the suite to be disabled.
+            // Stable assertions must remain active.
+            assertTextInTests(outputFolder, outputClass) { line ->
+                line.trim().startsWith(".body(\"'stable'\", containsString(\"same\"))")
+            }
         }
     }
 }
