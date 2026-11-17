@@ -365,39 +365,15 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
     override fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String {
-        return getRestAcceptHeader(call as RestCallAction, res as RestCallResult)
+        return getRestAcceptHeader(call as RestCallAction)
     }
 
-    private fun getRestAcceptHeader(call: RestCallAction, res: RestCallResult): String {
-        /*
-         *  Note: using the type in result body is wrong:
-         *  if you request a JSON but make an error, you might
-         *  get back a text/plain with an explanation
-         *
-         *  TODO: get the type from the REST call
-         */
-
-        val accept = openAcceptHeader()
-
-        var result: String
-
-        if (call.produces.isEmpty() || res.getBodyType() == null) {
-            result = "$accept\"*/*\""
-        } else {
-
-            val accepted = call.produces.filter { res.getBodyType().toString().contains(it, true) }
-
-            result = if (accepted.size == 1) {
-                "$accept\"${accepted.first()}\""
-            } else {
-                //FIXME: there seems to have been something or a problem
-                "$accept\"*/*\""
-            }
-        }
-
-        result = closeAcceptHeader(result)
-
-        return result
+    private fun getRestAcceptHeader(call: RestCallAction): String {
+        // Match AbstractRestFitness: the requested media type is independent of the response,
+        // which can have a different type (or no type at all), especially for errors.
+        val requested = call.produces.firstOrNull() ?: "*/*"
+        val escaped = GeneUtils.applyEscapes(requested, GeneUtils.EscapeMode.TEXT, format)
+        return closeAcceptHeader("${openAcceptHeader()}\"$escaped\"")
     }
 
 

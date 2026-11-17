@@ -88,8 +88,7 @@ class TestCaseWriterTest : WriterTestBase(){
             """
                 // Flaky size of : 1 vs. 2
                 // .body("size()", equalTo(1))
-                // Flaky Body: "foo" vs. "foo", "bar"
-                // .body("", hasItems("foo"))
+                .body("", hasItems("foo"))
             """.trimIndent(),
             stringArrayLines.toString().trimEnd()
         )
@@ -116,7 +115,7 @@ class TestCaseWriterTest : WriterTestBase(){
                 original.recordFlakyObservation(RestCallResult("action", false).apply { setBody(body) }, index + 1)
             }
             val lines = Lines(format)
-            writer.handleJsonStringAssertion("[1,2]", original.getMergedFlakyBody(), lines, null, false)
+            writer.handleJsonStringAssertions("[1,2]", original.getFlakyBodies().orEmpty(), lines, null, false)
             assertTrue(lines.toString().contains("Flaky size"))
             assertFalse(lines.toString().lineSequence().any { it.trim().startsWith(".body") }, lines.toString())
         }
@@ -1808,7 +1807,9 @@ public void test() throws Exception {
         val writer = RestTestCaseWriter(config, PartialOracles())
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        assertEquals(6, getNumberOfFlakyComment(config,lines.toString()))
+        // Missing array entries now retain their original assertions as comments.
+        assertEquals(7, getNumberOfFlakyComment(config,lines.toString()))
+        assertTrue(lines.toString().contains("// .body(\"'p0'[1]\", numberMatches(2))"))
     }
 
     @Test

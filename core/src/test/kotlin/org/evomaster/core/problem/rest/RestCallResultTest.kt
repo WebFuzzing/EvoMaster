@@ -235,6 +235,13 @@ internal class RestCallResultTest {
     }
 
     @Test
+    fun testStaticInferenceKeepsPlainTextRulesForNumericPrefixes() {
+        val original = createCallResult("123 550e8400-e29b-41d4-a716-446655440000")
+        original.recordStaticFlakyInference()
+        assertEquals("123 $UUID_MARKER", original.getStaticFlakyObservation()!!.differences[ResponseField.BODY])
+    }
+
+    @Test
     fun testMergedFlakyBodyCombinesDifferentExecutionDeltas(){
         val original = createCallResult("""{"stable":"same","first":"a","second":"b"}""")
         val firstDiff = createCallResult("""{"stable":"same","first":"x","second":"b"}""")
