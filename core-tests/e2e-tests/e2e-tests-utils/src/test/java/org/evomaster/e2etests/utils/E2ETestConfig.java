@@ -67,9 +67,8 @@ public class E2ETestConfig {
      * Format of the generated tests, which are then compiled with the matching compiler
      */
     public E2ETestConfig withOutputFormat(OutputFormat outputFormat) {
-        if (!outputFormat.isJavaOrKotlin() || !outputFormat.isJUnit5()) {
-            //JUnit 4 would need the vintage engine, which is not on the e2e classpath, so the tests would compile but none would be run
-            throw new IllegalArgumentException("Only JUnit 5 tests in Java or Kotlin can be compiled and run: " + outputFormat);
+        if (!outputFormat.isJavaOrKotlin()) {
+            throw new IllegalArgumentException("Only tests in Java or Kotlin can be compiled and run: " + outputFormat);
         }
         this.outputFormat = outputFormat;
         return this;
