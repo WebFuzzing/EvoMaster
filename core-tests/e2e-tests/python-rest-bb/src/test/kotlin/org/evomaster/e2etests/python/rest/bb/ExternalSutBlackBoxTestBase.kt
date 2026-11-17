@@ -78,7 +78,6 @@ abstract class ExternalSutBlackBoxTestBase : RestTestBase() {
         setOption(args, "bbSwaggerUrl", "$sutBaseUrl$sutSchemaPath")
         setOption(args, "problemType", "REST")
         setOption(args, "outputFormat", outputFormat.toString())
-        setOption(args, "bbExperiments", "false")
     }
 
     /**
