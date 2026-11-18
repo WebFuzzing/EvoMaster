@@ -313,7 +313,7 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
      *  If [ind]'s main action at [index] creates a resource, remove references to its location id made by subsequent
      *  actions.
      */
-    fun removeReferencesToResourceIfCreated(ind: RestIndividual, index: Int) {
+    private fun removeReferencesToResourceIfCreated(ind: RestIndividual, index: Int) {
         val actions = ind.seeMainExecutableActions()
 
         if (index !in actions.indices) {
@@ -339,7 +339,7 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
      *  Remove references to the links of [ind]'s main action at [index] made by the backward links of subsequent
      *  actions.
      */
-    fun removeBackwardLinksToAction(ind: RestIndividual, index: Int) {
+    private fun removeBackwardLinksToAction(ind: RestIndividual, index: Int) {
         val actions = ind.seeMainExecutableActions()
 
         if (index !in actions.indices) {
