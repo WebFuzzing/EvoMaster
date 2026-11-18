@@ -194,8 +194,8 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
             val copy = ind.copy() as T
 
             if (copy is RestIndividual) {
-                copy.removeReferencesToResourceIfCreated(index)
-                copy.removeBackwardLinksToAction(index)
+                removeReferencesToResourceIfCreated(copy, index)
+                removeBackwardLinksToAction(copy, index)
             }
 
             copy.removeMainExecutableAction(index)
@@ -305,6 +305,54 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
                     log.warn("Different status code $b returned from original $a, ie, $a != $b for endpoint: ${action.getName()}")
                     assert(false)
                 }
+            }
+        }
+    }
+
+    /**
+     *  If [ind]'s main action at [index] creates a resource, remove references to its location id made by subsequent
+     *  actions.
+     */
+    fun removeReferencesToResourceIfCreated(ind: RestIndividual, index: Int) {
+        val actions = ind.seeMainExecutableActions()
+
+        if (index !in actions.indices) {
+            throw IllegalArgumentException("Index is out of main actions list bounds")
+        }
+
+        if (index == actions.size - 1) {
+            return
+        }
+
+        if (actions[index].saveCreatedResourceLocation) {
+            val creationLocationId = actions[index].creationLocationId()
+            for (i in index + 1 until actions.size) {
+                if (actions[i].usePreviousLocationId == creationLocationId) {
+                    actions[i].usePreviousLocationId = null
+                }
+            }
+        }
+    }
+
+
+    /**
+     *  Remove references to the links of [ind]'s main action at [index] made by the backward links of subsequent
+     *  actions.
+     */
+    fun removeBackwardLinksToAction(ind: RestIndividual, index: Int) {
+        val actions = ind.seeMainExecutableActions()
+
+        if (index !in actions.indices) {
+            throw IllegalArgumentException("Index is out of main actions list bounds")
+        }
+
+        if (index == actions.indices.last || actions[index].links.isEmpty()) {
+            return
+        }
+
+        for (i in index + 1 until actions.size) {
+           if (actions[i].backwardLinkReference?.actualSourceActionLocalId == actions[index].getLocalId()) {
+                actions[i].backwardLinkReference = null
             }
         }
     }
