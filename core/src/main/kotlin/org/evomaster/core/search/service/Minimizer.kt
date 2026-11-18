@@ -9,6 +9,7 @@ import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.time.ExecutionPhaseController
@@ -58,7 +59,39 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
     }
 
     private fun pruneNonNeededDatabaseActions(){
-        //TODO
+        if (hasPhaseTimedOut()) {
+            return
+        }
+        archive.updateUniqueCoveredIndividuals { ei ->
+            if (hasPhaseTimedOut()) {
+                return@updateUniqueCoveredIndividuals null
+            }
+            val dbCount = ei.individual.prunableDatabaseActionsSize()
+            if (dbCount == 0) {
+                return@updateUniqueCoveredIndividuals null
+            }
+            val requiredTargets = ei.fitness.getViewOfData()
+                .filter { FitnessValue.isMaxValue(it.value.score) }
+                .keys
+            var bestEi = ei
+            for (i in dbCount - 1 downTo 0) {
+                if (hasPhaseTimedOut()) {
+                    break
+                }
+                @Suppress("UNCHECKED_CAST")
+                val candidate = bestEi.individual.copy() as T
+                candidate.removePrunableDatabaseAction(i)
+                candidate.cleanBrokenBindingReference()
+                if (!candidate.isValidInitializationActions()) {
+                    continue
+                }
+                val reevaluated = fitness.computeWholeAchievedCoverageForPostProcessing(candidate)
+                if (reevaluated != null && requiredTargets.all { reevaluated.fitness.doesCover(it) }) {
+                    bestEi = reevaluated
+                }
+            }
+            if (bestEi !== ei) bestEi else null
+        }
     }
 
     /**

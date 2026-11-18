@@ -300,6 +300,20 @@ abstract class Individual(
     }
 
     /**
+     * Return the number of database initialization actions that can be pruned
+     * during test case minimization.
+     */
+    open fun prunableDatabaseActionsSize(): Int = 0
+
+    /**
+     * Remove the prunable database initialization action at [relativeIndex]
+     * (in `0 until prunableDatabaseActionsSize()`).
+     */
+    open fun removePrunableDatabaseAction(relativeIndex: Int) {
+        throw UnsupportedOperationException("${this::class.java.simpleName} does not support pruning database actions")
+    }
+
+    /**
      * Return a view of all initializing actions done before the main
      * ones. Example: these could set up database before doing HTTP
      * calls toward the SUT.
