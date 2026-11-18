@@ -1,11 +1,16 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.wrapper.FlexibleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 internal class ObjectGeneTest {
@@ -169,5 +174,26 @@ internal class ObjectGeneTest {
 
         val xml = root.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
         assertEquals("<root><photoUrls><sarasa1>yC</sarasa1><lala2>2ctkEeIof</lala2></photoUrls></root>", xml)
+    }
+
+    @Test
+    fun testContainsSameValueAsHomogeneousAndHeterogeneousFields() {
+        val a1 = ObjectGene("obj", listOf(StringGene("name", "alice"), IntegerGene("age", 30)))
+        val a2 = ObjectGene("obj", listOf(IntegerGene("age", 30), StringGene("name", "alice")))
+        val a3 = ObjectGene("obj", listOf(StringGene("name", "bob"), IntegerGene("age", 30)))
+        assertTrue(a1.containsSameValueAs(a2))
+        assertFalse(a1.containsSameValueAs(a3))
+
+        val diffType = ObjectGene("obj", listOf(IntegerGene("name", 1), IntegerGene("age", 30)))
+        val diffName = ObjectGene("obj", listOf(StringGene("other", "alice"), IntegerGene("age", 30)))
+        assertFalse(a1.containsSameValueAs(diffType))
+        assertFalse(a1.containsSameValueAs(diffName))
+
+        val tmpl = PairGene<StringGene, Gene>("template", StringGene("k"), FlexibleGene("v", StringGene("v"), null))
+        val addSame1 = ObjectGene("obj", listOf(), isFixed = false, template = tmpl, additionalFields = mutableListOf(PairGene("p", StringGene("k", "a"), FlexibleGene("v", StringGene("v", "1"), null))))
+        val addSame2 = ObjectGene("obj", listOf(), isFixed = false, template = tmpl.copy() as PairGene<StringGene, Gene>, additionalFields = mutableListOf(PairGene("p", StringGene("k", "a"), FlexibleGene("v", StringGene("v", "1"), null))))
+        val addDiff = ObjectGene("obj", listOf(), isFixed = false, template = tmpl.copy() as PairGene<StringGene, Gene>, additionalFields = mutableListOf(PairGene("p", StringGene("k", "a"), FlexibleGene("v", IntegerGene("v", 1), null))))
+        assertTrue(addSame1.containsSameValueAs(addSame2))
+        assertFalse(addSame1.containsSameValueAs(addDiff))
     }
 }

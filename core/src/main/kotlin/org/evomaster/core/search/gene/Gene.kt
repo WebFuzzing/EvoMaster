@@ -891,6 +891,15 @@ abstract class Gene(
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
+    /**
+     * Safely checks whether [other] has the same runtime gene type (and optionally the same [name])
+     * before delegating to [containsSameValueAs], returning `false` on mismatches instead of throwing.
+     */
+    fun hasSameValueWithTypeCheck(other: Gene, checkName: Boolean = true): Boolean =
+        (!checkName || name == other.name) &&
+            this::class.java == other::class.java &&
+            containsSameValueAs(other)
+
 
     /**
      * evaluate whether `this` and [gene] belong to one evolution during search

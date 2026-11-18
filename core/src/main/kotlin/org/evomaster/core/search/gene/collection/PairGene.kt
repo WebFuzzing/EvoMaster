@@ -65,7 +65,8 @@ class PairGene<F,S>(
         if (other !is PairGene<*, *>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return first.containsSameValueAs(other.first) && second.containsSameValueAs(other.second)
+        return first.hasSameValueWithTypeCheck(other.first, checkName = false) &&
+            second.hasSameValueWithTypeCheck(other.second, checkName = false)
     }
 
 
