@@ -177,9 +177,10 @@ class TupleGene(
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.elements.zip(other.elements) { thisElem, otherElem ->
-            thisElem.containsSameValueAs(otherElem)
-        }.all { it }
+        return this.elements.size == other.elements.size &&
+            this.elements.zip(other.elements) { thisElem, otherElem ->
+                thisElem.hasSameValueWithTypeCheck(otherElem)
+            }.all { it }
     }
 
 

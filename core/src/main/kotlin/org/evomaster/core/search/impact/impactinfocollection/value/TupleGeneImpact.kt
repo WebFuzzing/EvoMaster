@@ -57,13 +57,13 @@ class TupleGeneImpact (
             throw IllegalArgumentException("gc.previous ${gc.previous::class.java.simpleName} should be ObjectGene")
 
         val mutatedElements = gc.current.elements.zip(gc.previous.elements) { cf, pf ->
-            Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
+            Pair(Pair(cf, pf), cf.hasSameValueWithTypeCheck(pf))
         }.filter { !it.second }.map { it.first }
 
         val onlyManipulation = mutatedElements.size > 1 && impactTargets.isNotEmpty()
 
         mutatedElements.forEach { g->
-            val fImpact = elements.getValue(g.first.name) as? GeneImpact ?:throw IllegalArgumentException("impact should be gene impact")
+            val fImpact = elements[g.first.name] as? GeneImpact ?: return@forEach
             if (!fImpact.validate(g.first) || !fImpact.validate(g.second)) return@forEach
             val mutatedGeneWithContext = MutatedGeneWithContext(
                 current =  g.first,
