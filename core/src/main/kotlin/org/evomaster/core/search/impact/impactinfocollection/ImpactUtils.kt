@@ -24,6 +24,7 @@ import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.datetime.TimeOffsetGene
 import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.wrapper.NullableGene
@@ -86,6 +87,7 @@ class ImpactUtils {
                 is SqlPrimaryKeyGene -> SqlPrimaryKeyGeneImpact(id, gene)
                 is SqlForeignKeyGene -> SqlForeignKeyGeneImpact(id)
                 is SqlAutoIncrementGene -> GeneImpact(id)
+                is ImmutableDataHolderGene -> GeneImpact(id)
                 is SqlMultidimensionalArrayGene<*> -> SqlMultidimensionalArrayGeneImpact(id)
                 // regex
                 is RegexGene -> RegexGeneImpact(id, gene)
@@ -325,7 +327,7 @@ class ImpactUtils {
                 g.name == template.name && g::class.java.simpleName == template::class.java.simpleName
                         && (includeSameValue
                             || !try { g.containsSameValueAs(template) }catch (e: Exception){
-                                if (g !is ArrayGene<*> && g !is FixedMapGene<*,*>) throw e else false
+                                if (g !is ArrayGene<*> && g !is FixedMapGene<*,*> && g !is ObjectGene && g !is TupleGene) throw e else false
                             }
                         )
             }
