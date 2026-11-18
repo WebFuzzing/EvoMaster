@@ -1043,15 +1043,14 @@ class StringGene(
             this.specializations.clear()
             this.specializations.addAll(other.specializations)
 
-            killAllChildren()
+            // Clean up discarded specializations without detaching this string's own bindings.
+            this.killAllChildren()
             val adopted = other.specializationGenes.map { it.copy() }
             adopted.forEach { it.resetLocalIdRecursively()}
-            addChildren(adopted)
+            this.addChildren(adopted)
 
             this.tainted = other.tainted
-            //TODO NOT sure if should handle this???
-//            this.bindingIds.clear()
-//            this.bindingIds.addAll(other.bindingIds)
+            // Note: bindingIds belongs to this gene's own taint analysis targets and should not be overwritten when copying value.
         }
 
         return true

@@ -21,6 +21,7 @@ internal class EMConfigTest{
     private val sqli = "sqli"
     private val blackBox = "blackBox"
     private val generateMongoData = "generateMongoData"
+    private val killSwitch = "killSwitch"
 
 
     @Test
@@ -826,6 +827,72 @@ internal class EMConfigTest{
         }
     }
 
+    @Test
+    fun testKillSwitchIsOffByDefaultForAsyncApi(){
+
+        fun configFor(vararg args: String) =
+            EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse(*args)) }
+
+        val rest = configFor("--problemType", "REST")
+        assertTrue(rest.isKillSwitchOn(), "the kill switch is on by default for REST")
+
+        /*
+            A message-driven service consumes on long-lived threads, which the kill switch
+            would stop for good. The option keeps its value: only what is asked of the driver
+            changes.
+         */
+        val asyncApi = configFor("--problemType", "ASYNCAPI", "--createTests", "false")
+        assertTrue(asyncApi.killSwitch)
+        assertFalse(asyncApi.isKillSwitchOn(), "the kill switch should be off by default for AsyncAPI")
+    }
+
+    @Test
+    fun testKillSwitchSetExplicitlyIsRespectedForAsyncApi(){
+
+        fun configFor(vararg args: String) =
+            EMConfig().apply { updateProperties(EMConfig.getOptionParser().parse(*args)) }
+
+        val on = configFor("--problemType", "ASYNCAPI", "--createTests", "false", "--$killSwitch", "true")
+        assertTrue(on.isKillSwitchOn(), "a kill switch turned on explicitly should stay on for AsyncAPI")
+
+        val off = configFor("--problemType", "ASYNCAPI", "--createTests", "false", "--$killSwitch", "false")
+        assertFalse(off.isKillSwitchOn())
+
+        val restOff = configFor("--problemType", "REST", "--$killSwitch", "false")
+        assertFalse(restOff.isKillSwitchOn(), "turning the kill switch off explicitly should work for REST too")
+
+        //a configuration file counts as explicit too
+        val fromFile = configFor("--problemType", "ASYNCAPI", "--createTests", "false",
+            "--configPath", "src/test/resources/config/killswitch.yml")
+        assertTrue(fromFile.isKillSwitchOn(), "a kill switch turned on in the configuration file should stay on")
+    }
+
+    @Test
+    fun testKillSwitchFollowsAProblemTypeResolvedFromTheDriver(){
+
+        /*
+            In white-box mode, a problem type left at DEFAULT is resolved from the driver
+            only after the options have been checked, the way Main does it.
+         */
+        val left = EMConfig()
+        left.updateProperties(EMConfig.getOptionParser().parse("--$blackBox", "false", "--createTests", "false"))
+        assertEquals(EMConfig.ProblemType.DEFAULT, left.problemType)
+        left.problemType = EMConfig.ProblemType.ASYNCAPI
+        left.checkMultiFieldConstraints()
+        assertFalse(left.isKillSwitchOn(), "the kill switch should be off once the run turns out to be AsyncAPI")
+
+        val forced = EMConfig()
+        forced.updateProperties(EMConfig.getOptionParser().parse("--$blackBox", "false", "--createTests", "false", "--$killSwitch", "true"))
+        forced.problemType = EMConfig.ProblemType.ASYNCAPI
+        forced.checkMultiFieldConstraints()
+        assertTrue(forced.isKillSwitchOn(), "a kill switch turned on explicitly should survive the resolution")
+
+        val rest = EMConfig()
+        rest.updateProperties(EMConfig.getOptionParser().parse("--$blackBox", "false"))
+        rest.problemType = EMConfig.ProblemType.REST
+        rest.checkMultiFieldConstraints()
+        assertTrue(rest.isKillSwitchOn())
+    }
 
     @Test
     fun testSetFalseOnDependsOn(){

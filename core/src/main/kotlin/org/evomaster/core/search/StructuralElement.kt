@@ -258,7 +258,7 @@ abstract class StructuralElement (
     open fun killAllChildren(){
 
         //we are prepared... we call Winston Wolfe before the "mess"...
-        callWinstonWolfe()
+        children.forEach { it.callWinstonWolfe() }
 
         children.forEach {
             it.parent = null; //let's avoid memory leaks

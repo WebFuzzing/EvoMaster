@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.Lazy
+import org.evomaster.core.StartService
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
@@ -27,6 +28,7 @@ import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.time.TimeBoxedPhase
 import org.slf4j.Logger
@@ -85,7 +87,7 @@ class HttpSemanticsService : TimeBoxedPhase{
 
     //TODO quite a few code here seem duplicate for SecurityRest... to consider common abstract class
 
-    @PostConstruct
+    @StartService([Sampler::class])
     private fun postInit() {
 
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
