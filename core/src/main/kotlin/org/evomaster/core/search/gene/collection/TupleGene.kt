@@ -177,9 +177,10 @@ class TupleGene(
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.elements.zip(other.elements) { thisElem, otherElem ->
-            thisElem.containsSameValueAs(otherElem)
-        }.all { it }
+        return this.elements.size == other.elements.size &&
+            this.elements.zip(other.elements) { thisElem, otherElem ->
+                thisElem.hasSameValueWithTypeCheck(otherElem)
+            }.all { it }
     }
 
 
@@ -239,8 +240,9 @@ class TupleGene(
             )
             val map = selected.map { internalGenes.indexOf(it) }
             return map.map {
+                val impact = (impacts[it] as? GeneImpact)?.takeIf { imp -> imp.validate(internalGenes[it]) }
                 internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(
-                    impact = impacts[it] as? GeneImpact,
+                    impact = impact,
                     gene = internalGenes[it]
                 )
             }
