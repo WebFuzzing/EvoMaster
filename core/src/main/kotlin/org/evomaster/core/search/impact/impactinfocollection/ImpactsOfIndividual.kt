@@ -392,7 +392,7 @@ open class ImpactsOfIndividual(
     /**
      * remove impacts for initialization
      */
-    fun removeInitializationImpacts(removed : List<Pair<SqlAction, Int>>, existingDataSize: Int, initActionClassName: String, initAbstrat: Boolean){
+    fun removeInitializationImpacts(removed : List<Pair<Action, Int>>, existingDataSize: Int, initActionClassName: String, initAbstrat: Boolean){
         initActionImpacts.getOrPut(initActionClassName, {InitializationGroupedActionsImpacts(initAbstrat)}).updateSizeOfExistingData(existingDataSize)
         initActionImpacts[initActionClassName]!!.removeInitialization(removed)
     }
