@@ -5,6 +5,8 @@ import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.utils.RegexFlags
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 /**
  * Created by arcuri82 on 11-Sep-19.
@@ -652,6 +654,34 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("(?=abcde)abc")
         assertThrows<AssertionError> { checkSameAsJava("""^a((?=b\d)b)y$""") }
         assertThrows<AssertionError> { checkSameAsJava("^(a(?=bc)d)e$") }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [
+        // some APIGuru patterns (although these are ECMA patterns they also work in Java)
+        "^(?!aws:).+",
+        """^(?!\s).*(?<!\s)$""",
+        """(?!.*[.]git$)[\w\-.]*""",
+        """^((?!\\[nr]).)+""",
+        """^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,6}$""",
+        $$"""^(?!.*?(.)\1{3})[-_!@#$a-zA-Z0-9]*$""", // $$ interpolation prefix to avoid issues with $a
+        "^[a-zA-Z]((?!--|__)[a-zA-Z0-9-_])+$",
+        """^[0-9a-z\.\-_]*(?!\.)$""",
+        """(?=[/\.\-_A-Za-z0-9]+)((?!aws\.).*)|(\$(\.[\w/_-]+(\[(\d+|\*)\])*)*)""",
+        "(^(?!_{2}))(^[a-zA-Z0-9_]+$)",
+        """^([\-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24\:?00)([\.,]\d(?!:))?)?(\17[0-5]\d([\.,]\d)?)?([zZ]|([\-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$""",
+        // some other examples
+        "(?!^)a", "(?<!^)a", "a(?!$)", "(?!a)(?!b)", "a|(?!a*)", "(?![a&&b])a",
+        "(?!(?=a))b", "(?!(?!a))a", "(?!(?=a)(?=b*))b", """^(?!(x))(a)\2$"""
+    ])
+    fun testNegativeLookarounds(regexString: String){
+        checkSameAsJava(regexString)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [ "(?!)", "(?!a*)b", "(?!a|)b", "(?<!a*)b", "(?!(?=a*))b", "(?!(?=a|))b", "(?!(?<=a?))b", """(?!(a))\1""" ])
+    fun testUnsatisfiableNegativeLookarounds(regexString: String){
+        assertThrows<IllegalStateException> { createGene(regexString) }
     }
 
     @Test
