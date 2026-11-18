@@ -270,9 +270,11 @@ open class ObjectGene(
                 && (isFixed || additionalFields!!.size == other.additionalFields!!.size)
                 && (this.fixedFields.sortedBy{it.name}
                         .zip(other.fixedFields.sortedBy { it.name })
-                        { thisField, otherField -> thisField.containsSameValueAs(otherField) }
+                        { thisField, otherField -> thisField.hasSameValueWithTypeCheck(otherField) }
                     .all { it })
-                && (isFixed || this.additionalFields!!.zip(other.additionalFields!!) { thisField, otherField -> thisField.containsSameValueAs(otherField) }.all { it }
+                && (isFixed || this.additionalFields!!.zip(other.additionalFields!!) { thisField, otherField ->
+                    thisField.hasSameValueWithTypeCheck(otherField)
+                }.all { it }
                 )
     }
 
