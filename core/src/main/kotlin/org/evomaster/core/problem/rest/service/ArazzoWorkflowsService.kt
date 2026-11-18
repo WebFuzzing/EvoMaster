@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import com.webfuzzing.arazzo.access.ArazzoAccess
+import com.webfuzzing.arazzo.models.domain.ArazzoStep
 import com.webfuzzing.arazzo.models.domain.ArazzoWorkflow
 import com.webfuzzing.arazzo.models.domain.FailureAction
 import com.webfuzzing.arazzo.models.domain.SuccessAction
@@ -9,6 +10,7 @@ import com.webfuzzing.arazzo.parser.ArazzoParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.rest.arazzo.ArazzoStepSpecs
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
@@ -152,8 +154,13 @@ class ArazzoWorkflowsService {
 
                 if (!currentFrame.pausedBranch) {
                     when {
-                        !step.operationId.isNullOrBlank() ->
-                            actions.add(findActionForOperation(step.operationId))
+                        !step.operationId.isNullOrBlank() -> {
+                            var action = findActionForOperation(step.operationId)
+
+                            action.arazzoStepSpecs = buildStepSpecs(step, currentFrame.workflow)
+
+                            actions.add(action)
+                        }
 
                         !step.workflowId.isNullOrBlank() -> {
                             val nested = arazzoWorkflowsById[step.workflowId]
@@ -294,6 +301,26 @@ class ArazzoWorkflowsService {
             .find { it.operationId == operationId }
             ?: throw IllegalArgumentException("Arazzo: Unknown operationId: $operationId")
         return template.copy() as RestCallAction
+    }
+
+    /**
+     * Maps the step's parameters and outputs to string expressions in the context of this workflow,
+     * for use when executing or fuzzing the workflow step.
+     */
+    private fun buildStepSpecs(step: ArazzoStep, workflow: ArazzoWorkflow): ArazzoStepSpecs {
+        val parameterExpressions = linkedMapOf<String, String>()
+        for (p in step.parameters.orEmpty()) {
+            parameterExpressions[p.name] = p.value.asString()
+        }
+
+        val outputExpressions = step.outputs?.toMap() ?: emptyMap()
+
+        return ArazzoStepSpecs(
+            workflow.workflowId,
+            step.stepId,
+            parameterExpressions,
+            outputExpressions
+        )
     }
 
 }

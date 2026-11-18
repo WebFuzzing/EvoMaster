@@ -7,6 +7,7 @@ import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.rest.arazzo.ArazzoStepSpecs
 import org.evomaster.core.problem.rest.link.BackwardLinkReference
 import org.evomaster.core.problem.rest.link.RestLink
 import org.evomaster.core.problem.rest.resource.ActionRToken
@@ -71,7 +72,14 @@ class RestCallAction(
      *
      * TODO check if it could be used to handle issue in BackwardLinkReference
      */
-    var weakReference: RestCallAction? = null
+    var weakReference: RestCallAction? = null,
+
+    /**
+     * If it is a RestCallAction belonging to an ArazzoWorkflow,
+     * the step information is saved so that the parameters it requires
+     * can be identified.
+     */
+    var arazzoStepSpecs: ArazzoStepSpecs? = null
 ) : HttpWsAction(auth, isCleanUp, parameters) {
 
     companion object{
@@ -143,7 +151,8 @@ class RestCallAction(
             id, verb, path, p, auth, isCleanUp, saveCreatedResourceLocation, usePreviousLocationId,
             produces, responseRefs, skipOracleChecks, operationId, links,
             backwardLinkReference?.copy(),
-            null // we never copy a weakReference
+            null, // we never copy a weakReference
+            arazzoStepSpecs
         )
         //note: immutable objects (eg String) do not need to be copied
     }

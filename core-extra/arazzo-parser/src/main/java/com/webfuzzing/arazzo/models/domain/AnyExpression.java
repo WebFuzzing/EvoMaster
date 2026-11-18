@@ -13,6 +13,8 @@ public abstract class AnyExpression {
     public AnyExpression() {
     }
 
+    public abstract String asString();
+
     public static class Any extends AnyExpression {
         private final JsonNode jsonNode;
 
@@ -22,6 +24,17 @@ public abstract class AnyExpression {
 
         public JsonNode getJsonNode() {
             return jsonNode;
+        }
+
+        @Override
+        public String asString() {
+            if (jsonNode == null || jsonNode.isNull()) {
+                return null;
+            }
+            if (jsonNode.isValueNode()) {
+                return jsonNode.asText();
+            }
+            return jsonNode.toString();
         }
     }
 
@@ -33,6 +46,11 @@ public abstract class AnyExpression {
         }
 
         public String getExpression() {
+            return expression;
+        }
+
+        @Override
+        public String asString() {
             return expression;
         }
     }
