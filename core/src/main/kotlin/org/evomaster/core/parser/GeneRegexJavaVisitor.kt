@@ -120,22 +120,28 @@ class GeneRegexJavaVisitor(val sourceRegex: String, val externalRegexFlags: Rege
      * Returns true if it reaches the top-level pattern without hitting either, false otherwise.
      */
     private fun isAssertionNested(ctx: RegexJavaParser.AssertionContext): Boolean {
+        var nested = false
         var current = ctx.parent
         while (current != null && current !is RegexJavaParser.PatternContext) {
             if (current is RegexJavaParser.AssertionContext) {
+                if (isNegativeLookaround(current)) {
+                    // since we do not sample/repair negative lookarounds we allow them to nest other assertions
+                    return false
+                }
                 // assertion within assertion
-                return true
+                nested = true
             }
-            if (current is RegexJavaParser.AtomContext && current.disjunction() != null) {
+            if (current is RegexJavaParser.AtomContext && current.disjunction() != null && !isNegativeLookaround(ctx)) {
+                // if ctx is a negative lookaround we skip this check, allowing them to be quantified
                 val enclosingTerm = current.parent as? RegexJavaParser.TermContext
                 if (enclosingTerm?.quantifier() != null) {
                     // assertion within quantified group
-                    return true
+                    nested = true
                 }
             }
             current = current.parent
         }
-        return false
+        return nested
     }
 
     private fun isLookaround(ctx: RegexJavaParser.AssertionContext): Boolean =
