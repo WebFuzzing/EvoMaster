@@ -1164,37 +1164,17 @@ object RestActionBuilderV3 {
                         gene
                     }
                 } else {
-                    try {
-                        createNonObjectGeneWithSchemaConstraints(
-                            schema,
-                            name,
-                            RegexGene::class.java,
-                            options,
-                            null,
-                            isInPath,
-                            examples,
-                            messages = messages
-                        )
-                    } catch (e: Exception) {
-                        /*
-                            TODO: if the Regex is syntactically invalid, we should warn
-                            the user. But, as we do not support 100% regex, might be an issue
-                            with EvoMaster. Anyway, in such cases, instead of crashing EM, let's just
-                            take it as a String.
-                            When 100% support, then tell user that it is his/her fault
-                         */
-                        LoggingUtil.uniqueWarn(log, "Cannot handle regex: ${schema.pattern}")
-                        createNonObjectGeneWithSchemaConstraints(
-                            schema,
-                            name,
-                            StringGene::class.java,
-                            options,
-                            null,
-                            isInPath,
-                            examples,
-                            messages = messages
-                        )//StringGene(name)
-                    }
+                    // this fallbacks to StringGene if RegexGene creation fails, handling exceptions and logging
+                    createNonObjectGeneWithSchemaConstraints(
+                        schema,
+                        name,
+                        RegexGene::class.java,
+                        options,
+                        null,
+                        isInPath,
+                        examples,
+                        messages = messages
+                    )
                 }
             }
 
@@ -2334,7 +2314,15 @@ object RestActionBuilderV3 {
                     eg,  min and max
                     also, isInPath
                  */
-                RegexHandler.createGeneForEcma262(schema.pattern).apply { this.name = name }
+                /*
+                    TODO: if the Regex is syntactically invalid, we should warn
+                    the user. But, as we do not support 100% regex, might be an issue
+                    with EvoMaster. Anyway, in such cases, instead of crashing EM, let's just
+                    take it as a String.
+                    When 100% support, then tell user that it is his/her fault
+                */
+                RegexHandler.attemptToCreateGeneForEcma262(schema.pattern)?.apply { this.name = name }
+                    ?: buildStringGene(name, options, schema, isInPath) // fallback to StringGene
             }
 
             ArrayGene::class.java -> {
