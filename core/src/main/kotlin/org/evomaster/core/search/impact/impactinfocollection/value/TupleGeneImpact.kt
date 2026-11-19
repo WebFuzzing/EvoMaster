@@ -41,6 +41,8 @@ class TupleGeneImpact (
         if (gc.previous == null){
             gc.current.elements.forEach { gene ->
                 val fImpact = elements.getValue(gene.name) as? GeneImpact ?:throw IllegalArgumentException("impact should be gene impact")
+                // TODO This skips counting gene impact when same-named elements in the collection are heterogeneous (possible in DynamoDB),
+                //  as elements is keyed by gene name. We need a better solution to track impacts for heterogeneous collections.
                 if (!fImpact.validate(gene)) return@forEach
                 val mutatedGeneWithContext = MutatedGeneWithContext(
                     current =  gene,
@@ -64,6 +66,8 @@ class TupleGeneImpact (
 
         mutatedElements.forEach { g->
             val fImpact = elements.getValue(g.first.name) as? GeneImpact ?:throw IllegalArgumentException("impact should be gene impact")
+            // TODO This skips counting gene impact when same-named elements in the collection are heterogeneous (possible in DynamoDB),
+            //  as elements is keyed by gene name. We need a better solution to track impacts for heterogeneous collections.
             if (!fImpact.validate(g.first) || !fImpact.validate(g.second)) return@forEach
             val mutatedGeneWithContext = MutatedGeneWithContext(
                 current =  g.first,
