@@ -296,6 +296,7 @@ There are 3 types of options:
 |`employResourceSizeHandlingStrategy`| __Enum__. Specify a strategy to determinate a number of resources to be manipulated throughout the search. *Valid values*: `NONE, RANDOM, DPC`. *Default value*: `NONE`.|
 |`enableAdaptiveResourceStructureMutation`| __Boolean__. Specify whether to decide the resource-based structure mutator and resource to be mutated adaptively based on impacts during focused search.Note that it only works when resource-based solution is enabled for solving REST problem. *Default value*: `false`.|
 |`enableAdvancedFormats`| __Boolean__. Whether to enable the handling of new type formats in OpenAPI schemas, e.g., the ones introduced in 3.1.0. *Default value*: `false`.|
+|`enableAdvancedMinimization`| __Boolean__. Enable further minimization actions during minimization phase. *Depends on*: `minimize=true`. *Default value*: `false`.|
 |`enableArazzoWorkflowSampling`| __Boolean__. Enable workflow-based sampling from an Arazzo document. *Default value*: `false`.|
 |`enableCustomizedMethodForMockObjectHandling`| __Boolean__. Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object. *Default value*: `false`.|
 |`enableCustomizedMethodForScheduleTaskHandling`| __Boolean__. Whether to apply customized method (i.e., implement 'customizeScheduleTaskInvocation' for invoking schedule task) to invoke schedule task. *Default value*: `false`.|
