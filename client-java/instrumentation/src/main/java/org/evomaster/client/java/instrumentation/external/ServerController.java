@@ -327,6 +327,33 @@ public class ServerController {
         return (BootTimeObjectiveInfo) response;
     }
 
+    /**
+     * Cheap enough to be polled every few milliseconds.
+     *
+     * @return how many times an objective was reached or improved in the SUT's current test,
+     * or null if the agent could not be asked, or failed to answer
+     */
+    public synchronized Long getObjectiveUpdateCount() {
+
+        boolean sent = sendCommand(Command.OBJECTIVE_UPDATE_COUNT);
+        if (!sent) {
+            SimpleLogger.error("Failed to send message");
+            return null;
+        }
+
+        Object response = waitAndGetResponse();
+        if (response == null) {
+            SimpleLogger.error("Failed to read response about objective update count");
+            return null;
+        }
+
+        if (!(response instanceof Long)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "a Long"));
+        }
+
+        return (Long) response;
+    }
+
     public synchronized UnitsInfoRecorder getUnitsInfoRecorder(){
 
         boolean sent = sendCommand(Command.UNITS_INFO);
