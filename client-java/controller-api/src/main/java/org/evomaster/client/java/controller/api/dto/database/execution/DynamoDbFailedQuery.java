@@ -22,6 +22,12 @@ public class DynamoDbFailedQuery {
      */
     public Map<String, DynamoDbKeyScalarTypeDto> missingPrimaryKeyAttributes = new LinkedHashMap<>();
 
+    /** Observed key values used only to infer formats, never copied as new keys. */
+    public Map<String, String> primaryKeyValueExamples = new LinkedHashMap<>();
+
+    /** Semantic attribute formats reported by enhanced-client attribute converters. */
+    public Map<String, String> primaryKeyFormats = new LinkedHashMap<>();
+
     public DynamoDbFailedQuery() {
     }
 
