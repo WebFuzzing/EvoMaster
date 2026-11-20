@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.dynamodb;
 
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -17,9 +17,9 @@ public class DynamoDbPrimaryKeyTest {
 
     @Test
     public void testPreservesWorldCupKeyDefinition() {
-        Map<String, DynamoDbScalarTypeDto> attributes = new LinkedHashMap<>();
-        attributes.put("country", DynamoDbScalarTypeDto.STRING);
-        attributes.put("fifaId", DynamoDbScalarTypeDto.NUMBER);
+        Map<String, DynamoDbKeyScalarTypeDto> attributes = new LinkedHashMap<>();
+        attributes.put("country", DynamoDbKeyScalarTypeDto.STRING);
+        attributes.put("fifaId", DynamoDbKeyScalarTypeDto.NUMBER);
 
         DynamoDbPrimaryKey key = new DynamoDbPrimaryKey(attributes);
 
@@ -29,24 +29,24 @@ public class DynamoDbPrimaryKeyTest {
 
     @Test
     public void testCopiesSourceAttributes() {
-        Map<String, DynamoDbScalarTypeDto> attributes = new LinkedHashMap<>();
-        attributes.put("country", DynamoDbScalarTypeDto.STRING);
+        Map<String, DynamoDbKeyScalarTypeDto> attributes = new LinkedHashMap<>();
+        attributes.put("country", DynamoDbKeyScalarTypeDto.STRING);
         DynamoDbPrimaryKey key = new DynamoDbPrimaryKey(attributes);
 
         attributes.clear();
 
-        assertEquals(Collections.singletonMap("country", DynamoDbScalarTypeDto.STRING), key.getAttributes());
+        assertEquals(Collections.singletonMap("country", DynamoDbKeyScalarTypeDto.STRING), key.getAttributes());
     }
 
     @Test
     public void testExposesImmutableAttributes() {
         DynamoDbPrimaryKey key = new DynamoDbPrimaryKey(
-                Collections.singletonMap("country", DynamoDbScalarTypeDto.STRING));
+                Collections.singletonMap("country", DynamoDbKeyScalarTypeDto.STRING));
 
         assertThrows(UnsupportedOperationException.class,
-                () -> key.getAttributes().put("country", DynamoDbScalarTypeDto.NUMBER));
+                () -> key.getAttributes().put("country", DynamoDbKeyScalarTypeDto.NUMBER));
         assertThrows(UnsupportedOperationException.class,
-                () -> key.getAttributes().keySet().remove("country"));
+                () -> key.getAttributes().remove("country"));
     }
 
     @Test
@@ -58,15 +58,15 @@ public class DynamoDbPrimaryKeyTest {
     @Test
     public void testRejectsMissingAttributeNames() {
         assertThrows(IllegalArgumentException.class, () -> new DynamoDbPrimaryKey(
-                Collections.singletonMap(null, DynamoDbScalarTypeDto.STRING)));
+                Collections.singletonMap(null, DynamoDbKeyScalarTypeDto.STRING)));
         assertThrows(IllegalArgumentException.class, () -> new DynamoDbPrimaryKey(
-                Collections.singletonMap("", DynamoDbScalarTypeDto.STRING)));
+                Collections.singletonMap("", DynamoDbKeyScalarTypeDto.STRING)));
     }
 
     @Test
     public void testRejectsUnsupportedAttributeTypes() {
         assertThrows(IllegalArgumentException.class, () -> new DynamoDbPrimaryKey(
-                Collections.singletonMap("captain", DynamoDbScalarTypeDto.BOOLEAN)));
+                Collections.singletonMap("captain", DynamoDbKeyScalarTypeDto.BOOLEAN)));
         assertThrows(IllegalArgumentException.class, () -> new DynamoDbPrimaryKey(
                 Collections.singletonMap("fifaId", null)));
     }

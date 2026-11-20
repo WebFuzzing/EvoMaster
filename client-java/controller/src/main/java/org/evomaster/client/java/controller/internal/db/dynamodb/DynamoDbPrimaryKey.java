@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.dynamodb;
 
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -11,7 +11,7 @@ import java.util.Objects;
  * as it appears in the schema  */
 final class DynamoDbPrimaryKey {
 
-    private final Map<String, DynamoDbScalarTypeDto> attributes;
+    private final Map<String, DynamoDbKeyScalarTypeDto> attributes;
 
     /**
      * Copies and validates the primary-key definition independently of its source map.
@@ -20,9 +20,9 @@ final class DynamoDbPrimaryKey {
      * @throws NullPointerException when the mapping is null
      * @throws IllegalArgumentException when the mapping is empty, a name is missing, or a type is unsupported
      */
-    DynamoDbPrimaryKey(Map<String, DynamoDbScalarTypeDto> attributes) {
+    DynamoDbPrimaryKey(Map<String, DynamoDbKeyScalarTypeDto> attributes) {
         Objects.requireNonNull(attributes, "DynamoDB primary-key attributes cannot be null");
-        Map<String, DynamoDbScalarTypeDto> copy = new LinkedHashMap<>(attributes);
+        Map<String, DynamoDbKeyScalarTypeDto> copy = new LinkedHashMap<>(attributes);
         if (copy.isEmpty()) {
             throw new IllegalArgumentException("DynamoDB primary key must contain at least one attribute");
         }
@@ -30,7 +30,7 @@ final class DynamoDbPrimaryKey {
             if (name == null || name.isEmpty()) {
                 throw new IllegalArgumentException("DynamoDB primary-key attribute name cannot be null or empty");
             }
-            if (type != DynamoDbScalarTypeDto.STRING && type != DynamoDbScalarTypeDto.NUMBER) {
+            if (type != DynamoDbKeyScalarTypeDto.STRING && type != DynamoDbKeyScalarTypeDto.NUMBER) {
                 throw new IllegalArgumentException("Unsupported DynamoDB primary key type for " + name);
             }
         });
@@ -42,7 +42,7 @@ final class DynamoDbPrimaryKey {
      *
      * @return immutable attribute mapping, partition key before sort key
      */
-    Map<String, DynamoDbScalarTypeDto> getAttributes() {
+    Map<String, DynamoDbKeyScalarTypeDto> getAttributes() {
         return attributes;
     }
 }

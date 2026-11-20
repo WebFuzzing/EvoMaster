@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.internal.db.dynamodb;
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 import org.evomaster.client.java.controller.dynamodb.ReflectionBasedDynamoDbClient;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
@@ -32,8 +32,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Tests that inferred data supports subsequent reads of non-key application attributes. */
 public class DynamoDbInsertionTemplateTest {
@@ -91,11 +90,11 @@ public class DynamoDbInsertionTemplateTest {
         DynamoDbFailedQuery inferred = handler.getExecutionDto().failedQueries.get(0);
         DynamoDbInsertionDto insertion = new DynamoDbInsertionDto();
         insertion.tableName = inferred.tableName;
-        assertEquals(Collections.singletonMap("record_key", DynamoDbScalarTypeDto.STRING),
+        assertEquals(Collections.singletonMap("record_key", DynamoDbKeyScalarTypeDto.STRING),
                 inferred.missingPrimaryKeyAttributes);
         // Core supplies missing keys; this controller test supplies one explicitly before executing the DTO.
         insertion.attributes = new ArrayList<>(inferred.attributes);
-        insertion.attributes.add(new DynamoDbAttributeValueDto("record_key", DynamoDbScalarTypeDto.STRING,
+        insertion.attributes.add(new DynamoDbAttributeValueDto("record_key", DynamoDbKeyScalarTypeDto.STRING,
                 "messi-final-ticket"));
 
         assertEquals(Collections.singletonList(true), new ReflectionBasedDynamoDbClient(client).executeInsertions(
@@ -105,7 +104,7 @@ public class DynamoDbInsertionTemplateTest {
                 .key(Collections.singletonMap("purpose", record.get("purpose"))).consistentRead(true).build()).item();
 
         assertEquals("Lionel Messi", record.get("subject_id").s());
-        assertFalse("final-ticket".equals(record.get("record_key").s()));
+        assertNotEquals("final-ticket", record.get("record_key").s());
         assertEquals("30", policy.get("retention_days").n());
         assertEquals(2L, Long.parseLong(record.get("version").n()) + 1);
         assertFalse(record.get("tombstoned").bool());

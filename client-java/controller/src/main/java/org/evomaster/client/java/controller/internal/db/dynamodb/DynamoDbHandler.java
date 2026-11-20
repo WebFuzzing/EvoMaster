@@ -3,8 +3,10 @@ package org.evomaster.client.java.controller.internal.db.dynamodb;
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbDtoUtils;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKeyBuilder;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto;
 import org.evomaster.client.java.controller.dynamodb.ReflectionBasedDynamoDbClient;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbRequestParser;
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
@@ -225,7 +227,7 @@ public class DynamoDbHandler {
      * @param command intercepted DynamoDB read
      * @param tableName table read by the command
      * @param parsed parsed request conditions
-     * @param items existing table items that can supply non-key scalar attributes
+     * @param items existing table items that can supply non-key attributes
      */
     private void registerFailedQuery(DynamoDbCommand command, String tableName, ParsedDynamoDbRequest parsed,
                                      List<Map<String, Object>> items) {
@@ -247,7 +249,7 @@ public class DynamoDbHandler {
         }
 
         completeFromTableItem(tableName, attributes, primaryKey.getAttributes().keySet(), items);
-        Map<String, DynamoDbScalarTypeDto> missingKeys = new LinkedHashMap<>(primaryKey.getAttributes());
+        Map<String, DynamoDbKeyScalarTypeDto> missingKeys = new LinkedHashMap<>(primaryKey.getAttributes());
         missingKeys.keySet().removeAll(attributes.keySet());
         addFailedQueryIfAbsent(tableName, attributes, missingKeys);
     }
@@ -279,9 +281,9 @@ public class DynamoDbHandler {
      */
     private boolean matchesPrimaryKeyTypes(Map<String, DynamoDbAttributeValueDto> attributes,
                                            DynamoDbPrimaryKey primaryKey) {
-        for (Map.Entry<String, DynamoDbScalarTypeDto> key : primaryKey.getAttributes().entrySet()) {
+        for (Map.Entry<String, DynamoDbKeyScalarTypeDto> key : primaryKey.getAttributes().entrySet()) {
             DynamoDbAttributeValueDto existing = attributes.get(key.getKey());
-            if (existing != null && existing.type != key.getValue()) {
+            if (existing != null && existing.type != DynamoDbValueTypeDto.fromKeyScalar(key.getValue())) {
                 return false;
             }
         }
@@ -296,7 +298,7 @@ public class DynamoDbHandler {
      * @param missingKeys key names and types that core must generate
      */
     private void addFailedQueryIfAbsent(String tableName, Map<String, DynamoDbAttributeValueDto> attributes,
-                                       Map<String, DynamoDbScalarTypeDto> missingKeys) {
+                                       Map<String, DynamoDbKeyScalarTypeDto> missingKeys) {
         List<DynamoDbAttributeValueDto> insertionAttributes = new ArrayList<>(attributes.values());
         String insertionKey = DynamoDbInsertionKeyBuilder.fromAttributes(tableName, insertionAttributes);
         if (insertionKeys.add(insertionKey)) {
@@ -322,7 +324,7 @@ public class DynamoDbHandler {
             Map<String, DynamoDbAttributeValueDto> candidate = new LinkedHashMap<>();
             for (Map.Entry<String, Object> entry : new TreeMap<>(item).entrySet()) {
                 if (!primaryKeys.contains(entry.getKey())) {
-                    DynamoDbAttributeValueDto attribute = toAttribute(entry.getKey(), entry.getValue());
+                    DynamoDbAttributeValueDto attribute = toTemplateAttribute(entry.getKey(), entry.getValue());
                     if (attribute != null) {
                         candidate.put(entry.getKey(), attribute);
                     }
@@ -406,15 +408,30 @@ public class DynamoDbHandler {
      */
     private DynamoDbAttributeValueDto toAttribute(String name, Object value) {
         if (value instanceof String) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbScalarTypeDto.STRING, (String) value);
+            return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.STRING, (String) value);
         }
         if (value instanceof Number) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbScalarTypeDto.NUMBER, String.valueOf(value));
+            return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.NUMBER, String.valueOf(value));
         }
         if (value instanceof Boolean) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbScalarTypeDto.BOOLEAN, String.valueOf(value));
+            return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.BOOLEAN, String.valueOf(value));
         }
         return null;
+    }
+
+
+    /**
+     * Copies normalized observed values as typed trees, skipping unsupported binary ({@code B}) and
+     * binary set ({@code BS}) payloads (as well as empty or malformed sets).
+     */
+    private DynamoDbAttributeValueDto toTemplateAttribute(String name, Object value) {
+        try {
+            return DynamoDbDtoUtils.fromPlainValue(name, value);
+        } catch (IllegalArgumentException e) {
+            SimpleLogger.uniqueWarn("Skipping unsupported DynamoDB template attribute '" + name + "': "
+                    + e.getMessage());
+            return null;
+        }
     }
 
     /**
