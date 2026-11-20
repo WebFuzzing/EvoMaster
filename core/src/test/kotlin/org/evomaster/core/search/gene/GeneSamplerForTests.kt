@@ -2,8 +2,10 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.parser.RegexType
+import org.evomaster.core.database.dynamodb.DynamoDbValueType
 import org.evomaster.core.search.gene.cassandra.CqlDurationGene
 import org.evomaster.core.search.gene.collection.*
+import org.evomaster.core.search.gene.dynamodb.DynamoDbSetGene
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
@@ -189,6 +191,9 @@ object GeneSamplerForTests {
 
             // Cassandra genes
             CqlDurationGene::class -> sampleCqlDurationGene(rand) as T
+
+            // DynamoDB genes
+            DynamoDbSetGene::class -> sampleDynamoDbSetGene(rand) as T
 
             // JSON Patch genes
             JsonPatchDocumentGene::class  -> sampleJsonPatchDocumentGene(rand) as T
@@ -425,6 +430,19 @@ object GeneSamplerForTests {
 
     private fun sampleCqlDurationGene(rand: Randomness): CqlDurationGene {
         return CqlDurationGene("rand CqlDurationGene ${rand.nextInt()}")
+    }
+
+    private fun sampleDynamoDbSetGene(rand: Randomness): DynamoDbSetGene {
+        val setType = rand.choose(listOf(DynamoDbValueType.STRING_SET, DynamoDbValueType.NUMBER_SET))
+        val size = rand.nextInt(1, 3)
+        val elements: List<Gene> = List(size) { index ->
+            when (setType) {
+                DynamoDbValueType.STRING_SET -> sampleStringGene(rand).apply { name = "elem_$index" }
+                DynamoDbValueType.NUMBER_SET -> sampleBigDecimalGene(rand).apply { name = "elem_$index" }
+                else -> throw IllegalStateException("Unsupported DynamoDB set type: $setType")
+            }
+        }
+        return DynamoDbSetGene("rand DynamoDbSetGene ${rand.nextInt()}", setType, elements)
     }
 
     fun sampleBackReferenceRxGene(rand: Randomness): BackReferenceRxGene {
