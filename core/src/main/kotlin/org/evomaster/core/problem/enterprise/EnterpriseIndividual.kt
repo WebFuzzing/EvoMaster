@@ -638,6 +638,25 @@ abstract class EnterpriseIndividual(
         killChildren { it is SqlAction && actions.contains(it)}
     }
 
+    protected open fun prunableDatabaseInitGroups(): List<String> = listOf(
+        GroupsOfChildren.INITIALIZATION_DYNAMODB
+    )
+
+    private fun prunableDatabaseInitChildren(): List<StructuralElement> {
+        val view = groupsView() ?: return emptyList()
+        return prunableDatabaseInitGroups().flatMap { view.getAllInGroup(it) }
+    }
+
+    override fun prunableDatabaseActionsSize(): Int = prunableDatabaseInitChildren().size
+
+    override fun removePrunableDatabaseAction(relativeIndex: Int) {
+        val actions = prunableDatabaseInitChildren()
+        if (relativeIndex !in actions.indices) {
+            throw IndexOutOfBoundsException("Invalid prunable DB action index: $relativeIndex (size=${actions.size})")
+        }
+        killChild(actions[relativeIndex])
+    }
+
     /***
      * remove specified list of [HostnameResolutionAction] from the initializing actions.
      */

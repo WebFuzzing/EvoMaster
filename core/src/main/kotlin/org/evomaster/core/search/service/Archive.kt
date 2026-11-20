@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import java.util.IdentityHashMap
 
 
 class Archive<T> where T : Individual {
@@ -134,6 +135,36 @@ class Archive<T> where T : Individual {
 
     fun getCopyOfUniqueCoveringEvaluatedIndividuals() : List<EvaluatedIndividual<T>>{
         return getUniquePopulation().map { it.copy() }
+    }
+
+    /**
+     * Applies [updater] once per unique covered individual currently stored in the archive
+     * and updates all covered target entries referencing that individual when [updater] returns
+     * a replacement that still covers those targets.
+     */
+    fun updateUniqueCoveredIndividuals(updater: (EvaluatedIndividual<T>) -> EvaluatedIndividual<T>?) {
+        val uniques = getUniquePopulation()
+        val replacements = IdentityHashMap<EvaluatedIndividual<T>, EvaluatedIndividual<T>>()
+        uniques.forEach { ei ->
+            val updated = updater(ei)
+            if (updated != null && updated !== ei) {
+                replacements[ei] = updated.copy(tracker.getCopyFilterForEvalInd(updated))
+            }
+        }
+        if (replacements.isEmpty()) {
+            return
+        }
+        populations.entries.forEach { (target, pop) ->
+            if (!isCovered(target)) {
+                return@forEach
+            }
+            val replacement = replacements[pop[0]] ?: return@forEach
+            if (replacement.fitness.doesCover(target)) {
+                pop[0] = replacement
+            } else {
+                log.warn("Updated individual during archive post-processing no longer covers target {}", target)
+            }
+        }
     }
 
     private fun getUniquePopulation(): MutableSet<EvaluatedIndividual<T>> {
