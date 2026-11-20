@@ -26,8 +26,6 @@ public class DynamoDbTableItemsCacheTest {
 
     private static final String TABLE = "WorldCupPlayers";
 
-    private final DynamoDbTableDataAccessor accessor = new DynamoDbTableDataAccessor();
-
     /**
      * Verifies that items for a table are loaded on the first call and cached for subsequent calls.
      */
@@ -39,7 +37,7 @@ public class DynamoDbTableItemsCacheTest {
                 .build();
         when(client.scan(any(ScanRequest.class))).thenReturn(response);
 
-        DynamoDbTableItemsCache cache = new DynamoDbTableItemsCache(accessor, client);
+        DynamoDbTableItemsCache cache = new DynamoDbTableItemsCache(client);
 
         List<Map<String, Object>> first = cache.getItems(TABLE);
         List<Map<String, Object>> second = cache.getItems(TABLE);
@@ -61,7 +59,7 @@ public class DynamoDbTableItemsCacheTest {
                 .build();
         when(client.scan(any(ScanRequest.class))).thenReturn(response);
 
-        DynamoDbTableItemsCache cache = new DynamoDbTableItemsCache(accessor, client);
+        DynamoDbTableItemsCache cache = new DynamoDbTableItemsCache(client);
 
         List<Map<String, Object>> direct = cache.getItems(TABLE);
         List<Map<String, Object>> padded = cache.getItems("  " + TABLE + "  ");
@@ -75,7 +73,7 @@ public class DynamoDbTableItemsCacheTest {
      */
     @Test
     public void testRejectsNullOrBlankTableName() {
-        DynamoDbTableItemsCache cache = new DynamoDbTableItemsCache(accessor, mock(DynamoDbClient.class));
+        DynamoDbTableItemsCache cache = new DynamoDbTableItemsCache(mock(DynamoDbClient.class));
 
         NullPointerException nullTable = assertThrows(NullPointerException.class, () -> cache.getItems(null));
         assertEquals("DynamoDB table name cannot be null", nullTable.getMessage());
@@ -88,13 +86,13 @@ public class DynamoDbTableItemsCacheTest {
     }
 
     /**
-     * Verifies that null accessor arguments in constructor are rejected.
+     * Verifies that null client arguments in constructor are rejected.
      */
     @Test
     public void testRejectsNullConstructorArguments() {
         NullPointerException exception = assertThrows(NullPointerException.class,
-                () -> new DynamoDbTableItemsCache(null, new Object()));
-        assertEquals("DynamoDB table data accessor cannot be null", exception.getMessage());
+                () -> new DynamoDbTableItemsCache(null));
+        assertEquals("DynamoDB client cannot be null", exception.getMessage());
     }
 
     /**
@@ -108,7 +106,7 @@ public class DynamoDbTableItemsCacheTest {
                 .build();
         when(client.scan(any(ScanRequest.class))).thenReturn(response);
 
-        DynamoDbTableItemsCache cache = new DynamoDbTableItemsCache(accessor, client);
+        DynamoDbTableItemsCache cache = new DynamoDbTableItemsCache(client);
         List<Map<String, Object>> items = cache.getItems(TABLE);
 
         Map<String, Object> newItem = new HashMap<>();
