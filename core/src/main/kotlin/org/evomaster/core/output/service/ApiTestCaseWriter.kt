@@ -1,7 +1,6 @@
 package org.evomaster.core.output.service
 
 import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.cassandra.CassandraDbActionResult
@@ -175,6 +174,10 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
      * handle assertion with text plain
      */
     fun handleTextPlainTextAssertion(bodyString: String?, flakyBodyString: String?, lines: Lines, bodyVarName: String?) {
+        handleTextPlainTextAssertions(bodyString, listOfNotNull(flakyBodyString), lines, bodyVarName)
+    }
+
+    fun handleTextPlainTextAssertions(bodyString: String?, observedBodies: List<String?>, lines: Lines, bodyVarName: String?) {
 
         val assertion = if (bodyString.isNullOrBlank()) {
             emptyBodyCheck(bodyVarName)
@@ -186,10 +189,13 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (assertion == null) {
             return
         }
-        if (flakyBodyString == null || flakyBodyString == bodyString) {
+        val contradicted = observedBodies.any {
+            if (bodyString.isNullOrBlank()) !it.isNullOrEmpty() else it != bodyString
+        }
+        if (!contradicted) {
             lines.add(assertion)
         }else{
-            lines.addSingleCommentLine(flakyInfo("response in plain text", bodyString?:"null", flakyBodyString))
+            lines.addSingleCommentLine("Flaky response in plain text: an observed response contradicts this assertion")
             lines.addSingleCommentLine(assertion)
         }
     }
@@ -198,42 +204,44 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
      * handle assertion with json body string
      */
     fun handleJsonStringAssertion(bodyString: String?, flakyBodyString : String?, lines: Lines, bodyVarName: String?, isTooLargeBody: Boolean) {
-        when (bodyString?.trim()?.first()) {
-            //TODO this should be handled recursively, and not ad-hoc here...
-            '[' -> {
-                try{
-                // This would be run if the JSON contains an array of objects.
-                val list = mapper.readValue(
-                    bodyString,
-                    object : TypeReference<List<*>>() {}
-                )
-                val flakyList = flakyBodyString?.let {  mapper.readValue(
-                    it,
-                    object : TypeReference<List<*>>() {}
-                )}
+        handleJsonStringAssertions(bodyString, listOfNotNull(flakyBodyString), lines, bodyVarName, isTooLargeBody)
+    }
 
-                handleAssertionsOnList(list, flakyList, lines, "", bodyVarName)
-                } catch (e: JsonProcessingException) {
-                    lines.addSingleCommentLine("Failed to parse JSON response")
-                }
-            }
-            '{' -> {
-                // JSON contains an object
-                try {
-                    val resContents: Map<String, *> = mapper.readValue(
-                        bodyString,
-                        object : TypeReference<Map<String, *>>() {}
-                    )
-
-                    val flakyMap: Map<String, *>? = flakyBodyString?.let {
-                        mapper.readValue(it, object : TypeReference<Map<String, *>>() {})
+    /**
+     * Check each original assertion against every observation, rather than against a synthetic
+     * merged response. A later matching observation must never undo an earlier contradiction.
+     */
+    fun handleJsonStringAssertions(bodyString: String?, observedBodies: List<String?>, lines: Lines, bodyVarName: String?, isTooLargeBody: Boolean) {
+        if (bodyString?.trim()?.firstOrNull() in listOf('[', '{')) {
+            try {
+                val original = mapper.readValue(bodyString, Any::class.java)
+                val observations = observedBodies.map {
+                    if (it == null) return@map MissingJsonValue
+                    try {
+                        mapper.readValue(it, Any::class.java)
+                    } catch (e: JsonProcessingException) {
+                        // A non-JSON response cannot satisfy assertions requiring JSON navigation.
+                        MissingJsonValue
                     }
-
-                    handleAssertionsOnObject(resContents as Map<String, *>, flakyMap, lines, "", bodyVarName)
-                } catch (e: JsonProcessingException) {
-                    lines.addSingleCommentLine("Failed to parse JSON response")
                 }
+                handleAssertionsOnField(original, observations, lines, "", bodyVarName)
+            } catch (e: JsonProcessingException) {
+                lines.addSingleCommentLine("Failed to parse JSON response")
             }
+            return
+        }
+        // A null entry is an observed absence of the body, not the absence of an observation.
+        // Primitive writers use null for the latter, so handle this distinction before calling them.
+        if (!bodyString.isNullOrBlank() && observedBodies.any { it == null }) {
+            val originalAssertions = Lines(format)
+            handleJsonStringAssertions(bodyString, emptyList(), originalAssertions, bodyVarName, isTooLargeBody)
+            originalAssertions.toString().lineSequence().filter { it.isNotBlank() }.forEach {
+                lines.addSingleCommentLine(it)
+            }
+            return
+        }
+        val flakyBodyString = observedBodies.firstOrNull { it != bodyString }
+        when (bodyString?.trim()?.firstOrNull()) {
             '"' -> {
                 val isString = bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, bodyVarName) ?: return
                 if (flakyBodyString == null || flakyBodyString == bodyString) {
@@ -301,7 +309,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 try {
                     val number = s.toDouble()
                     // TODO only support flaky for JVM
-                    handleAssertionsOnField(number, null, lines, fieldPath, responseVariableName)
+                    handleAssertionsOnField(number, emptyList(), lines, fieldPath, responseVariableName)
                     return
                 } catch (e: NumberFormatException) {
                 }
@@ -309,7 +317,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 if (s.equals("true", true) || s.equals("false", true)) {
                     val tf = bodyString.toBoolean()
                     // TODO flaky
-                    handleAssertionsOnField(tf, null, lines, fieldPath, responseVariableName)
+                    handleAssertionsOnField(tf, emptyList(), lines, fieldPath, responseVariableName)
                     return
                 }
 
@@ -324,10 +332,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         }
     }
 
-    protected fun handleAssertionsOnObject(resContents: Map<String, *>, flakyMap: Map<String, *>?, lines: Lines, fieldPath: String, responseVariableName: String?) {
-        if (flakyMap != null && flakyMap.size != resContents.size) {
-            lines.addSingleCommentLine(flakyInfo("mismatched size of fields for Object $fieldPath", resContents.size.toString(), flakyMap.size.toString()))
-        }
+    private fun handleAssertionsOnObject(resContents: Map<String, *>, observations: List<Any?>, lines: Lines, fieldPath: String, responseVariableName: String?) {
 
         if (resContents.isEmpty()) {
 
@@ -354,7 +359,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
 
-            if (flakyMap.isNullOrEmpty()) {
+            if (observations.all { it is Map<*, *> && it.isEmpty() }) {
                 lines.add(instruction)
             }else{
                 lines.addSingleCommentLine(instruction)
@@ -397,11 +402,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                         "${fieldPath}${fieldName}"
                     }
 
-                    if (flakyMap == null || flakyMap.containsKey(it.key)) {
-                        handleAssertionsOnField(it.value, flakyMap?.get(it.key), lines, extendedPath, responseVariableName)
-                    }else{
-                        lines.addSingleCommentLine(flakyInfo("mismatched field name", fieldName, "NONE"))
+                    val values = observations.map { observed ->
+                        if (observed is Map<*, *> && observed.containsKey(it.key)) observed[it.key]
+                        else MissingJsonValue
                     }
+                    handleAssertionsOnField(it.value, values, lines, extendedPath, responseVariableName)
                 }
     }
 
@@ -460,7 +465,23 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         }
     }
 
-    private fun handleAssertionsOnField(value: Any?, flakyValue: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
+    private object MissingJsonValue
+
+    private fun handleAssertionsOnField(value: Any?, observations: List<Any?>, lines: Lines, fieldPath: String, responseVariableName: String?) {
+
+        // Missing is distinct from JSON null. When a parent cannot be navigated, all its
+        // original assertions (including size) are retained as comments, not silently lost.
+        if (observations.any { it === MissingJsonValue ||
+                    (value is List<*> && it !is List<*>) ||
+                    (value is Map<*, *> && it !is Map<*, *>) }) {
+            lines.addSingleCommentLine("Flaky type or missing value at $fieldPath")
+            val originalLines = Lines(format)
+            handleAssertionsOnField(value, emptyList(), originalLines, fieldPath, responseVariableName)
+            originalLines.toString().lineSequence().filter { it.isNotBlank() }.forEach {
+                lines.addSingleCommentLine(it.trim())
+            }
+            return
+        }
 
         if (value == null) {
             val field = when {
@@ -483,8 +504,8 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 format.isPython() -> "assert $responseVariableName.json()$fieldPath is None"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
-            if (flakyValue != null){
-                lines.addSingleCommentLine(flakyInfo("value of field $fieldPath","null", flakyValue!!.toString()))
+            if (observations.any { it != null }){
+                lines.addSingleCommentLine("Flaky value of field $fieldPath")
                 lines.addSingleCommentLine(instruction)
             }else{
                 lines.add(instruction)
@@ -494,11 +515,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
         when (value) {
             is Map<*, *> -> {
-                handleAssertionsOnObject(value as Map<String, *>, flakyValue as? Map<String, *>,lines, fieldPath, responseVariableName)
+                handleAssertionsOnObject(value as Map<String, *>, observations, lines, fieldPath, responseVariableName)
                 return
             }
             is List<*> -> {
-                handleAssertionsOnList(value, flakyValue as? List<*>, lines, fieldPath, responseVariableName)
+                handleAssertionsOnList(value, observations, lines, fieldPath, responseVariableName)
                 return
             }
         }
@@ -517,10 +538,17 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 else -> throw IllegalStateException("Unsupported type: ${value::class}")
             }
             if (isSuitableToPrint(left)) {
-                if (flakyValue == null || flakyValue == value)
+                if (observations.all {
+                        when (value) {
+                            is String -> it is String && it.contains(value)
+                            // Same numeric semantics as the generated NumberMatcher.
+                            is Number -> it is Number && value.toDouble() == it.toDouble()
+                            else -> it == value
+                        }
+                    })
                     lines.add(".body(\"$fieldPath\", $left)")
                 else{
-                    lines.addSingleCommentLine(flakyInfo("value of field \"$fieldPath\"", value.toString(), flakyValue.toString()))
+                    lines.addSingleCommentLine("Flaky value of field $fieldPath")
                     lines.addSingleCommentLine(".body(\"$fieldPath\", $left)")
                 }
             }
@@ -552,11 +580,10 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                         "expect($field$fieldPath).toBe($toPrint);" // ($field$)fieldPath
                     }
 
-                    if (flakyValue == null || flakyValue == value){
+                    if (observations.all { it == value }){
                         lines.add(assertionContent)
                     }else{
-                        val flakyToPrint = valueToPrint(flakyValue, format)
-                        lines.addSingleCommentLine(flakyInfo("value of field $fieldPath", toPrint, flakyToPrint))
+                        lines.addSingleCommentLine("Flaky value of field $fieldPath")
                         lines.addSingleCommentLine(assertionContent)
                     }
                 } else {
@@ -620,20 +647,20 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
     }
 
     /**
-     * Generates assertions for [list], commenting out assertions that differ from [flakyList].
+     * Generates assertions from the original array and checks them against all observations.
      *
      * @param list the original response array used as the assertion baseline
-     * @param flakyList comparison values for the same array from flakiness observations, or null
-     * if no comparison is available. Elements correspond to [list] by index, and this list must
-     * not be longer than [list]. If it is shorter, indexed assertions stop at its end.
+     * Indexed assertions require that index in every observation. The JVM hasItems assertion
+     * instead checks membership independently of length and order.
      */
-    protected fun handleAssertionsOnList(list: List<*>, flakyList: List<*>?, lines: Lines, fieldPath: String, responseVariableName: String?) {
+    private fun handleAssertionsOnList(list: List<*>, observations: List<Any?>, lines: Lines, fieldPath: String, responseVariableName: String?) {
 
         val checkSize = collectionSizeCheck(responseVariableName, fieldPath, list.size)
-        if (flakyList == null || flakyList.size == list.size) {
+        if (observations.all { it is List<*> && it.size == list.size }) {
             lines.add(checkSize)
         }else{
-            lines.addSingleCommentLine(flakyInfo("size of $fieldPath", list.size.toString(), flakyList.size.toString()))
+            val changed = observations.first { it !is List<*> || it.size != list.size }
+            lines.addSingleCommentLine(flakyInfo("size of $fieldPath", list.size.toString(), (changed as? List<*>)?.size.toString()))
             lines.addSingleCommentLine(checkSize)
         }
 
@@ -654,13 +681,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 return
             }
 
-            if (flakyList != null && (!flakyList.containsAll(list) || flakyList.size != list.size)) {
+            if (observations.any { it !is List<*> || !it.containsAll(list) }) {
 
-                val flakyItems = (flakyList as List<String>).joinToString {
-                    "\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""
-                }
-
-                lines.addSingleCommentLine(flakyInfo("Body", items, flakyItems))
+                lines.addSingleCommentLine("Flaky contents of $fieldPath")
                 lines.addSingleCommentLine(".body(\"$fieldPath\", hasItems(${
                     items
                 }))")
@@ -687,14 +710,10 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 break
             }
 
-            // The comparison response may contain fewer elements than the original list.
-            // Stop at its end to avoid out-of-bounds access and assertions without a matching observation.
-            if (flakyList != null && i >= flakyList.size){
-                break
+            val values = observations.map {
+                if (it is List<*> && i < it.size) it[i] else MissingJsonValue
             }
-            val flakyItem = if (flakyList != null) flakyList[i] else null
-
-            handleAssertionsOnField(list[i], flakyItem, lines, "$fieldPath[$i]", responseVariableName)
+            handleAssertionsOnField(list[i], values, lines, "$fieldPath[$i]", responseVariableName)
         }
         if (skipped > 0) {
             lines.addSingleCommentLine("Skipping assertions on the remaining $skipped elements. This limit of $limit elements can be increased in the configurations")

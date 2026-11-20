@@ -393,6 +393,10 @@ class PythonTestCaseWriterTest : WriterTestBase(){
         val writer = RestTestCaseWriter(config, PartialOracles())
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        assertEquals(5, getNumberOfFlakyComment(config,lines.toString()))
+        // Count changed assertions, not the former informational object-field-count message.
+        assertEquals(4, getNumberOfFlakyComment(config,lines.toString()))
+        assertTrue(lines.toString().lineSequence().any {
+            it.trim().startsWith("# assert len(") && it.contains("[\"empty\"]) == 0")
+        })
     }
 }
