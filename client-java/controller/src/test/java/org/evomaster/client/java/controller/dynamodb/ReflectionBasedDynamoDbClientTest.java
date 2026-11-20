@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDb
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -16,7 +17,14 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import java.math.BigDecimal;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -286,6 +294,113 @@ public class ReflectionBasedDynamoDbClientTest {
         assertEquals(Collections.singletonList(false), results.executionResults);
         assertEquals(Integer.valueOf(0), results.failedInsertionIndex);
         verify(mockClient, times(0)).putItem(any(PutItemRequest.class));
+    }
+
+    /**
+     * Simulates an AWS SDK client whose model classes are shaded into a relocated package
+     * (e.g., shaded.emb.software.amazon.awssdk.services.dynamodb.model).
+     */
+    @Test
+    public void testSupportsRelocatedModelPackageForScanAndPut(@TempDir Path tempDir) throws Exception {
+        String pkg = "shaded.emb.software.amazon.awssdk.services.dynamodb.model";
+        Path pkgDir = tempDir.resolve("shaded/emb/software/amazon/awssdk/services/dynamodb/model");
+        Files.createDirectories(pkgDir);
+
+        Map<String, String> sources = new LinkedHashMap<>();
+        sources.put("AttributeValue.java",
+                "package " + pkg + ";\n"
+                        + "import java.util.*;\n"
+                        + "public class AttributeValue {\n"
+                        + "  private String s, n; private Boolean bool, nul;\n"
+                        + "  public static Builder builder() { return new Builder(); }\n"
+                        + "  public String s() { return s; }\n"
+                        + "  public String n() { return n; }\n"
+                        + "  public Boolean bool() { return bool; }\n"
+                        + "  public Boolean nul() { return nul; }\n"
+                        + "  public boolean hasM() { return false; }\n"
+                        + "  public Map<String, AttributeValue> m() { return null; }\n"
+                        + "  public boolean hasL() { return false; }\n"
+                        + "  public List<AttributeValue> l() { return null; }\n"
+                        + "  public static class Builder {\n"
+                        + "    private final AttributeValue v = new AttributeValue();\n"
+                        + "    public Builder s(String s) { v.s = s; return this; }\n"
+                        + "    public Builder n(String n) { v.n = n; return this; }\n"
+                        + "    public Builder bool(Boolean b) { v.bool = b; return this; }\n"
+                        + "    public Builder nul(Boolean nul) { v.nul = nul; return this; }\n"
+                        + "    public AttributeValue build() { return v; }\n"
+                        + "  }\n"
+                        + "}\n");
+        sources.put("PutItemRequest.java",
+                "package " + pkg + ";\n"
+                        + "import java.util.*;\n"
+                        + "public class PutItemRequest {\n"
+                        + "  public final Map<String, AttributeValue> item;\n"
+                        + "  public PutItemRequest(Map<String, AttributeValue> item) { this.item = item; }\n"
+                        + "  public static Builder builder() { return new Builder(); }\n"
+                        + "  public static class Builder {\n"
+                        + "    private Map<String, AttributeValue> item;\n"
+                        + "    public Builder tableName(String t) { return this; }\n"
+                        + "    public Builder item(Map<String, AttributeValue> i) { this.item = i; return this; }\n"
+                        + "    public PutItemRequest build() { return new PutItemRequest(item); }\n"
+                        + "  }\n"
+                        + "}\n");
+        sources.put("ScanRequest.java",
+                "package " + pkg + ";\n"
+                        + "import java.util.*;\n"
+                        + "public class ScanRequest {\n"
+                        + "  public static Builder builder() { return new Builder(); }\n"
+                        + "  public static class Builder {\n"
+                        + "    public Builder tableName(String t) { return this; }\n"
+                        + "    public Builder exclusiveStartKey(Map<?, ?> k) { return this; }\n"
+                        + "    public ScanRequest build() { return new ScanRequest(); }\n"
+                        + "  }\n"
+                        + "}\n");
+        sources.put("ScanResponse.java",
+                "package " + pkg + ";\n"
+                        + "import java.util.*;\n"
+                        + "public class ScanResponse {\n"
+                        + "  private final List<Map<String, AttributeValue>> items;\n"
+                        + "  public ScanResponse(List<Map<String, AttributeValue>> items) { this.items = items; }\n"
+                        + "  public List<Map<String, AttributeValue>> items() { return items; }\n"
+                        + "  public Map<?, ?> lastEvaluatedKey() { return Collections.emptyMap(); }\n"
+                        + "}\n");
+        sources.put("FakeRelocatedClient.java",
+                "package " + pkg + ";\n"
+                        + "import java.util.*;\n"
+                        + "public class FakeRelocatedClient {\n"
+                        + "  public final List<Map<String, AttributeValue>> items = new ArrayList<>();\n"
+                        + "  public Object putItem(PutItemRequest req) { items.add(req.item); return new Object(); }\n"
+                        + "  public ScanResponse scan(ScanRequest req) { return new ScanResponse(items); }\n"
+                        + "}\n");
+
+        List<String> filesToCompile = new ArrayList<>();
+        for (Map.Entry<String, String> entry : sources.entrySet()) {
+            Path src = pkgDir.resolve(entry.getKey());
+            Files.write(src, entry.getValue().getBytes(StandardCharsets.UTF_8));
+            filesToCompile.add(src.toString());
+        }
+
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        assertNotNull(compiler);
+        int exit = compiler.run(null, null, null, filesToCompile.toArray(new String[0]));
+        assertEquals(0, exit);
+
+        try (URLClassLoader relocatedLoader = new URLClassLoader(
+                new URL[]{tempDir.toUri().toURL()},
+                ReflectionBasedDynamoDbClient.class.getClassLoader())) {
+            Object relocatedClient = Class.forName(pkg + ".FakeRelocatedClient", true, relocatedLoader)
+                    .getDeclaredConstructor().newInstance();
+            ReflectionBasedDynamoDbClient client = new ReflectionBasedDynamoDbClient(relocatedClient);
+
+            DynamoDbInsertionResultsDto single = client.executeInsertions(Collections.singletonList(worldCupPlayer()));
+            assertEquals(Collections.singletonList(true), single.executionResults);
+
+            List<Map<String, Object>> items = client.getItems(TABLE);
+            assertEquals(1, items.size());
+            assertEquals("Argentina", items.get(0).get("country"));
+            assertEquals(10L, items.get(0).get("fifaId"));
+            assertEquals(true, items.get(0).get("captain"));
+        }
     }
 
     private static DynamoDbInsertionDto worldCupPlayer() {

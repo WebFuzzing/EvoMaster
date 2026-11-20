@@ -30,17 +30,8 @@ import java.util.concurrent.CompletionStage;
  */
 public class ReflectionBasedDynamoDbClient {
 
-    private static final String ATTRIBUTE_VALUE_CLASS_NAME =
-            "software.amazon.awssdk.services.dynamodb.model.AttributeValue";
-    private static final String ATTRIBUTE_VALUE_BUILDER_CLASS_NAME = ATTRIBUTE_VALUE_CLASS_NAME + "$Builder";
-
-    private static final String PUT_ITEM_REQUEST_CLASS_NAME =
-            "software.amazon.awssdk.services.dynamodb.model.PutItemRequest";
-    private static final String PUT_ITEM_REQUEST_BUILDER_CLASS_NAME = PUT_ITEM_REQUEST_CLASS_NAME + "$Builder";
+    private static final String ATTRIBUTE_VALUE_CLASS_SIMPLE = "AttributeValue";
     private static final String PUT_ITEM_REQUEST_CLASS_SIMPLE = "PutItemRequest";
-
-    private static final String SCAN_REQUEST_CLASS_NAME =
-            "software.amazon.awssdk.services.dynamodb.model.ScanRequest";
     private static final String SCAN_REQUEST_CLASS_SIMPLE = "ScanRequest";
     private static final String DESCRIBE_TABLE_REQUEST_CLASS_SIMPLE = "DescribeTableRequest";
 
@@ -83,7 +74,10 @@ public class ReflectionBasedDynamoDbClient {
     public ReflectionBasedDynamoDbClient(Object client) {
         this.client = Objects.requireNonNull(client, "DynamoDB client cannot be null");
         ClassLoader clientLoader = client.getClass().getClassLoader();
-        this.loader = clientLoader != null ? clientLoader : ReflectionBasedDynamoDbClient.class.getClassLoader();
+        ClassLoader fallbackLoader = ReflectionBasedDynamoDbClient.class.getClassLoader();
+        this.loader = clientLoader != null
+                ? clientLoader
+                : (fallbackLoader != null ? fallbackLoader : ClassLoader.getSystemClassLoader());
     }
 
     /**
@@ -121,10 +115,13 @@ public class ReflectionBasedDynamoDbClient {
      */
     public void executeOne(DynamoDbInsertionDto insertion) {
         try {
-            Class<?> attributeValueClass = resolveClass(ATTRIBUTE_VALUE_CLASS_NAME);
-            Class<?> attributeValueBuilderClass = resolveClass(ATTRIBUTE_VALUE_BUILDER_CLASS_NAME);
-            Class<?> putItemRequestClass = resolveClass(PUT_ITEM_REQUEST_CLASS_NAME);
-            Class<?> putItemRequestBuilderClass = resolveClass(PUT_ITEM_REQUEST_BUILDER_CLASS_NAME);
+            Method putItem = findClientMethod(PUT_ITEM_METHOD, PUT_ITEM_REQUEST_CLASS_SIMPLE);
+            Class<?> putItemRequestClass = putItem.getParameterTypes()[0];
+            Class<?> putItemRequestBuilderClass = putItemRequestClass.getMethod(BUILDER_METHOD).getReturnType();
+            String modelPrefix = packagePrefix(putItemRequestClass);
+            ClassLoader modelLoader = putItemRequestClass.getClassLoader();
+            Class<?> attributeValueClass = resolveClass(modelPrefix + ATTRIBUTE_VALUE_CLASS_SIMPLE, modelLoader);
+            Class<?> attributeValueBuilderClass = attributeValueClass.getMethod(BUILDER_METHOD).getReturnType();
 
             Map<String, Object> item = new LinkedHashMap<>();
             for (DynamoDbAttributeValueDto attribute : insertion.attributes) {
@@ -138,7 +135,6 @@ public class ReflectionBasedDynamoDbClient {
             putItemRequestBuilderClass.getMethod(ITEM_METHOD, Map.class).invoke(requestBuilder, item);
             Object request = putItemRequestBuilderClass.getMethod(BUILD_METHOD).invoke(requestBuilder);
 
-            Method putItem = findClientMethod(PUT_ITEM_METHOD, PUT_ITEM_REQUEST_CLASS_SIMPLE);
             Object response = putItem.invoke(client, request);
             awaitIfNeeded(response);
         } catch (InvocationTargetException e) {
@@ -339,22 +335,30 @@ public class ReflectionBasedDynamoDbClient {
         return response;
     }
 
-    private Class<?> resolveClass(String className) throws ClassNotFoundException {
-        return Class.forName(className, true, loader);
+    private static String packagePrefix(Class<?> modelClass) {
+        String name = modelClass.getName();
+        int lastDot = name.lastIndexOf('.');
+        return lastDot >= 0 ? name.substring(0, lastDot + 1) : "";
+    }
+
+    private Class<?> resolveClass(String className, ClassLoader preferredLoader) throws ClassNotFoundException {
+        ClassLoader effectiveLoader = preferredLoader != null ? preferredLoader : loader;
+        return Class.forName(className, true, effectiveLoader);
     }
 
     private Method findClientMethod(String methodName, String requestClassName) {
-        Method interfaceMethod = findMethodOnInterfaces(client.getClass(), methodName, requestClassName);
+        Class<?> clientClass = client.getClass();
+        Method interfaceMethod = findMethodOnInterfaces(clientClass, methodName, requestClassName);
         if (interfaceMethod != null) {
             return interfaceMethod;
         }
-        for (Method method : client.getClass().getMethods()) {
+        for (Method method : clientClass.getMethods()) {
             if (isClientMethod(method, methodName, requestClassName)
                     && Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
                 return method;
             }
         }
-        for (Method method : client.getClass().getMethods()) {
+        for (Method method : clientClass.getMethods()) {
             if (isClientMethod(method, methodName, requestClassName)) {
                 return method;
             }
