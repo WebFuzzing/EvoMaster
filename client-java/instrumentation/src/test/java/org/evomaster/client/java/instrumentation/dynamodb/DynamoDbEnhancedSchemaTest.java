@@ -11,6 +11,12 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.regions.Region;
 import java.net.URI;
 import java.time.*;
+import software.amazon.awssdk.enhanced.dynamodb.internal.converter.attribute.InstantAsStringAttributeConverter;
+import software.amazon.awssdk.enhanced.dynamodb.internal.converter.attribute.OptionalAttributeConverter;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.*;
 import java.io.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -141,5 +147,94 @@ public class DynamoDbEnhancedSchemaTest {
                 assertTrue(transported.batchRequestItems().get("WorldCupMatches").keys().isEmpty());
             }
         }
+    }
+
+    @DynamoDbBean
+    public static class NumericVariantsEntity {
+        private byte primitiveByte;
+        private Byte boxedByte;
+        private short primitiveShort;
+        private Short boxedShort;
+        private int primitiveInt;
+        private Integer boxedInt;
+        private AtomicInteger atomicInt;
+        private long primitiveLong;
+        private Long boxedLong;
+        private AtomicLong atomicLong;
+        private BigInteger bigInteger;
+        private float primitiveFloat;
+        private Float boxedFloat;
+        private double primitiveDouble;
+        private Double boxedDouble;
+        private BigDecimal bigDecimal;
+
+        @DynamoDbPartitionKey public byte getPrimitiveByte() { return primitiveByte; }
+        public void setPrimitiveByte(byte v) { primitiveByte = v; }
+        public Byte getBoxedByte() { return boxedByte; }
+        public void setBoxedByte(Byte v) { boxedByte = v; }
+        public short getPrimitiveShort() { return primitiveShort; }
+        public void setPrimitiveShort(short v) { primitiveShort = v; }
+        public Short getBoxedShort() { return boxedShort; }
+        public void setBoxedShort(Short v) { boxedShort = v; }
+        public int getPrimitiveInt() { return primitiveInt; }
+        public void setPrimitiveInt(int v) { primitiveInt = v; }
+        public Integer getBoxedInt() { return boxedInt; }
+        public void setBoxedInt(Integer v) { boxedInt = v; }
+        public AtomicInteger getAtomicInt() { return atomicInt; }
+        public void setAtomicInt(AtomicInteger v) { atomicInt = v; }
+        public long getPrimitiveLong() { return primitiveLong; }
+        public void setPrimitiveLong(long v) { primitiveLong = v; }
+        public Long getBoxedLong() { return boxedLong; }
+        public void setBoxedLong(Long v) { boxedLong = v; }
+        public AtomicLong getAtomicLong() { return atomicLong; }
+        public void setAtomicLong(AtomicLong v) { atomicLong = v; }
+        public BigInteger getBigInteger() { return bigInteger; }
+        public void setBigInteger(BigInteger v) { bigInteger = v; }
+        public float getPrimitiveFloat() { return primitiveFloat; }
+        public void setPrimitiveFloat(float v) { primitiveFloat = v; }
+        public Float getBoxedFloat() { return boxedFloat; }
+        public void setBoxedFloat(Float v) { boxedFloat = v; }
+        public double getPrimitiveDouble() { return primitiveDouble; }
+        public void setPrimitiveDouble(double v) { primitiveDouble = v; }
+        public Double getBoxedDouble() { return boxedDouble; }
+        public void setBoxedDouble(Double v) { boxedDouble = v; }
+        public BigDecimal getBigDecimal() { return bigDecimal; }
+        public void setBigDecimal(BigDecimal v) { bigDecimal = v; }
+    }
+
+    @Test
+    public void optionalAndNumericConvertersRecordExpectedFormats() {
+        TableSchema<TournamentSchedule> optionalSchema = TableSchema.builder(TournamentSchedule.class)
+                .newItemSupplier(TournamentSchedule::new)
+                .addAttribute(UUID.class, a -> a.name("tournamentId")
+                        .getter(TournamentSchedule::getTournamentId).setter(TournamentSchedule::setTournamentId)
+                        .tags(software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primaryPartitionKey()))
+                .addAttribute(new EnhancedType<Optional<Instant>>() {}, a -> a.name("optionalCreatedAt")
+                        .getter(e -> Optional.ofNullable(e.getCreatedAt()))
+                        .setter((e, v) -> e.setCreatedAt(v.orElse(null)))
+                        .attributeConverter(OptionalAttributeConverter.create(InstantAsStringAttributeConverter.create())))
+                .build();
+        DynamoDbSchemaRegistry.register("OptionalTournamentEntries", optionalSchema);
+        assertEquals(DynamoDbAttributeFormat.DATE_TIME,
+                DynamoDbSchemaRegistry.getFormats("OptionalTournamentEntries").get("optionalCreatedAt"));
+
+        DynamoDbSchemaRegistry.register("NumericVariantsTable", TableSchema.fromBean(NumericVariantsEntity.class));
+        Map<String, DynamoDbAttributeFormat> formats = DynamoDbSchemaRegistry.getFormats("NumericVariantsTable");
+        assertEquals(DynamoDbAttributeFormat.INT8, formats.get("primitiveByte"));
+        assertEquals(DynamoDbAttributeFormat.INT8, formats.get("boxedByte"));
+        assertEquals(DynamoDbAttributeFormat.INT16, formats.get("primitiveShort"));
+        assertEquals(DynamoDbAttributeFormat.INT16, formats.get("boxedShort"));
+        assertEquals(DynamoDbAttributeFormat.INT32, formats.get("primitiveInt"));
+        assertEquals(DynamoDbAttributeFormat.INT32, formats.get("boxedInt"));
+        assertEquals(DynamoDbAttributeFormat.INT32, formats.get("atomicInt"));
+        assertEquals(DynamoDbAttributeFormat.INT64, formats.get("primitiveLong"));
+        assertEquals(DynamoDbAttributeFormat.INT64, formats.get("boxedLong"));
+        assertEquals(DynamoDbAttributeFormat.INT64, formats.get("atomicLong"));
+        assertEquals(DynamoDbAttributeFormat.INTEGER, formats.get("bigInteger"));
+        assertFalse(formats.containsKey("primitiveFloat"));
+        assertFalse(formats.containsKey("boxedFloat"));
+        assertFalse(formats.containsKey("primitiveDouble"));
+        assertFalse(formats.containsKey("boxedDouble"));
+        assertFalse(formats.containsKey("bigDecimal"));
     }
 }

@@ -57,6 +57,20 @@ public class DynamoDbDtoUtilsTest {
     }
 
     @Test
+    public void formatsBigDecimalPlainStringAndRejectsNonFiniteNumbers() {
+        DynamoDbAttributeValueDto capsDto = DynamoDbDtoUtils.fromPlainValue("caps", new BigDecimal("1E+5"));
+        assertEquals(DynamoDbValueTypeDto.NUMBER, capsDto.type);
+        assertEquals("100000", capsDto.value);
+
+        DynamoDbAttributeValueDto nsDto = DynamoDbDtoUtils.fromPlainValue("capsSet", Collections.singleton(new BigDecimal("1E+5")));
+        assertEquals(Collections.singletonList("100000"), nsDto.setValue);
+
+        assertThrows(IllegalArgumentException.class, () -> DynamoDbDtoUtils.fromPlainValue("nan", Double.NaN));
+        assertThrows(IllegalArgumentException.class, () -> DynamoDbDtoUtils.fromPlainValue("inf", Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class, () -> DynamoDbDtoUtils.fromPlainValue("negInf", Double.NEGATIVE_INFINITY));
+    }
+
+    @Test
     public void rejectsNullDtoOrEmptySetInToPlainValue() {
         assertThrows(IllegalArgumentException.class, () -> DynamoDbDtoUtils.toPlainValue(null));
         assertThrows(IllegalArgumentException.class, () -> DynamoDbDtoUtils.toPlainValue(new DynamoDbAttributeValueDto()));

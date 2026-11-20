@@ -14,10 +14,12 @@ import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.comparison.EqualsOperation;
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeFormat;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.evomaster.client.java.utils.SimpleLogger;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -69,7 +71,7 @@ public class DynamoDbHandler {
     private Object dynamoDbClient;
 
     /**
-     * Creates a handler with heuristic calculation enabled.
+     * Creates a handler with heuristic calculation and failed-read extraction enabled.
      */
     public DynamoDbHandler() {
         calculateHeuristics = true;
@@ -141,12 +143,18 @@ public class DynamoDbHandler {
     }
 
     /**
-     * Evaluates all registered commands and consumes them.
+     * Evaluates all pending {@link #commands} registered via {@link #handle(DynamoDbCommand)}, clears the
+     * pending queue, and returns the accumulated distance entries for the current action.
+     * <p>
+     * Results in {@link #evaluatedCommands} and {@link #failedQueries} are retained across calls until
+     * {@link #reset()}, so subsequent calls in the same action return the previously evaluated snapshot.
      *
-     * @return evaluated commands for the current action
+     * @return copy of all evaluated commands with heuristic distances for the current action
      */
     public List<DynamoDbCommandWithDistance> getEvaluatedDynamoDbCommands() {
         if (!calculateHeuristics && !extractDynamoDbExecution) {
+            // Neither heuristic scoring nor failed-read extraction is enabled; discard queued commands
+            // without scanning DynamoDB tables.
             commands.clear();
             return Collections.emptyList();
         }
@@ -160,6 +168,7 @@ public class DynamoDbHandler {
             return new ArrayList<>(evaluatedCommands);
         }
 
+        // Reuse table scans within this batch so each referenced table is scanned at most once.
         DynamoDbTableItemsCache itemsCache = new DynamoDbTableItemsCache(dynamoDbClient);
         for (DynamoDbCommand command : commands) {
             evaluateCommand(command, itemsCache);
@@ -169,7 +178,10 @@ public class DynamoDbHandler {
     }
 
     /**
-     * @return failed reads captured for the current action
+     * Returns failed-read insertion candidates populated during {@link #getEvaluatedDynamoDbCommands()}
+     * for the current action (retained until {@link #reset()}).
+     *
+     * @return DTO containing failed reads captured for the current action
      */
     public DynamoDbExecutionsDto getExecutionDto() {
         DynamoDbExecutionsDto dto = new DynamoDbExecutionsDto();
@@ -186,39 +198,83 @@ public class DynamoDbHandler {
      * @param itemsCache cached table contents
      */
     private void evaluateCommand(DynamoDbCommand command, DynamoDbTableItemsCache itemsCache) {
-        Map<String, ParsedDynamoDbRequest> parsedByTable;
-        try {
-            parsedByTable = requestParser.parseByTable(command.getDdbRequest(), command.getOperationName());
-        } catch (RuntimeException e) {
-            registerFailures(command, command.getTableNames(), e);
+        Map<String, ParsedDynamoDbRequest> parsedByTable = parseCommandByTable(command);
+        if (parsedByTable == null || parsedByTable.isEmpty()) {
+            // Either request parsing failed (already logged by registerFailures) or no tables were extracted.
             return;
         }
 
         for (Map.Entry<String, ParsedDynamoDbRequest> entry : parsedByTable.entrySet()) {
-            ParsedDynamoDbRequest parsed = entry.getValue();
-            if (parsed == null || (parsed.getKeyCondition() == null && parsed.getFilterExpression() == null)) {
-                continue;
-            }
-            if (!command.isSuccessfullyExecuted() && parsed.getFilterExpression() == null) {
-                continue;
-            }
-
-            String tableName = entry.getKey();
-            try {
-                List<Map<String, Object>> items = itemsCache.getItems(tableName);
-                double distance = calculator.computeDistance(
-                        parsed.getKeyCondition(), parsed.getFilterExpression(), items);
-                DynamoDbDistanceWithMetrics metrics = new DynamoDbDistanceWithMetrics(distance, items.size(), false);
-                if (calculateHeuristics) {
-                    evaluatedCommands.add(new DynamoDbCommandWithDistance(command, tableName, metrics));
-                }
-                if (extractDynamoDbExecution && distance > 0.0d) {
-                    registerFailedQuery(command, tableName, parsed, items);
-                }
-            } catch (RuntimeException e) {
-                registerFailure(command, tableName, e);
-            }
+            evaluateTableRequest(command, entry.getKey(), entry.getValue(), itemsCache);
         }
+    }
+
+    /**
+     * Parses a DynamoDB request into per-table predicates, recording failure metrics if parsing throws.
+     *
+     * @param command intercepted DynamoDB command
+     * @return per-table parsed requests, or {@code null} when parsing fails
+     */
+    private Map<String, ParsedDynamoDbRequest> parseCommandByTable(DynamoDbCommand command) {
+        try {
+            return requestParser.parseByTable(command.getDdbRequest(), command.getOperationName());
+        } catch (RuntimeException e) {
+            registerFailures(command, command.getTableNames(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Evaluates one table entry of a parsed DynamoDB command for heuristic distances and failed-read extraction.
+     *
+     * @param command intercepted DynamoDB command
+     * @param tableName table targeted by {@code parsed}
+     * @param parsed parsed predicates for {@code tableName}
+     * @param itemsCache cached table contents for the current batch
+     */
+    private void evaluateTableRequest(DynamoDbCommand command, String tableName, ParsedDynamoDbRequest parsed,
+                                      DynamoDbTableItemsCache itemsCache) {
+        if (!shouldEvaluateTableRequest(command, tableName, parsed)) {
+            return;
+        }
+
+        try {
+            List<Map<String, Object>> items = itemsCache.getItems(tableName);
+            double distance = calculator.computeDistance(
+                    parsed.getKeyCondition(), parsed.getFilterExpression(), items);
+            DynamoDbDistanceWithMetrics metrics = new DynamoDbDistanceWithMetrics(distance, items.size(), false);
+            if (calculateHeuristics) {
+                evaluatedCommands.add(new DynamoDbCommandWithDistance(command, tableName, metrics));
+            }
+            if (extractDynamoDbExecution && distance > 0.0d) {
+                registerFailedQuery(command, tableName, parsed, items);
+            }
+        } catch (RuntimeException e) {
+            registerFailure(command, tableName, e);
+        }
+    }
+
+    /**
+     * Returns whether a parsed table request carries predicates that should be evaluated.
+     *
+     * @param command intercepted DynamoDB command
+     * @param tableName table targeted by {@code parsed}
+     * @param parsed parsed predicates for {@code tableName}
+     * @return {@code true} if distance/insertion evaluation should run for this table entry
+     */
+    private boolean shouldEvaluateTableRequest(DynamoDbCommand command, String tableName,
+                                               ParsedDynamoDbRequest parsed) {
+        if (parsed == null || (parsed.getKeyCondition() == null && parsed.getFilterExpression() == null)) {
+            SimpleLogger.debug("Skipping DynamoDB evaluation for table '" + tableName
+                    + "': command has no key condition or filter/condition expression");
+            return false;
+        }
+        if (!command.isSuccessfullyExecuted() && parsed.getFilterExpression() == null) {
+            SimpleLogger.debug("Skipping failed DynamoDB command evaluation for table '" + tableName
+                    + "': no filter or condition expression present");
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -231,27 +287,118 @@ public class DynamoDbHandler {
      */
     private void registerFailedQuery(DynamoDbCommand command, String tableName, ParsedDynamoDbRequest parsed,
                                      List<Map<String, Object>> items) {
-        if (command.getOperationName() != DynamoDbOperationNames.GET_ITEM
-                && command.getOperationName() != DynamoDbOperationNames.QUERY) {
+        if (!isInsertionInferableOperation(command.getOperationName())) {
+            // Only GetItem and Query bind equality conditions that can describe a concrete insertion item.
             return;
         }
 
-        Map<String, DynamoDbAttributeValueDto> attributes = new LinkedHashMap<>();
-        if (!evaluateEqualitiesAsFlatAttributes(parsed.getKeyCondition(), attributes)
-                || !evaluateEqualitiesAsFlatAttributes(parsed.getFilterExpression(), attributes)
-                || attributes.isEmpty()) {
+        Map<String, DynamoDbAttributeValueDto> attributes = extractFlatInsertionAttributes(parsed);
+        if (attributes == null) {
+            SimpleLogger.debug("Skipping DynamoDB failed-query extraction for table '" + tableName
+                    + "': predicates cannot be flattened to scalar insertion attributes");
             return;
         }
 
         DynamoDbPrimaryKey primaryKey = getPrimaryKey(tableName);
-        if (primaryKey == null || !matchesPrimaryKeyTypes(attributes, primaryKey)) {
+        if (primaryKey == null) {
+            // DescribeTable failure was already logged by getPrimaryKey.
+            return;
+        }
+        if (!matchesPrimaryKeyTypes(attributes, primaryKey)) {
+            SimpleLogger.debug("Skipping DynamoDB failed-query extraction for table '" + tableName
+                    + "': inferred attribute types do not match table primary key");
             return;
         }
 
         completeFromTableItem(tableName, attributes, primaryKey.getAttributes().keySet(), items);
+        Map<String, DynamoDbKeyScalarTypeDto> missingKeys = computeMissingPrimaryKeys(primaryKey, attributes);
+        DynamoDbFailedQuery inferred = addFailedQueryIfAbsent(tableName, attributes, missingKeys);
+        if (inferred == null) {
+            // Identical canonical insertion attributes were already recorded during this action.
+            return;
+        }
+
+        populatePrimaryKeyFormats(command, inferred);
+        populatePrimaryKeyValueExamples(missingKeys.keySet(), items, inferred);
+    }
+
+    /**
+     * Returns whether the DynamoDB operation can seed a concrete row from failed-read predicates.
+     *
+     * @param operationName DynamoDB operation name
+     * @return {@code true} for {@code GetItem} and {@code Query}
+     */
+    private boolean isInsertionInferableOperation(DynamoDbOperationNames operationName) {
+        return operationName == DynamoDbOperationNames.GET_ITEM
+                || operationName == DynamoDbOperationNames.QUERY;
+    }
+
+    /**
+     * Flattens key and filter equality predicates into scalar insertion attributes.
+     *
+     * @param parsed parsed request predicates
+     * @return extracted attribute map, or {@code null} when predicates are empty, non-flat, or conflicting
+     */
+    private Map<String, DynamoDbAttributeValueDto> extractFlatInsertionAttributes(ParsedDynamoDbRequest parsed) {
+        Map<String, DynamoDbAttributeValueDto> attributes = new LinkedHashMap<>();
+        if (!evaluateEqualitiesAsFlatAttributes(parsed.getKeyCondition(), attributes)
+                || !evaluateEqualitiesAsFlatAttributes(parsed.getFilterExpression(), attributes)
+                || attributes.isEmpty()) {
+            return null;
+        }
+        return attributes;
+    }
+
+    /**
+     * Computes primary-key attributes required by the table schema that are not yet present in {@code attributes}.
+     *
+     * @param primaryKey table primary-key schema
+     * @param attributes already-inferred attributes
+     * @return map of missing primary-key names to their scalar types
+     */
+    private Map<String, DynamoDbKeyScalarTypeDto> computeMissingPrimaryKeys(
+            DynamoDbPrimaryKey primaryKey, Map<String, DynamoDbAttributeValueDto> attributes) {
         Map<String, DynamoDbKeyScalarTypeDto> missingKeys = new LinkedHashMap<>(primaryKey.getAttributes());
         missingKeys.keySet().removeAll(attributes.keySet());
-        addFailedQueryIfAbsent(tableName, attributes, missingKeys);
+        return missingKeys;
+    }
+
+    /**
+     * Copies any recorded enhanced-schema attribute formats from the intercepted command onto {@code inferred}.
+     *
+     * @param command intercepted DynamoDB command
+     * @param inferred failed-query DTO to populate
+     */
+    private void populatePrimaryKeyFormats(DynamoDbCommand command, DynamoDbFailedQuery inferred) {
+        if (command.getDdbRequest() == null) {
+            return;
+        }
+        Map<String, DynamoDbAttributeFormat> formats = command.getDdbRequest().attributeFormats();
+        if (formats == null) {
+            return;
+        }
+        formats.forEach((attributeName, format) ->
+                inferred.primaryKeyFormats.put(attributeName, format != null ? format.getValue() : null));
+    }
+
+    /**
+     * Collects deterministic sample string values from existing table items for missing primary-key attributes.
+     *
+     * @param missingKeyNames primary-key attributes not supplied by the failed query
+     * @param items existing normalized table items
+     * @param inferred failed-query DTO to populate
+     */
+    private void populatePrimaryKeyValueExamples(Set<String> missingKeyNames, List<Map<String, Object>> items,
+                                                 DynamoDbFailedQuery inferred) {
+        for (String key : missingKeyNames) {
+            items.stream()
+                    .map(item -> item.get(key))
+                    .filter(value -> value instanceof String)
+                    .map(String::valueOf)
+                    .sorted()
+                    .findFirst()
+                    .ifPresent(value -> inferred.primaryKeyValueExamples.put(key, value));
+        }
     }
 
     /**
@@ -296,14 +443,19 @@ public class DynamoDbHandler {
      * @param tableName table being populated
      * @param attributes inferred query and template attributes
      * @param missingKeys key names and types that core must generate
+     * @return newly recorded failed query, or {@code null} when an identical insertion was already recorded
      */
-    private void addFailedQueryIfAbsent(String tableName, Map<String, DynamoDbAttributeValueDto> attributes,
-                                       Map<String, DynamoDbKeyScalarTypeDto> missingKeys) {
+    private DynamoDbFailedQuery addFailedQueryIfAbsent(String tableName,
+                                                       Map<String, DynamoDbAttributeValueDto> attributes,
+                                                       Map<String, DynamoDbKeyScalarTypeDto> missingKeys) {
         List<DynamoDbAttributeValueDto> insertionAttributes = new ArrayList<>(attributes.values());
         String insertionKey = DynamoDbInsertionKeyBuilder.fromAttributes(tableName, insertionAttributes);
-        if (insertionKeys.add(insertionKey)) {
-            failedQueries.add(new DynamoDbFailedQuery(tableName, insertionAttributes, missingKeys));
+        if (!insertionKeys.add(insertionKey)) {
+            return null;
         }
+        DynamoDbFailedQuery failedQuery = new DynamoDbFailedQuery(tableName, insertionAttributes, missingKeys);
+        failedQueries.add(failedQuery);
+        return failedQuery;
     }
 
     /**
@@ -411,6 +563,16 @@ public class DynamoDbHandler {
             return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.STRING, (String) value);
         }
         if (value instanceof Number) {
+            if (value instanceof Double && !Double.isFinite((Double) value)) {
+                return null;
+            }
+            if (value instanceof Float && !Float.isFinite((Float) value)) {
+                return null;
+            }
+            if (value instanceof BigDecimal) {
+                return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.NUMBER,
+                        ((BigDecimal) value).toPlainString());
+            }
             return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.NUMBER, String.valueOf(value));
         }
         if (value instanceof Boolean) {
@@ -423,6 +585,10 @@ public class DynamoDbHandler {
     /**
      * Copies normalized observed values as typed trees, skipping unsupported binary ({@code B}) and
      * binary set ({@code BS}) payloads (as well as empty or malformed sets).
+     *
+     * @param name attribute name
+     * @param value normalized plain Java value observed in an existing item
+     * @return typed template attribute, or {@code null} when the value cannot be represented
      */
     private DynamoDbAttributeValueDto toTemplateAttribute(String name, Object value) {
         try {
