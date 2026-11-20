@@ -1,5 +1,6 @@
 package org.evomaster.core.sql
 
+import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExistingDataDto
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
@@ -433,6 +434,10 @@ class SqlInsertBuilderTest {
         }
 
         override fun executeNeo4jInsertions(dto: Neo4jDatabaseCommandsDto): Neo4jInsertionResultsDto? {
+            return null
+        }
+
+        override fun getNeo4jExistingData(): Neo4jExistingDataDto? {
             return null
         }
 

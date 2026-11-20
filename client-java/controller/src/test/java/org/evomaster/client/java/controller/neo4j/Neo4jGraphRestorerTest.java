@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.neo4j;
 
+import org.evomaster.client.java.controller.neo4j.data.Neo4jGraph;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -117,6 +118,25 @@ public class Neo4jGraphRestorerTest {
         restorer.restore(client);
 
         assertEquals(idsBefore, elementIds());
+    }
+
+    @Test
+    public void testTheSnapshotKeepsTheGraphAsItWasWhenTaken() {
+        run("CREATE (:Toy {id: 'T1'})");
+        run("MATCH ()-[r:HOUSES]->() DELETE r");
+
+        Neo4jGraph snapshot = restorer.getSnapshot();
+
+        assertEquals(4, snapshot.getNodes().size());
+        assertEquals(2, snapshot.getEdges().size());
+    }
+
+    @Test
+    public void testAskingForTheSnapshotWithoutTakingOneFails() {
+        assertThrows(IllegalStateException.class, () -> new Neo4jGraphRestorer().getSnapshot());
+
+        restorer.discardSnapshot();
+        assertThrows(IllegalStateException.class, () -> restorer.getSnapshot());
     }
 
     @Test
