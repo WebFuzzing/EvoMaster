@@ -64,13 +64,14 @@ class ObjectGeneImpact  (
             how to handle additional properties needs to support in the future
          */
         val mutatedFields = gc.current.fixedFields.zip(gc.previous.fixedFields) { cf, pf ->
-            Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
+            Pair(Pair(cf, pf), cf.hasSameValueWithTypeCheck(pf))
         }.filter { !it.second }.map { it.first }
 
         val onlyManipulation = mutatedFields.size > 1 && impactTargets.isNotEmpty()
 
         mutatedFields.forEach {g->
-            val fImpact = fixedFields.getValue(g.first.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
+            val fImpact = fixedFields[g.first.name] as? GeneImpact ?: return@forEach
+            if (!fImpact.validate(g.first) || !fImpact.validate(g.second)) return@forEach
             val mutatedGeneWithContext = MutatedGeneWithContext(
                 current =  g.first,
                 actionName = "none",
