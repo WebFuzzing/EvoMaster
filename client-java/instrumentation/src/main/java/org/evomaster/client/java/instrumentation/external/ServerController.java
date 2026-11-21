@@ -69,6 +69,7 @@ public class ServerController {
         try {
             socket = server.accept();
             socket.setSoTimeout(seconds);
+            socket.setTcpNoDelay(true);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
 

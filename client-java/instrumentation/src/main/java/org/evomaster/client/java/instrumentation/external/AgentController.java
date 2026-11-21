@@ -27,6 +27,7 @@ public class AgentController {
 
         try{
             socket = new Socket("localhost", port);
+            socket.setTcpNoDelay(true);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
         } catch (Exception e){
