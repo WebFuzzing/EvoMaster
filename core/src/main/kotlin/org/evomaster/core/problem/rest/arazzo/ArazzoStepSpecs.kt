@@ -1,11 +1,21 @@
 package org.evomaster.core.problem.rest.arazzo
 
 /**
- * The input and output expressions for each AraazzoStep are stored.
+ * The inputs and outputs for each ArazzoStep are stored.
  */
 data class ArazzoStepSpecs (
     val workflowId: String,
     val stepId: String,
-    val parameterExpressions: Map<String, String>,
-    val outputExpressions: Map<String, String> = emptyMap(),
+    val parameters: List<ArazzoParameterSpec>,
+    val outputs: Map<String, String> = emptyMap(),
+    val workflowInputs: List<ArazzoParameterSpec> = emptyList(),
+)
+
+/**
+ * Parameter for each steps
+ */
+data class ArazzoParameterSpec(
+    val name: String,
+    val location: String?,
+    val expression: String,
 )
