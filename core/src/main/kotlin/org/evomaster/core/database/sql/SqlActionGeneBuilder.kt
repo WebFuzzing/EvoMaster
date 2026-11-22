@@ -8,8 +8,6 @@ import org.evomaster.core.database.sql.schema.ColumnDataType
 import org.evomaster.core.database.sql.schema.ForeignKey
 import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.parser.RegexHandler
-import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
-import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -699,7 +697,8 @@ class SqlActionGeneBuilder {
                      */
                     log.warn("Handling only a regex pattern for (${column.name}). Using similar to pattern: ${similarToPattern}}")
                 }
-                buildSimilarToRegexGene(columnName, similarToPattern, databaseType = column.databaseType)
+                attemptToBuildSimilarToRegexGene(columnName, similarToPattern, databaseType = column.databaseType)
+                    ?: buildStringGene(isFixedLength, column)
             } else if (!column.likePatterns.isNullOrEmpty()) {
                 val columnName = column.name
                 val likePattern = column.likePatterns[0]
@@ -709,7 +708,8 @@ class SqlActionGeneBuilder {
                      */
                     LoggingUtil.uniqueWarn(log, "Handling only a regex pattern for (${column.name}). Using like pattern: ${likePattern}}")
                 }
-                buildLikeRegexGene(columnName, likePattern, databaseType = column.databaseType)
+                attemptToBuildLikeRegexGene(columnName, likePattern, databaseType = column.databaseType)
+                    ?: buildStringGene(isFixedLength, column)
             } else if (column.javaRegExPattern != null) {
 
                 attemptToBuildJavaRegexGene(column.name, column.javaRegExPattern)
@@ -759,59 +759,84 @@ class SqlActionGeneBuilder {
     }
 
     /**
-     * Builds a RegexGene using a name and a list of LIKE patterns.
-     * The resulting gene is a disjunction of the given patterns
+     * Builds a RegexGene using a name and a LIKE pattern.
      *
+     * Throws when we do not support `LIKE` regex operations for [databaseType] or when regex is unsupported/invalid.
      * TODO need to handle NOT and ILIKE
      */
     fun buildLikeRegexGene(geneName: String, likePattern: String, databaseType: DatabaseType): RegexGene {
-        return when (databaseType) {
-            DatabaseType.POSTGRES, //https://www.postgresqltutorial.com/postgresql-tutorial/postgresql-like/
-            DatabaseType.H2, // http://www.h2database.com/html/grammar.html#like_predicate_right_hand_side
-            DatabaseType.MYSQL -> {
-                buildPostgresMySQLLikeRegexGene(geneName, likePattern)
-            }
-            //TODO: support other database SIMILAR_TO check expressions
-            else -> throw UnsupportedOperationException(
-                    "Must implement LIKE expressions for database %s".format(
-                            databaseType
-                    )
-            )
+        if (!supportsLikeRegex(databaseType)) {
+            throw UnsupportedOperationException("Must implement LIKE expressions for database $databaseType")
         }
+        return RegexHandler.createGeneForPostgresLike(likePattern).also{ it.name = geneName }
     }
 
-    private fun buildPostgresMySQLLikeRegexGene(geneName: String, likePattern: String): RegexGene {
-        val gene = createGeneForPostgresLike(likePattern)
-        gene.name = geneName
-        return gene
+    /**
+     * Whether we support `LIKE` regex expressions for [databaseType].
+     */
+    private fun supportsLikeRegex(databaseType: DatabaseType) = when(databaseType) {
+        DatabaseType.POSTGRES, //https://www.postgresqltutorial.com/postgresql-tutorial/postgresql-like/
+        DatabaseType.H2, // http://www.h2database.com/html/grammar.html#like_predicate_right_hand_side
+        DatabaseType.MYSQL -> true
+        //TODO: support other database LIKE check expressions
+        else -> false
+    }
+
+    /**
+     * Attempts to build a RegexGene using a name and a LIKE pattern.
+     * Returns null if regex is unsupported/invalid or when we do not support `LIKE` regex operations for [databaseType].
+     */
+    fun attemptToBuildLikeRegexGene(geneName: String, likePattern: String, databaseType: DatabaseType): RegexGene? {
+        if (!supportsLikeRegex(databaseType)) {
+            LoggingUtil.uniqueWarn(log, "LIKE expressions are not supported for database $databaseType")
+            return null
+        }
+        return RegexHandler.attemptToCreateGeneForPostgresLike(likePattern)?.also { it.name = geneName }
     }
 
 
     /**
      * Builds a RegexGene using a name and a SIMILAR_TO pattern.
+     *
+     * Throws when we do not support `SIMILAR TO` regex operations for [databaseType]
+     * or when regex is unsupported/invalid.
      */
     fun buildSimilarToRegexGene(
             geneName: String,
             similarToPattern: String,
             databaseType: DatabaseType
     ): RegexGene {
-        return when(databaseType) {
-             DatabaseType.POSTGRES,
-             DatabaseType.MYSQL,
-             DatabaseType.H2 -> buildPostgresSimilarToRegexGene(geneName, similarToPattern)
-            //TODO: support other database SIMILAR_TO check expressions
-            else -> throw UnsupportedOperationException(
-                    "Must implement similarTo expressions for database %s".format(
-                            databaseType
-                    )
-            )
+        if (!supportsSimilarToRegex(databaseType)) {
+            throw UnsupportedOperationException("Must implement similarTo expressions for database $databaseType")
         }
+        return RegexHandler.createGeneForPostgresSimilarTo(similarToPattern).also{ it.name = geneName }
     }
 
-    private fun buildPostgresSimilarToRegexGene(geneName: String, similarToPattern: String): RegexGene {
-        val regexGene = createGeneForPostgresSimilarTo(similarToPattern)
-        regexGene.name = geneName
-        return regexGene
+    /**
+     * Whether we support `SIMILAR TO` regex expressions for [databaseType].
+     */
+    private fun supportsSimilarToRegex(databaseType: DatabaseType) = when(databaseType) {
+        DatabaseType.POSTGRES,
+        DatabaseType.MYSQL,
+        DatabaseType.H2 -> true
+        //TODO: support other database SIMILAR_TO check expressions
+        else -> false
+    }
+
+    /**
+     * Attempts to build a RegexGene using a name and a SIMILAR_TO pattern. Returns null if regex is unsupported/invalid
+     * or when we do not support `SIMILAR TO` regex operations for [databaseType].
+     */
+    fun attemptToBuildSimilarToRegexGene(
+        geneName: String,
+        similarToPattern: String,
+        databaseType: DatabaseType
+    ): RegexGene? {
+        if (!supportsSimilarToRegex(databaseType)) {
+            LoggingUtil.uniqueWarn(log, "SIMILAR TO expressions are not supported for database $databaseType")
+            return null
+        }
+        return RegexHandler.attemptToCreateGeneForPostgresSimilarTo(similarToPattern)?.also { it.name = geneName }
     }
 
     private fun buildSqlTimeWithTimeZoneGene(column: Column): TimeGene {
