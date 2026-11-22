@@ -302,7 +302,7 @@ object RegexHandler {
     /**
      * Run [create], returning null (and logging a warning) if it fails.
      */
-    private fun attempt(type: RegexType, regex: String, create: () -> RegexGene): RegexGene? {
+    internal fun attempt(type: RegexType, regex: String, create: () -> RegexGene): RegexGene? {
         return try {
             create()
         } catch (e: Exception) {

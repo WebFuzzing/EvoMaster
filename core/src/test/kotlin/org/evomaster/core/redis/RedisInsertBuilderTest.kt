@@ -22,6 +22,8 @@ import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class RedisInsertBuilderTest {
 
@@ -229,6 +231,22 @@ class RedisInsertBuilderTest {
 
         assertEquals(1, actions.size)
         assertInstanceOf(RedisSetFromPatternAction::class.java, actions[0])
+        assertEquals("^user:.*$", (actions[0] as RedisSetFromPatternAction).keyGene.sourceRegex)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [ "(", "[a&&b]+", "a{99999999999}" ])
+    fun testKeysWithPatternThatCannotBeHandledIsSkipped(pattern: String) {
+        val actions = RedisInsertBuilder.buildInsertActions(listOf(keysCommand(pattern)), emptySet())
+        assertTrue(actions.isEmpty())
+    }
+
+    @Test
+    fun testKeysWithPatternThatCannotBeHandledDoesNotAffectOthers() {
+        val actions = RedisInsertBuilder.buildInsertActions(
+            listOf(keysCommand("("), keysCommand("^user:.*$")), emptySet()
+        )
+        assertEquals(1, actions.size)
         assertEquals("^user:.*$", (actions[0] as RedisSetFromPatternAction).keyGene.sourceRegex)
     }
 

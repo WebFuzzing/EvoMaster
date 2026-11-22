@@ -1,0 +1,23 @@
+openapi: 3.0.0
+info:
+  version: "1.0"
+  title: invalid-pattern
+paths:
+  "/api/x":
+    "get":
+      parameters:
+        - in: query
+          name: valid
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z]{3}$"
+        - in: query
+          name: invalid
+          required: true
+          schema:
+            type: string
+            pattern: "(("
+      responses:
+        "200":
+          description: "ok"

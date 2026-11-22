@@ -40,6 +40,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.time.format.DateTimeFormatter
 import org.evomaster.core.search.gene.interfaces.UserExamplesGene
+import org.evomaster.core.search.gene.regex.RegexGene
 
 class RestActionBuilderV3Test{
 
@@ -2394,5 +2395,20 @@ class RestActionBuilderV3Test{
          */
         assertTrue(found.any{it.contains("Foo")})
         assertEquals(1, found.size)
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testPatternThatCannotBeHandledIsString(enableConstraintHandling : Boolean) {
+        val actions = loadAndAssertActions("/swagger/artificial/regex_invalid_pattern.yaml", 1, enableConstraintHandling)
+        val genes = actions.values.first().seeTopGenes().flatMap { it.flatView() }
+
+        val regexes = genes.filterIsInstance<RegexGene>()
+        assertEquals(1, regexes.size)
+        assertEquals("^[a-z]{3}$", regexes[0].sourceRegex)
+
+        val strings = genes.filterIsInstance<StringGene>()
+        assertEquals(1, strings.size)
+        assertEquals("invalid", strings[0].name)
     }
 }
