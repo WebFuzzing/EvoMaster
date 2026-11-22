@@ -1,7 +1,9 @@
 package org.evomaster.core.problem.rest.arazzo
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -11,12 +13,23 @@ import java.util.ArrayDeque
  * Runtime state of one Arazzo test evaluation.
  * A stack of [Frame]s keeps `$inputs`, `$outputs` and `$steps` scoped to the workflow in execution.
  */
-class ArazzoRuntime(
-    private val inputs: Map<String, String> = emptyMap(),
-) {
+class ArazzoRuntime private constructor() {
+    companion object  {
+        /**
+         * Returns a runtime only if the individual comes from an Arazzo workflow, otherwise null.
+         */
+        operator fun invoke(mainActions: List<RestCallAction>): ArazzoRuntime? {
+            return if (mainActions.isNotEmpty() && mainActions[0].arazzoStepSpecs != null) {
+                ArazzoRuntime()
+            } else {
+                null
+            }
+        }
+    }
 
     private val frames = ArrayDeque<Frame>()
     private val workflows = mutableMapOf<String, Frame>()
+    private val mapper = ObjectMapper()
 
     /**
      * Prepare the request with the values corresponding to the step.
@@ -42,19 +55,17 @@ class ArazzoRuntime(
         workflowInputs: List<ArazzoParameterSpec>,
         action: RestCallAction,
     ) {
-        if (frames.isEmpty()) {
-            push(Frame(workflowId, inputs.toMutableMap()))
-            return
-        }
-        if (frames.last().workflowId == workflowId) {
-            return
-        }
-        val parent = frames.indexOfLast { it.workflowId == workflowId }
-        if (parent >= 0) {
-            while (frames.size - 1 > parent) {
-                frames.removeLast()
+        if (!frames.isEmpty()) {
+            if (frames.last().workflowId == workflowId) {
+                return
             }
-            return
+            val parent = frames.indexOfLast { it.workflowId == workflowId }
+            if (parent >= 0) {
+                while (frames.size - 1 > parent) {
+                    frames.removeLast()
+                }
+                return
+            }
         }
         push(Frame(workflowId, resolveInputs(workflowInputs, action)))
     }
@@ -106,13 +117,12 @@ class ArazzoRuntime(
             "\$steps" -> resolveStep(rest)
             "\$workflows" -> resolveWorkflow(rest)
             "\$request" -> resolveMessage(fieldsFromAction(action), rest)
-            "\$sourceDescriptions", "\$url", "\$method","\$response", "\$statusCode" -> null
             else -> null
         }
     }
 
     /**
-     * Resolves `$steps.<stepId>.outputs|request|response.*` on the current frame.
+     * Resolves `$steps.<stepId>.outputs.<name>` on the current frame.
      */
     private fun resolveStep(rest: String): String? {
         val stepId = rest.substringBefore('.')
@@ -121,8 +131,6 @@ class ArazzoRuntime(
 
         return when {
             tail.startsWith("outputs.") -> readNamed(step.outputs, tail.removePrefix("outputs."))
-            tail.startsWith("request.") -> resolveMessage(step.request, tail.removePrefix("request."))
-            tail.startsWith("response.") -> resolveMessage(step.response, tail.removePrefix("response."))
             else -> null
         }
     }
@@ -143,7 +151,7 @@ class ArazzoRuntime(
     }
 
     /**
-     * Reads a header, query or path value. Body is not supported yet.
+     * Reads a `$request.header|query|path.<name>` value. Body is not supported yet.
      */
     private fun resolveMessage(message: HttpFields?, rest: String): String? {
         if (message == null || rest.isEmpty()) {
@@ -211,6 +219,62 @@ class ArazzoRuntime(
     }
 
     /**
+     * After the action is executed, evaluates the step's `outputs` against the response
+     * and stores them for later steps (`$steps.<stepId>.outputs.<name>`).
+     */
+    fun recordResponse(action: RestCallAction, result: RestCallResult) {
+        val stepSpecs = action.arazzoStepSpecs ?: return
+
+        val outputs = mutableMapOf<String, String>()
+        for ((name, expression) in stepSpecs.outputs) {
+            val value = resolveResponseOutput(expression, result) ?: continue
+            outputs[name] = value
+        }
+
+        current().steps[stepSpecs.stepId] = StepMemory(outputs)
+    }
+
+    /**
+     * Evaluates an output expression against the response. Supported:
+     * - `$statusCode`
+     * - `$response.header.<name>`
+     * - `$response.body`
+     * - `$response.body#/json/pointer`
+     */
+    private fun resolveResponseOutput(expression: String, result: RestCallResult): String? {
+        val expr = expression.trim()
+
+        if (expr == "\$statusCode") {
+            return result.getStatusCode()?.toString()
+        }
+
+        if (expr.startsWith("\$response.header.")) {
+            return result.getHeader(expr.removePrefix("\$response.header."))
+        }
+
+        if (expr == "\$response.body") {
+            return result.getBody()
+        }
+
+        if (expr.startsWith("\$response.body#")) {
+            val body = result.getBody() ?: return null
+            val pointer = expr.substringAfter('#')
+            val node = try {
+                mapper.readTree(body).at(pointer)
+            } catch (_: Exception) {
+                return null
+            }
+            return when {
+                node.isMissingNode || node.isNull -> null
+                node.isValueNode -> node.asText()
+                else -> node.toString()
+            }
+        }
+
+        return null
+    }
+
+    /**
      * Workflow frame currently in execution.
      */
     private fun current(): Frame = frames.last()
@@ -226,16 +290,14 @@ class ArazzoRuntime(
     )
 
     /**
-     * Values produced by one step in this run: named outputs, request and response fields.
+     * Values produced by one executed step: its named outputs.
      */
     private class StepMemory(
         val outputs: MutableMap<String, String> = mutableMapOf(),
-        val request: HttpFields = HttpFields(),
-        val response: HttpFields = HttpFields(),
     )
 
     /**
-     * Header, query and path values of a request or a response.
+     * Header, query and path values of the request, used to resolve `$request.*`.
      */
     private class HttpFields(
         val headers: MutableMap<String, String> = mutableMapOf(),
