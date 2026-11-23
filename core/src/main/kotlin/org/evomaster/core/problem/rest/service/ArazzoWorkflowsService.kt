@@ -381,6 +381,7 @@ class ArazzoWorkflowsService {
             parameters = parameterSpecs(step.parameters),
             outputs = step.outputs?.toMap() ?: emptyMap(),
             workflowInputs = workflowInputs,
+            requestBody = step.requestBody?.payload?.toString()
         )
     }
 

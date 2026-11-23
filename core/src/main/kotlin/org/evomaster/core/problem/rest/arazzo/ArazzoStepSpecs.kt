@@ -11,6 +11,7 @@ data class ArazzoStepSpecs (
     val outputs: Map<String, String> = emptyMap(),
     val workflowInputs: List<ArazzoParameterSpec> = emptyList(),
     val closes: List<FrameClose> = emptyList(),
+    val requestBody: String? = null,
 )
 
 /**

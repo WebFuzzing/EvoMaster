@@ -1,9 +1,12 @@
 package org.evomaster.core.problem.rest.arazzo
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.TextNode
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -43,6 +46,8 @@ class ArazzoRuntime private constructor() {
             val param = findParam(action, spec) ?: continue
             param.primaryGene().setFromStringValue(value)
         }
+
+        stepSpecs.requestBody?.let { applyBody(it, action) }
     }
 
     /**
@@ -211,6 +216,37 @@ class ArazzoRuntime private constructor() {
             "query" -> param is QueryParam
             "header" -> param is HeaderParam
             else -> false
+        }
+    }
+
+    /**
+     * Fills the action's body gene with the step's `requestBody` payload, once its expressions are evaluated.
+     */
+    private fun applyBody(payload: String, action: RestCallAction) {
+        val body = action.parameters.filterIsInstance<BodyParam>().singleOrNull() ?: return
+        val resolved = resolvePayload(mapper.readTree(payload), action) ?: return
+        body.primaryGene().setFromStringValue(resolved.toString())
+    }
+
+    /**
+     * Copies the JSON replacing each text starting with `$` by its value.
+     * A field whose expression has no value is left out, so its gene keeps the generated value.
+     */
+    private fun resolvePayload(node: JsonNode, action: RestCallAction): JsonNode? {
+        return when {
+            node.isObject -> mapper.createObjectNode().also { copy ->
+                for ((name, child) in node.fields()) {
+                    resolvePayload(child, action)?.let { copy.set<JsonNode>(name, it) }
+                }
+            }
+            node.isArray -> mapper.createArrayNode().also { copy ->
+                for (child in node) {
+                    resolvePayload(child, action)?.let { copy.add(it) }
+                }
+            }
+            node.isTextual && node.asText().startsWith("$") ->
+                resolve(node.asText(), action, current())?.let { TextNode(it) }
+            else -> node
         }
     }
 
