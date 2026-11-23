@@ -36,38 +36,29 @@ class ArazzoRuntime private constructor() {
      */
     fun prepareRequest(action: RestCallAction) {
         val stepSpecs = action.arazzoStepSpecs ?: return
-        syncFrame(stepSpecs.workflowId, stepSpecs.workflowInputs, action)
+        syncFrame(stepSpecs, action)
 
         for (spec in stepSpecs.parameters) {
-            val value = resolve(spec.expression, action) ?: continue
+            val value = resolve(spec.expression, action, current()) ?: continue
             val param = findParam(action, spec) ?: continue
             param.primaryGene().setFromStringValue(value)
         }
     }
 
     /**
-     * `$steps`, `$inputs` and `$outputs` refer to the workflow currently on the stack.
-     * A nested workflow gets its own frame, so the same stepId does not collide.
-     * Returning to a workflowId already on the stack closes the frames opened after it.
+     * Aligns the frame stack with this action's `frameId`: resume it or push a new workflow frame.
      */
-    private fun syncFrame(
-        workflowId: String,
-        workflowInputs: List<ArazzoParameterSpec>,
-        action: RestCallAction,
-    ) {
-        if (!frames.isEmpty()) {
-            if (frames.last().workflowId == workflowId) {
-                return
+    private fun syncFrame(stepSpecs: ArazzoStepSpecs, action: RestCallAction) {
+        val frameId = stepSpecs.frameId
+
+        if (frames.any { it.frameId == frameId }) {
+            while (frames.last().frameId != frameId) {
+                frames.removeLast()
             }
-            val parent = frames.indexOfLast { it.workflowId == workflowId }
-            if (parent >= 0) {
-                while (frames.size - 1 > parent) {
-                    frames.removeLast()
-                }
-                return
-            }
+            return
         }
-        push(Frame(workflowId, resolveInputs(workflowInputs, action)))
+        val inputs = resolveInputs(stepSpecs.workflowInputs, action)
+        push(Frame(frameId, stepSpecs.workflowId, inputs))
     }
 
     /**
@@ -79,7 +70,7 @@ class ArazzoRuntime private constructor() {
     ): MutableMap<String, String> {
         val resolved = mutableMapOf<String, String>()
         for (spec in workflowInputs) {
-            val value = resolve(spec.expression, action) ?: continue
+            val value = resolve(spec.expression, action, current()) ?: continue
             resolved[spec.name] = value
         }
         return resolved
@@ -94,9 +85,14 @@ class ArazzoRuntime private constructor() {
     }
 
     /**
-     * Retrieves the value corresponding to the parameter expression
+     * Evaluates one runtime expression (`$inputs`, `$steps`, `$outputs`, etc.) to a string, or null.
      */
-    private fun resolve(expression: String, action: RestCallAction): String? {
+    private fun resolve(
+        expression: String,
+        action: RestCallAction?,
+        frame: Frame,
+        outputsFrame: Frame = frame,
+    ): String? {
         val expr = expression.trim()
         if (expr.isEmpty()) {
             return null
@@ -112,22 +108,22 @@ class ArazzoRuntime private constructor() {
         val rest = expr.substringAfter('.', "")
 
         return when (head) {
-            "\$inputs" -> readNamed(current().inputs, rest)
-            "\$outputs" -> readNamed(current().outputs, rest)
-            "\$steps" -> resolveStep(rest)
+            "\$inputs" -> readNamed(frame.inputs, rest)
+            "\$outputs" -> readNamed(outputsFrame.outputs, rest)
+            "\$steps" -> resolveStep(frame, rest)
             "\$workflows" -> resolveWorkflow(rest)
-            "\$request" -> resolveMessage(fieldsFromAction(action), rest)
+            "\$request" -> action?.let { resolveMessage(fieldsFromAction(it), rest) }
             else -> null
         }
     }
 
     /**
-     * Resolves `$steps.<stepId>.outputs.<name>` on the current frame.
+     * Resolves `$steps.<stepId>.outputs.<name>` on [frame].
      */
-    private fun resolveStep(rest: String): String? {
+    private fun resolveStep(frame: Frame, rest: String): String? {
         val stepId = rest.substringBefore('.')
         val tail = rest.substringAfter('.', "")
-        val step = current().steps[stepId] ?: return null
+        val step = frame.steps[stepId] ?: return null
 
         return when {
             tail.startsWith("outputs.") -> readNamed(step.outputs, tail.removePrefix("outputs."))
@@ -221,6 +217,7 @@ class ArazzoRuntime private constructor() {
     /**
      * After the action is executed, evaluates the step's `outputs` against the response
      * and stores them for later steps (`$steps.<stepId>.outputs.<name>`).
+     * Then closes the workflows that end right after this action.
      */
     fun recordResponse(action: RestCallAction, result: RestCallResult) {
         val stepSpecs = action.arazzoStepSpecs ?: return
@@ -232,6 +229,33 @@ class ArazzoRuntime private constructor() {
         }
 
         current().steps[stepSpecs.stepId] = StepMemory(outputs)
+
+        for (close in stepSpecs.closes) {
+            closeFrame(close)
+        }
+    }
+
+    /**
+     * Pops the top workflow frame after filling its outputs and, if needed, the parent step's outputs.
+     */
+    private fun closeFrame(close: FrameClose) {
+        val child = frames.peekLast() ?: return
+
+        for ((name, expression) in close.workflowOutputs) {
+            val value = resolve(expression, null, child) ?: continue
+            child.outputs[name] = value
+        }
+        frames.removeLast()
+
+        val parentStepId = close.parentStepId ?: return
+        val parent = frames.peekLast() ?: return
+
+        val stepOutputs = mutableMapOf<String, String>()
+        for ((name, expression) in close.parentStepOutputs) {
+            val value = resolve(expression, null, parent, outputsFrame = child) ?: continue
+            stepOutputs[name] = value
+        }
+        parent.steps[parentStepId] = StepMemory(stepOutputs)
     }
 
     /**
@@ -283,6 +307,7 @@ class ArazzoRuntime private constructor() {
      * One invocation of a workflow: its inputs, outputs and executed steps.
      */
     private class Frame(
+        val frameId: Int,
         val workflowId: String,
         val inputs: MutableMap<String, String> = mutableMapOf(),
         val outputs: MutableMap<String, String> = mutableMapOf(),

@@ -13,6 +13,7 @@ import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.arazzo.ArazzoParameterSpec
 import org.evomaster.core.problem.rest.arazzo.ArazzoStepSpecs
+import org.evomaster.core.problem.rest.arazzo.FrameClose
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
@@ -52,12 +53,33 @@ class ArazzoWorkflowsService {
         var currenStepIndex: Int,
         var pausedBranch: Boolean = false,
         var workflowInputs: List<ArazzoParameterSpec> = emptyList(),
+        val frameId: Int,
+        val parentStep: ArazzoStep? = null,
     ) {
+        var hasActions: Boolean = false
+
         val stepIndexById: Map<String, Int> =
             workflow.arazzoSteps.mapIndexedNotNull { index, step ->
                 step.stepId?.let { id -> id to index }
             }.toMap()
     }
+
+    /**
+     * Source of unique [Frame.frameId]s.
+     */
+    private var frameCounter = 0
+
+    private fun newFrame(
+        workflow: ArazzoWorkflow,
+        parentStep: ArazzoStep? = null,
+        workflowInputs: List<ArazzoParameterSpec> = emptyList(),
+    ): Frame = Frame(
+        workflow,
+        0,
+        workflowInputs = workflowInputs,
+        frameId = frameCounter++,
+        parentStep = parentStep,
+    )
 
     @Inject
     private lateinit var randomness: Randomness
@@ -127,7 +149,7 @@ class ArazzoWorkflowsService {
             throw IllegalArgumentException("Arazzo: The Workflow ${arazzoWorkflow.workflowId} has no steps")
         }
 
-        val frame = Frame(arazzoWorkflow, 0)
+        val frame = newFrame(arazzoWorkflow)
 
         val actions = crossWorkflow(frame)
             .onEach {
@@ -162,7 +184,8 @@ class ArazzoWorkflowsService {
                             val workflowInputs = currentFrame.workflowInputs
                             currentFrame.workflowInputs = emptyList()
 
-                            action.arazzoStepSpecs = buildStepSpecs(step, currentFrame.workflow, workflowInputs)
+                            action.arazzoStepSpecs = buildStepSpecs(step, currentFrame, workflowInputs)
+                            currentFrame.hasActions = true
 
                             actions.add(action)
                         }
@@ -172,7 +195,7 @@ class ArazzoWorkflowsService {
                                 ?: throw IllegalArgumentException("Arazzo: Unknown workflowId: ${step.workflowId}")
                             currentFrame.pausedBranch = true
                             stack.addLast(currentFrame)
-                            stack.addLast(Frame(nested, 0, workflowInputs = parameterSpecs(step.parameters)))
+                            stack.addLast(newFrame(nested, parentStep = step, workflowInputs = parameterSpecs(step.parameters)))
                             continue@outer
                         }
 
@@ -189,17 +212,19 @@ class ArazzoWorkflowsService {
                 when (pathway) {
                     PathWay.SUCCESS -> {
                         val successAction = randomness.choose(onSuccess)
-                        if (applyPathwayAction(stack, currentFrame, successAction.type, successAction.stepId, successAction.workflowId))
+                        if (applyPathwayAction(stack, currentFrame, successAction.type, successAction.stepId, successAction.workflowId)) {
+                            closeIfReplaced(actions, stack, currentFrame)
                             continue@outer
-                        else
+                        } else
                             break
 
                     }
                     PathWay.FAILURE -> {
                         val failureAction = randomness.choose(onFailure)
-                        if (applyPathwayAction(stack, currentFrame, failureAction.type, failureAction.stepId, failureAction.workflowId))
+                        if (applyPathwayAction(stack, currentFrame, failureAction.type, failureAction.stepId, failureAction.workflowId)) {
+                            closeIfReplaced(actions, stack, currentFrame)
                             continue@outer
-                        else
+                        } else
                             break
                     }
                     else -> {
@@ -208,10 +233,42 @@ class ArazzoWorkflowsService {
                 }
            }
 
+           closeFrame(actions, currentFrame, reportToParent = true)
        }
 
        return actions
 
+    }
+
+    /**
+     * Closes [frame] when a success or failure jump replaces it with another workflow.
+     * The new workflow keeps the parent step, so this close does not report outputs to it.
+     */
+    private fun closeIfReplaced(actions: List<RestCallAction>, stack: ArrayDeque<Frame>, frame: Frame) {
+        if (stack.last() !== frame) {
+            closeFrame(actions, frame, reportToParent = false)
+        }
+    }
+
+    /**
+     * Records on the last action that [frame] has finished, so the runtime can compute its outputs.
+     * [reportToParent] also records the outputs of the step that invoked this workflow.
+     * A frame with no actions of its own is skipped: the runtime never opened it.
+     */
+    private fun closeFrame(actions: List<RestCallAction>, frame: Frame, reportToParent: Boolean) {
+        if (!frame.hasActions) {
+            return
+        }
+        val last = actions.last()
+        val specs = last.arazzoStepSpecs ?: return
+        val parentStep = if (reportToParent) frame.parentStep else null
+
+        val close = FrameClose(
+            workflowOutputs = frame.workflow.outputs?.toMap() ?: emptyMap(),
+            parentStepId = parentStep?.stepId,
+            parentStepOutputs = parentStep?.outputs?.toMap() ?: emptyMap(),
+        )
+        last.arazzoStepSpecs = specs.copy(closes = specs.closes + close)
     }
 
     /**
@@ -280,7 +337,7 @@ class ArazzoWorkflowsService {
 
             workflowId != null -> {
                 val newWorkflow = arazzoWorkflowsById[workflowId] ?: throw IllegalArgumentException("Arazzo: Unknown workflowId: $workflowId")
-                stack.addLast(Frame(newWorkflow, 0))
+                stack.addLast(newFrame(newWorkflow, parentStep = frame.parentStep))
                 return true
             }
 
@@ -314,11 +371,12 @@ class ArazzoWorkflowsService {
      */
     private fun buildStepSpecs(
         step: ArazzoStep,
-        workflow: ArazzoWorkflow,
+        frame: Frame,
         workflowInputs: List<ArazzoParameterSpec> = emptyList(),
     ): ArazzoStepSpecs {
         return ArazzoStepSpecs(
-            workflowId = workflow.workflowId,
+            workflowId = frame.workflow.workflowId,
+            frameId = frame.frameId,
             stepId = step.stepId,
             parameters = parameterSpecs(step.parameters),
             outputs = step.outputs?.toMap() ?: emptyMap(),
