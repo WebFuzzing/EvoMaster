@@ -9,12 +9,22 @@ import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.glassfish.jersey.client.RequestEntityProcessing
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
+import java.util.logging.Level
+import java.util.logging.Logger
 import javax.net.ssl.*
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 
 object HttpClientFactory {
 
+    /**
+     * Jersey can flood the logs with endless warnings...
+     * This is the easiest way to disable it, as it does not use SLF4J.
+     * Keeping configuration in a variable to avoid GC.
+     */
+    private val jerseyLogger: Logger = Logger.getLogger("org.glassfish.jersey").apply {
+        level = Level.OFF
+    }
 
     /**
      * Create a Jersey Client to make HTTP calls.

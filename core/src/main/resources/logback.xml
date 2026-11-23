@@ -38,7 +38,10 @@
 
     <!-- Avoid pointless warnings from Jersey related to its inability to support HTTP semantics.
          We know that current version of Jersey is limited, there is no need to flood the logs with warnings
-         at each fitness evaluation
+         at each fitness evaluation.
+
+         Note: this doesn't seem to work anymore, as not using SLF4J (has it ever worked though?).
+         Now directly disabled in HttpClientFactory
     -->
     <logger name="org.glassfish.jersey.client.JerseyInvocation" level="OFF"/>
 
