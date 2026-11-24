@@ -34,46 +34,57 @@ class GenePostgresLikeVisitorTest : RegexTestTemplate(){
 
     @Test
     fun testAny(){
-        check("_", ".")
+        checkMatches("_", ".")
     }
 
     @Test
     fun testAnyAndText(){
-        check("_a_b_", ".a.b.")
+        checkMatches("_a_b_", ".a.b.")
     }
 
     @Test
     fun testPercent(){
-        check("%", ".*")
+        checkMatches("%", ".*")
     }
 
     @Test
     fun testPercentAndText(){
-        check("%a%b%", ".*a.*b.*")
+        checkMatches("%a%b%", ".*a.*b.*")
     }
 
     @Test
     fun testAnyAndPercent(){
-        check("%a_b%", ".*a.b.*")
+        checkMatches("%a_b%", ".*a.b.*")
     }
 
     @Test
     fun testEscapedAny(){
-        check("\\_", "_")
+        checkMatches("\\_", "_")
+        checkSamplesExactly("\\_", "_")
+        checkSamplesExactly("a\\_b", "a_b")
     }
 
     @Test
     fun testAnyWithAlsoEscape(){
-        check("\\__", "_.")
+        checkMatches("\\__", "_.")
     }
 
     @Test
     fun testEscapedPercent(){
-        check("\\%", "%")
+        checkMatches("\\%", "%")
+        checkSamplesExactly("\\%", "%")
+        checkSamplesExactly("100\\%", "100%")
     }
 
     @Test
     fun testPercentWithAlsoEscape(){
-        check("\\%%", "%.*")
+        checkMatches("\\%%", "%.*")
+    }
+
+    @Test
+    fun testBlankBlockName(){
+        checkSameAsJava(" ")
+        checkMatches("% \n%", ".* \n.*")
+        checkMatches("% %", ".* .*")
     }
 }

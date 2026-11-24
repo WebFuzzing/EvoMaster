@@ -898,10 +898,13 @@ object RestActionBuilderV3 {
         val multipart = bodies.entries.find { HttpWsUtil.isContentTypeMultipartForm(it.key) }?.value
             ?: return mapOf()
 
-        val schema = multipart.schema?.`$ref`
-            ?.let { SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, it, messages) }
-            ?: multipart.schema
-            ?: return mapOf()
+        val rawSchema = multipart.schema ?: return mapOf()
+        val ref = rawSchema.`$ref`
+        val schema = if (ref == null) {
+            rawSchema
+        } else {
+            SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) ?: return mapOf()
+        }
 
         val properties = schema.properties
         if (properties.isNullOrEmpty()) {
@@ -910,15 +913,19 @@ object RestActionBuilderV3 {
         }
 
         return properties.entries.associate { (name, propertySchema) ->
-            //can be a comma-separated list, take the first
-            val declared = multipart.encoding?.get(name)?.contentType
-                ?.substringBefore(",")?.trim()?.takeIf { it.isNotEmpty() }
+            //both the encoding entry and its contentType are optional in OpenAPI
+            val encoding = multipart.encoding?.get(name)
+            val declared = encoding?.contentType?.let { firstContentType(it) }
             //for arrays, `format: binary` is on the items
             val isFile = propertySchema?.format.equals("binary", ignoreCase = true)
                     || propertySchema?.items?.format.equals("binary", ignoreCase = true)
             name to PartMeta(isFile = isFile, contentType = declared)
         }
     }
+
+    //encoding contentType can be a comma-separated list, take the first
+    private fun firstContentType(contentType: String): String? =
+        contentType.substringBefore(",").trim().takeIf { it.isNotEmpty() }
 
     private fun possiblyOptional(gene: Gene, required: Boolean?): Gene {
         if (required != true) {

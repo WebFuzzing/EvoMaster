@@ -69,6 +69,8 @@ public class ServerController {
         try {
             socket = server.accept();
             socket.setSoTimeout(seconds);
+            //essential, due to 40ms ack-delay in Linux (but no issue on Windows nor Mac)
+            socket.setTcpNoDelay(true);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
 
