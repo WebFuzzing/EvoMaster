@@ -4,12 +4,15 @@ import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.MinimalFiles
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -213,5 +216,28 @@ class MultipartBuilderTest {
         assertTrue(out.contains("filename=\"attachments_0.jpg\""), out)
         assertTrue(out.contains("filename=\"attachments_1.jpg\""), out)
         assertEquals(2, Regex("Content-Type: image/jpeg").findAll(out).count(), out)
+    }
+
+    private fun minimalFilesOf(g: Gene?): List<String> =
+        ((g as StringGene).specializationGenes.firstOrNull() as EnumGene<*>?)?.values?.map { it.toString() } ?: listOf()
+
+    @Test
+    fun testFilePartsGetTheMinimalFilesOfTheirContentType() {
+        val obj = buildBody(flag = true).primaryGene().getWrappedGene(ObjectGene::class.java)!!
+        val field = { n: String -> obj.fixedFields.first { it.name == n }.getLeafGene() }
+
+        assertEquals(listOf(MinimalFiles.files[MinimalFiles.PNG]), minimalFilesOf(field("file")))
+        assertTrue(minimalFilesOf(field("title")).isEmpty())
+
+        //for arrays, on the template used to create new elements
+        val albums = buildBody(flag = true, path = "/api/albums").primaryGene().getWrappedGene(ObjectGene::class.java)!!
+        val attachments = albums.fixedFields.first { it.name == "attachments" }.getLeafGene() as ArrayGene<*>
+        assertEquals(listOf(MinimalFiles.files[MinimalFiles.JPEG]), minimalFilesOf(attachments.template.getLeafGene()))
+    }
+
+    @Test
+    fun testFlagOffAddsNoMinimalFiles() {
+        val obj = buildBody(flag = false).primaryGene().getWrappedGene(ObjectGene::class.java)!!
+        assertTrue(minimalFilesOf(obj.fixedFields.first { it.name == "file" }.getLeafGene()).isEmpty())
     }
 }

@@ -248,6 +248,22 @@ object GeneUtils {
         else return ret
     }
 
+    /**
+     * For a literal holding one byte per char (eg, a multipart body), to apply after [EscapeMode.TEXT].
+     * Control chars and bytes above 0x7E are written as escapes, as they are not printable.
+     */
+    fun applyByteEscapes(string: String, format: OutputFormat): String {
+        val sb = StringBuilder()
+        string.forEach { c ->
+            when {
+                c.code in 0x20..0x7E -> sb.append(c)
+                format.isPython() || format.isJavaScript() -> sb.append(String.format("\\x%02x", c.code))
+                else -> sb.append(String.format("\\u%04x", c.code))
+            }
+        }
+        return sb.toString()
+    }
+
     private fun applyTextEscapes(string: String, format: OutputFormat): String {
         val ret = string.replace("\\", """\\""")
                 .replace("\"", "\\\"")

@@ -42,13 +42,17 @@ class BBMultipartEMTest : SpringTestBase() {
             3,
             /*
                 The harness asserts this is EXACTLY the set of targets the generated tests cover, so it
-                doubles as a statement of what the feature can and cannot reach.
+                doubles as a statement of what the feature can and cannot reach. Deliberately absent
+                MP_EXTENSION_REJECTED and MP_NO_EXTENSION, because the filename is derived from the
+                declared encoding (or from the selected minimal file), so it always has a valid extension.
              */
             listOf(
                 "MP_TEXT_ONLY",
                 "MP_STORE_ONLY",
                 "MP_EXTENSION_ACCEPTED",
                 "MP_CONTENT_INVALID",
+                //minimal valid PNG, sent as bytes
+                "MP_CONTENT_VALID",
                 "MP_ONLY"
                 //TODO MP_CONTENT_VALID, to be added in next iteration, when valid file content is generated
                 //TODO MP_EXTENSION_REJECTED and MP_NO_EXTENSION, to be added in next iteration, when the filename is mutated (now always "file.png")
@@ -64,6 +68,7 @@ class BBMultipartEMTest : SpringTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bbmp/text", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bbmp/store", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/bbmp/validate", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bbmp/validate", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bbmp/multipart-only", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bbmp/whitelist", null)
         }

@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.rest.param
 
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.HttpWsUtil
 import org.evomaster.core.search.gene.ObjectGene
@@ -10,7 +12,9 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.junit.jupiter.api.Assertions.*
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Test
+import java.nio.charset.StandardCharsets
 
 class BodyParamMultipartTest {
 
@@ -328,5 +332,54 @@ class BodyParamMultipartTest {
         //collision check looks into each element
         assertEquals("${BodyParam.DEFAULT_BOUNDARY}2", b.multipartBoundary())
         assertTrue(render(b).startsWith("--${BodyParam.DEFAULT_BOUNDARY}2$CRLF"))
+    }
+
+    private fun fileWithMinimalFile(name: String, contentType: String): StringGene {
+        val g = str(name, "aK3zR0fq")
+        val specs = MinimalFiles.files.values.map { StringSpecializationInfo(StringSpecialization.CONSTANT, it) }
+        g.addSpecializations("", specs, Randomness(), updateGlobalInfo = false, enableConstraintHandling = false)
+        val enum = g.specializationGenes[0] as EnumGene<String>
+        enum.index = enum.values.indexOf(MinimalFiles.files[contentType])
+        g.selectedSpecialization = 0
+        return g
+    }
+
+    private fun bytes(b: BodyParam) = render(b).toByteArray(StandardCharsets.ISO_8859_1)
+
+    private fun containsBytes(all: ByteArray, sub: ByteArray) =
+        (0..all.size - sub.size).any { i -> sub.indices.all { all[i + it] == sub[it] } }
+
+    @Test
+    fun testSelectedMinimalFileSetsFilenameAndContentType() {
+        //no encoding declared, so without the minimal file it would be file.bin
+        val b = body(mapOf("file" to PartMeta(isFile = true)), listOf(fileWithMinimalFile("file", MinimalFiles.JPEG)))
+        val out = render(b)
+
+        assertTrue(out.contains("filename=\"file.jpg\""), out)
+        assertTrue(out.contains("Content-Type: image/jpeg"), out)
+    }
+
+    @Test
+    fun testBinaryFileIsSentWithItsExactBytes() {
+        val b = body(mapOf("file" to PartMeta(isFile = true, contentType = "image/png")),
+            listOf(fileWithMinimalFile("file", MinimalFiles.PNG)))
+
+        val png = MinimalFiles.files[MinimalFiles.PNG]!!.toByteArray(StandardCharsets.ISO_8859_1)
+        assertTrue(containsBytes(bytes(b), png))
+        //UTF-8 would have turned 0x89 into C2 89
+        assertTrue(containsBytes(bytes(b), byteArrayOf(0x0A, 0x89.toByte(), 0x50, 0x4E, 0x47)))
+    }
+
+    @Test
+    fun testTextPartIsUtf8Encoded() {
+        val b = body(mapOf("title" to PartMeta(isFile = false)), listOf(str("title", "café")))
+        assertTrue(containsBytes(bytes(b), byteArrayOf(0x63, 0x61, 0x66, 0xC3.toByte(), 0xA9.toByte())))
+    }
+
+    @Test
+    fun testFileCharsAboveOneByteAreUtf8Encoded() {
+        val b = body(mapOf("file" to PartMeta(isFile = true)), listOf(str("file", "a€é")))
+        //€ does not fit in a byte, é does
+        assertTrue(containsBytes(bytes(b), byteArrayOf(0x61, 0xE2.toByte(), 0x82.toByte(), 0xAC.toByte(), 0xE9.toByte())))
     }
 }

@@ -23,6 +23,7 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.nio.charset.StandardCharsets
 
 
 /**
@@ -204,10 +205,13 @@ class BodyParam(gene: Gene,
                 && g.isPrintable()
 
     /**
-     * Declared `encoding` content type, else the OpenAPI default
+     * Type of the minimal file if one is selected, else declared `encoding` content type, else the OpenAPI default
      */
     private fun partContentType(name: String, leaf: Gene): String {
         val meta = parts[name]
+        if (meta?.isFile == true) {
+            MinimalFiles.contentTypeOf(leaf.getValueAsRawString())?.let { return it }
+        }
         return meta?.contentType
             ?: when {
                 meta?.isFile == true -> CONTENT_TYPE_OCTET_STREAM
@@ -224,6 +228,24 @@ class BodyParam(gene: Gene,
         return "${part.name}$suffix${extensionForContentType(partContentType)}"
     }
 
+    /**
+     * One char per byte, to be sent as ISO-8859-1: text is UTF-8 encoded, files are sent as they are
+     */
+    private fun asBytes(s: String, isFile: Boolean): String {
+        if (!isFile) {
+            return String(s.toByteArray(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1)
+        }
+        val sb = StringBuilder()
+        s.codePoints().forEach { cp ->
+            if (cp <= 0xFF) sb.append(cp.toChar())
+            else sb.append(asBytes(String(Character.toChars(cp)), false))
+        }
+        return sb.toString()
+    }
+
+    /**
+     * The body as a Latin-1 String, see [asBytes]
+     */
     private fun renderMultipartBody(targetFormat: OutputFormat?): String {
 
         val boundary = multipartBoundary()
@@ -240,15 +262,18 @@ class BodyParam(gene: Gene,
                 part.leaf.getValueAsRawString()
             }
 
-            buffer.append("--").append(boundary).append(CRLF)
-            buffer.append("Content-Disposition: form-data; name=\"").append(part.name).append("\"")
-            if (parts[part.name]?.isFile == true) {
-                buffer.append("; filename=\"").append(partFilename(part, partType)).append("\"")
+            val isFile = parts[part.name]?.isFile == true
+            val headers = StringBuilder()
+            headers.append("--").append(boundary).append(CRLF)
+            headers.append("Content-Disposition: form-data; name=\"").append(part.name).append("\"")
+            if (isFile) {
+                headers.append("; filename=\"").append(partFilename(part, partType)).append("\"")
             }
-            buffer.append(CRLF)
-            buffer.append("Content-Type: ").append(partType).append(CRLF)
-            buffer.append(CRLF)
-            buffer.append(value).append(CRLF)
+            headers.append(CRLF)
+            headers.append("Content-Type: ").append(partType).append(CRLF)
+            headers.append(CRLF)
+            buffer.append(asBytes(headers.toString(), false))
+            buffer.append(asBytes(value, isFile)).append(CRLF)
         }
 
         buffer.append("--").append(boundary).append("--").append(CRLF)

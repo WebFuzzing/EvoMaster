@@ -97,4 +97,41 @@ open class MultipartApplication {
 
         return ResponseEntity.ok("uploaded ${file.size} bytes")
     }
+
+    /**
+     * Magic bytes compared byte by byte, as APIs usually do: only a real PNG, sent as bytes, gets a 200
+     */
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        content = [Content(
+            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+            encoding = [Encoding(name = "file", contentType = "image/png")]
+        )]
+    )
+    @PostMapping("/image", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    open fun image(@RequestParam("file") file: MultipartFile): ResponseEntity<String> {
+        if (!startsWith(file.bytes, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)) {
+            return ResponseEntity.status(422).body("not a png")
+        }
+        return ResponseEntity.ok("png ok")
+    }
+
+    /**
+     * No `encoding` declared: the extension and the content have to agree on an image type
+     */
+    @PostMapping("/picture", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    open fun picture(@RequestParam("file") file: MultipartFile): ResponseEntity<String> {
+        val extension = file.originalFilename?.substringAfterLast('.', "")?.lowercase()
+        val valid = when (extension) {
+            "jpg", "jpeg" -> startsWith(file.bytes, 0xFF, 0xD8, 0xFF)
+            "png" -> startsWith(file.bytes, 0x89, 0x50, 0x4E, 0x47)
+            else -> return ResponseEntity.status(415).body("not an image extension")
+        }
+        if (!valid) {
+            return ResponseEntity.status(422).body("content does not match the extension")
+        }
+        return ResponseEntity.ok("picture ok")
+    }
+
+    private fun startsWith(bytes: ByteArray, vararg expected: Int): Boolean =
+        bytes.size >= expected.size && expected.indices.all { (bytes[it].toInt() and 0xFF) == expected[it] }
 }
