@@ -5,11 +5,13 @@ import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class InstrumentationController {
@@ -90,8 +92,20 @@ public class InstrumentationController {
 
         Map<String, TargetInfo> objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
 
+        AtomicInteger unknown = new AtomicInteger(0);
+
         if(ids != null) {
             ids.stream().forEach(id -> {
+
+                if (!ObjectiveRecorder.isMapped(id)) {
+                    /*
+                        can happen when the SUT was restarted and could not get the ids of its
+                        previous process
+                     */
+                    unknown.incrementAndGet();
+                    list.add(TargetInfo.notReached(id));
+                    return;
+                }
 
                 String descriptiveId = ObjectiveRecorder.getDescriptiveId(id);
 
@@ -107,6 +121,10 @@ public class InstrumentationController {
 
                 list.add(info);
             });
+
+            if (unknown.get() > 0) {
+                SimpleLogger.warn("Asked for " + unknown.get() + " target ids this SUT process never mapped, answered as not reached");
+            }
 
             /*
              *  If new targets were found, we add them even if not requested by EM

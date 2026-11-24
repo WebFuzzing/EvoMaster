@@ -11,6 +11,8 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 /**
@@ -34,6 +36,19 @@ public class ServerController {
     private Socket socket;
     protected ObjectOutputStream out;
     protected ObjectInputStream in;
+
+    /**
+     * Descriptive id of each target to the numeric id the SUT gave it, as the SUT reported them. This
+     * outlives the SUT process: when the SUT is restarted, the new process gets the same mapping, so it
+     * keeps answering for the ids the EvoMaster core already knows.
+     */
+    private final Map<String, Integer> knownIds = new HashMap<>();
+
+    /**
+     * The reverse of {@link #knownIds}: numeric id to the descriptive id of its target. Used to detect a
+     * numeric id being reported for two different targets.
+     */
+    private final Map<Integer, String> knownTargets = new HashMap<>();
 
     public synchronized int startServer() {
 
@@ -73,6 +88,10 @@ public class ServerController {
             socket.setTcpNoDelay(true);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
+
+            out.writeObject(new HashMap<>(knownIds));
+            out.reset();
+            out.flush();
 
         } catch (InterruptedIOException e) {
             /*
@@ -185,7 +204,9 @@ public class ServerController {
                 + ", but rather received " + repMsg;
     }
 
-    public boolean resetForNewSearch() {
+    public synchronized boolean resetForNewSearch() {
+        knownIds.clear();
+        knownTargets.clear();
         return sendAndExpectACK(Command.NEW_SEARCH);
     }
 
@@ -284,7 +305,28 @@ public class ServerController {
             throw new IllegalStateException(errorMsgExpectingResponse(response, "a List"));
         }
 
-        return (List<TargetInfo>) response;
+        List<TargetInfo> infos = (List<TargetInfo>) response;
+        recordIds(infos);
+        return infos;
+    }
+
+    /**
+     * Records the mapping of every target in [infos] that comes with both its numeric and descriptive id.
+     */
+    private void recordIds(List<TargetInfo> infos) {
+        for (TargetInfo info : infos) {
+            if (info == null || info.mappedId == null || info.descriptiveId == null) {
+                continue;
+            }
+            Integer old = knownIds.put(info.descriptiveId, info.mappedId);
+            if (old != null && !old.equals(info.mappedId)) {
+                SimpleLogger.warn("Target " + info.descriptiveId + " changed its id from " + old + " to " + info.mappedId);
+            }
+            String oldTarget = knownTargets.put(info.mappedId, info.descriptiveId);
+            if (oldTarget != null && !oldTarget.equals(info.descriptiveId)) {
+                SimpleLogger.warn("Id " + info.mappedId + " moved from target " + oldTarget + " to " + info.descriptiveId);
+            }
+        }
     }
 
     public synchronized List<AdditionalInfo> getAdditionalInfoList() {

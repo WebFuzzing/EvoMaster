@@ -9,6 +9,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -292,7 +293,7 @@ public class AdditionalInfo implements Serializable {
 
         String key = getThreadIdentifier();
         lastExecutingThread = key;
-        lastExecutedStatementStacks.putIfAbsent(key, new ArrayDeque<>());
+        lastExecutedStatementStacks.putIfAbsent(key, new ConcurrentLinkedDeque<>());
         Deque<StatementDescription> stack = lastExecutedStatementStacks.get(key);
 
         noExceptionStatement = null;
