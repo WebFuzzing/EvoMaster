@@ -11,6 +11,7 @@ import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.listener.MessageListenerContainer;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -63,7 +64,7 @@ public class ListenerKafkaController extends KafkaController {
 
     @Override
     protected List<String> getTopics() {
-        return Collections.singletonList(OrderListener.ORDER_PLACED);
+        return Arrays.asList(OrderListener.ORDER_PLACED, OrderEvents.ORDER_CONFIRMED, OrderEvents.ORDER_AUDIT);
     }
 
     @Override

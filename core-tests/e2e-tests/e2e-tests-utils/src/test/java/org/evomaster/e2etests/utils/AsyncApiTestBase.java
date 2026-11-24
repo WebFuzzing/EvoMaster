@@ -61,6 +61,30 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
     }
 
     /**
+     * That some test in the solution covered the target the core calls {@code descriptiveId},
+     * eg one of the AsyncAPI ones, such as {@code ASYNCAPI_EMITTED:<address>:<operation>}.
+     *
+     * @param run what {@link #initAndDebug} returned
+     */
+    protected void assertTargetCovered(Pair<Injector, Solution<AsyncApiIndividual>> run, String descriptiveId) {
+        Set<String> covered = coveredTargetsOf(run);
+        assertTrue(covered.contains(descriptiveId),
+                "With seed " + defaultSeed + ": " + descriptiveId + " was not covered, only " + covered);
+    }
+
+    /**
+     * What the core calls every target some test in the solution covered.
+     *
+     * @param run what {@link #initAndDebug} returned
+     */
+    protected Set<String> coveredTargetsOf(Pair<Injector, Solution<AsyncApiIndividual>> run) {
+        IdMapper idMapper = run.getFirst().getInstance(IdMapper.class);
+        return run.getSecond().getOverall().coveredTargets().stream()
+                .map(idMapper::getDescriptiveId)
+                .collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    /**
      * The result of every message published, across the whole solution.
      */
     protected List<AsyncApiCallResult> allResultsOf(Solution<AsyncApiIndividual> solution) {

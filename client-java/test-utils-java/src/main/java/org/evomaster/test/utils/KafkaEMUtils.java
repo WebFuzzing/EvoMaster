@@ -19,6 +19,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Utility functions used in the generated tests of AsyncAPI services to publish over Kafka
@@ -125,5 +131,128 @@ public class KafkaEMUtils {
             consumer.position(partition);
         }
         return true;
+    }
+
+    /**
+     * Start observing what the service emits to the given topics, from their current end, so
+     * that only what a message published afterwards makes it emit is collected. A topic that
+     * does not exist yet is picked up from its start once it does, by awaitEmitted.
+     * Close it, or hand it to awaitEmitted, which does.
+     */
+    public static AutoCloseable observeEmitted(String broker, String... topics) {
+        Properties props = new Properties();
+        props.put("bootstrap.servers", broker);
+        props.put("enable.auto.commit", "false");
+        KafkaConsumer<String,String> consumer =
+                new KafkaConsumer<>(props,
+                        new StringDeserializer(), new StringDeserializer());
+        try {
+            List<TopicPartition> parts = new ArrayList<>();
+            for (String topic : topics) {
+                List<PartitionInfo> info = consumer.partitionsFor(topic);
+                for (PartitionInfo p : info == null
+                        ? Collections.<PartitionInfo>emptyList() : info) {
+                    parts.add(new TopicPartition(p.topic(), p.partition()));
+                }
+            }
+            if (!parts.isEmpty()) {
+                consumer.assign(parts);
+                consumer.seekToEnd(parts);
+                //seekToEnd is lazy: asking for the positions is what makes it take effect now
+                for (TopicPartition p : parts) {
+                    consumer.position(p);
+                }
+            }
+            return consumer;
+        } catch (RuntimeException e) {
+            consumer.close();
+            throw e;
+        }
+    }
+
+    /**
+     * Collect what the service emitted to the given topics since observeEmitted, until
+     * each topic got as many messages as expected holds for it, at the same position, or
+     * timeoutMs went by, and close the observer.
+     *
+     * @return topic -> payloads emitted to it, in arrival order, with every topic present
+     */
+    public static Map<String, List<String>> awaitEmitted(AutoCloseable observer,
+            int[] expected, long timeoutMs, String... topics) throws Exception {
+        @SuppressWarnings("unchecked")
+        KafkaConsumer<String,String> consumer =
+                (KafkaConsumer<String,String>) observer;
+        Map<String, List<String>> emitted = new LinkedHashMap<>();
+        for (String topic : topics) {
+            emitted.put(topic, new ArrayList<>());
+        }
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        try {
+            while (System.currentTimeMillis() < deadline) {
+                boolean arrived = true;
+                for (int i = 0; i < topics.length; i++) {
+                    if (emitted.get(topics[i]).size() < expected[i]) {
+                        arrived = false;
+                    }
+                }
+                if (arrived) {
+                    break;
+                }
+                Set<TopicPartition> assigned =
+                        new LinkedHashSet<>(consumer.assignment());
+                Set<String> known = new HashSet<>();
+                for (TopicPartition p : assigned) {
+                    known.add(p.topic());
+                }
+                //a topic created since observing began only holds what was emitted since: read it all
+                List<TopicPartition> created = new ArrayList<>();
+                for (String topic : topics) {
+                    List<PartitionInfo> info =
+                            known.contains(topic) ? null : consumer.partitionsFor(topic);
+                    for (PartitionInfo p : info == null
+                            ? Collections.<PartitionInfo>emptyList() : info) {
+                        created.add(new TopicPartition(p.topic(), p.partition()));
+                    }
+                }
+                if (!created.isEmpty()) {
+                    assigned.addAll(created);
+                    consumer.assign(assigned);
+                    consumer.seekToBeginning(created);
+                }
+                if (assigned.isEmpty()) {
+                    Thread.sleep(POLL_MS);
+                    continue;
+                }
+                for (ConsumerRecord<String,String> r :
+                        consumer.poll(Duration.ofMillis(POLL_MS))) {
+                    List<String> payloads = emitted.get(r.topic());
+                    if (payloads != null) {
+                        payloads.add(r.value());
+                    }
+                }
+            }
+            return emitted;
+        } finally {
+            consumer.close();
+        }
+    }
+
+    /**
+     * Publish while observing emitted messages. On failure, close the observer before
+     * propagating the exception; on success, awaitEmitted owns its cleanup.
+     */
+    public static String publishAndAwaitReplyObserved(AutoCloseable observer, String broker, String topic,
+            String replyTopic, String payload, String correlationHeader, long timeoutMs, String... headerPairs)
+            throws Exception {
+        try {
+            return publishAndAwaitReply(broker, topic, replyTopic, payload, correlationHeader, timeoutMs, headerPairs);
+        } catch (Exception | Error failure) {
+            try {
+                observer.close();
+            } catch (Exception closeFailure) {
+                failure.addSuppressed(closeFailure);
+            }
+            throw failure;
+        }
     }
 }

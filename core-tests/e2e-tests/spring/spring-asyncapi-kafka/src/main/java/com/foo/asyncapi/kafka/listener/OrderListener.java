@@ -6,8 +6,9 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Consumes {@link OrderPlaced}. An express order is dispatched on another thread, a while after
- * the listener has returned.
+ * Consumes {@link OrderPlaced}. Every order is confirmed and audited, through {@link OrderEvents},
+ * before the listener returns. An express order is also dispatched on another thread, a while
+ * after the listener has returned.
  */
 @Component
 public class OrderListener {
@@ -28,12 +29,18 @@ public class OrderListener {
 
     private final ExecutorService dispatchExecutor;
 
-    public OrderListener(ExecutorService dispatchExecutor) {
+    private final OrderEvents events;
+
+    public OrderListener(ExecutorService dispatchExecutor, OrderEvents events) {
         this.dispatchExecutor = dispatchExecutor;
+        this.events = events;
     }
 
     @KafkaListener(id = LISTENER_ID, topics = ORDER_PLACED)
     public void onOrderPlaced(OrderPlaced order) {
+
+        events.confirmed(order);
+        events.audited(order);
 
         if (!EXPRESS.equals(order.getShipping())) {
             //nothing to dispatch

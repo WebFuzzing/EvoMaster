@@ -5,6 +5,7 @@ info:
   version: 1.0.0
   description: |
     One fire-and-forget operation over Kafka: an order is placed, and nothing is answered.
+    Every order taken is confirmed on a topic of its own, for whoever is listening.
 defaultContentType: application/json
 
 servers:
@@ -18,12 +19,22 @@ channels:
     messages:
       orderPlaced:
         $ref: '#/components/messages/orderPlaced'
+  orderConfirmed:
+    address: order.confirmed
+    messages:
+      orderConfirmed:
+        $ref: '#/components/messages/orderConfirmed'
 
 operations:
   placeOrder:
     action: receive
     channel:
       $ref: '#/channels/orderPlaced'
+  confirmOrder:
+    action: send
+    summary: An order was taken.
+    channel:
+      $ref: '#/channels/orderConfirmed'
 
 components:
   messages:
@@ -32,10 +43,23 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/OrderPlaced'
+    orderConfirmed:
+      name: OrderConfirmed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderConfirmed'
 
   schemas:
     OrderPlaced:
       type: object
       required: [shipping]
       properties:
+        shipping: { type: string }
+    OrderConfirmed:
+      type: object
+      required: [status, shipping]
+      properties:
+        status:
+          type: string
+          const: CONFIRMED
         shipping: { type: string }

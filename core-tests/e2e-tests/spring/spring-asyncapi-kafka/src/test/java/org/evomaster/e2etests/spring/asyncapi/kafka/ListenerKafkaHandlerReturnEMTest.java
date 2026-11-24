@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.asyncapi.kafka;
 
 import com.foo.asyncapi.kafka.listener.ListenerKafkaController;
+import com.foo.asyncapi.kafka.listener.OrderEvents;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual;
@@ -9,6 +10,10 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.utils.AsyncApiTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,6 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * service. Each test class runs in a JVM of its own in this module.
  */
 public class ListenerKafkaHandlerReturnEMTest extends AsyncApiTestBase {
+
+    /**
+     * The topics the service publishes to.
+     */
+    private static final List<String> SERVICE_TOPICS = Arrays.asList(OrderEvents.ORDER_CONFIRMED, OrderEvents.ORDER_AUDIT);
 
     @BeforeAll
     public static void initClass() throws Exception {
@@ -68,8 +78,13 @@ public class ListenerKafkaHandlerReturnEMTest extends AsyncApiTestBase {
                     assertEquals(0, countSettleEnd(solution, AsyncApiReplyDto.SettleEndReason.INTERRUPTED),
                             "a wait was interrupted");
 
-                    //the service publishes nothing, so nothing is recorded as emitted
-                    assertTrue(emittedMessagesOf(solution).isEmpty(), "emitted: " + emittedMessagesOf(solution));
+                    //its confirmations and audits; the driver's publishes, made in this JVM, are not the service's
+                    List<String> emitted = emittedMessagesOf(solution).stream()
+                            .map(m -> m.address)
+                            .distinct()
+                            .collect(Collectors.toList());
+                    assertTrue(emitted.contains(OrderEvents.ORDER_CONFIRMED), "emitted: " + emitted);
+                    assertTrue(SERVICE_TOPICS.containsAll(emitted), "recorded as emitted by the service: " + emitted);
                 },
                 5);
     }
