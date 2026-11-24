@@ -208,7 +208,9 @@ public class JarAgentLocator {
 
         File target = new File(folder);
         if(!target.exists()){
+            if(SimpleLogger.isDebug()){
             SimpleLogger.debug("No target folder "+target.getAbsolutePath());
+            }
             return null;
         }
 
