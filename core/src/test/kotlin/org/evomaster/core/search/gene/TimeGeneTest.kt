@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -162,5 +163,15 @@ class TimeGeneTest {
         }
     }
 
+    @Test
+    fun testSetFromStringValue() {
+        val gene = TimeGene("time")
 
+        assertTrue(gene.unsafeSetFromStringValue("23:45:06"))
+        assertEquals(23, gene.hour.value)
+        assertEquals(45, gene.minute.value)
+        assertEquals(6, gene.second.value)
+
+        assertFalse(gene.unsafeSetFromStringValue("not a time"))
+    }
 }

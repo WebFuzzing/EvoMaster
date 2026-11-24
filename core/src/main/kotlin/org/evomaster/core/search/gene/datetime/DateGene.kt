@@ -216,9 +216,8 @@ class DateGene(
 
     override fun unsafeSetFromStringValue(value: String): Boolean {
 
-        val formatter = DateTimeFormatter.ofPattern("YYYY-MM-DD")
         val date = try{
-            LocalDate.parse(value, formatter)
+            LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE)
         }catch (ex: DateTimeParseException){
             return false
         }
