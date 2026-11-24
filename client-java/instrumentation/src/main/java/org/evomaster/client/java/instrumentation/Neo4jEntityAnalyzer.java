@@ -72,7 +72,7 @@ public class Neo4jEntityAnalyzer {
 
             String type = graphType(f.getType());
             if (type == null) {
-                SimpleLogger.debug("Skipping Neo4j property of unsupported type " + f.getType().getName()
+                SimpleLogger.warn("Skipping Neo4j property of unsupported type " + f.getType().getName()
                         + ": " + klass.getName() + "." + f.getName());
                 continue;
             }

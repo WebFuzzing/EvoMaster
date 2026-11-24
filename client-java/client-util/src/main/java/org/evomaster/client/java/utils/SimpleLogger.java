@@ -52,6 +52,29 @@ public class SimpleLogger {
         }
     }
 
+    public static boolean isLevel(Level level){
+        return level.compareTo(threshold) >= 0;
+    }
+
+    /**
+     *  Check needed before wasting time in doing string message concatenations if it is going to be discarded
+     *  anyway due to the log level
+     */
+    public static boolean isDebug(){
+        return isLevel(Level.DEBUG);
+    }
+
+    public static boolean isInfo(){
+        return isLevel(Level.INFO);
+    }
+
+    public static boolean isWarn(){
+        return isLevel(Level.WARN);
+    }
+
+    public static boolean isError(){
+        return isLevel(Level.ERROR);
+    }
 
     public static void debug(String message){
         printMessage(Level.DEBUG, message, null);

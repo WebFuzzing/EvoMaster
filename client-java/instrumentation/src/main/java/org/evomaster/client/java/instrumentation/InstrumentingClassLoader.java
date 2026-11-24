@@ -119,7 +119,9 @@ public class InstrumentingClassLoader extends ClassLoader {
             Class<?> result = defineClass(className.getFullNameWithDots(), byteBuffer, 0, byteBuffer.length);
             classes.put(className.getFullNameWithDots(), result);
 
-            debug("Loaded class: " + className.getFullNameWithDots());
+            if(isDebug()) {
+                debug("Loaded class: " + className.getFullNameWithDots());
+            }
             return result;
         } catch (Throwable t) {
             error("Error while loading class " + className.getFullNameWithDots(), t);
