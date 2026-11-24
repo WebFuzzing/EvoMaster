@@ -39,15 +39,18 @@ class MultipartEMTest : SpringTestBase() {
         ) { args: MutableList<String> ->
 
             setOption(args, "enableMultipartFormDataSupport", "true")
-            //no auth in this SUT, so the security oracle would flag the POSTs
-            setOption(args, "security", "false")
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
 
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/form", null)
+            //an empty text part is rejected by Spring as missing, so "blank" branches need whitespace-only values
+            assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/multipart/form", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 422, "/api/multipart/form", "title too short")
+
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/upload", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 422, "/api/multipart/upload", "empty")
             //minimal valid files, sent as bytes
             assertHasAtLeastOne(solution, HttpVerb.POST, 422, "/api/multipart/image", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/image", null)

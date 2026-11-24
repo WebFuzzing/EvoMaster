@@ -2,6 +2,10 @@ package org.evomaster.core.problem.rest.param
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.util.HttpWsUtil.CONTENT_TYPE_JSON
+import org.evomaster.core.problem.util.HttpWsUtil.CONTENT_TYPE_OCTET_STREAM
+import org.evomaster.core.problem.util.HttpWsUtil.CONTENT_TYPE_TEXT_PLAIN
+import org.evomaster.core.problem.util.HttpWsUtil.extensionForContentType
 import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeForm
 import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeJson
 import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeMultipartForm
@@ -51,27 +55,6 @@ class BodyParam(gene: Gene,
         const val DEFAULT_BOUNDARY = "EvoMasterBoundary7f3a"
 
         private const val CRLF = "\r\n"
-
-        //many endpoints check the file extension before reading the content
-        fun extensionForContentType(contentType: String): String = when {
-            contentType.contains("image/png", true) -> ".png"
-            contentType.contains("image/jpeg", true) -> ".jpg"
-            contentType.contains("image/gif", true) -> ".gif"
-            contentType.contains("image/webp", true) -> ".webp"
-            contentType.contains("image/svg", true) -> ".svg"
-            contentType.contains("application/pdf", true) -> ".pdf"
-            contentType.contains("text/csv", true) -> ".csv"
-            contentType.contains("zip", true) -> ".zip"
-            //Office types contain "openxmlformats", so they must come before the "xml" check
-            contentType.contains("spreadsheetml", true) -> ".xlsx"
-            contentType.contains("wordprocessingml", true) -> ".docx"
-            contentType.contains("presentationml", true) -> ".pptx"
-            contentType.contains("ms-excel", true) -> ".xls"
-            contentType.contains("json", true) -> ".json"
-            contentType.contains("xml", true) -> ".xml"
-            contentType.contains("text/plain", true) -> ".txt"
-            else -> ".bin"
-        }
     }
 
     constructor(genes: List<Gene>) : this(genes[0], genes[1] as EnumGene<String>, genes[2] as CustomMutationRateGene<BooleanGene>?){
@@ -231,9 +214,9 @@ class BodyParam(gene: Gene,
         }
         return meta?.contentType
             ?: when {
-                meta?.isFile == true -> "application/octet-stream"
-                leaf is ObjectGene -> "application/json"
-                else -> "text/plain"
+                meta?.isFile == true -> CONTENT_TYPE_OCTET_STREAM
+                leaf is ObjectGene -> CONTENT_TYPE_JSON
+                else -> CONTENT_TYPE_TEXT_PLAIN
             }
     }
 

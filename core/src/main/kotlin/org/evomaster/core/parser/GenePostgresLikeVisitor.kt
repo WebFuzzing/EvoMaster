@@ -52,8 +52,16 @@ class GenePostgresLikeVisitor : PostgresLikeBaseVisitor<VisitResult>() {
 
         } else {
 
-            val block = ctx.baseSymbol().map { it.text }.joinToString("")
-            return VisitResult(PatternCharacterBlockGene(block, block))
+            // an escaped symbol represents the symbol itself, so "\%" should match "%"
+            val block = ctx.baseSymbol().joinToString("") {
+                when {
+                    it.ESCAPED_PERCENT() != null -> "%"
+                    it.ESCAPED_UNDERSCORE() != null -> "_"
+                    else -> it.text
+                }
+            }
+            val name = block.ifBlank { "blankBlock" }
+            return VisitResult(PatternCharacterBlockGene(name, block))
         }
 
     }

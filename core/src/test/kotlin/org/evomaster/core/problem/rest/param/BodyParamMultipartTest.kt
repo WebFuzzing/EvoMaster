@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.param
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.util.HttpWsUtil
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -205,22 +206,22 @@ class BodyParamMultipartTest {
 
     @Test
     fun testExtensionMapping() {
-        assertEquals(".png", BodyParam.extensionForContentType("image/png"))
-        assertEquals(".jpg", BodyParam.extensionForContentType("image/jpeg"))
-        assertEquals(".gif", BodyParam.extensionForContentType("image/gif"))
-        assertEquals(".svg", BodyParam.extensionForContentType("image/svg+xml"))
-        assertEquals(".pdf", BodyParam.extensionForContentType("application/pdf"))
-        assertEquals(".csv", BodyParam.extensionForContentType("text/csv"))
-        assertEquals(".zip", BodyParam.extensionForContentType("application/x-zip-compressed"))
-        assertEquals(".xlsx", BodyParam.extensionForContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-        assertEquals(".docx", BodyParam.extensionForContentType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
-        assertEquals(".pptx", BodyParam.extensionForContentType("application/vnd.openxmlformats-officedocument.presentationml.presentation"))
-        assertEquals(".xls", BodyParam.extensionForContentType("application/vnd.ms-excel"))
-        assertEquals(".json", BodyParam.extensionForContentType("application/json"))
-        assertEquals(".xml", BodyParam.extensionForContentType("application/xml"))
-        assertEquals(".txt", BodyParam.extensionForContentType("text/plain"))
-        assertEquals(".bin", BodyParam.extensionForContentType("application/octet-stream"))
-        assertEquals(".bin", BodyParam.extensionForContentType("something/unknown"))
+        assertEquals(".png", HttpWsUtil.extensionForContentType("image/png"))
+        assertEquals(".jpg", HttpWsUtil.extensionForContentType("image/jpeg"))
+        assertEquals(".gif", HttpWsUtil.extensionForContentType("image/gif"))
+        assertEquals(".svg", HttpWsUtil.extensionForContentType("image/svg+xml"))
+        assertEquals(".pdf", HttpWsUtil.extensionForContentType("application/pdf"))
+        assertEquals(".csv", HttpWsUtil.extensionForContentType("text/csv"))
+        assertEquals(".zip", HttpWsUtil.extensionForContentType("application/x-zip-compressed"))
+        assertEquals(".xlsx", HttpWsUtil.extensionForContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+        assertEquals(".docx", HttpWsUtil.extensionForContentType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+        assertEquals(".pptx", HttpWsUtil.extensionForContentType("application/vnd.openxmlformats-officedocument.presentationml.presentation"))
+        assertEquals(".xls", HttpWsUtil.extensionForContentType("application/vnd.ms-excel"))
+        assertEquals(".json", HttpWsUtil.extensionForContentType("application/json"))
+        assertEquals(".xml", HttpWsUtil.extensionForContentType("application/xml"))
+        assertEquals(".txt", HttpWsUtil.extensionForContentType("text/plain"))
+        assertEquals(".bin", HttpWsUtil.extensionForContentType("application/octet-stream"))
+        assertEquals(".bin", HttpWsUtil.extensionForContentType("something/unknown"))
     }
 
 

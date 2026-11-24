@@ -58,8 +58,8 @@ open class BBMultipartApplication {
     }
 
     /**
-     * 2. Store-only upload: looks at the metadata of the part and never at its content.
-     *    **This is the case the whole feature bets on**, so it must be reachable.
+     * 2. Store-only upload: looks only at the metadata of the part (filename, size), never at its content,
+     *    as EvoMaster does not generate valid file content yet.
      */
     @PostMapping("/store", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     open fun storeOnly(@RequestParam("file") file: MultipartFile): ResponseEntity<String> {

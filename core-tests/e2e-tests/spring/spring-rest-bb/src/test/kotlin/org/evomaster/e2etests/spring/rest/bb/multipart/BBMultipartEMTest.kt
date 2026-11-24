@@ -54,6 +54,8 @@ class BBMultipartEMTest : SpringTestBase() {
                 //minimal valid PNG, sent as bytes
                 "MP_CONTENT_VALID",
                 "MP_ONLY"
+                //TODO MP_CONTENT_VALID, to be added in next iteration, when valid file content is generated
+                //TODO MP_EXTENSION_REJECTED and MP_NO_EXTENSION, to be added in next iteration, when the filename is mutated (now always "file.png")
             )
         ) { args: MutableList<String> ->
 
@@ -72,10 +74,11 @@ class BBMultipartEMTest : SpringTestBase() {
         }
     }
 
+    //with support disabled, multipart endpoints must not make the search crash
     @Test
     fun testBlackBoxWithoutMultipartSupport() {
 
-        runBlackBoxEM(OutputFormat.KOTLIN_JUNIT_5, "BBMultipartEM_NoSupport", 1000, 3, false) { args ->
+        runBlackBoxEM(OutputFormat.KOTLIN_JUNIT_5, "BBMultipartEM_NoSupport", 20, 3, false) { args ->
 
             setOption(args, "enableMultipartFormDataSupport", "false")
 
