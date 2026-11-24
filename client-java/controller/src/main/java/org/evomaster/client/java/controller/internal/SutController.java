@@ -1879,9 +1879,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * @return the count, which only grows within a test, or null when unknown, eg because the
      * SUT is not instrumented
      */
-    public Long getObjectiveUpdateCount() {
-        return null;
-    }
+    public abstract Long getObjectiveUpdateCount();
 
     protected BootTimeInfoDto getBootTimeInfoDto(BootTimeObjectiveInfo info){
         if (info == null)

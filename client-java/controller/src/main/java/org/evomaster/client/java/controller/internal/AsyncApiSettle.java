@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.internal;
 
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
-import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.utils.SupplierUtils;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -100,24 +100,6 @@ public class AsyncApiSettle {
         reply.settleEndedBy = end;
     }
 
-    /**
-     * What {@code reader} reads, where a failure to read counts as not knowing. Reading is a
-     * socket round trip for an external SUT, and the action was published all the same: a
-     * failure here would otherwise turn a dropped connection into a broken setup.
-     *
-     * @param warning what to warn about, once, as reads come every few milliseconds; the reason
-     *                goes to the debug log
-     */
-    private static <T> T readOrNull(Supplier<T> reader, String warning) {
-        try {
-            return reader.get();
-        } catch (RuntimeException e) {
-            SimpleLogger.uniqueWarn(warning);
-            SimpleLogger.debug(warning + ": " + e.getMessage());
-            return null;
-        }
-    }
-
     private AsyncApiReplyDto.SettleEndReason waitUntil(long deadline) throws InterruptedException {
         long left = deadline - clock.nowMs();
         if (left > 0) {
@@ -141,7 +123,7 @@ public class AsyncApiSettle {
 
         long deadline = start + settleMs;
 
-        Long last = readOrNull(objectiveUpdates, OBJECTIVE_UPDATES_FAILURE_WARNING);
+        Long last = SupplierUtils.getOrNullOnFailure(objectiveUpdates, OBJECTIVE_UPDATES_FAILURE_WARNING);
         long lastChange = start;
 
         while (true) {
@@ -161,7 +143,7 @@ public class AsyncApiSettle {
             long nap = Math.min(POLL_INTERVAL_MS, Math.min(deadline - now, lastChange + stableMs - now));
             sleeper.sleep(nap);
 
-            Long current = readOrNull(objectiveUpdates, OBJECTIVE_UPDATES_FAILURE_WARNING);
+            Long current = SupplierUtils.getOrNullOnFailure(objectiveUpdates, OBJECTIVE_UPDATES_FAILURE_WARNING);
             if (current != null && !current.equals(last)) {
                 lastChange = clock.nowMs();
             }

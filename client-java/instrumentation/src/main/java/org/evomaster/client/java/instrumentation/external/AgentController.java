@@ -280,24 +280,11 @@ public class AgentController {
         }
     }
 
-    /**
-     * Answer null, read by the controller as unknown, when handling a command failed. Otherwise
-     * the controller would stall until its read times out.
-     */
-    private static void sendUnknown(){
-        try {
-            sendObject(null);
-        } catch (Exception e) {
-            SimpleLogger.error("Failure in sending an unknown answer: "+e.getMessage());
-        }
-    }
-
     private static void handleObjectiveUpdateCount(){
         try {
             sendObject(InstrumentationController.getObjectiveUpdateCount());
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling objective update count: "+e.getMessage());
-            sendUnknown();
         }
     }
 
