@@ -42,11 +42,7 @@ class BBMultipartEMTest : SpringTestBase() {
             3,
             /*
                 The harness asserts this is EXACTLY the set of targets the generated tests cover, so it
-                doubles as a statement of what the feature can and cannot reach. Deliberately absent:
-                  - MP_CONTENT_VALID, because the content of a part is arbitrary text and never a real
-                    image: that is the documented limitation of this version;
-                  - MP_EXTENSION_REJECTED and MP_NO_EXTENSION, because the filename is derived from the
-                    declared encoding and is therefore always "file.png" here.
+                doubles as a statement of what the feature can and cannot reach.
              */
             listOf(
                 "MP_TEXT_ONLY",
@@ -54,6 +50,8 @@ class BBMultipartEMTest : SpringTestBase() {
                 "MP_EXTENSION_ACCEPTED",
                 "MP_CONTENT_INVALID",
                 "MP_ONLY"
+                //TODO MP_CONTENT_VALID, to be added in next iteration, when valid file content is generated
+                //TODO MP_EXTENSION_REJECTED and MP_NO_EXTENSION, to be added in next iteration, when the filename is mutated (now always "file.png")
             )
         ) { args: MutableList<String> ->
 
@@ -71,10 +69,11 @@ class BBMultipartEMTest : SpringTestBase() {
         }
     }
 
+    //with support disabled, multipart endpoints must not make the search crash
     @Test
     fun testBlackBoxWithoutMultipartSupport() {
 
-        runBlackBoxEM(OutputFormat.KOTLIN_JUNIT_5, "BBMultipartEM_NoSupport", 1000, 3, false) { args ->
+        runBlackBoxEM(OutputFormat.KOTLIN_JUNIT_5, "BBMultipartEM_NoSupport", 20, 3, false) { args ->
 
             setOption(args, "enableMultipartFormDataSupport", "false")
 
