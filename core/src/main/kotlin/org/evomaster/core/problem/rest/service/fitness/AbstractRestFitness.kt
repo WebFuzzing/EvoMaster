@@ -728,10 +728,22 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     createInvocation(a, chainState, cookies, tokens).invoke()
                 }
 
-                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) || TcpUtils.isNoHttpResponse(e) -> {
+                TcpUtils.shouldBeSafeToResend(e) -> {
                     /*
-                        This should not really happen... but it does :( at least on Windows...
+                        This could be sporadic, if client is reusing a socket that was closed
+                        by SUT without Jersey not realizing it yet.
+                        In this case, we just try again without recreating the client.
                      */
+                    try{
+                        createInvocation(a, chainState, cookies, tokens).invoke()
+                    } catch (k: ProcessingException) {
+                        log.warn("Failed to repeat call when no HTTP response: ${k.cause!!.message}")
+                        rcr.setTcpProblem(true)
+                        return false
+                    }
+                }
+
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e)  -> {
                     log.warn("TCP connection to SUT problem: ${e.cause!!.message}")
                     rcr.setTcpProblem(true)
                     return false

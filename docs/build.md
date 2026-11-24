@@ -1,7 +1,7 @@
 # Build EvoMaster
 
 
-To compile the project, you need Maven and the JDK (version __8__ or later).
+To compile the project, you need Maven and the JDK (version __17__ or later).
 
 Use the Maven command:
 
@@ -20,7 +20,3 @@ Note: if you get an error from the *shade-plugin*, then make sure to use
 Furthermore, if you decide to do not skip the tests, then you will need to have
 _Docker_ installed and running on your machine.
 
-
-Note: we have also started initial support for other languages, e.g., JavaScript and C#.
-To build everything, you can use the script `buildAll.sh`.
-However, besides the JDK, you will need other tools as well installed on your machine (e.g., NodeJS and DotNet Core).

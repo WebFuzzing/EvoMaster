@@ -13,10 +13,12 @@ import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.rest.data.ContentType
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.Individual
 import org.evomaster.test.utils.EMTestUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
@@ -278,9 +280,26 @@ object AuthUtils {
 
         val response = try {
             invocation.invoke()
-        } catch (e: Exception) {
-            log.warn("Failed to login for ${name}: $e")
-            return null
+        } catch (e: ProcessingException) {
+            /*
+                TODO there are many reasons for which a connection might fail.
+                See TcpUtils and how used in AbstractRestFitness.
+                Maybe should do something similar here?
+                TODO this is especially the case if will we do auth validation
+                on startup
+             */
+
+            if(TcpUtils.shouldBeSafeToResend(e)){
+                try{
+                    invocation.invoke()
+                } catch (t: ProcessingException) {
+                    log.warn("Failed to login for ${name}: $t")
+                    return null
+                }
+            } else {
+                log.warn("Failed to login for ${name}: $e")
+                return null
+            }
         }
 
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
