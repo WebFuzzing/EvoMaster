@@ -3160,7 +3160,8 @@ class EMConfig {
     @Experimental
     @Min(0.0)
     @DependsOnTrueFor("handleFlakiness")
-    @Cfg("Specify the number of re-executions for detecting flakiness in tests. Set to 0 to disable re-execution based flakiness detection.")
+    @Cfg("Specify the number of re-executions for detecting flakiness in tests. Set to 0 to disable re-execution based flakiness detection. " +
+            "White-box HTTP SUTs are restarted once before the batch; this does not replace per-test state reset.")
     var execNumForDetectFlakiness = 1
 
     @Experimental

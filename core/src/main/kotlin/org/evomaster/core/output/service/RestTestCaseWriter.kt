@@ -448,6 +448,15 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             val idPointer = res.getResourceId()?.pointer ?: "/id"
 
             val extract = extractValueFromJsonResponse(resVarName, idPointer)
+            // Match the search-side encoding of a resource ID, not the complete URL.
+            val encodedId = when {
+                format.isJavaOrKotlin() ->
+                    "java.net.URLEncoder.encode($extract, \"UTF-8\").replace(\"+\", \"%20\")"
+                format.isJavaScript() ->
+                    "encodeURIComponent($extract).replace(/[!'()*]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase())"
+                format.isPython() -> "urllib.parse.quote($extract, safe=\"\")"
+                else -> throw IllegalStateException("Unsupported format $format")
+            }
 
             when {
                 format.isJavaScript() -> lines.add("const ")
@@ -455,7 +464,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 format.isKotlin() -> lines.add("val ")
                 format.isPython() -> lines.add("")/* nothing to do in Python */
             }
-            lines.append("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $extract")
+            lines.append("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $encodedId")
             lines.appendSemicolon()
         }
 

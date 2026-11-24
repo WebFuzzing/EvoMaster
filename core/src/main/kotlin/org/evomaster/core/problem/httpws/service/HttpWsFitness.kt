@@ -77,6 +77,18 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
 
 
+    override fun prepareForFlakinessDetection() {
+        // Black-box targets are not owned by the driver and cannot be restarted here.
+        if (config.blackBox) return
+
+        if (!rc.stopSUT()) {
+            throw SutProblemException("Failed to stop the SUT before flakiness detection")
+        }
+        if (::client.isInitialized) client.close()
+        // Refresh the HTTP client and SUT info, including a possibly changed base URL.
+        initialize()
+    }
+
     open fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: HttpWsCallResult, name: String) : String?{
         var location5xx : String? = null
         if (status == 500){

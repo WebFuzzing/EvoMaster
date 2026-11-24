@@ -6,7 +6,6 @@ import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
-import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.output.dto.DtoCall
@@ -824,7 +823,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         val send = sendBodyCommand()
 
-        val bodyLines = formatJsonWithEscapes(json, format)
+        // Preserve the searched payload. Formatting JSON can change a String request body,
+        // numeric lexemes, or error locations, even when the JSON value appears equivalent.
+        val bodyLines = listOf("\"${GeneUtils.applyEscapes(json, GeneUtils.EscapeMode.BODY, format)}\"")
 
         if (bodyLines.size == 1) {
             when {

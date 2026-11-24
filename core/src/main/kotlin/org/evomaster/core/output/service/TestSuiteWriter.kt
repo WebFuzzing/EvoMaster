@@ -615,6 +615,7 @@ class TestSuiteWriter {
             lines.add("import json")
             lines.add("import unittest")
             lines.add("import requests")
+            lines.add("import urllib.parse")
 
             if(config.sqli){
                 lines.add("import time")

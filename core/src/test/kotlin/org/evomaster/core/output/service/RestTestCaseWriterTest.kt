@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpServer
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.output.EvaluatedIndividualBuilder
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.Lines
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.WriterTestBase
 import org.evomaster.core.output.compiler.GeneratedRegressionCompiler
@@ -14,15 +15,127 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import java.lang.reflect.InvocationTargetException
 import java.net.InetSocketAddress
+import java.net.URLEncoder
 import java.nio.file.Path
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import javax.ws.rs.core.MediaType
+import org.evomaster.test.utils.EMTestUtils
+import org.evomaster.core.remote.HttpClientFactory
 
 /** Check generated request fidelity and response assertions using local HTTP replay. */
 class RestTestCaseWriterTest : WriterTestBase() {
     @TempDir
     lateinit var directory: Path
+
+    @ParameterizedTest
+    @EnumSource(OutputFormat::class, names = ["JAVA_JUNIT_5", "KOTLIN_JUNIT_5"])
+    fun jsonRequestBodyPreservesTheSearchedText(format: OutputFormat) {
+        val payloads = listOf("741", " 741 ", "1e2", "true", "null", "\"a b\"",
+            "{ \"name\" : \"å\", \"n\": 1e2 }\r\n", "{\n \"a\": 1,\n \"b\": 2\n}")
+        val received = LinkedBlockingQueue<ByteArray>()
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/") {
+            received.add(it.requestBody.readBytes())
+            it.sendResponseHeaders(204, -1)
+            it.close()
+        }
+        server.start()
+        try {
+            val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+            val methods = payloads.mapIndexed { index, payload ->
+                val lines = Lines(format)
+                writer.printSendJsonBody(payload, lines)
+                val request = "io.restassured.RestAssured.given().contentType(\"application/json; charset=UTF-8\")$lines.post(\"http://127.0.0.1:${server.address.port}/\")"
+                if (format.isJava()) "public void run$index() { $request; }"
+                else "fun run$index() { $request }"
+            }.joinToString("\n")
+            val code = if (format.isJava()) "public class BodyProbe { $methods }"
+                else "class BodyProbe { $methods }"
+            GeneratedRegressionCompiler.withClass(directory, format, "BodyProbe", code) { klass ->
+                val instance = klass.getDeclaredConstructor().newInstance()
+                payloads.forEachIndexed { index, payload ->
+                    klass.getMethod("run$index").invoke(instance)
+                    assertArrayEquals(payload.toByteArray(Charsets.UTF_8), received.poll(5, TimeUnit.SECONDS))
+                }
+            }
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(OutputFormat::class, names = ["JAVA_JUNIT_5", "KOTLIN_JUNIT_5"])
+    fun inferredResourceIdUsesTheSameEncodingAsSearch(format: OutputFormat) {
+        val received = LinkedBlockingQueue<String>()
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/") {
+            received.add(it.requestURI.rawPath)
+            it.sendResponseHeaders(204, -1)
+            it.close()
+        }
+        server.start()
+        try {
+            val writer = RestTestCaseWriter(getConfig(format), PartialOracles())
+            val call = RestCallAction("1", HttpVerb.POST, RestPath("/resources"), mutableListOf())
+            EvaluatedIndividualBuilder.buildResourceEvaluatedIndividual(mutableListOf(),
+                mutableListOf(mutableListOf<SqlAction>() to mutableListOf(call)), format)
+            call.saveCreatedResourceLocation = true
+            call.usePreviousLocationId = "parent"
+            val result = RestCallResult(call.getLocalId()).apply {
+                setBodyType(MediaType.APPLICATION_JSON_TYPE)
+                setBody("""{"data":"example"}""")
+                setHeuristicsForChainedLocation(true)
+            }
+            val lines = Lines(format)
+            val method = RestTestCaseWriter::class.java.getDeclaredMethod("handleLocationHeader",
+                RestCallAction::class.java, RestCallResult::class.java, String::class.java, Lines::class.java)
+            method.isAccessible = true
+            method.invoke(writer, call, result, "res_0", lines)
+            val location = lines.toString().trim().removePrefix("String ").removePrefix("val ").substringBefore(" =")
+            val url = "http://127.0.0.1:${server.address.port}"
+            val request = """io.restassured.RestAssured.given().baseUri("$url").port(${server.address.port}).urlEncodingEnabled(false).get(org.evomaster.test.utils.EMTestUtils.resolveLocation($location, "$url/resources/916"))"""
+            val code = if (format.isJava()) """
+                public class LocationProbe {
+                    public void run(String body) throws Exception {
+                        String location_parent = "/resources";
+                        io.restassured.response.ValidatableResponse res_0 = new io.restassured.builder.ResponseBuilder().setContentType("application/json").setBody(body).build().then();
+                        $lines
+                        $request;
+                    }
+                }
+            """ else """
+                class LocationProbe {
+                    fun run(body: String) {
+                        val location_parent = "/resources"
+                        val res_0 = io.restassured.builder.ResponseBuilder().setContentType("application/json").setBody(body).build().then()
+                        $lines
+                        $request
+                    }
+                }
+            """
+            GeneratedRegressionCompiler.withClass(directory, format, "LocationProbe", code) { klass ->
+                val instance = klass.getDeclaredConstructor().newInstance()
+                val searchClient = HttpClientFactory.createTrustingJerseyClient(false, 5000)
+                try {
+                    for (id in listOf("916", "Trigget satsendring for fagsakene []", "a+b", "a/b", "%2F", "å !'()*")) {
+                        val body = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(mapOf("data" to id))
+                        klass.getMethod("run", String::class.java).invoke(instance, body)
+                        val replayed = received.poll(5, TimeUnit.SECONDS)
+                        assertNotNull(replayed)
+                        val encoded = URLEncoder.encode(id, "UTF-8").replace("+", "%20")
+                        val searched = EMTestUtils.resolveLocation("/resources/$encoded", "$url/resources/916")
+                        searchClient.target(searched).request().get().close()
+                        assertEquals(received.poll(5, TimeUnit.SECONDS), replayed, id)
+                    }
+                } finally {
+                    searchClient.close()
+                }
+            }
+        } finally {
+            server.stop(0)
+        }
+    }
 
     @ParameterizedTest
     @EnumSource(OutputFormat::class, names = ["JAVA_JUNIT_5", "KOTLIN_JUNIT_5"])

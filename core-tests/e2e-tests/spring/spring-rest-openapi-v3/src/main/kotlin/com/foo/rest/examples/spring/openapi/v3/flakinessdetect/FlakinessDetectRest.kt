@@ -19,6 +19,12 @@ import kotlin.math.min
 @RequestMapping(path = ["/api/flakinessdetect"])
 class FlakinessDetectRest {
 
+    private val startupValue = UUID.randomUUID().toString()
+
+    @GetMapping(path = ["/lifecycle"])
+    fun getLifecycle(): ResponseEntity<Map<String, String>> =
+        ResponseEntity.ok(mapOf("startupValue" to startupValue, "stable" to "same"))
+
     companion object{
         val formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS yyyy-MM-dd EEEE 'Week' ww")
         private val START_UP_OBJECT_TAG = arrayOf(javax.validation.constraints.Pattern.Flag.CASE_INSENSITIVE).toString()
