@@ -1,7 +1,6 @@
 package org.evomaster.core.search.service
 
 import io.mockk.*
-import org.evomaster.core.EMConfig
 import org.evomaster.core.output.EvaluatedIndividualBuilder
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.rest.data.*
@@ -10,6 +9,7 @@ import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
+/** Verify that one lifecycle restart precedes the entire repeated-detection batch. */
 class FlakinessDetectorTest {
 
     private fun inject(target: Any, name: String, value: Any) {

@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.problem.httpws.service
 
 import io.mockk.*
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
@@ -9,7 +9,8 @@ import org.evomaster.core.remote.service.RemoteController
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class FlakinessRestartTest {
+/** Verify driver-controlled lifecycle preparation without changing black-box targets. */
+class HttpWsFitnessTest {
     private class TestFitness : RestFitness() {
         fun closeClient() = client.close()
     }

@@ -35,6 +35,8 @@ public abstract class ExternalSutController extends SutController {
     private volatile boolean instrumentation;
     private volatile Thread processKillHook;
     private volatile Thread outputPrinter;
+    /** Process whose output is handled by outputPrinter, which may outlive stopSut(). */
+    private volatile Process outputPrinterProcess;
     private volatile Thread sutStartChecker;
     private volatile CountDownLatch latch;
     private volatile ServerController serverController;
@@ -733,7 +735,10 @@ public abstract class ExternalSutController extends SutController {
 
     protected void startExternalProcessPrinter(boolean checkSutInitializedWithLog) {
 
-        if (outputPrinter == null || !outputPrinter.isAlive()) {
+        final Process startingProcess = process;
+        final CountDownLatch startupLatch = latch;
+        if (outputPrinter == null || !outputPrinter.isAlive() || outputPrinterProcess != startingProcess) {
+            outputPrinterProcess = startingProcess;
             outputPrinter = new Thread(() -> {
 
                 try {
@@ -745,11 +750,15 @@ public abstract class ExternalSutController extends SutController {
                     }
 
                     Scanner scanner = new Scanner(new BufferedReader(
-                            new InputStreamReader(process.getInputStream())));
+                            new InputStreamReader(startingProcess.getInputStream())));
 
                     while (scanner.hasNextLine()) {
 
                         String line = scanner.nextLine();
+
+                        if (process != startingProcess) {
+                            return;
+                        }
 
                         if(!muted) {
                             SimpleLogger.info("SUT: " + line);
@@ -761,7 +770,7 @@ public abstract class ExternalSutController extends SutController {
                         if (checkSutInitializedWithLog && line.contains(getLogMessageOfInitializedServer())){
                             initialized = true;
                             errorBuffer = null; //no need to keep track of it if everything is ok
-                            latch.countDown();
+                            startupLatch.countDown();
                         }
                     }
 
@@ -770,11 +779,13 @@ public abstract class ExternalSutController extends SutController {
                         this could happen if it was started with some misconfiguration, or
                         if it has been stopped
                      */
-                    if (process == null) {
-                        SimpleLogger.warn("SUT was manually terminated ('process' reference is null)");
-                    } else if(!initialized) {
-                        if (!process.isAlive()) {
-                            SimpleLogger.warn("SUT was terminated before initialization. Exit code: " + process.exitValue());
+                    if (process != startingProcess) {
+                        // A stopped process must not update a replacement process's startup state.
+                        return;
+                    }
+                    if (!initialized) {
+                        if (!startingProcess.isAlive()) {
+                            SimpleLogger.warn("SUT was terminated before initialization. Exit code: " + startingProcess.exitValue());
                         } else {
                             SimpleLogger.warn("SUT is still alive, but its output was closed before" +
                                     " producing the initialization message.");
@@ -783,7 +794,7 @@ public abstract class ExternalSutController extends SutController {
                         SimpleLogger.info("Process output has been closed");
                     }
 
-                    latch.countDown();
+                    startupLatch.countDown();
 
                 } catch (Exception e) {
                     SimpleLogger.error("Failed to handle external process printer", e);
