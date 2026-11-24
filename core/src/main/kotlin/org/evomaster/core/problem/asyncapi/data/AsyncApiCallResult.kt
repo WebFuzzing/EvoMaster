@@ -14,6 +14,7 @@ class AsyncApiCallResult : EnterpriseActionResult {
         const val REPLY_MESSAGE = "REPLY_MESSAGE"
         const val CORRELATION_MATCHED = "CORRELATION_MATCHED"
         const val WAITED_MS = "WAITED_MS"
+        const val SETTLE_WAITED_MS = "SETTLE_WAITED_MS"
         const val TEST_SCRIPT = "TEST_SCRIPT"
 
         /*
@@ -82,6 +83,18 @@ class AsyncApiCallResult : EnterpriseActionResult {
     }
 
     fun getWaitedMs(): Long? = getResultValue(WAITED_MS)?.toLong()
+
+    /**
+     * How long the action was actually kept open after the driver returned, so that what the
+     * service did with the message was still credited to it. It can be shorter than the
+     * [org.evomaster.core.EMConfig.asyncApiSettleMs] that was asked for. Absent when no such wait
+     * was asked for, or when the message could not be published.
+     */
+    fun setSettleWaitedMs(ms: Long) {
+        addResultValue(SETTLE_WAITED_MS, ms.toString())
+    }
+
+    fun getSettleWaitedMs(): Long? = getResultValue(SETTLE_WAITED_MS)?.toLong()
 
     /**
      * The lines the driver rendered for a generated test, or empty when it rendered none.
