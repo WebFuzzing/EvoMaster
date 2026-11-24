@@ -19,6 +19,9 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.PartMeta
+import org.evomaster.core.problem.rest.param.MinimalFiles
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -1953,6 +1956,44 @@ public void test() throws Exception {
             } else {
                 assertTrue(output.contains("\\r\\na\$bc\\r\\n"), output)
             }
+        }
+    }
+
+    @Test
+    fun testMultipartBinaryFileIsWrittenAsBytes() {
+        val file = StringGene("file")
+        val typeGene = EnumGene("contentType", listOf("multipart/form-data"))
+        val bodyParam = BodyParam(ObjectGene("body", listOf(file)), typeGene, null, mapOf("file" to PartMeta(isFile = true)))
+
+        val action = RestCallAction("1", HttpVerb.POST, RestPath("/upload"), mutableListOf(bodyParam))
+        val individual = RestIndividual(mutableListOf(action), SampleType.RANDOM)
+        TestUtils.doInitializeIndividualForTesting(individual, Randomness().apply { updateSeed(42L) })
+
+        //set after initialization, which randomizes the values
+        val png = MinimalFiles.files[MinimalFiles.PNG]!!
+        file.addSpecializations("", listOf(StringSpecializationInfo(StringSpecialization.CONSTANT, png)),
+            Randomness(), updateGlobalInfo = false, enableConstraintHandling = false)
+        file.selectedSpecialization = 0
+        bodyParam.contentTypeGene.index = bodyParam.contentTypeGene.values.indexOf("multipart/form-data")
+
+        val result = RestCallResult(action.getLocalId()).apply { setStatusCode(200) }
+        val ei = EvaluatedIndividual(FitnessValue(0.0), individual, listOf(result))
+
+        mapOf(
+            OutputFormat.KOTLIN_JUNIT_5 to listOf("\\u0089PNG", ".toByteArray(Charsets.ISO_8859_1))"),
+            OutputFormat.JAVA_JUNIT_5 to listOf("\\u0089PNG", ".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1))"),
+            OutputFormat.PYTHON_UNITTEST to listOf("\\x89PNG", ".encode(\"latin-1\")"),
+            OutputFormat.JS_JEST to listOf("\\x89PNG", "Buffer.from(\"", "\", \"latin1\")")
+        ).forEach { (format, expected) ->
+            val config = getConfig(format)
+            config.problemType = EMConfig.ProblemType.REST
+            val writer = RestTestCaseWriter(config, PartialOracles())
+            val output = writer.convertToCompilableTestCode(TestCase(test = ei, name = "test"), "baseUrlOfSut").toString()
+
+            expected.forEach { assertTrue(output.contains(it), "$format: $it in $output") }
+            assertTrue(output.contains("filename=\\\"file.png\\\""), output)
+            //no raw non-printable byte in the generated code
+            assertTrue(output.none { it.code in 0x80..0xFF || it.code == 0 }, output)
         }
     }
 

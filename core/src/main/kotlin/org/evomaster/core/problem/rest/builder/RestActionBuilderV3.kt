@@ -18,6 +18,8 @@ import io.swagger.v3.oas.models.responses.ApiResponse
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
@@ -59,6 +61,7 @@ import org.evomaster.core.search.gene.uri.UriGene
 import org.evomaster.core.search.gene.uri.UrlHttpGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.NullableGene
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -872,6 +875,10 @@ object RestActionBuilderV3 {
             mapOf()
         }
 
+        if (multipartParts.isNotEmpty()) {
+            addMinimalFiles(gene, bodies, multipartParts)
+        }
+
         val bodyParam = BodyParam(gene, contentTypeGene, parts = multipartParts)
             .apply { this.description = description }
 
@@ -917,6 +924,38 @@ object RestActionBuilderV3 {
             val isFile = propertySchema?.format.equals("binary", ignoreCase = true)
                     || propertySchema?.items?.format.equals("binary", ignoreCase = true)
             name to PartMeta(isFile = isFile, contentType = declared)
+        }
+    }
+
+    /**
+     * Minimal valid files are added as specializations of the gene of each file part,
+     * so the search can send a file that passes content checks (eg magic bytes), or keep a random string.
+     */
+    private fun addMinimalFiles(gene: Gene, bodies: Map<String, MediaType>, parts: Map<String, PartMeta>) {
+
+        val obj = gene.getWrappedGene(ObjectGene::class.java) ?: return
+        val encoding = bodies.entries.find { HttpWsUtil.isContentTypeMultipartForm(it.key) }?.value?.encoding
+        val randomness = Randomness()
+
+        parts.filter { it.value.isFile }.forEach { (name, _) ->
+            val declared = encoding?.get(name)?.contentType
+                ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+                ?: listOf()
+            val specs = MinimalFiles.forContentTypes(declared)
+                .map { StringSpecializationInfo(StringSpecialization.CONSTANT, it) }
+            if (specs.isEmpty()) {
+                return@forEach
+            }
+
+            val leaf = obj.fixedFields.find { it.name == name }?.getLeafGene() ?: return@forEach
+            val strings = if (leaf is ArrayGene<*>) {
+                listOf(leaf.template.getLeafGene()) + leaf.getViewOfElements().map { it.getLeafGene() }
+            } else {
+                listOf(leaf)
+            }
+            strings.filterIsInstance<StringGene>().forEach {
+                it.addSpecializations("", specs, randomness, updateGlobalInfo = false, enableConstraintHandling = false)
+            }
         }
     }
 

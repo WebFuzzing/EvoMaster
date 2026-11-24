@@ -1127,7 +1127,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
             val stringToBeSent = body.getRawStringToBeSent(mode = mode, targetFormat = configuration.outputFormat)
             Entity.entity(
-                stringToBeSent,
+                //multipart is rendered one char per byte, to be able to send binary files
+                if (mode == GeneUtils.EscapeMode.MULTIPART_FORM_DATA) stringToBeSent.toByteArray(StandardCharsets.ISO_8859_1)
+                else stringToBeSent,
                 //includes the boundary for multipart
                 body.contentTypeHeader()
             )

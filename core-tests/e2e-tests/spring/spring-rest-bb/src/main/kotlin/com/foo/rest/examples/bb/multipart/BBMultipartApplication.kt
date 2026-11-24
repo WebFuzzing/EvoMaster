@@ -106,8 +106,7 @@ open class BBMultipartApplication {
     }
 
     /**
-     * 4. Parses the content. Expected NOT to be passed: the content of a part is arbitrary text, not a
-     *    real image. Asserting the 4xx is what documents that limitation with evidence.
+     * 4. Decodes the content: only a real image passes, ie a minimal valid file sent as bytes.
      */
     @PostMapping("/validate", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     open fun validateContent(@RequestParam("file") file: MultipartFile): ResponseEntity<String> {

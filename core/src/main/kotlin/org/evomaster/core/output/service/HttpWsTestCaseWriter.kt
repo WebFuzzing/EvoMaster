@@ -745,23 +745,26 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 else -> lines.add(".$send(\"$escapedXml\")")
             }
         } else if (bodyParam.isMultipartSupported()) {
-            //same escapes as a text body, eg, $ in Kotlin
-            val body = GeneUtils.applyEscapes(
-                bodyParam.getValueAsPrintableString(
-                    mode = GeneUtils.EscapeMode.MULTIPART_FORM_DATA,
-                    targetFormat = format
+            //one char per byte: same escapes as a text body (eg, $ in Kotlin), then the non-printable bytes
+            val body = GeneUtils.applyByteEscapes(
+                GeneUtils.applyEscapes(
+                    bodyParam.getValueAsPrintableString(
+                        mode = GeneUtils.EscapeMode.MULTIPART_FORM_DATA,
+                        targetFormat = format
+                    ),
+                    mode = GeneUtils.EscapeMode.TEXT,
+                    format = format
                 ),
-                mode = GeneUtils.EscapeMode.TEXT,
-                format = format
+                format
             )
 
+            //sent as ISO-8859-1, to get back the same bytes used during the search
             when {
-                format.isPython() -> {
-                    lines.add("body = \"$body\"")
-                }
-                format.isPlaywright() -> {
-                    lines.add("data: \"$body\",")
-                }
+                format.isPython() -> lines.add("body = \"$body\".encode(\"latin-1\")")
+                format.isPlaywright() -> lines.add("data: Buffer.from(\"$body\", \"latin1\"),")
+                format.isJavaScript() -> lines.add(".$send(Buffer.from(\"$body\", \"latin1\"))")
+                format.isKotlin() -> lines.add(".$send(\"$body\".toByteArray(Charsets.ISO_8859_1))")
+                format.isJava() -> lines.add(".$send(\"$body\".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1))")
                 else -> lines.add(".$send(\"$body\")")
             }
         } else {

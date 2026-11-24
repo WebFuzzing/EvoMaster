@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test
  *  - a 200 on /upload requires the part to carry a filename WITH the extension derived from the
  *    `encoding.contentType` declared in the schema (application/pdf -> .pdf). The surrounding 4xx
  *    branches are the ones a wrong filename would land on.
+ *  - a 200 on /image and /picture requires a minimal valid file sent as bytes (magic bytes check).
  */
 class MultipartEMTest : SpringTestBase() {
 
@@ -47,6 +48,10 @@ class MultipartEMTest : SpringTestBase() {
 
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/form", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/upload", null)
+            //minimal valid files, sent as bytes
+            assertHasAtLeastOne(solution, HttpVerb.POST, 422, "/api/multipart/image", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/image", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/picture", null)
         }
     }
 }
