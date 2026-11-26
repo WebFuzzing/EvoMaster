@@ -173,6 +173,12 @@ abstract class FitnessFunction<T>  where T : Individual {
     protected open fun reinitialize() = false
 
     /**
+     * Prepare a fresh SUT lifecycle before the repeated flakiness-detection batch.
+     * Fitness implementations without lifecycle control do not restart a SUT.
+     */
+    open fun prepareForFlakinessDetection() {}
+
+    /**
      * decide what targets to evaluate during fitness evaluation
      * @param targets indicates prioritized targets if there exists
      */

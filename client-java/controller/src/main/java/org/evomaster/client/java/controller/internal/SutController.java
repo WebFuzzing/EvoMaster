@@ -994,35 +994,53 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     private int getFkDepth(String tableName, Set<String> checked){
-
-        List<String> keys = fkMap.keySet().stream()
-                //.filter(s-> s.equalsIgnoreCase(tableName))
-                //FIXME
-                .filter((s-> s.toLowerCase().endsWith(tableName.toLowerCase())))
-                .collect(Collectors.toList());
-
-        if(keys.isEmpty()){
+        String key = resolveFkTable(tableName);
+        if (key == null) {
             return -1;
         }
-
-        checked.add(tableName);
-
-        List<String> fks = keys.stream()
-                .map(s -> fkMap.get(s))
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-        if (fks.isEmpty()) {
+        // Always track the canonical map key: PUBLIC.EMPLOYEES and EMPLOYEES
+        // must not be counted as different nodes when following a self-reference.
+        if (!checked.add(key)) {
             return 0;
         }
-
-        int sum = fks.size();
-        for (String fk: fks){
-            if (!checked.stream().anyMatch(c -> c.equalsIgnoreCase(fk))){
-                sum += getFkDepth(fk, checked);
+        try {
+            int depth = 0;
+            for (String fk : fkMap.get(key)) {
+                String target = resolveFkTable(fk);
+                if (target != null && !checked.contains(target)) {
+                    // Longest dependency path, not a count of reachable edges. Shared
+                    // dependencies must be evaluated independently for each path.
+                    depth = Math.max(depth, 1 + getFkDepth(target, checked));
+                }
             }
+            return depth;
+        } finally {
+            checked.remove(key);
         }
+    }
 
-        return sum;
+    /**
+     * Resolve a foreign-key table name to its schema-qualified key in {@code fkMap}.
+     * Bare names are accepted only when unambiguous across schemas.
+     */
+    private String resolveFkTable(String tableName) {
+        Optional<String> exact = fkMap.keySet().stream()
+                .filter(k -> k.equalsIgnoreCase(tableName)).findFirst();
+        if (exact.isPresent()) {
+            return exact.get();
+        }
+        // A qualified name must never be matched to another schema, or to a
+        // table whose name merely ends in the same characters.
+        if (tableName.contains(".")) {
+            return null;
+        }
+        List<String> candidates = fkMap.keySet().stream()
+                .filter(k -> k.substring(k.lastIndexOf('.') + 1).equalsIgnoreCase(tableName))
+                .collect(Collectors.toList());
+        if (candidates.size() > 1) {
+            throw new IllegalArgumentException("Ambiguous foreign-key table name: " + tableName);
+        }
+        return candidates.isEmpty() ? null : candidates.get(0);
     }
 
     /**

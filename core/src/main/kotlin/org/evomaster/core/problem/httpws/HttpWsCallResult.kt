@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.node.TextNode
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
@@ -237,7 +238,9 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         STATUS_CODE,
         BODY,
         BODY_TYPE,
-        ERROR_MESSAGE //,
+        ERROR_MESSAGE,
+        WWW_AUTHENTICATE,
+        UPGRADE
         // do not consider the following fields in flakiness handling
 //        TOO_LARGE_BODY,
 //        INFINITE_LOOP,
@@ -299,7 +302,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
                 val baseline = spec.extract(this)
                 val observed = spec.extract(other)
 
-                if (observed != null && observed != baseline) {
+                if (observed != baseline) {
                     spec.field to observed
                 } else {
                     null
@@ -321,7 +324,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         val differences = mutableMapOf<ResponseField, String?>()
 
         getBody()?.let {
-            val normalized = FlakinessInferenceUtil.derive(it)
+            val normalized = inferFlakyBody(it)
             if (normalized != it) {
                 differences[ResponseField.BODY] = normalized
             }
@@ -337,6 +340,35 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         if (differences.isNotEmpty()) {
             flakyObservations.removeIf { it.source == FlakyObservationSource.STATIC_INFERENCE }
             flakyObservations.add(FlakyObservation(FlakyObservationSource.STATIC_INFERENCE, null, differences))
+        }
+    }
+
+    private fun inferFlakyBody(body: String): String {
+        if (body.trimStart().firstOrNull() !in listOf('{', '[')) {
+            return FlakinessInferenceUtil.derive(body)
+        }
+        // Apply the same inference rules to JSON values, not to the serialized document.
+        // Replacing an unquoted numeric timestamp with a marker otherwise breaks JSON and
+        // prevents the writer from retaining assertions on unrelated, stable fields.
+        fun infer(node: JsonNode): JsonNode = when (node) {
+            is ObjectNode -> node.deepCopy().also { copy ->
+                node.fields().forEachRemaining { (key, value) -> copy.set<JsonNode>(key, infer(value)) }
+            }
+            is ArrayNode -> mapper.createArrayNode().also { copy -> node.forEach { copy.add(infer(it)) } }
+            else -> {
+                val original = node.toString()
+                val normalized = FlakinessInferenceUtil.derive(original)
+                if (original == normalized) node
+                else if (node.isTextual) mapper.readTree(normalized)
+                else TextNode(normalized)
+            }
+        }
+        return try {
+            val original = mapper.readTree(body) ?: return FlakinessInferenceUtil.derive(body)
+            val inferred = infer(original)
+            if (original == inferred) body else inferred.toString()
+        } catch (e: JsonProcessingException) {
+            FlakinessInferenceUtil.derive(body)
         }
     }
 
@@ -370,13 +402,8 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     fun getFlakyValues(field: ResponseField): List<String?> =
         flakyObservations
             .sortedWith(compareBy<FlakyObservation> { it.source }.thenBy { it.execIndex ?: Int.MAX_VALUE })
-            .mapNotNull { observation ->
-                if (observation.differences.containsKey(field)) {
-                    observation.differences[field]
-                } else {
-                    null
-                }
-            }
+            .filter { it.differences.containsKey(field) }
+            .map { it.differences[field] }
 
     /**
      * Return the values observed for [field] across concrete re-executions.
@@ -533,7 +560,9 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         ResponseFieldSpec(ResponseField.STATUS_CODE) { it.getStatusCode()?.toString() },
         ResponseFieldSpec(ResponseField.BODY) { it.getBody() },
         ResponseFieldSpec(ResponseField.BODY_TYPE) { it.getBodyType()?.toString() },
-        ResponseFieldSpec(ResponseField.ERROR_MESSAGE) { it.getErrorMessage() }//,
+        ResponseFieldSpec(ResponseField.ERROR_MESSAGE) { it.getErrorMessage() },
+        ResponseFieldSpec(ResponseField.WWW_AUTHENTICATE) { it.getHeader("www-authenticate") },
+        ResponseFieldSpec(ResponseField.UPGRADE) { it.getHeader("upgrade") }
 //        ResponseFieldSpec(ResponseField.TOO_LARGE_BODY) { it.getTooLargeBody().toString() },
 //        ResponseFieldSpec(ResponseField.INFINITE_LOOP) { it.getInfiniteLoop().toString() },
 //        ResponseFieldSpec(ResponseField.TIMEDOUT) { it.getTimedout().toString() },

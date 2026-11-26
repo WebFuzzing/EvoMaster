@@ -6,7 +6,6 @@ import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
-import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.output.dto.DtoCall
@@ -375,7 +374,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             format.isJavaScript() && format.isPlaywright() -> {
                 val statusAssert = "expect($responseVariableName.status()).toBe($code);"
-                if (res.getFlakyStatusCode() == null){
+                if (!res.hasFlakyField(HttpWsCallResult.ResponseField.STATUS_CODE)){
                     lines.add(statusAssert)
                 }else{
                     lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
@@ -386,7 +385,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             format.isJavaScript() && !format.isPlaywright() -> {
                 val statusAssert = "expect($responseVariableName.status).toBe($code);"
-                if (res.getFlakyStatusCode() == null){
+                if (!res.hasFlakyField(HttpWsCallResult.ResponseField.STATUS_CODE)){
                     lines.add(statusAssert)
                 }else{
                     lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
@@ -400,7 +399,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             format.isPython() -> {
                 val statusAssert = "assert $responseVariableName.status_code == $code"
-                if (res.getFlakyStatusCode() == null){
+                if (!res.hasFlakyField(HttpWsCallResult.ResponseField.STATUS_CODE)){
                     lines.add(statusAssert)
                 }else{
                     lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
@@ -844,7 +843,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         val send = sendBodyCommand()
 
-        val bodyLines = formatJsonWithEscapes(json, format)
+        // Preserve the searched payload. Formatting JSON can change a String request body,
+        // numeric lexemes, or error locations, even when the JSON value appears equivalent.
+        val bodyLines = listOf("\"${GeneUtils.applyEscapes(json, GeneUtils.EscapeMode.BODY, format)}\"")
 
         if (bodyLines.size == 1) {
             when {
@@ -1007,7 +1008,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             when {
                 format.isJavaOrKotlin() -> {
                     lines.add(".then()")
-                    if (res.getFlakyStatusCode() == null) {
+                    if (!res.hasFlakyField(HttpWsCallResult.ResponseField.STATUS_CODE)) {
                         lines.add(".statusCode($code)")
                     } else {
                         lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
@@ -1044,10 +1045,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             addAssertionOnHeader(lines, "allow", res.getHeader("allow"), true, responseVariableName)
         }
         if(status == 401){
-            addAssertionOnHeader(lines, "www-authenticate", res.getHeader("www-authenticate"), false, responseVariableName)
+            addAssertionOnHeader(lines, "www-authenticate", res.getHeader("www-authenticate"),
+                res.hasFlakyField(HttpWsCallResult.ResponseField.WWW_AUTHENTICATE), responseVariableName)
         }
         if(status == 426) {
-            addAssertionOnHeader(lines, "upgrade", res.getHeader("upgrade"), false, responseVariableName)
+            addAssertionOnHeader(lines, "upgrade", res.getHeader("upgrade"),
+                res.hasFlakyField(HttpWsCallResult.ResponseField.UPGRADE), responseVariableName)
         }
     }
 
@@ -1113,7 +1116,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val bodyString = res.getBody()
 
         if (bodyString.isNullOrBlank()) {
-            lines.add(emptyBodyCheck(responseVariableName))
+            handleTextPlainTextAssertions(bodyString, res.getFlakyValues(HttpWsCallResult.ResponseField.BODY), lines, responseVariableName)
             return
         }
 
@@ -1136,7 +1139,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             }
 
             // handle flaky body type
-            if (res.getFlakyBodyType() == null){
+            if (!res.hasFlakyField(HttpWsCallResult.ResponseField.BODY_TYPE)){
                 lines.add(instruction)
             } else{
                 lines.addSingleCommentLine(instruction)
@@ -1161,7 +1164,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("JsonConvert.DeserializeObject(await $responseVariableName.Content.ReadAsStringAsync());")
             }
 
-            handleJsonStringAssertion(bodyString, res.getFlakyBodies()?.let { res.getMergedFlakyBody() }, lines, bodyVarName, res.getTooLargeBody())
+            handleJsonStringAssertions(bodyString, res.getFlakyValues(HttpWsCallResult.ResponseField.BODY), lines, bodyVarName, res.getTooLargeBody())
 
         } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
 
@@ -1169,7 +1172,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
             }
 
-            handleTextPlainTextAssertion(bodyString, res.getFlakyBodies()?.let { res.getMergedFlakyBody() }, lines, bodyVarName)
+            handleTextPlainTextAssertions(bodyString, res.getFlakyValues(HttpWsCallResult.ResponseField.BODY), lines, bodyVarName)
         } else {
             if (format.isCsharp()) {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")

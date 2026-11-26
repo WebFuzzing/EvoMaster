@@ -615,6 +615,7 @@ class TestSuiteWriter {
             lines.add("import json")
             lines.add("import unittest")
             lines.add("import requests")
+            lines.add("import urllib.parse")
 
             if(config.sqli){
                 lines.add("import time")
@@ -920,7 +921,8 @@ class TestSuiteWriter {
                         }
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
-                        lines.add(".encoderConfig(EncoderConfig.encoderConfig().encodeContentTypeAs(\"application/octet-stream\", ContentType.TEXT))")
+                        // Encoding the payload as text must not add a charset absent from the searched request.
+                        lines.add(".encoderConfig(EncoderConfig.encoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(false).encodeContentTypeAs(\"application/octet-stream\", ContentType.TEXT))")
                     }
                     lines.appendSemicolon()
                 }

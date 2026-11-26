@@ -5,23 +5,82 @@ import com.google.inject.Guice
 import com.google.inject.Injector
 import com.google.inject.Provider
 import com.netflix.governator.guice.LifecycleInjector
+import com.sun.net.httpserver.HttpServer
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
+import org.evomaster.core.output.compiler.GeneratedRegressionCompiler
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.Solution
 import org.evomaster.test.utils.py.PyLoader
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
+import java.net.InetSocketAddress
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 
 class TestSuiteWriterTest{
+
+    @TempDir
+    lateinit var temporaryDirectory: Path
+
+    @ParameterizedTest
+    @EnumSource(OutputFormat::class, names = ["JAVA_JUNIT_5", "KOTLIN_JUNIT_5"])
+    fun generatedEncoderDoesNotAddCharsetButPreservesExplicitCharset(format: OutputFormat) {
+        val injector = getInjector()
+        val config = injector.getInstance(EMConfig::class.java)
+        config.createTests = true
+        config.outputFormat = format
+        config.problemType = EMConfig.ProblemType.REST
+        config.outputFolder = temporaryDirectory.resolve("suite").toString()
+        config.outputFilePrefix = "CharsetSuite"
+        config.outputFileSuffix = ""
+        injector.getInstance(TestSuiteWriter::class.java).writeTests(getEmptySolution(config), FakeController::class.qualifiedName!!, null)
+        val extension = if (format.isJava()) ".java" else ".kt"
+        val content = Files.readString(Paths.get(config.outputFolder, config.outputFilePrefix + extension))
+        val encoderLine = content.lineSequence().single { it.contains(".encoderConfig(") }.trim().removeSuffix(";")
+        val received = LinkedBlockingQueue<Pair<String, String>>()
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/") {
+            received.add(it.requestHeaders.getFirst("Content-Type") to String(it.requestBody.readAllBytes(), Charsets.UTF_8))
+            it.sendResponseHeaders(204, -1)
+            it.close()
+        }
+        server.start()
+        try {
+            val imports = """
+                import io.restassured.RestAssured;
+                import io.restassured.config.EncoderConfig;
+                import io.restassured.http.ContentType;
+            """.trimIndent()
+            val request = """RestAssured.given().config(RestAssured.config()$encoderLine).contentType(type).body("hello").post("http://127.0.0.1:${server.address.port}/")"""
+            val code = if (format.isJava()) "$imports\npublic class CharsetProbe { public void run(String type) { $request; } }"
+                else "$imports\nclass CharsetProbe { fun run(type: String) { $request } }"
+            GeneratedRegressionCompiler.withClass(temporaryDirectory.resolve("compiled"), format, "CharsetProbe", code) { klass ->
+                val instance = klass.getDeclaredConstructor().newInstance()
+                for (type in listOf("application/octet-stream", "text/plain", "application/json", "application/octet-stream; charset=UTF-8")) {
+                    klass.getMethod("run", String::class.java).invoke(instance, type)
+                    val actual = received.poll(5, TimeUnit.SECONDS)
+                    assertEquals(type, actual?.first)
+                    assertEquals("hello", actual?.second)
+                }
+            }
+        } finally {
+            server.stop(0)
+        }
+    }
 
     /*
         Generated files during the tests should always be somewhere

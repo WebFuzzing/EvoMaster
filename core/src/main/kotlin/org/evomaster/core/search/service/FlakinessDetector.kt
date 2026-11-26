@@ -65,6 +65,14 @@ class FlakinessDetector<T: Individual> : TimeBoxedPhase {
          */
         val currentIndividuals = archive.extractSolution().individuals
 
+        if (execNum <= 0 || currentIndividuals.isEmpty() || hasPhaseTimedOut()) {
+            return archive.extractSolution()
+        }
+
+        // Restart once before the batch, not before every test or repetition.
+        // Keep the original responses so differences from search history can be detected.
+        fitness.prepareForFlakinessDetection()
+
         LoggingUtil.getInfoLogger().info("Reexecuting all individual ${currentIndividuals.size} for identifying flakiness.")
 
         for (execIndex in 1..execNum) {
