@@ -7,8 +7,13 @@ import org.evomaster.core.database.sql.schema.ColumnDataType
 import org.evomaster.core.database.sql.schema.ForeignKey
 import org.evomaster.core.database.sql.schema.Table
 import org.evomaster.core.database.sql.schema.TableId
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -105,5 +110,59 @@ class DbActionGeneBuilderTest {
         }
     }
 
+    private fun buildTextColumnGene(
+        databaseType: DatabaseType,
+        similarTo: List<String>? = null,
+        like: List<String>? = null,
+        javaRegex: String? = null
+    ) : Gene {
+        val column = Column(
+            "c",
+            ColumnDataType.VARCHAR,
+            size = 20,
+            nullable = false,
+            databaseType = databaseType,
+            similarToPatterns = similarTo,
+            likePatterns = like,
+            javaRegExPattern = javaRegex
+        )
+        val table = Table(TableId("t"), setOf(column), setOf())
+        return SqlActionGeneBuilder().buildGene(1L, table, column)
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = DatabaseType::class, names = ["H2", "MYSQL", "POSTGRES"])
+    fun testValidPatternsGiveRegexGene(databaseType: DatabaseType) {
+        assertTrue(buildTextColumnGene(databaseType, similarTo = listOf("(foo|bar)%")) is RegexGene)
+        assertTrue(buildTextColumnGene(databaseType, like = listOf("%foo_")) is RegexGene)
+        assertTrue(buildTextColumnGene(databaseType, javaRegex = "[a-z]{3}") is RegexGene)
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = DatabaseType::class, names = ["H2", "MYSQL", "POSTGRES"])
+    fun testInvalidPatternsGiveStringGene(databaseType: DatabaseType) {
+        assertTrue(buildTextColumnGene(databaseType, similarTo = listOf("[]")) is StringGene)
+        assertTrue(buildTextColumnGene(databaseType, similarTo = listOf("[^]")) is StringGene)
+        assertTrue(buildTextColumnGene(databaseType, similarTo = listOf("(")) is StringGene)
+        assertTrue(buildTextColumnGene(databaseType, javaRegex = "(") is StringGene)
+        assertTrue(buildTextColumnGene(databaseType, javaRegex = "[a&&b]+") is StringGene)
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = DatabaseType::class, names = ["H2", "MYSQL", "POSTGRES"], mode = EnumSource.Mode.EXCLUDE)
+    fun testUnsupportedDatabaseGivesStringGene(databaseType: DatabaseType) {
+        assertTrue(buildTextColumnGene(databaseType, similarTo = listOf("(foo|bar)%")) is StringGene)
+        assertTrue(buildTextColumnGene(databaseType, like = listOf("%foo_")) is StringGene)
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = DatabaseType::class, names = ["H2", "MYSQL", "POSTGRES"], mode = EnumSource.Mode.EXCLUDE)
+    fun testUnsupportedDatabaseInRegexBuilders(databaseType: DatabaseType) {
+        val builder = SqlActionGeneBuilder()
+        assertThrows(UnsupportedOperationException::class.java) { builder.buildLikeRegexGene("c", "%foo_", databaseType) }
+        assertThrows(UnsupportedOperationException::class.java) { builder.buildSimilarToRegexGene("c", "(foo|bar)%", databaseType) }
+        assertNull(builder.attemptToBuildLikeRegexGene("c", "%foo_", databaseType))
+        assertNull(builder.attemptToBuildSimilarToRegexGene("c", "(foo|bar)%", databaseType))
+    }
 
 }

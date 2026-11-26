@@ -1,7 +1,12 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Randomness
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -127,5 +132,46 @@ internal class StringGeneTest{
 
         assertTrue(testGene.getValueAsPrintableString(targetFormat = OutputFormat.JAVA_JUNIT_5).contains('"'))
         assertTrue(testGene.getValueAsPrintableString(targetFormat = OutputFormat.JAVA_JUNIT_5).contains("\""))
+    }
+
+    private fun addSpecs(vararg specs: StringSpecializationInfo): StringGene {
+        val gene = StringGene("foo")
+        gene.addSpecializations(
+            "foo",
+            specs.toList(),
+            Randomness(),
+            updateGlobalInfo = false,
+            enableConstraintHandling = false
+        )
+        return gene
+    }
+
+    @Test
+    fun testConstantIgnoreCase() {
+        val gene = addSpecs(StringSpecializationInfo(StringSpecialization.CONSTANT_IGNORE_CASE, "Hello, World [1] \\E"))
+        assertEquals(1, gene.specializationGenes.size)
+        assertTrue(gene.specializationGenes[0] is RegexGene)
+    }
+
+    @Test
+    fun testRegexWhole() {
+        val gene = addSpecs(StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, "^[a-z]{3}$"))
+        assertEquals(1, gene.specializationGenes.size)
+        assertTrue(gene.specializationGenes[0] is RegexGene)
+    }
+
+    @Test
+    fun testInvalidRegexIsSkipped() {
+        val gene = addSpecs(StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, "("))
+        assertEquals(0, gene.specializationGenes.size)
+    }
+
+    @Test
+    fun testInvalidRegexDoesNotPreventOthers() {
+        val gene = addSpecs(
+            StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, "("),
+            StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, "^[a-z]{3}$")
+        )
+        assertEquals(1, gene.specializationGenes.size)
     }
 }

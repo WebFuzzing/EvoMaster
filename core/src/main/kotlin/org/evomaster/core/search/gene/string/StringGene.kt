@@ -646,12 +646,15 @@ class StringGene(
         }
 
         if (toAddSpecs.any { it.stringSpecialization == StringSpecialization.CONSTANT_IGNORE_CASE }) {
-            toAddGenes.add(RegexHandler.createGeneForJVM(
+            val regexGene = RegexHandler.attemptToCreateGeneForJVM(
                 toAddSpecs.filter { it.stringSpecialization == StringSpecialization.CONSTANT_IGNORE_CASE }
                     .map { "^(${RegexUtils.ignoreCaseRegex(it.value)})$" }
                     .joinToString("|")
-            ))
-            log.trace("CONSTANT_IGNORE_CASE, added specification size: {}", toAddGenes.size)
+            )
+            if (regexGene != null) {
+                toAddGenes.add(regexGene)
+                log.trace("CONSTANT_IGNORE_CASE, added specification size: {}", toAddGenes.size)
+            }
         }
 
 
@@ -821,15 +824,12 @@ class StringGene(
                     }
                     //.joinToString("|")
                     .forEach {(regex, externalFlags) ->
-                      try {
-                              toAddGenes.add(RegexHandler.createGeneForJVM(regex, externalFlags))
-                              log.trace("Regex, added specification for: {}", regex)
-                          } catch (e: Exception) {
-                              LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
-                          } catch (e: java.lang.StackOverflowError){
-                              LoggingUtil.uniqueWarn(log, "Failed to handle regex, as it gives a stack overflow error: $regex")
-                          }
-                      }
+                        val regexGene = RegexHandler.attemptToCreateGeneForJVM(regex, externalFlags)
+                        if (regexGene != null) {
+                            toAddGenes.add(regexGene)
+                            log.trace("Regex, added specification for: {}", regex)
+                        }
+                    }
 
 //            try {
 //                toAddGenes.add(RegexHandler.createGeneForJVM(regex))

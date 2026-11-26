@@ -86,7 +86,7 @@ object RedisInsertBuilder {
             }
             "KEYS" -> {
                 val pattern = cmd.pattern ?: return emptyList()
-                val keyGene = RegexHandler.createGeneForJVM(pattern)
+                val keyGene = RegexHandler.attemptToCreateGeneForJVM(pattern) ?: return emptyList()
                 listOf(RedisSetFromPatternAction(
                     keyGene = keyGene,
                     valueGene = StringGene("value")
@@ -203,7 +203,8 @@ object RedisInsertBuilder {
                 if (term.endsWith("*")) {
                     val word = term.removeSuffix("*")
                     val regex = "^" + escapeRegexLiteral(word) + ".*$"
-                    RedisQueryField(field, valueGene = RegexHandler.createGeneForJVM(regex))
+                    val valueGene = RegexHandler.attemptToCreateGeneForJVM(regex) ?: return null
+                    RedisQueryField(field, valueGene = valueGene)
                 } else {
                     RedisQueryField(field, constantValue = term)
                 }

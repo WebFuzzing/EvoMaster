@@ -10,6 +10,9 @@ import org.evomaster.core.utils.RegexFlags
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.ValueSource
 import java.util.regex.Pattern
 
 internal class RegexHandlerTest{
@@ -253,5 +256,59 @@ internal class RegexHandlerTest{
             val value = withExternalCI.getValueAsRawString()
             assertEquals("abc", value)
         }
+    }
+
+    @Test
+    fun testAttemptJVM(){
+        val regex = "^[a-z]{3}$"
+        val gene = RegexHandler.attemptToCreateGeneForJVM(regex)
+        assertNotNull(gene)
+        assertEquals(regex, gene!!.sourceRegex)
+
+        val ignoreCase = RegexHandler.attemptToCreateGeneForJVM("^abc$", RegexFlags(caseInsensitive = true))
+        assertNotNull(ignoreCase)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [ "(", "[\\1]", "[a&&b]+", "a{2,1}", "\\p{Foo}", "(?<n>a)(?<n>b)", "a{99999999999}" ])
+    fun testAttemptJVMInvalid(regex: String){
+        assertThrows(Exception::class.java, { RegexHandler.createGeneForJVM(regex) }, regex)
+        assertNull(RegexHandler.attemptToCreateGeneForJVM(regex), regex)
+    }
+
+    @Test
+    fun testAttemptEcma262(){
+        val regex = "^[a-z]{3}$"
+        val gene = RegexHandler.attemptToCreateGeneForEcma262(regex)
+        assertNotNull(gene)
+        assertEquals(regex, gene!!.sourceRegex)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [ "(", "[]" ])
+    fun testAttemptEcma262Invalid(regex: String){
+        assertThrows(Exception::class.java, { RegexHandler.createGeneForEcma262(regex) }, regex)
+        assertNull(RegexHandler.attemptToCreateGeneForEcma262(regex), regex)
+    }
+
+    @Test
+    fun testAttemptPostgresSimilarTo(){
+        val pattern = "(foo|bar)%"
+        val gene = RegexHandler.attemptToCreateGeneForPostgresSimilarTo(pattern)
+        assertNotNull(gene)
+        assertEquals(pattern, gene!!.sourceRegex)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [ "(", "[]", "[^]" ])
+    fun testAttemptPostgresSimilarToInvalid(pattern: String){
+        assertThrows(Exception::class.java, { RegexHandler.createGeneForPostgresSimilarTo(pattern) }, pattern)
+        assertNull(RegexHandler.attemptToCreateGeneForPostgresSimilarTo(pattern), pattern)
+    }
+
+    @ParameterizedTest
+    @EnumSource(RegexType::class)
+    fun testAttemptCatchesStackOverflow(type: RegexType){
+        assertNull(RegexHandler.attempt(type, "x") { throw StackOverflowError() })
     }
 }
