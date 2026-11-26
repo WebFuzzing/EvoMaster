@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -50,5 +51,16 @@ class DateGeneTest {
         assertEquals(gene.year.toInt(),copy.year.toInt())
         assertEquals(gene.month.toInt(),copy.month.toInt())
         assertEquals(gene.day.toInt(),copy.day.toInt())
+    }
+
+    @Test
+    fun testSetFromStringValue() {
+        val gene = DateGene("date")
+
+        assertTrue(gene.unsafeSetFromStringValue("1978-07-31"))
+        assertEquals("1978-07-31", gene.getValueAsRawString())
+
+        assertFalse(gene.unsafeSetFromStringValue("not a date"))
+        assertEquals("1978-07-31", gene.getValueAsRawString())
     }
 }

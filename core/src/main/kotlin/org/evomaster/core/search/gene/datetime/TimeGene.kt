@@ -259,7 +259,7 @@ class TimeGene(
 
     override fun unsafeSetFromStringValue(value: String): Boolean {
 
-        val formatter = DateTimeFormatter.ofPattern("HH:MM:SS")
+        val formatter = DateTimeFormatter.ofPattern("HH:mm:ss")
         val localTime = try{
             LocalTime.parse(value, formatter)
         }catch(ex: DateTimeParseException){

@@ -20,6 +20,7 @@ import java.time.OffsetDateTime
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.time.temporal.TemporalAccessor
 
 /**
  * Using RFC3339
@@ -175,25 +176,18 @@ open class DateTimeGene(
 
     override fun unsafeSetFromStringValue(value: String): Boolean {
 
-        val pd = DateTimeFormatter.ofPattern("YYYY-MM-DD")
-        val pt = DateTimeFormatter.ofPattern("HH:MM:SS")
+        val pd = DateTimeFormatter.ISO_LOCAL_DATE
+        val pt = DateTimeFormatter.ofPattern("HH:mm:ss")
 
         val (dateValue, timeValue) = try{
-            if(format == FormatForDatesAndTimes.RFC3339) {
-                val dateTime = OffsetDateTime.parse(value)
-
-                val dateValue = dateTime.format(pd)
-                val timeValue = dateTime.format(pt)
-                Pair(dateValue, timeValue)
-
-            } else{
-                val formatter = DateTimeFormatter.ofPattern(format.pattern)
-                val dateTime = LocalDateTime.parse(value, formatter)
-
-                val dateValue =  dateTime.format(pd)
-                val timeValue = dateTime.format(pt)
-                Pair(dateValue, timeValue)
+            // FormatForDatesAndTimes.pattern is a description, not a pattern for DateTimeFormatter
+            val dateTime : TemporalAccessor = when(format) {
+                FormatForDatesAndTimes.RFC3339 -> OffsetDateTime.parse(value)
+                FormatForDatesAndTimes.ISO_LOCAL -> LocalDateTime.parse(value)
+                FormatForDatesAndTimes.DATETIME ->
+                    LocalDateTime.parse(value, DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss"))
             }
+            Pair(pd.format(dateTime), pt.format(dateTime))
         }catch (e: Exception){
             return false
         }

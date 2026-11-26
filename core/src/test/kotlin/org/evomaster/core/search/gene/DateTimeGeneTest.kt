@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -198,5 +199,37 @@ class DateTimeGeneTest {
         assertEquals(
             FormatForDatesAndTimes.DATETIME,
                 gene1.format)
+    }
+
+    @Test
+    fun testSetFromStringValueISOLocal() {
+        val gene = DateTimeGene("dateTime", format = FormatForDatesAndTimes.ISO_LOCAL)
+
+        assertTrue(gene.unsafeSetFromStringValue("2025-12-30T23:45:06"))
+        assertEquals("2025-12-30T23:45:06", gene.getValueAsRawString())
+
+        assertFalse(gene.unsafeSetFromStringValue("2025-12-30 23:45:06"))
+    }
+
+    @Test
+    fun testSetFromStringValueDateTime() {
+        val gene = DateTimeGene("dateTime", format = FormatForDatesAndTimes.DATETIME)
+
+        assertTrue(gene.unsafeSetFromStringValue("2025-12-30 23:45:06"))
+        assertEquals("2025-12-30 23:45:06", gene.getValueAsRawString())
+
+        assertFalse(gene.unsafeSetFromStringValue("2025-12-30T23:45:06"))
+    }
+
+    @Test
+    fun testSetFromStringValueRFC3339() {
+        val gene = DateTimeGene("dateTime", format = FormatForDatesAndTimes.RFC3339)
+        gene.time.apply {
+            useMilliseconds(false)
+            selectZ()
+        }
+
+        assertTrue(gene.unsafeSetFromStringValue("2025-12-30T23:45:06Z"))
+        assertEquals("2025-12-30T23:45:06Z", gene.getValueAsRawString())
     }
 }
