@@ -42,11 +42,29 @@ class SamplerVerifierTest {
         }
     }
 
+    /*
+        This is problematic. On my Mac, it takes 15 seconds.
+        Looks like overhead in binding of genes.
+
+        Removing:
+        Individual -> computeTransitiveBindingGenes()  (L158)
+        RestCallAction -> BindingBuilder.bindParamsInRestAction(this, randomness = randomness) (L289)
+        RestResourceCalls -> buildBindingGene(randomness) (L74)
+
+        reduce time from 15s to 5s (this latter is acceptable)
+
+        for black-box testing, it reduces from 5s to 2.5s.
+        but, in BB, do we even use binding of genes?
+        so far (but likely ll change in future) we just do sampling and not mutation in BB.
+
+        we need optimize and review the use of gene binding in EM
+     */
+
     @TestFactory
     fun debugIssue(): Collection<DynamicTest>{
         val tests = sampleFromSchemasAndCheckInvariants(
             //NOTE: can replace with a folder to debug
-            "./src/test/resources/APIs_guru/asana.com/1.0",
+            "./src/test/resources/APIs_guru/adyen.com/CheckoutService/64",
             "APIs_guru",
             false)
         assertTrue(tests.isNotEmpty())
