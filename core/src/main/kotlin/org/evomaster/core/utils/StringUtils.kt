@@ -193,4 +193,16 @@ object StringUtils {
         if (t == "true" || t == "false") return true
         return t.toBigDecimalOrNull() != null
     }
+
+    /**
+     * Normalizes an identifier [name] for case- and separator-insensitive comparison across naming styles.
+     *
+     * Here, normalization strips every character that is not a letter or digit (such as `_`, `-`, `.`,
+     * or whitespace) and converts the remaining alphanumeric characters to lowercase.
+     * For example, `subject_id`, `subject-id`, `subjectId`, and `SubjectID` all normalize to `subjectid`.
+     *
+     * @param name identifier, parameter name, or attribute name to normalize
+     * @return lowercase alphanumeric representation of [name]
+     */
+    fun normalizeName(name: String): String = name.filter(Char::isLetterOrDigit).lowercase()
 }
