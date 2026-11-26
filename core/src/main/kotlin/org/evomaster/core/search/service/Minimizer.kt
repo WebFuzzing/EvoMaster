@@ -195,6 +195,7 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
             val copy = ind.copy() as T
 
             if (copy is RestIndividual) {
+                // TODO: code here will need to be refactored when having updated code for deleting actions
                 removeReferencesToResourceIfCreated(copy, index)
                 removeBackwardLinksToAction(copy, index)
             }
