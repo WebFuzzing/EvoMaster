@@ -1,6 +1,9 @@
 package org.evomaster.core.search.impact
 
 import org.evomaster.core.TestUtils
+import org.evomaster.core.database.dynamodb.DynamoDbAction
+import org.evomaster.core.database.dynamodb.DynamoDbAttributeGene
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.redis.RedisSetAction
@@ -152,5 +155,36 @@ class InitializationAbsolutePositionsTest {
             it.doInitializeLocalId()
             it.doInitialize()
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun testRemoveInitializationImpactsSupportsGenericActionsAndEmptyList(abstract: Boolean) {
+        val ddb1 = DynamoDbAction("WorldCupPlayers", listOf(DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.STRING, StringGene("country", "Argentina"))))
+        val ddb2 = DynamoDbAction("WorldCupPlayers", listOf(DynamoDbAttributeGene("country", DynamoDbScalarTypeDto.STRING, StringGene("country", "Brazil"))))
+        val rest = RestResourceCalls(actions = listOf(TestUtils.generateFakeQueryRestAction("get-world-cup-players", "/world-cup/players")), sqlActions = mutableListOf())
+        val individual = RestIndividual(
+            sampleType = SampleType.RANDOM,
+            allActions = mutableListOf(ddb1, ddb2, rest),
+            mainSize = 1,
+            sqlSize = 0,
+            mongoSize = 0,
+            redisSize = 0,
+            dynamoDbSize = 2
+        )
+        val impacts = ImpactsOfIndividual(individual, listOf(DynamoDbAction::class), abstract, null)
+        impacts.initInitializationImpacts(listOf(listOf(ddb1, ddb2)), 0, ImpactsOfIndividual.DYNAMODB_ACTION_KEY, abstract)
+        impacts.syncBasedOnIndividual(individual, null)
+
+        // Empty list should be a safe no-op
+        impacts.removeInitializationImpacts(emptyList(), 0, ImpactsOfIndividual.DYNAMODB_ACTION_KEY, abstract)
+
+        // Removing a non-SQL Action updates initialization impacts cleanly
+        individual.killChildren { it === ddb1 }
+        impacts.removeInitializationImpacts(listOf(ddb1 to 0), 0, ImpactsOfIndividual.DYNAMODB_ACTION_KEY, abstract)
+        impacts.syncBasedOnIndividual(individual, null)
+
+        val ddbGroup = impacts.initActionImpacts[ImpactsOfIndividual.DYNAMODB_ACTION_KEY]!!
+        assertNotNull(ddbGroup.getImpactOfAction(ddb2.getName(), 0, absoluteIndex = true))
     }
 }

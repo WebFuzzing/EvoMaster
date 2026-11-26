@@ -111,9 +111,10 @@ class InitializationGroupedActionsImpacts(val abstract: Boolean, val enableImpac
 
     /**
      * remove impacts of actions in initialization of the individual
-     * @param removed to be removed, a list of Dbaction to its index
+     * @param removed to be removed, a list of initialization action to its index
      */
-    fun removeInitialization(removed: List<Pair<SqlAction, Int>>){
+    fun removeInitialization(removed: List<Pair<Action, Int>>){
+        if (removed.isEmpty()) return
         val removedIndex = removed.map { it.second - existingSQLData}.sorted()
         val removedImpacts = removedIndex.map { completeSequence[it] }
 
