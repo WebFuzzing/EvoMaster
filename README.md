@@ -293,6 +293,7 @@ Otherwise, if you are working in industry on closed-source APIs, we have options
 * [Download and Install EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
 * [Command-Line Interface (CLI) options](docs/options.md)
+* [Using LLMs with EvoMaster (including OrcaRouter)](docs/llm.md)
 * [OpenApi/Swagger Schema](docs/openapi.md)
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
