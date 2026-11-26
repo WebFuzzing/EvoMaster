@@ -286,7 +286,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
 
         if (format.isPlaywright() && bodyParam != null) {
-            val contentType = bodyParam.contentType()
+            val contentType = bodyParam.contentTypeHeader()
             if (contentType != null) {
                 lines.add("'Content-Type': '$contentType',")
             }
@@ -692,12 +692,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val send = sendBodyCommand()
 
         when {
-            format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
-            format.isJavaScript() && !format.isPlaywright() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
+            format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentTypeHeader()}\")")
+            format.isJavaScript() && !format.isPlaywright() -> lines.add(".set('Content-Type','${bodyParam.contentTypeHeader()}')")
             format.isPlaywright() -> {
                 // handled in makeHttpCall through options object
             }
-            format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
+            format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentTypeHeader()}\"")
         }
 
         if (bodyParam.isJson()) {
@@ -743,6 +743,26 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     lines.add("data: \"$escapedXml\",")
                 }
                 else -> lines.add(".$send(\"$escapedXml\")")
+            }
+        } else if (bodyParam.isMultipartSupported()) {
+            //same escapes as a text body, eg, $ in Kotlin
+            val body = GeneUtils.applyEscapes(
+                bodyParam.getValueAsPrintableString(
+                    mode = GeneUtils.EscapeMode.MULTIPART_FORM_DATA,
+                    targetFormat = format
+                ),
+                mode = GeneUtils.EscapeMode.TEXT,
+                format = format
+            )
+
+            when {
+                format.isPython() -> {
+                    lines.add("body = \"$body\"")
+                }
+                format.isPlaywright() -> {
+                    lines.add("data: \"$body\",")
+                }
+                else -> lines.add(".$send(\"$body\")")
             }
         } else {
             LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType() +
