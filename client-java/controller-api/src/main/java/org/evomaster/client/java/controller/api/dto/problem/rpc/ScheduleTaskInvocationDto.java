@@ -47,7 +47,14 @@ public class ScheduleTaskInvocationDto {
     public String appKey;
 
     /**
-     * the type of schedule task which used in customization
+     * the source of schedule tasks that can be discovered or identified by evomaster
+     */
+    public SupportedScheduleTaskSource supportedScheduleTaskSource;
+
+    /**
+     * Concrete annotation or user-defined type name for this schedule task.
+     * For built-in schedule task types, this is the fully qualified annotation
+     * name from {@link SupportedScheduleTaskSource#getName()}.
      */
     public String scheduleTaskType;
 

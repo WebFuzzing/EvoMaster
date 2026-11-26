@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.RPCTestWithResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
+import org.evomaster.client.java.controller.problem.rpc.CustomizedAnnotationForScheduleTaskMethod;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
 
 import java.util.List;
@@ -59,6 +60,15 @@ public interface CustomizationHandler {
      */
     List<SeededRPCTestDto> seedRPCTests();
 
+    /**
+     * <p>
+     *     specify customized annotations that identify schedule task methods.
+     *     These are used by evomaster that support automatic schedule task discovery.
+     * </p>
+     *
+     * @return customized schedule task annotations
+     */
+    List<CustomizedAnnotationForScheduleTaskMethod> specifyCustomizedScheduleTaskAnnotations();
 
 
     /**

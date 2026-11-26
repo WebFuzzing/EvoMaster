@@ -681,16 +681,18 @@ class RPCEndpointsHandler {
 
         setAuthInfo(infoDto)
 
+        infoDto.rpcProblem.seededTestDtos?.values?.forEach { t->
+            t.scheduleTaskInvocationDtos?.forEach { s ->
+                extractScheduleTaskAction(s, scheduleActionsCluster)
+            }
+        }
+
         if (config.seedTestCases){
             // handle seeded test dto
             infoDto.rpcProblem.seededTestDtos?.values?.forEach { t->
                 // handle rpc function with corresponding mock objects
                 t.rpcFuctions?.forEach { a->
                     extractRPCExternalServiceAction(infoDto, a)
-                }
-                // handle schedule task
-                t.scheduleTaskInvocationDtos?.forEach{s ->
-                    extractScheduleTaskAction(s, scheduleActionsCluster)
                 }
 
             }
