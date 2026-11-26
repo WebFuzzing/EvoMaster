@@ -380,10 +380,10 @@ class ArchiveGeneMutator{
     private fun selectSpec(gene: StringGene, impact: StringGeneImpact, targets: Set<Int>) : Int{
         val impacts = mutableListOf<Impact>()
         if (impact.getSpecializationImpacts().size != gene.specializationGenes.size){
-            log.warn("mismatched specialization impacts, {} impact but {} spec", impact.getSpecializationImpacts().size, gene.specializationGenes.size)
             if(impact.getSpecializationImpacts().isEmpty()){
                 return randomness.nextInt(0, gene.specializationGenes.size - 1)
             }
+            log.warn("mismatched specialization impacts, {} impact but {} spec", impact.getSpecializationImpacts().size, gene.specializationGenes.size)
         }
 
         if (gene.specializationGenes.size <= impact.getSpecializationImpacts().size){
@@ -391,7 +391,7 @@ class ArchiveGeneMutator{
                     impact.getSpecializationImpacts().subList(0, gene.specializationGenes.size)
             )
         }else{
-            (impact.getSpecializationImpacts().size-1 until gene.specializationGenes.size).forEach {
+            (impact.getSpecializationImpacts().size until gene.specializationGenes.size).forEach {
                 val ms = gene.specializationGenes[it]
                 impacts.add(ImpactUtils.createGeneImpact(ms,ms.name))
             }
