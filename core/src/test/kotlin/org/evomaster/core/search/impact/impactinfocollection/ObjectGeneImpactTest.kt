@@ -5,6 +5,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 /**
@@ -77,5 +78,34 @@ class ObjectGeneImpactTest : GeneImpactTest() {
         assertImpact(impact.fixedFields.getValue(f1), updateImpact.fixedFields.getValue(f1), ImpactOptions.NONE)
         assertImpact(impact.fixedFields.getValue(f2), updateImpact.fixedFields.getValue(f2), ImpactOptions.NO_IMPACT)
 
+    }
+
+    @Test
+    fun testHeterogeneousAndMissingFieldImpactsAreSafelySkipped() {
+        val prev = ObjectGene("obj", listOf(StringGene(f1, "s1"), IntegerGene(f2, 2)))
+        val impact = initImpact(prev) as ObjectGeneImpact
+        val curr = ObjectGene("obj", listOf(IntegerGene(f1, 99), IntegerGene(f2, 3), StringGene("unknown", "x")))
+
+        impact.countImpactWithMutatedGeneWithContext(
+            gc = MutatedGeneWithContext(current = curr, previous = prev),
+            noImpactTargets = setOf(),
+            impactTargets = setOf(1),
+            improvedTargets = setOf(1),
+            onlyManipulation = false
+        )
+
+        assertEquals(0, impact.fixedFields.getValue(f1).getTimesToManipulate())
+        assertEquals(0.0, impact.fixedFields.getValue(f1).getTimesOfImpacts()[1] ?: 0.0)
+        assertEquals(1, impact.fixedFields.getValue(f2).getTimesToManipulate())
+
+        val validOnlyF2 = ObjectGene("obj", listOf(StringGene(f1, "s1"), IntegerGene(f2, 4)))
+        impact.countImpactWithMutatedGeneWithContext(
+            gc = MutatedGeneWithContext(current = validOnlyF2, previous = prev),
+            noImpactTargets = setOf(),
+            impactTargets = setOf(1),
+            improvedTargets = setOf(1),
+            onlyManipulation = false
+        )
+        assertEquals(1.0, impact.fixedFields.getValue(f2).getTimesOfImpacts()[1])
     }
 }
