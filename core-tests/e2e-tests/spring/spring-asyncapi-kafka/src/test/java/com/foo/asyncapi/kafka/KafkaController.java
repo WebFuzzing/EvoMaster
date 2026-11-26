@@ -146,7 +146,7 @@ public abstract class KafkaController extends EmbeddedSutController {
         kafka.start();
         String bootstrap = kafka.getBootstrapServers();
 
-        createTopics(bootstrap);
+        createTopics();
 
         ctx = new SpringApplicationBuilder(applicationClass)
                 .web(WebApplicationType.NONE)
@@ -205,12 +205,18 @@ public abstract class KafkaController extends EmbeddedSutController {
                 "The service did not answer a probe within " + READY_TIMEOUT_MS + " ms");
     }
 
-    private void createTopics(String bootstrap) {
-
+    /**
+     * An admin client on the broker, to be closed by the caller.
+     */
+    protected AdminClient createAdminClient() {
         Properties props = new Properties();
-        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
+        return AdminClient.create(props);
+    }
 
-        try (AdminClient admin = AdminClient.create(props)) {
+    private void createTopics() {
+
+        try (AdminClient admin = createAdminClient()) {
             List<NewTopic> topics = getTopics().stream()
                     .map(name -> new NewTopic(name, 1, (short) 1))
                     .collect(Collectors.toList());
