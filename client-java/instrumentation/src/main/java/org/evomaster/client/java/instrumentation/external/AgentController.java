@@ -128,6 +128,9 @@ public class AgentController {
                     case EXTRACT_JVM_DTO:
                         handleExtractingSpecifiedDto();
                         break;
+                    case OBJECTIVE_UPDATE_COUNT:
+                        handleObjectiveUpdateCount();
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -274,6 +277,14 @@ public class AgentController {
             sendObject(InstrumentationController.getBootTimeObjectiveInfo());
         }catch (Exception e) {
             SimpleLogger.error("Failure in handling Boot-time Objective Info: "+e.getMessage());
+        }
+    }
+
+    private static void handleObjectiveUpdateCount(){
+        try {
+            sendObject(InstrumentationController.getObjectiveUpdateCount());
+        } catch (Exception e) {
+            SimpleLogger.error("Failure in handling objective update count: "+e.getMessage());
         }
     }
 
