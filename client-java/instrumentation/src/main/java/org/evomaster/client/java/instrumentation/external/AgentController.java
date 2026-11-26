@@ -2,6 +2,8 @@ package org.evomaster.client.java.instrumentation.external;
 
 import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.InstrumentationController;
+import org.evomaster.client.java.instrumentation.TargetInfo;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -9,8 +11,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Code running in the Java Agent to receive and respond to the
@@ -22,6 +26,12 @@ public class AgentController {
     private static Thread thread;
     private static ObjectOutputStream out;
     private static ObjectInputStream in;
+
+    /**
+     * How long the agent waits for the driver to send the id mapping of the targets when it connects.
+     * The SUT does not start while it waits, so a driver that never sends it must not block it forever.
+     */
+    private static final int ID_MAPPING_TIMEOUT_MS = 10_000;
 
     public static void start(int port){
 
@@ -36,6 +46,30 @@ public class AgentController {
         }
 
         SimpleLogger.info("Connected to EvoMaster controller");
+
+        /*
+            The driver first sends the ids that earlier processes of the SUT gave to their targets.
+            They are loaded here, before the SUT classes run, so that no target gets a new id first.
+         */
+        try {
+            socket.setSoTimeout(ID_MAPPING_TIMEOUT_MS);
+            Object mapping = in.readObject();
+            if (mapping instanceof Map) {
+                ObjectiveRecorder.restoreIdMapping((Map<String, Integer>) mapping);
+            } else {
+                SimpleLogger.error("Expected the id mapping of the targets, but received: " + mapping);
+            }
+        } catch (Exception e) {
+            SimpleLogger.error("Failure in reading the id mapping of the targets: " + e.getMessage(), e);
+        } finally {
+            try {
+                if (socket != null) {
+                    socket.setSoTimeout(0);
+                }
+            } catch (IOException e) {
+                SimpleLogger.error("Failure in resetting the socket timeout: " + e.getMessage(), e);
+            }
+        }
 
         thread = new Thread(() ->{
 
@@ -309,6 +343,15 @@ public class AgentController {
 
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling ids", e);
+            /*
+                the driver is blocked waiting for a list: without an answer it times out, and every
+                message after that is read out of order
+             */
+            try {
+                sendObject(new ArrayList<TargetInfo>());
+            } catch (IOException io) {
+                SimpleLogger.error("Failure in answering the request for ids", io);
+            }
         }
     }
 

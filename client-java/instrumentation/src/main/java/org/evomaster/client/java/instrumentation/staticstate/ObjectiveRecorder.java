@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.staticstate;
 import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.PrintWriter;
 import java.util.*;
@@ -279,6 +280,41 @@ public class ObjectiveRecorder {
         }
 
         return map;
+    }
+
+    /**
+     * @return whether this process gave the numeric id {@code id} to some target
+     */
+    public static boolean isMapped(int id) {
+        return reversedIdMapping.containsKey(id);
+    }
+
+    /**
+     * Loads the numeric ids a previous process of the SUT gave to its targets, so that a restarted SUT
+     * keeps answering for the same ids the EvoMaster core already holds. Without it the new process
+     * numbers its targets again from 0, and the ids it hands out clash with the ones of the old process.
+     * It has to be called before any target gets an id in this process: if some already did, the mapping
+     * is not restored, as the ids could clash.
+     *
+     * @param previous descriptive id of each target to the numeric id a previous process gave it
+     */
+    public static synchronized void restoreIdMapping(Map<String, Integer> previous) {
+        if (previous == null || previous.isEmpty()) {
+            return;
+        }
+        if (!idMapping.isEmpty()) {
+            SimpleLogger.warn("Not restoring the ids of " + previous.size() + " targets, as "
+                    + idMapping.size() + " targets already got an id in this process");
+            return;
+        }
+        int next = 0;
+        for (Map.Entry<String, Integer> e : previous.entrySet()) {
+            idMapping.put(e.getKey(), e.getValue());
+            reversedIdMapping.put(e.getValue(), e.getKey());
+            next = Math.max(next, e.getValue() + 1);
+        }
+        idMappingCounter.set(next);
+        SimpleLogger.info("Restored the ids of " + previous.size() + " targets from the previous SUT process");
     }
 
     public static String getDescriptiveId(int id) {
