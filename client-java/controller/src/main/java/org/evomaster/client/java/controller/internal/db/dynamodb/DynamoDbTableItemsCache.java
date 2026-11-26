@@ -18,7 +18,7 @@ import java.util.Objects;
  * {@link Object} attribute values (for instance, nested collections, maps, or byte arrays) are not
  * guaranteed to be deeply immutable.
  */
-final class DynamoDbTableItemsCache {
+public final class DynamoDbTableItemsCache {
 
     private final Object dynamoDbClient;
 
@@ -34,7 +34,7 @@ final class DynamoDbTableItemsCache {
      *
      * @param dynamoDbClient SDK v2 synchronous or asynchronous DynamoDB client
      */
-    DynamoDbTableItemsCache(Object dynamoDbClient) {
+    public DynamoDbTableItemsCache(Object dynamoDbClient) {
         this.dynamoDbClient = Objects.requireNonNull(dynamoDbClient,
                 "DynamoDB client cannot be null");
     }
@@ -48,7 +48,7 @@ final class DynamoDbTableItemsCache {
      *         Note that the individual attribute value {@link Object}s are not guaranteed to be
      *         deeply immutable.
      */
-    List<Map<String, Object>> getItems(String tableName) {
+    public List<Map<String, Object>> getItems(String tableName) {
         String validTableName = validateTableName(tableName);
         List<Map<String, Object>> items = itemsByTable.get(validTableName);
         if (items == null) {

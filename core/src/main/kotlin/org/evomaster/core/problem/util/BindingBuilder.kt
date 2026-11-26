@@ -34,6 +34,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
 
 /**
@@ -147,7 +148,7 @@ object BindingBuilder {
                 val inserted = attribute.gene as? StringGene ?: return@forEach
                 val candidates = stringsByValue[inserted.value].orEmpty()
                 val matchingName = candidates.filter {
-                    normalizedName(it.name) == normalizedName(attribute.attributeName)
+                    StringUtils.normalizeName(it.name) == StringUtils.normalizeName(attribute.attributeName)
                 }
                 val sources = matchingName.ifEmpty { candidates.takeIf { it.size == 1 }.orEmpty() }
                 sources.forEach { input ->
@@ -157,9 +158,6 @@ object BindingBuilder {
             }
         }
     }
-
-    /** Compares DynamoDB attribute names with API parameter names across common naming styles. */
-    private fun normalizedName(name: String): String = name.filter(Char::isLetterOrDigit).lowercase()
 
     /**
      *  bind [restAction] with [sqlActions]
