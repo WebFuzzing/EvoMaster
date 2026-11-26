@@ -29,7 +29,7 @@ data class McpResourceTemplate(
 data class McpToolResult(
     val content: List<McpToolContent> = emptyList(),
     val isError: Boolean = false,
-    val structuredContent: Map<String, Any?>? = null,
+    val structuredContent: JsonNode? = null,
     val protocolError: McpProtocolError? = null
 )
 
