@@ -1,0 +1,56 @@
+package org.evomaster.e2etests.spring.openapi.v3.multipart
+
+import com.foo.rest.examples.spring.openapi.v3.multipart.MultipartController
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+
+/**
+ * White-box e2e for multipart/form-data support.
+ *
+ * Being white-box, the search is guided by instrumentation, so what is asserted here is that it
+ * actually reaches branches that are only reachable through a well formed multipart request:
+ *
+ *  - a 200 on /form requires several text parts to arrive correctly parsed, which only happens if the
+ *    envelope and its per-part Content-Disposition headers are right;
+ *  - a 200 on /upload requires the part to carry a filename WITH the extension derived from the
+ *    `encoding.contentType` declared in the schema (application/pdf -> .pdf). The surrounding 4xx
+ *    branches are the ones a wrong filename would land on.
+ */
+class MultipartEMTest : SpringTestBase() {
+
+    companion object {
+        @BeforeAll
+        @JvmStatic
+        fun init() {
+            initClass(MultipartController())
+        }
+    }
+
+    @Test
+    fun testRunEM() {
+        runTestHandlingFlakyAndCompilation(
+            "MultipartEM",
+            "org.foo.MultipartEM",
+            200
+        ) { args: MutableList<String> ->
+
+            setOption(args, "enableMultipartFormDataSupport", "true")
+
+            val solution = initAndRun(args)
+
+            assertTrue(solution.individuals.size >= 1)
+
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/form", null)
+            //an empty text part is rejected by Spring as missing, so "blank" branches need whitespace-only values
+            assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/multipart/form", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 422, "/api/multipart/form", "title too short")
+
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/multipart/upload", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 422, "/api/multipart/upload", "empty")
+            //TODO 422 "no extension" and 415 "only pdf" on /upload, to be added in next iteration, when the filename is mutated (now always "file.pdf")
+        }
+    }
+}
