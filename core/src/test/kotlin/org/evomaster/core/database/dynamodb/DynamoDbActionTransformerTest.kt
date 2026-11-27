@@ -1,10 +1,7 @@
 package org.evomaster.core.database.dynamodb
 
-import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbDtoUtils
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
-import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -21,9 +18,9 @@ class DynamoDbActionTransformerTest {
         val action = DynamoDbAction(
             "WorldCupPlayers",
             listOf(
-                DynamoDbAttributeGene("country", DynamoDbValueTypeDto.STRING, StringGene("country", "Argentina")),
-                DynamoDbAttributeGene("fifaId", DynamoDbValueTypeDto.NUMBER, BigDecimalGene("fifaId", BigDecimal("10.50"))),
-                DynamoDbAttributeGene("captain", DynamoDbValueTypeDto.BOOLEAN, BooleanGene("captain", true))
+                DynamoDbAttributeGene("country", DynamoDbValueType.STRING, StringGene("country", "Argentina")),
+                DynamoDbAttributeGene("fifaId", DynamoDbValueType.NUMBER, BigDecimalGene("fifaId", BigDecimal("10.50"))),
+                DynamoDbAttributeGene("captain", DynamoDbValueType.BOOLEAN, BooleanGene("captain", true))
             )
         )
 
@@ -40,24 +37,79 @@ class DynamoDbActionTransformerTest {
     }
 
     @Test
+    fun transformsDocumentSetAndNullAttributes() {
+        val rolesDto = DynamoDbDtoUtils.fromPlainValue("roles", setOf("forward", "captain"))
+        val scoresDto = DynamoDbDtoUtils.fromPlainValue("scores", setOf(BigDecimal("10.50"), BigDecimal("2")))
+        val nestedDto = DynamoDbDtoUtils.fromPlainValue(
+            "details",
+            mapOf("tags" to setOf("world-cup", "mvp"), "coach" to null)
+        )
+        val nullDto = DynamoDbDtoUtils.fromPlainValue("retiredAt", null)
+
+        val action = DynamoDbAction(
+            "WorldCupPlayers",
+            listOf(
+                DynamoDbAttributeGene("roles", DynamoDbValueType.STRING_SET, DynamoDbInsertBuilder.buildDocumentGene("roles", rolesDto)),
+                DynamoDbAttributeGene("scores", DynamoDbValueType.NUMBER_SET, DynamoDbInsertBuilder.buildDocumentGene("scores", scoresDto)),
+                DynamoDbAttributeGene("details", DynamoDbValueType.MAP, DynamoDbInsertBuilder.buildDocumentGene("details", nestedDto)),
+                DynamoDbAttributeGene("retiredAt", DynamoDbValueType.NULL, DynamoDbInsertBuilder.buildDocumentGene("retiredAt", nullDto))
+            )
+        )
+
+        val attributes = DynamoDbActionTransformer.transform(listOf(action)).insertions.single().attributes
+        assertEquals(DynamoDbValueTypeDto.STRING_SET, attributes[0].type)
+        assertEquals(listOf("captain", "forward"), attributes[0].setValue)
+        assertEquals(DynamoDbValueTypeDto.NUMBER_SET, attributes[1].type)
+        assertEquals(listOf("2", "10.50"), attributes[1].setValue)
+        assertEquals(DynamoDbValueTypeDto.MAP, attributes[2].type)
+        assertEquals(DynamoDbValueTypeDto.STRING_SET, attributes[2].mapValue.getValue("tags").type)
+        assertEquals(listOf("mvp", "world-cup"), attributes[2].mapValue.getValue("tags").setValue)
+        assertEquals(DynamoDbValueTypeDto.NULL, attributes[2].mapValue.getValue("coach").type)
+        assertEquals(DynamoDbValueTypeDto.NULL, attributes[3].type)
+    }
+
+    @Test
     fun transformsAnEmptyActionList() {
         assertTrue(DynamoDbActionTransformer.transform(emptyList()).insertions.isEmpty())
     }
-    @Test
-    fun transformsGeneratedWorldCupKeysAndPreservesTemplateValues() {
-        val query = DynamoDbFailedQuery("WorldCupRecords", listOf(
-            DynamoDbAttributeValueDto("country", DynamoDbValueTypeDto.STRING, "Argentina"),
-            DynamoDbAttributeValueDto("purpose", DynamoDbValueTypeDto.STRING, "World Cup tickets")
-        ), linkedMapOf("recordKey" to DynamoDbKeyScalarTypeDto.STRING, "matchNumber" to DynamoDbKeyScalarTypeDto.NUMBER))
-        val action = DynamoDbInsertBuilder.buildInsertActions(listOf(query), Randomness()).single()
-        val copy = action.copy() as DynamoDbAction
-        val insertion = DynamoDbActionTransformer.transform(listOf(copy)).insertions.single()
-        val attributes = insertion.attributes.associateBy { it.attributeName }
 
-        assertEquals("Argentina", attributes.getValue("country").value)
-        assertEquals("World Cup tickets", attributes.getValue("purpose").value)
-        assertTrue(attributes.getValue("recordKey").value.isNotEmpty())
-        assertEquals(DynamoDbValueTypeDto.NUMBER, attributes.getValue("matchNumber").type)
-        assertTrue(attributes.getValue("matchNumber").value.toBigDecimal().precision() <= 38)
+    /** Copies of individuals and insertion DTOs must not share document payloads. */
+    @Test
+    fun isolatesNestedWorldCupTemplates() {
+        val source = DynamoDbDtoUtils.fromPlainValue("squad", mapOf("players" to listOf("Lionel Messi")))
+        val docGene = DynamoDbInsertBuilder.buildDocumentGene("squad", source)
+        val action = DynamoDbAction("WorldCupPlayers", listOf(DynamoDbAttributeGene("squad", DynamoDbValueType.MAP, docGene)))
+        source.mapValue.clear()
+        val copied = action.copy() as DynamoDbAction
+        val transported = DynamoDbActionTransformer.transform(listOf(action)).insertions.single().attributes.single()
+        transported.mapValue.clear()
+        val independent = DynamoDbActionTransformer.transform(listOf(copied)).insertions.single().attributes.single()
+        assertEquals("Lionel Messi", independent.mapValue.getValue("players").listValue.single().value)
+    }
+
+    @Test
+    fun transformsExhaustivePlayerProfilesItemIncludingEmptyListAndSets() {
+        val profile = linkedMapOf<String, Any?>(
+            "country" to "Argentina",
+            "roles" to setOf("captain", "forward"),
+            "jerseyNumbers" to setOf(BigDecimal("10"), BigDecimal("19")),
+            "emptyAwards" to emptyList<Any?>(),
+            "matchTimeline" to listOf("Final", BigDecimal("120"), true, null, mapOf("opponent" to "France")),
+            "coach" to null
+        )
+        val profileDto = DynamoDbDtoUtils.fromPlainValue("profile", profile)
+        val action = DynamoDbAction(
+            "PlayerProfiles",
+            listOf(
+                DynamoDbAttributeGene(
+                    "profile",
+                    DynamoDbValueType.MAP,
+                    DynamoDbInsertBuilder.buildDocumentGene("profile", profileDto)
+                )
+            )
+        )
+
+        val transported = DynamoDbActionTransformer.transform(listOf(action)).insertions.single().attributes.single()
+        assertEquals(profileDto, transported)
     }
 }
