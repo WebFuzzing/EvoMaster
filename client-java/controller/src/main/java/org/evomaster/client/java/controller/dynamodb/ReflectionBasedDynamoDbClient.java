@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.dynamodb;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionResultsDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeType;
 
 import java.lang.reflect.InvocationTargetException;
@@ -65,6 +65,11 @@ public class ReflectionBasedDynamoDbClient {
     private static final String STRING_VALUE_METHOD = "s";
     private static final String NUMBER_VALUE_METHOD = "n";
     private static final String BOOLEAN_VALUE_METHOD = "bool";
+    private static final String MAP_VALUE_METHOD = "m";
+    private static final String LIST_VALUE_METHOD = "l";
+    private static final String STRING_SET_VALUE_METHOD = "ss";
+    private static final String NUMBER_SET_VALUE_METHOD = "ns";
+    private static final String NULL_VALUE_METHOD = "nul";
 
     private final Object client;
     private final ClassLoader loader;
@@ -123,26 +128,8 @@ public class ReflectionBasedDynamoDbClient {
 
             Map<String, Object> item = new LinkedHashMap<>();
             for (DynamoDbAttributeValueDto attribute : insertion.attributes) {
-                Object builder = attributeValueClass.getMethod(BUILDER_METHOD).invoke(null);
-                String setter;
-                Object value = attribute.value;
-                switch (attribute.type) {
-                    case STRING:
-                        setter = STRING_VALUE_METHOD;
-                        break;
-                    case NUMBER:
-                        setter = NUMBER_VALUE_METHOD;
-                        break;
-                    case BOOLEAN:
-                        setter = BOOLEAN_VALUE_METHOD;
-                        value = Boolean.valueOf(attribute.value);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unsupported DynamoDB attribute type: " + attribute.type);
-                }
-                attributeValueBuilderClass.getMethod(setter, value.getClass()).invoke(builder, value);
                 item.put(attribute.attributeName,
-                        attributeValueBuilderClass.getMethod(BUILD_METHOD).invoke(builder));
+                        buildAttributeValue(attribute, attributeValueClass, attributeValueBuilderClass));
             }
 
             Object requestBuilder = putItemRequestClass.getMethod(BUILDER_METHOD).invoke(null);
@@ -159,6 +146,69 @@ public class ReflectionBasedDynamoDbClient {
             throw new RuntimeException("Failed DynamoDB insertion into table '" + insertion.tableName + "'", cause);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed DynamoDB insertion into table '" + insertion.tableName + "'", e);
+        }
+    }
+
+
+    /**
+     * Builds an AWS SDK {@code AttributeValue} from a DTO; binary ({@code B}) and binary sets ({@code BS})
+     * are intentionally unsupported.
+     */
+    private Object buildAttributeValue(DynamoDbAttributeValueDto attribute, Class<?> valueClass,
+                                       Class<?> builderClass) throws ReflectiveOperationException {
+        if (attribute == null || attribute.type == null) {
+            throw new IllegalArgumentException("Unsupported DynamoDB attribute type: null");
+        }
+        Object builder = valueClass.getMethod(BUILDER_METHOD).invoke(null);
+        switch (attribute.type) {
+            case MAP:
+                Map<String, Object> map = new LinkedHashMap<>();
+                if (attribute.mapValue != null) {
+                    for (Map.Entry<String, DynamoDbAttributeValueDto> entry : attribute.mapValue.entrySet()) {
+                        map.put(entry.getKey(), buildAttributeValue(entry.getValue(), valueClass, builderClass));
+                    }
+                }
+                builderClass.getMethod(MAP_VALUE_METHOD, Map.class).invoke(builder, map);
+                break;
+            case LIST:
+                List<Object> list = new ArrayList<>();
+                if (attribute.listValue != null) {
+                    for (DynamoDbAttributeValueDto child : attribute.listValue) {
+                        list.add(buildAttributeValue(child, valueClass, builderClass));
+                    }
+                }
+                builderClass.getMethod(LIST_VALUE_METHOD, Collection.class).invoke(builder, list);
+                break;
+            case STRING_SET:
+                requireNonEmptySet(attribute);
+                builderClass.getMethod(STRING_SET_VALUE_METHOD, Collection.class).invoke(builder, attribute.setValue);
+                break;
+            case NUMBER_SET:
+                requireNonEmptySet(attribute);
+                builderClass.getMethod(NUMBER_SET_VALUE_METHOD, Collection.class).invoke(builder, attribute.setValue);
+                break;
+            case NULL:
+                builderClass.getMethod(NULL_VALUE_METHOD, Boolean.class).invoke(builder, Boolean.TRUE);
+                break;
+            case STRING:
+                builderClass.getMethod(STRING_VALUE_METHOD, String.class).invoke(builder, attribute.value);
+                break;
+            case NUMBER:
+                builderClass.getMethod(NUMBER_VALUE_METHOD, String.class).invoke(builder, attribute.value);
+                break;
+            case BOOLEAN:
+                builderClass.getMethod(BOOLEAN_VALUE_METHOD, Boolean.class)
+                        .invoke(builder, Boolean.valueOf(attribute.value));
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported DynamoDB attribute type: " + attribute.type);
+        }
+        return builderClass.getMethod(BUILD_METHOD).invoke(builder);
+    }
+
+    private static void requireNonEmptySet(DynamoDbAttributeValueDto attribute) {
+        if (attribute.setValue == null || attribute.setValue.isEmpty()) {
+            throw new IllegalArgumentException("DynamoDB sets cannot be empty");
         }
     }
 
@@ -206,7 +256,7 @@ public class ReflectionBasedDynamoDbClient {
      * @param tableName table whose primary key is needed
      * @return primary-key names and types in schema order
      */
-    public Map<String, DynamoDbScalarTypeDto> getPrimaryKeyAttributes(String tableName) {
+    public Map<String, DynamoDbKeyScalarTypeDto> getPrimaryKeyAttributes(String tableName) {
         Objects.requireNonNull(tableName, "DynamoDB table name cannot be null");
 
         try {
@@ -220,19 +270,19 @@ public class ReflectionBasedDynamoDbClient {
             Object response = awaitIfNeeded(describeMethod.invoke(client, request));
             Object table = response.getClass().getMethod(TABLE_METHOD).invoke(response);
 
-            Map<String, DynamoDbScalarTypeDto> definedTypes = new LinkedHashMap<>();
+            Map<String, DynamoDbKeyScalarTypeDto> definedTypes = new LinkedHashMap<>();
             for (Object definition : (Collection<?>) table.getClass().getMethod(ATTRIBUTE_DEFINITIONS_METHOD).invoke(table)) {
                 String name = (String) definition.getClass().getMethod(ATTRIBUTE_NAME_METHOD).invoke(definition);
                 String type = definition.getClass().getMethod(ATTRIBUTE_TYPE_METHOD).invoke(definition).toString();
                 if (DynamoDbAttributeType.STRING.getToken().equals(type)) {
-                    definedTypes.put(name, DynamoDbScalarTypeDto.STRING);
+                    definedTypes.put(name, DynamoDbKeyScalarTypeDto.STRING);
                 } else if (DynamoDbAttributeType.NUMBER.getToken().equals(type)) {
-                    definedTypes.put(name, DynamoDbScalarTypeDto.NUMBER);
+                    definedTypes.put(name, DynamoDbKeyScalarTypeDto.NUMBER);
                 }
             }
 
             Collection<?> keySchema = (Collection<?>) table.getClass().getMethod(KEY_SCHEMA_METHOD).invoke(table);
-            Map<String, DynamoDbScalarTypeDto> keys = new LinkedHashMap<>();
+            Map<String, DynamoDbKeyScalarTypeDto> keys = new LinkedHashMap<>();
             for (String keyType : Arrays.asList("HASH", "RANGE")) {
                 for (Object key : keySchema) {
                     if (keyType.equals(key.getClass().getMethod(KEY_TYPE_METHOD).invoke(key).toString())) {

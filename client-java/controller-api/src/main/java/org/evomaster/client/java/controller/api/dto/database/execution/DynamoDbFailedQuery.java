@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.database.execution;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,7 +20,7 @@ public class DynamoDbFailedQuery {
      * Maps each missing base-table primary-key attribute name to its DynamoDB scalar type.
      * Entries are ordered by key role (partition key, then sort key) for generation by core.
      */
-    public Map<String, DynamoDbScalarTypeDto> missingPrimaryKeyAttributes = new LinkedHashMap<>();
+    public Map<String, DynamoDbKeyScalarTypeDto> missingPrimaryKeyAttributes = new LinkedHashMap<>();
 
     public DynamoDbFailedQuery() {
     }
@@ -44,7 +44,7 @@ public class DynamoDbFailedQuery {
      * @param missingPrimaryKeyAttributes missing key names and supported scalar types
      */
     public DynamoDbFailedQuery(String tableName, List<DynamoDbAttributeValueDto> attributes,
-                               Map<String, DynamoDbScalarTypeDto> missingPrimaryKeyAttributes) {
+                               Map<String, DynamoDbKeyScalarTypeDto> missingPrimaryKeyAttributes) {
         this(tableName, attributes);
         this.missingPrimaryKeyAttributes = new LinkedHashMap<>(missingPrimaryKeyAttributes);
     }

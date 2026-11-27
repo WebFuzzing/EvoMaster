@@ -1,9 +1,11 @@
 package org.evomaster.client.java.controller.dynamodb;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbDtoUtils;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionResultsDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -14,10 +16,12 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -223,13 +227,74 @@ public class ReflectionBasedDynamoDbClientTest {
         assertEquals("The provided client does not expose scan(ScanRequest)", exception.getMessage());
     }
 
+
+    /** Nested template and set values must retain their native DynamoDB types. */
+    @Test
+    public void testExecuteInsertionsWithDocumentAndSetValues() {
+        DynamoDbClient mockClient = mock(DynamoDbClient.class);
+        when(mockClient.putItem(any(PutItemRequest.class))).thenReturn(PutItemResponse.builder().build());
+
+        DynamoDbInsertionDto insertion = worldCupPlayer();
+        Map<String, Object> document = new LinkedHashMap<>();
+        Map<String, Object> player = new LinkedHashMap<>();
+        player.put("name", "Lionel Messi");
+        player.put("captain", true);
+        document.put("players", Collections.singletonList(player));
+        document.put("score", new BigDecimal("10.1234567890123456789"));
+        document.put("coach", null);
+        document.put("emptyMap", Collections.emptyMap());
+        document.put("emptyList", Collections.emptyList());
+
+        insertion.attributes.add(DynamoDbDtoUtils.fromPlainValue("squad", document));
+        insertion.attributes.add(DynamoDbDtoUtils.fromPlainValue("positions",
+                new LinkedHashSet<>(Arrays.asList("forward", "captain"))));
+        insertion.attributes.add(DynamoDbDtoUtils.fromPlainValue("jerseyNumbers",
+                new LinkedHashSet<>(Arrays.asList(10, new BigDecimal("30.5")))));
+
+        ReflectionBasedDynamoDbClient client = new ReflectionBasedDynamoDbClient(mockClient);
+        DynamoDbInsertionResultsDto results = client.executeInsertions(Collections.singletonList(insertion));
+
+        assertTrue(results.executionResults.get(0));
+        ArgumentCaptor<PutItemRequest> captor = ArgumentCaptor.forClass(PutItemRequest.class);
+        verify(mockClient).putItem(captor.capture());
+        AttributeValue squad = captor.getValue().item().get("squad");
+        assertNotNull(squad);
+        assertTrue(squad.hasM());
+        assertEquals(true, squad.m().get("coach").nul());
+        assertEquals("10.1234567890123456789", squad.m().get("score").n());
+        assertEquals("Lionel Messi", squad.m().get("players").l().get(0).m().get("name").s());
+        AttributeValue positions = captor.getValue().item().get("positions");
+        assertTrue(positions.hasSs());
+        assertEquals(Arrays.asList("captain", "forward"), positions.ss());
+        AttributeValue jerseyNumbers = captor.getValue().item().get("jerseyNumbers");
+        assertTrue(jerseyNumbers.hasNs());
+        assertEquals(Arrays.asList("10", "30.5"), jerseyNumbers.ns());
+    }
+
+    @Test
+    public void testExecuteInsertionsRejectsEmptySetAttribute() {
+        DynamoDbClient mockClient = mock(DynamoDbClient.class);
+        DynamoDbInsertionDto insertion = worldCupPlayer();
+        DynamoDbAttributeValueDto emptySet = new DynamoDbAttributeValueDto();
+        emptySet.attributeName = "positions";
+        emptySet.type = DynamoDbValueTypeDto.STRING_SET;
+        emptySet.setValue = Collections.emptyList();
+        insertion.attributes.add(emptySet);
+
+        ReflectionBasedDynamoDbClient client = new ReflectionBasedDynamoDbClient(mockClient);
+        DynamoDbInsertionResultsDto results = client.executeInsertions(Collections.singletonList(insertion));
+        assertEquals(Collections.singletonList(false), results.executionResults);
+        assertEquals(Integer.valueOf(0), results.failedInsertionIndex);
+        verify(mockClient, times(0)).putItem(any(PutItemRequest.class));
+    }
+
     private static DynamoDbInsertionDto worldCupPlayer() {
         DynamoDbInsertionDto dto = new DynamoDbInsertionDto();
         dto.tableName = TABLE;
         dto.attributes = new ArrayList<>();
-        dto.attributes.add(new DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"));
-        dto.attributes.add(new DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.NUMBER, "10"));
-        dto.attributes.add(new DynamoDbAttributeValueDto("captain", DynamoDbScalarTypeDto.BOOLEAN, "true"));
+        dto.attributes.add(new DynamoDbAttributeValueDto("country", DynamoDbKeyScalarTypeDto.STRING, "Argentina"));
+        dto.attributes.add(new DynamoDbAttributeValueDto("fifaId", DynamoDbKeyScalarTypeDto.NUMBER, "10"));
+        dto.attributes.add(new DynamoDbAttributeValueDto("captain", DynamoDbKeyScalarTypeDto.BOOLEAN, "true"));
         return dto;
     }
 }

@@ -2,7 +2,8 @@ package org.evomaster.core.database.dynamodb
 
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -33,15 +34,15 @@ class DynamoDbInsertBuilderTest {
         val valid = validQuery()
         val invalidNumber = DynamoDbFailedQuery(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.NUMBER, "ten"))
+            listOf(DynamoDbAttributeValueDto("fifaId", DynamoDbValueTypeDto.NUMBER, "ten"))
         )
         val blankTable = DynamoDbFailedQuery(
             "",
-            listOf(DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"))
+            listOf(DynamoDbAttributeValueDto("country", DynamoDbValueTypeDto.STRING, "Argentina"))
         )
         val missingType = DynamoDbFailedQuery(
             "WorldCupPlayers",
-            listOf(DynamoDbAttributeValueDto("country", null, "Argentina"))
+            listOf(DynamoDbAttributeValueDto("country", null as DynamoDbValueTypeDto?, "Argentina"))
         )
 
         val actions = DynamoDbInsertBuilder.buildInsertActions(
@@ -56,8 +57,8 @@ class DynamoDbInsertBuilderTest {
     fun generatesReproducibleWorldCupKeysWithoutRandomizingInferredValues() {
         val query = validQuery().apply {
             missingPrimaryKeyAttributes = linkedMapOf(
-                "recordKey" to DynamoDbScalarTypeDto.STRING,
-                "matchNumber" to DynamoDbScalarTypeDto.NUMBER
+                "recordKey" to DynamoDbKeyScalarTypeDto.STRING,
+                "matchNumber" to DynamoDbKeyScalarTypeDto.NUMBER
             )
         }
         val first = DynamoDbInsertBuilder.buildInsertActions(listOf(query), Randomness()).single()
@@ -78,7 +79,7 @@ class DynamoDbInsertBuilderTest {
     @Test
     fun repeatedFailedReadsCanGenerateFreshKeys() {
         val query = validQuery().apply {
-            missingPrimaryKeyAttributes = linkedMapOf("recordKey" to DynamoDbScalarTypeDto.STRING)
+            missingPrimaryKeyAttributes = linkedMapOf("recordKey" to DynamoDbKeyScalarTypeDto.STRING)
         }
         val randomness = Randomness()
         val first = DynamoDbInsertBuilder.buildInsertActions(listOf(query), randomness).single()
@@ -97,8 +98,8 @@ class DynamoDbInsertBuilderTest {
 
     @Test
     fun rejectsUnsupportedMissingKeysAndOverlappingAttributes() {
-        for ((name, type) in listOf("captainKey" to DynamoDbScalarTypeDto.BOOLEAN,
-            "" to DynamoDbScalarTypeDto.STRING, "country" to DynamoDbScalarTypeDto.STRING)) {
+        for ((name, type) in listOf("captainKey" to DynamoDbKeyScalarTypeDto.BOOLEAN,
+            "" to DynamoDbKeyScalarTypeDto.STRING, "country" to DynamoDbKeyScalarTypeDto.STRING)) {
             val query = validQuery().apply { missingPrimaryKeyAttributes = linkedMapOf(name to type) }
             val randomness = Randomness()
             assertTrue(DynamoDbInsertBuilder.buildInsertActions(listOf(query), randomness).isEmpty())
@@ -109,9 +110,9 @@ class DynamoDbInsertBuilderTest {
     private fun validQuery(): DynamoDbFailedQuery = DynamoDbFailedQuery(
         "WorldCupPlayers",
         listOf(
-            DynamoDbAttributeValueDto("country", DynamoDbScalarTypeDto.STRING, "Argentina"),
-            DynamoDbAttributeValueDto("fifaId", DynamoDbScalarTypeDto.NUMBER, "10.50"),
-            DynamoDbAttributeValueDto("captain", DynamoDbScalarTypeDto.BOOLEAN, "true")
+            DynamoDbAttributeValueDto("country", DynamoDbValueTypeDto.STRING, "Argentina"),
+            DynamoDbAttributeValueDto("fifaId", DynamoDbValueTypeDto.NUMBER, "10.50"),
+            DynamoDbAttributeValueDto("captain", DynamoDbValueTypeDto.BOOLEAN, "true")
         )
     )
 }

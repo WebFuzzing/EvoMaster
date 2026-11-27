@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.dynamodb;
 
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 import org.evomaster.client.java.controller.dynamodb.ReflectionBasedDynamoDbClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -111,8 +111,8 @@ public class ReflectionBasedDynamoDbClientTableTest {
         DynamoDbPrimaryKey primaryKey = new DynamoDbPrimaryKey(new ReflectionBasedDynamoDbClient(client).getPrimaryKeyAttributes(TABLE));
 
         assertEquals(2, primaryKey.getAttributes().size());
-        assertEquals(DynamoDbScalarTypeDto.STRING, primaryKey.getAttributes().get("country"));
-        assertEquals(DynamoDbScalarTypeDto.NUMBER, primaryKey.getAttributes().get("fifaId"));
+        assertEquals(DynamoDbKeyScalarTypeDto.STRING, primaryKey.getAttributes().get("country"));
+        assertEquals(DynamoDbKeyScalarTypeDto.NUMBER, primaryKey.getAttributes().get("fifaId"));
         verify(client).describeTable(any(DescribeTableRequest.class));
     }
 
@@ -152,7 +152,7 @@ public class ReflectionBasedDynamoDbClientTableTest {
 
         DynamoDbPrimaryKey primaryKey = new DynamoDbPrimaryKey(new ReflectionBasedDynamoDbClient(client).getPrimaryKeyAttributes(TABLE));
 
-        assertEquals(Collections.singletonMap("country", DynamoDbScalarTypeDto.STRING), primaryKey.getAttributes());
+        assertEquals(Collections.singletonMap("country", DynamoDbKeyScalarTypeDto.STRING), primaryKey.getAttributes());
         verify(client).describeTable(any(DescribeTableRequest.class));
     }
 

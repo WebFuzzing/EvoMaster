@@ -3,10 +3,12 @@ package org.evomaster.client.java.controller.internal.db.dynamodb;
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
@@ -22,6 +24,7 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -164,10 +167,10 @@ public class DynamoDbHandlerTest {
         assertEquals(1, execution.failedQueries.size());
         DynamoDbFailedQuery failedQuery = execution.failedQueries.get(0);
         assertEquals(TABLE, failedQuery.tableName);
-        assertAttribute(failedQuery.attributes, "country", DynamoDbScalarTypeDto.STRING, "Argentina");
-        assertAttribute(failedQuery.attributes, "playerName", DynamoDbScalarTypeDto.STRING, "Lionel Scaloni");
-        assertAttribute(failedQuery.attributes, "fifaId", DynamoDbScalarTypeDto.NUMBER, "10");
-        assertAttribute(failedQuery.attributes, "captain", DynamoDbScalarTypeDto.BOOLEAN, "true");
+        assertAttribute(failedQuery.attributes, "country", DynamoDbKeyScalarTypeDto.STRING, "Argentina");
+        assertAttribute(failedQuery.attributes, "playerName", DynamoDbKeyScalarTypeDto.STRING, "Lionel Scaloni");
+        assertAttribute(failedQuery.attributes, "fifaId", DynamoDbKeyScalarTypeDto.NUMBER, "10");
+        assertAttribute(failedQuery.attributes, "captain", DynamoDbKeyScalarTypeDto.BOOLEAN, "true");
         assertEquals(1, client.describeCalls);
 
         handler.reset();
@@ -204,9 +207,9 @@ public class DynamoDbHandlerTest {
         handler.getEvaluatedDynamoDbCommands();
         List<DynamoDbAttributeValueDto> attributes = handler.getExecutionDto().failedQueries.get(0).attributes;
 
-        assertAttribute(attributes, "subject_id", DynamoDbScalarTypeDto.STRING, "England");
+        assertAttribute(attributes, "subject_id", DynamoDbKeyScalarTypeDto.STRING, "England");
         assertFalse(attributes.stream().anyMatch(attribute -> "record_key".equals(attribute.attributeName)));
-        assertEquals(Collections.singletonMap("record_key", DynamoDbScalarTypeDto.STRING),
+        assertEquals(Collections.singletonMap("record_key", DynamoDbKeyScalarTypeDto.STRING),
                 handler.getExecutionDto().failedQueries.get(0).missingPrimaryKeyAttributes);
     }
 
@@ -224,10 +227,10 @@ public class DynamoDbHandlerTest {
         handler.getEvaluatedDynamoDbCommands();
         List<DynamoDbAttributeValueDto> attributes = handler.getExecutionDto().failedQueries.get(0).attributes;
 
-        assertAttribute(attributes, "subject_id", DynamoDbScalarTypeDto.STRING, "Brazil");
-        assertAttribute(attributes, "purpose", DynamoDbScalarTypeDto.STRING, "World Cup tickets");
-        assertAttribute(attributes, "version", DynamoDbScalarTypeDto.NUMBER, "1");
-        assertAttribute(attributes, "tombstoned", DynamoDbScalarTypeDto.BOOLEAN, "false");
+        assertAttribute(attributes, "subject_id", DynamoDbKeyScalarTypeDto.STRING, "Brazil");
+        assertAttribute(attributes, "purpose", DynamoDbKeyScalarTypeDto.STRING, "World Cup tickets");
+        assertAttribute(attributes, "version", DynamoDbKeyScalarTypeDto.NUMBER, "1");
+        assertAttribute(attributes, "tombstoned", DynamoDbKeyScalarTypeDto.BOOLEAN, "false");
         assertFalse(attributes.stream().anyMatch(attribute -> "final-ticket".equals(attribute.value)));
     }
 
@@ -245,7 +248,7 @@ public class DynamoDbHandlerTest {
 
         assertEquals(1, handler.getExecutionDto().failedQueries.size());
         assertAttribute(handler.getExecutionDto().failedQueries.get(0).attributes,
-                "playerName", DynamoDbScalarTypeDto.STRING, "Pele");
+                "playerName", DynamoDbKeyScalarTypeDto.STRING, "Pele");
         assertTrue(handler.getExecutionDto().failedQueries.get(0).missingPrimaryKeyAttributes.isEmpty());
     }
 
@@ -263,7 +266,7 @@ public class DynamoDbHandlerTest {
         handler.handle(command);
         handler.getEvaluatedDynamoDbCommands();
         assertEquals(1, handler.getExecutionDto().failedQueries.size());
-        assertEquals(Collections.singletonMap("matchNumber", DynamoDbScalarTypeDto.NUMBER),
+        assertEquals(Collections.singletonMap("matchNumber", DynamoDbKeyScalarTypeDto.NUMBER),
                 handler.getExecutionDto().failedQueries.get(0).missingPrimaryKeyAttributes);
 
         handler.reset();
@@ -291,10 +294,10 @@ public class DynamoDbHandlerTest {
         handler.getEvaluatedDynamoDbCommands();
         List<DynamoDbAttributeValueDto> attributes = handler.getExecutionDto().failedQueries.get(0).attributes;
 
-        assertAttribute(attributes, "attemptId", DynamoDbScalarTypeDto.STRING, "World Cup Final");
-        assertAttribute(attributes, "pcRetry", DynamoDbScalarTypeDto.STRING, "1");
+        assertAttribute(attributes, "attemptId", DynamoDbKeyScalarTypeDto.STRING, "World Cup Final");
+        assertAttribute(attributes, "pcRetry", DynamoDbKeyScalarTypeDto.STRING, "1");
         assertFalse(attributes.stream().anyMatch(attribute -> "trackingId".equals(attribute.attributeName)));
-        assertEquals(Collections.singletonMap("trackingId", DynamoDbScalarTypeDto.STRING),
+        assertEquals(Collections.singletonMap("trackingId", DynamoDbKeyScalarTypeDto.STRING),
                 handler.getExecutionDto().failedQueries.get(0).missingPrimaryKeyAttributes);
     }
 
@@ -312,7 +315,7 @@ public class DynamoDbHandlerTest {
         handler.getEvaluatedDynamoDbCommands();
         List<DynamoDbAttributeValueDto> attributes = handler.getExecutionDto().failedQueries.get(0).attributes;
         assertFalse(attributes.stream().anyMatch(attribute -> "matchNumber".equals(attribute.attributeName)));
-        assertEquals(Collections.singletonMap("matchNumber", DynamoDbScalarTypeDto.NUMBER),
+        assertEquals(Collections.singletonMap("matchNumber", DynamoDbKeyScalarTypeDto.NUMBER),
                 handler.getExecutionDto().failedQueries.get(0).missingPrimaryKeyAttributes);
     }
 
@@ -400,13 +403,13 @@ public class DynamoDbHandlerTest {
     private void assertAttribute(
             List<DynamoDbAttributeValueDto> attributes,
             String name,
-            DynamoDbScalarTypeDto type,
+            DynamoDbKeyScalarTypeDto type,
             String value) {
         DynamoDbAttributeValueDto attribute = attributes.stream()
                 .filter(candidate -> name.equals(candidate.attributeName))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Missing attribute " + name));
-        assertEquals(type, attribute.type);
+        assertEquals(DynamoDbValueTypeDto.fromKeyScalar(type), attribute.type);
         assertEquals(value, attribute.value);
     }
 
@@ -540,5 +543,87 @@ public class DynamoDbHandlerTest {
                     .build();
             return CompletableFuture.completedFuture(response);
         }
+    }
+
+    public static final class DocumentTemplateClient {
+        private final List<Map<String, AttributeValue>> items;
+
+        private DocumentTemplateClient(List<Map<String, AttributeValue>> items) {
+            this.items = items;
+        }
+
+        public DescribeTableResponse describeTable(DescribeTableRequest request) {
+            TableDescription table = TableDescription.builder()
+                    .keySchema(KeySchemaElement.builder().attributeName("country").keyType(KeyType.HASH).build())
+                    .attributeDefinitions(AttributeDefinition.builder()
+                            .attributeName("country")
+                            .attributeType(ScalarAttributeType.S)
+                            .build())
+                    .build();
+            return DescribeTableResponse.builder().table(table).build();
+        }
+
+        public ScanResponse scan(ScanRequest request) {
+            return ScanResponse.builder().items(items).build();
+        }
+    }
+
+    @Test
+    public void testCompletesNestedDocumentAndSetTemplatesFromObservedTableItems() {
+        DynamoDbHandler handler = new DynamoDbHandler();
+        handler.setExtractDynamoDbExecution(true);
+        handler.setCalculateHeuristics(false);
+
+        Map<String, AttributeValue> existingItem = new HashMap<>();
+        existingItem.put("country", AttributeValue.builder().s("Brazil").build());
+        existingItem.put("squad", AttributeValue.builder().m(Collections.singletonMap(
+                "players", AttributeValue.builder().l(
+                        AttributeValue.builder().s("Pele").build(),
+                        AttributeValue.builder().nul(true).build()
+                ).build()
+        )).build());
+        existingItem.put("positions", AttributeValue.builder().ss("forward", "captain").build());
+        existingItem.put("jerseyNumbers", AttributeValue.builder().ns("10", "9.5").build());
+        existingItem.put("unsupportedBinarySet", AttributeValue.builder()
+                .bs(SdkBytes.fromByteArray(new byte[]{1, 2})).build());
+
+        handler.setDynamoDbClient(new DocumentTemplateClient(Collections.singletonList(existingItem)));
+
+        GetItemRequest request = GetItemRequest.builder()
+                .tableName("WorldCupPlayers")
+                .key(Collections.singletonMap("country", AttributeValue.builder().s("Argentina").build()))
+                .build();
+        handler.handle(new DynamoDbCommand(
+                Collections.singletonList("WorldCupPlayers"),
+                DynamoDbOperationNames.GET_ITEM,
+                request,
+                true,
+                1L));
+        handler.getEvaluatedDynamoDbCommands();
+
+        DynamoDbFailedQuery failed = handler.getExecutionDto().failedQueries.get(0);
+        DynamoDbAttributeValueDto squad = failed.attributes.stream()
+                .filter(a -> "squad".equals(a.attributeName))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Missing squad template attribute"));
+        assertEquals(DynamoDbValueTypeDto.MAP, squad.type);
+        assertEquals("Pele", squad.mapValue.get("players").listValue.get(0).value);
+        assertEquals(DynamoDbValueTypeDto.NULL, squad.mapValue.get("players").listValue.get(1).type);
+
+        DynamoDbAttributeValueDto positions = failed.attributes.stream()
+                .filter(a -> "positions".equals(a.attributeName))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Missing positions template attribute"));
+        assertEquals(DynamoDbValueTypeDto.STRING_SET, positions.type);
+        assertEquals(Arrays.asList("captain", "forward"), positions.setValue);
+
+        DynamoDbAttributeValueDto jerseyNumbers = failed.attributes.stream()
+                .filter(a -> "jerseyNumbers".equals(a.attributeName))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Missing jerseyNumbers template attribute"));
+        assertEquals(DynamoDbValueTypeDto.NUMBER_SET, jerseyNumbers.type);
+        assertEquals(Arrays.asList("9.5", "10"), jerseyNumbers.setValue);
+
+        assertFalse(failed.attributes.stream().anyMatch(a -> "unsupportedBinarySet".equals(a.attributeName)));
     }
 }
