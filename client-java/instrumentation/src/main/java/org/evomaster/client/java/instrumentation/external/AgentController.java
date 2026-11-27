@@ -27,6 +27,8 @@ public class AgentController {
 
         try{
             socket = new Socket("localhost", port);
+            //essential, due to 40ms ack-delay in Linux (but no issue on Windows nor Mac)
+            socket.setTcpNoDelay(true);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
         } catch (Exception e){
@@ -58,7 +60,9 @@ public class AgentController {
 
                 Command command = (Command) msg;
                 long start = System.currentTimeMillis();
-                SimpleLogger.debug("Handling command: "+command);
+                if(SimpleLogger.isDebug()) {
+                    SimpleLogger.debug("Handling command: " + command);
+                }
 
                 switch(command){
                     case NEW_SEARCH:
@@ -124,13 +128,18 @@ public class AgentController {
                     case EXTRACT_JVM_DTO:
                         handleExtractingSpecifiedDto();
                         break;
+                    case OBJECTIVE_UPDATE_COUNT:
+                        handleObjectiveUpdateCount();
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
                 }
 
                 long delta = System.currentTimeMillis() - start;
-                SimpleLogger.debug("Command took "+delta+" ms");
+                if(SimpleLogger.isDebug()) {
+                    SimpleLogger.debug("Command took " + delta + " ms");
+                }
             }
         });
 
@@ -268,6 +277,14 @@ public class AgentController {
             sendObject(InstrumentationController.getBootTimeObjectiveInfo());
         }catch (Exception e) {
             SimpleLogger.error("Failure in handling Boot-time Objective Info: "+e.getMessage());
+        }
+    }
+
+    private static void handleObjectiveUpdateCount(){
+        try {
+            sendObject(InstrumentationController.getObjectiveUpdateCount());
+        } catch (Exception e) {
+            SimpleLogger.error("Failure in handling objective update count: "+e.getMessage());
         }
     }
 

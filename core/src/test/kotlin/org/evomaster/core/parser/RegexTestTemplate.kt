@@ -41,7 +41,7 @@ abstract class RegexTestTemplate {
         return gene
     }
 
-    protected fun check(regex: String, javaRegex: String) : RegexGene {
+    private fun checkSamples(regex: String, javaRegex: String, matchWholeValue: Boolean) : RegexGene {
         val randomness = Randomness().apply { updateSeed(42) }
 
         val gene = createGene(regex)
@@ -54,11 +54,16 @@ abstract class RegexTestTemplate {
 
             val pattern = Pattern.compile(javaRegex)
             val matcher = pattern.matcher(instance)
-            Assertions.assertTrue(matcher.find(), "String not matching:\n$regex\n$instance")
+            val result = if (matchWholeValue) matcher.matches() else matcher.find()
+            Assertions.assertTrue(result, "String not matching:\n$regex\n$instance")
         }
 
         return gene
     }
+
+    protected fun check(regex: String, javaRegex: String) = checkSamples(regex, javaRegex, false)
+
+    protected fun checkMatches(regex: String, javaRegex: String) = checkSamples(regex, javaRegex, true)
 
     protected fun checkCanSample(regex: String, values: Collection<String>, tries: Int) {
 

@@ -45,7 +45,7 @@ class BaseIT {
         @BeforeAll
         fun beforeAll() {
             setupJarAgent()
-            driver.setNeedsJdk17Options(true)
+            driver.setNeedsOptionsForJdk17(true)
             driver.controllerPort = 0
             starter.start()
             remote = RemoteControllerImplementation("localhost", driver.controllerServerPort, false, false)
