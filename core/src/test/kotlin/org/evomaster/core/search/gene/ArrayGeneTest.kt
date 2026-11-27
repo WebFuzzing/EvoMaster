@@ -2,7 +2,10 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.numeric.BigIntegerGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -14,6 +17,8 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.math.BigDecimal
+import java.math.BigInteger
 
 class ArrayGeneTest {
 
@@ -32,80 +37,187 @@ class ArrayGeneTest {
         assertTrue(gene.getViewOfChildren().isNotEmpty())
     }
 
+    /**
+     * Verifies that an ArrayGene with uniqueElements = true detects and rejects duplicate elements
+     * while accepting distinct ones.
+     */
+    private fun <T : Gene> assertUniqueEnforcement(
+        template: T,
+        initial: List<T>,
+        duplicates: List<T> = initial.map { it.copy() as T },
+        distinct: T? = null
+    ) {
+        val array = ArrayGene(
+            "array",
+            minSize = 1,
+            maxSize = 10,
+            template = template,
+            uniqueElements = true,
+            elements = initial.toMutableList()
+        )
+
+        assertTrue(array.isElementApplicableToUniqueCheck(template))
+        duplicates.forEach { duplicate ->
+            assertTrue(array.doesExist(duplicate))
+            assertThrows<IllegalArgumentException> { array.addElement(duplicate) }
+        }
+        if (distinct != null) {
+            assertFalse(array.doesExist(distinct))
+            array.addElement(distinct)
+            assertEquals(initial.size + 1, array.getViewOfElements().size)
+        }
+    }
+
     @Test
-    fun testUnique(){
-        val boolArray = ArrayGene(
-                "array",
-                minSize = 1,
-                maxSize =10,
-                template=BooleanGene("boolean"),
-                uniqueElements = true,
-                elements = mutableListOf(BooleanGene("true_element", true), BooleanGene("false_element", false))
+    fun testUniqueBoolean() {
+        assertUniqueEnforcement(
+            template = BooleanGene("qualified"),
+            initial = listOf(BooleanGene("argentina", true), BooleanGene("italy", false))
+        )
+    }
+
+    @Test
+    fun testUniqueInteger() {
+        assertUniqueEnforcement(
+            template = IntegerGene("age"),
+            initial = listOf(IntegerGene("messiAge", 35), IntegerGene("mbappeAge", 23)),
+            distinct = IntegerGene("modricAge", 37)
+        )
+    }
+
+    @Test
+    fun testUniqueLong() {
+        assertUniqueEnforcement(
+            template = LongGene("viewers"),
+            initial = listOf(LongGene("semiFinal", 500_000_000L), LongGene("final", 1_500_000_000L)),
+            distinct = LongGene("openingMatch", 250_000_000L)
+        )
+    }
+
+    @Test
+    fun testUniqueDouble() {
+        assertUniqueEnforcement(
+            template = DoubleGene("goalsPerMatch"),
+            initial = listOf(DoubleGene("argentinaAvg", 2.14), DoubleGene("franceAvg", 2.29)),
+            distinct = DoubleGene("brazilAvg", 1.6)
+        )
+    }
+
+    @Test
+    fun testUniqueFloat() {
+        assertUniqueEnforcement(
+            template = FloatGene("height"),
+            initial = listOf(FloatGene("messiHeight", 1.70f), FloatGene("martinezHeight", 1.95f)),
+            distinct = FloatGene("mbappeHeight", 1.78f)
+        )
+    }
+
+    @Test
+    fun testUniqueBigInteger() {
+        assertUniqueEnforcement(
+            template = BigIntegerGene("attendance"),
+            initial = listOf(
+                BigIntegerGene("lusailFinal", BigInteger("88966")),
+                BigIntegerGene("maracanaRecord", BigInteger("173850"))
+            ),
+            distinct = BigIntegerGene("aztecaFinal", BigInteger("114600"))
+        )
+    }
+
+    @Test
+    fun testUniqueBigDecimal() {
+        val highPrecision = BigDecimal("123456789012345678901234567890.12345678")
+        assertUniqueEnforcement(
+            template = BigDecimalGene("rating"),
+            initial = listOf(
+                BigDecimalGene("messiRating", BigDecimal("9.5")),
+                BigDecimalGene("mbappeRating", highPrecision)
+            ),
+            duplicates = listOf(
+                BigDecimalGene("dupMessi", BigDecimal("9.5")),
+                BigDecimalGene("equivalentScaleMessi", BigDecimal("9.50")),
+                BigDecimalGene("dupHighPrecision", BigDecimal("123456789012345678901234567890.12345678"))
+            ),
+            distinct = BigDecimalGene("modricRating", BigDecimal("8.75"))
+        )
+    }
+
+    @Test
+    fun testUniqueString() {
+        assertUniqueEnforcement(
+            template = StringGene("country"),
+            initial = listOf(StringGene("champion", "Argentina"), StringGene("runnerUp", "France")),
+            distinct = StringGene("thirdPlace", "Croatia")
+        )
+    }
+
+    @Test
+    fun testUniqueEnum() {
+        val template = EnumGene("stage", listOf("GROUP", "SEMIFINAL", "FINAL"))
+        assertUniqueEnforcement(
+            template = template,
+            initial = listOf(
+                (template.copy() as EnumGene<String>).apply { index = 0 },
+                (template.copy() as EnumGene<String>).apply { index = 1 }
+            ),
+            distinct = (template.copy() as EnumGene<String>).apply { index = 2 }
+        )
+    }
+
+    @Test
+    fun testUniqueNotApplicableForObjectGene() {
+        val playerTemplate = ObjectGene("player", listOf(StringGene("country", "Argentina")))
+        val squad = ArrayGene("squad", template = playerTemplate, uniqueElements = true)
+        assertFalse(squad.isElementApplicableToUniqueCheck(playerTemplate))
+    }
+
+    @Test
+    fun testUnsafeCopyValueFromDeduplicatesBigDecimalElements() {
+        val sourceRatings = ArrayGene(
+            "allRatings",
+            template = BigDecimalGene("rating"),
+            uniqueElements = false,
+            elements = mutableListOf(
+                BigDecimalGene("rating1", BigDecimal("9.5")),
+                BigDecimalGene("rating2", BigDecimal("9.50")),
+                BigDecimalGene("rating3", BigDecimal("8.0"))
+            )
+        )
+        val uniqueRatings = ArrayGene(
+            "uniqueRatings",
+            template = BigDecimalGene("rating"),
+            uniqueElements = true
         )
 
-        assertTrue(boolArray.doesExist(BooleanGene("new_true_element", true)))
-        assertTrue(boolArray.doesExist(BooleanGene("new_false_element", false)))
-        assertThrows<IllegalArgumentException> {  boolArray.addElement(BooleanGene("new_true_element", true))}
-        assertThrows<IllegalArgumentException> {  boolArray.addElement(BooleanGene("new_false_element", false))}
+        assertTrue(uniqueRatings.unsafeCopyValueFrom(sourceRatings))
+        assertEquals(2, uniqueRatings.getViewOfElements().size)
+        assertTrue(uniqueRatings.doesExist(BigDecimalGene("checkNinePointFive", BigDecimal("9.5"))))
+        assertTrue(uniqueRatings.doesExist(BigDecimalGene("checkEight", BigDecimal("8.0"))))
+    }
 
-        val intArray = ArrayGene(
-                "array",
-                minSize = 1,
-                maxSize =10,
-                template=IntegerGene("int"),
-                uniqueElements = true,
-                elements = mutableListOf(IntegerGene("0_element", 0), IntegerGene("42_element", 42))
+    @Test
+    fun testRandomizeUniqueBigDecimalElements() {
+        val randomness = Randomness().apply { updateSeed(666) }
+        val uniqueAges = ArrayGene(
+            "playerAges",
+            minSize = 3,
+            maxSize = 5,
+            template = BigDecimalGene("age", min = BigDecimal("18"), max = BigDecimal("40"), scale = 0),
+            uniqueElements = true
         )
 
-        assertTrue(intArray.doesExist(IntegerGene("0_element", 0)))
-        assertTrue(intArray.doesExist(IntegerGene("42_element", 42)))
-        assertThrows<IllegalArgumentException> {  intArray.addElement(IntegerGene("0_element", 0))}
-        assertThrows<IllegalArgumentException> {  intArray.addElement(IntegerGene("42_element", 42))}
+        uniqueAges.randomize(randomness, tryToForceNewValue = false)
 
-        val longArray = ArrayGene(
-                "array",
-                minSize = 1,
-                maxSize = 10,
-                template= LongGene("long"),
-                uniqueElements = true,
-                elements = mutableListOf(LongGene("0_element", 0L), LongGene("42_element", 42L))
-        )
-
-        assertTrue(longArray.doesExist(LongGene("0_element", 0)))
-        assertTrue(longArray.doesExist(LongGene("42_element", 42)))
-        assertThrows<IllegalArgumentException> {  longArray.addElement(LongGene("0_element", 0))}
-        assertThrows<IllegalArgumentException> {  longArray.addElement(LongGene("42_element", 42))}
-
-        val stringArray = ArrayGene(
-                "array",
-                minSize = 1,
-                maxSize =10,
-                template= StringGene("string"),
-                uniqueElements = true,
-                elements = mutableListOf(StringGene("foo_element", "foo"), StringGene("bar_element", "bar"))
-        )
-
-        assertTrue(stringArray.doesExist(StringGene("foo_element", "foo")))
-        assertTrue(stringArray.doesExist(StringGene("bar_element", "bar")))
-        assertThrows<IllegalArgumentException> {  stringArray.addElement(StringGene("foo_element", "foo"))}
-        assertThrows<IllegalArgumentException> {  stringArray.addElement(StringGene("bar_element", "bar"))}
-
-        val enumValues = listOf("ONE", "TWO", "THREE")
-        val enumTemplate = EnumGene("enum", enumValues)
-        val enumArray = ArrayGene(
-                "array",
-                minSize = 1,
-                maxSize =10,
-                template= enumTemplate,
-                uniqueElements = true,
-                elements = mutableListOf(
-                        (enumTemplate.copy() as EnumGene<String>).apply { index =0 }, (enumTemplate.copy() as EnumGene<String>).apply { index =1 })
-        )
-
-        assertTrue(enumArray.doesExist((enumTemplate.copy() as EnumGene<String>).apply { index =0 }))
-        assertTrue(enumArray.doesExist((enumTemplate.copy() as EnumGene<String>).apply { index =1 }))
-        assertThrows<IllegalArgumentException> {  enumArray.addElement((enumTemplate.copy() as EnumGene<String>).apply { index =0 })}
-        assertThrows<IllegalArgumentException> {  enumArray.addElement((enumTemplate.copy() as EnumGene<String>).apply { index =1 })}
+        val elements = uniqueAges.getViewOfElements()
+        assertTrue(elements.size in 3..5)
+        for (i in elements.indices) {
+            for (j in i + 1 until elements.size) {
+                assertFalse(
+                    elements[i].containsSameValueAs(elements[j]),
+                    "Expected unique elements, but found duplicate values ${elements[i].value} and ${elements[j].value}"
+                )
+            }
+        }
     }
 
     @Test
