@@ -1,0 +1,153 @@
+package org.evomaster.client.java.controller.internal;
+
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
+import org.evomaster.client.java.utils.SupplierUtils;
+
+import java.util.Objects;
+import java.util.function.Supplier;
+
+/**
+ * Keeps an AsyncAPI action open for a while after the driver has returned from publishing it,
+ * so that what the service does with the message, on a thread of its own, is still attributed
+ * to that action. Done in the controller so that drivers need not implement it, and the core
+ * pays no extra round trip.
+ */
+public class AsyncApiSettle {
+
+    private static final long NANOS_PER_MILLI = 1_000_000L;
+
+    private static final String OBJECTIVE_UPDATES_FAILURE_WARNING = "Failed to read how many coverage objectives" +
+            " the SUT has reached or improved, so the whole settle window is waited";
+
+    /**
+     * How often the SUT's coverage is read while waiting for it to become stable, in milliseconds.
+     * Short next to any useful stable window, and long enough that reading it, a socket round
+     * trip for an external SUT, costs little.
+     */
+    static final long POLL_INTERVAL_MS = 25;
+
+    /**
+     * Where the time comes from, in milliseconds. Only the difference between two readings is
+     * ever used, so it does not have to be wall-clock time.
+     */
+    interface Clock {
+        long nowMs();
+    }
+
+    /**
+     * How the waiting thread is put to sleep.
+     */
+    interface Sleeper {
+        void sleep(long ms) throws InterruptedException;
+    }
+
+    private final Clock clock;
+
+    private final Sleeper sleeper;
+
+    /**
+     * Sleeps for real, and measures with {@link System#nanoTime()}, which does not jump when the
+     * system clock changes.
+     */
+    public AsyncApiSettle() {
+        this(() -> System.nanoTime() / NANOS_PER_MILLI, Thread::sleep);
+    }
+
+    AsyncApiSettle(Clock clock, Sleeper sleeper) {
+        this.clock = Objects.requireNonNull(clock);
+        this.sleeper = Objects.requireNonNull(sleeper);
+    }
+
+    /**
+     * Wait as {@link AsyncApiActionDto#settleMs} and {@link AsyncApiActionDto#completion} ask,
+     * and record in {@link AsyncApiReplyDto#settleWaitedMs} how long that actually was and in
+     * {@link AsyncApiReplyDto#settleEndedBy} why it ended. Nothing is waited or recorded when no
+     * wait is asked for.
+     *
+     * If the thread is interrupted, the wait ends there and the interrupt flag is left set.
+     *
+     * @param dto               the action that was just published
+     * @param reply             what the driver reported about it, to which the wait is added
+     * @param objectiveUpdates  reads how many times the SUT has reached or improved a coverage
+     *                          objective in the current test, or null when that cannot be known.
+     *                          Only read for {@link AsyncApiActionDto.MessageCompletionStrategy#COVERAGE_STABLE}
+     */
+    public void settle(AsyncApiActionDto dto, AsyncApiReplyDto reply, Supplier<Long> objectiveUpdates) {
+        Objects.requireNonNull(dto);
+        Objects.requireNonNull(reply);
+        Objects.requireNonNull(objectiveUpdates);
+
+        Long settleMs = dto.settleMs;
+        if (settleMs == null || settleMs <= 0) {
+            return;
+        }
+
+        boolean coverageStable = dto.completion == AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE
+                && dto.stableMs != null && dto.stableMs > 0;
+
+        long start = clock.nowMs();
+        AsyncApiReplyDto.SettleEndReason end;
+        try {
+            end = coverageStable
+                    ? waitForStableCoverage(start, settleMs, dto.stableMs, objectiveUpdates)
+                    : waitUntil(start + settleMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            end = AsyncApiReplyDto.SettleEndReason.INTERRUPTED;
+        }
+        reply.settleWaitedMs = clock.nowMs() - start;
+        reply.settleEndedBy = end;
+    }
+
+    private AsyncApiReplyDto.SettleEndReason waitUntil(long deadline) throws InterruptedException {
+        long left = deadline - clock.nowMs();
+        if (left > 0) {
+            sleeper.sleep(left);
+        }
+        return AsyncApiReplyDto.SettleEndReason.DEADLINE;
+    }
+
+    /**
+     * Read the SUT's coverage every {@link #POLL_INTERVAL_MS}, and stop once it has gone
+     * {@code stableMs} without moving, or at the deadline, whichever comes first. The stable
+     * period is counted from the start of the wait, so a service that does nothing new after
+     * the driver returned is let go after {@code stableMs}.
+     */
+    private AsyncApiReplyDto.SettleEndReason waitForStableCoverage(
+            long start,
+            long settleMs,
+            long stableMs,
+            Supplier<Long> objectiveUpdates
+    ) throws InterruptedException {
+
+        long deadline = start + settleMs;
+
+        Long last = SupplierUtils.getOrNullOnFailure(objectiveUpdates, OBJECTIVE_UPDATES_FAILURE_WARNING);
+        long lastChange = start;
+
+        while (true) {
+            if (last == null) {
+                //coverage unknown: wait out the window
+                return waitUntil(deadline);
+            }
+
+            long now = clock.nowMs();
+            if (now >= deadline) {
+                return AsyncApiReplyDto.SettleEndReason.DEADLINE;
+            }
+            if (now - lastChange >= stableMs) {
+                return AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE;
+            }
+
+            long nap = Math.min(POLL_INTERVAL_MS, Math.min(deadline - now, lastChange + stableMs - now));
+            sleeper.sleep(nap);
+
+            Long current = SupplierUtils.getOrNullOnFailure(objectiveUpdates, OBJECTIVE_UPDATES_FAILURE_WARNING);
+            if (current != null && !current.equals(last)) {
+                lastChange = clock.nowMs();
+            }
+            last = current;
+        }
+    }
+}

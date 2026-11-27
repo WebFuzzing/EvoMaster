@@ -9,6 +9,7 @@ Under development in `master` branch.
 - #711: What are the type of faults that can be detected with this tool?  
 
 ### Fixed Bugs
+- Fixed long-standing critical performance issue for white-box testing with external drivers on Linux. 
 - Fixed issue for gzip-compressed responses with empty bodies leading to resource leakage.
 - Fixed instrumentation bug in JDK 25.
 - Fixed experimental configurations that were wrongly on by default.

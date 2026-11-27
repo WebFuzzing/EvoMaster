@@ -15,6 +15,30 @@ import java.util.Map;
 public class AsyncApiReplyDto {
 
     /**
+     * Why the controller stopped keeping the action open.
+     */
+    public enum SettleEndReason {
+
+        /**
+         * The whole {@link AsyncApiActionDto#settleMs} window went by. Also what a
+         * {@link AsyncApiActionDto.MessageCompletionStrategy#COVERAGE_STABLE} wait ends with when the SUT's
+         * coverage cannot be read.
+         */
+        DEADLINE,
+
+        /**
+         * The SUT went {@link AsyncApiActionDto#stableMs} without improving any coverage
+         * objective.
+         */
+        COVERAGE_STABLE,
+
+        /**
+         * The waiting thread was interrupted.
+         */
+        INTERRUPTED
+    }
+
+    /**
      * The index of the action this answers, echoing what was asked.
      */
     public Integer index;
@@ -65,6 +89,22 @@ public class AsyncApiReplyDto {
      * expected or nothing was published.
      */
     public Long waitedMs;
+
+    /**
+     * How long the controller kept the action open after the driver returned, in milliseconds,
+     * as asked by {@link AsyncApiActionDto#settleMs}; shorter when it ended early, see
+     * {@link #settleEndedBy}. Set by the controller, not the driver. Null when no wait was asked
+     * for, or the message could not be published.
+     *
+     * Not to be confused with {@link #waitedMs}, which is how long the driver waited for a reply.
+     */
+    public Long settleWaitedMs;
+
+    /**
+     * Why the controller stopped waiting, set together with {@link #settleWaitedMs}. Null exactly
+     * when that is.
+     */
+    public SettleEndReason settleEndedBy;
 
     /**
      * Why publishing failed, when it did.

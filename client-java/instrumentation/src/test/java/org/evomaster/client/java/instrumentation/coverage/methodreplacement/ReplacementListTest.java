@@ -37,7 +37,12 @@ class ReplacementListTest {
             }
 
             //make sure that during testing all third-party libraries are available
-            assertTrue(mrc.isAvailable(), "Not available: " + mrc.getClass().getName());
+            if (!mrc.isAvailable()) {
+                //except that, when a library has a replacement for each of its versions, only one of the
+                //versions can be on the classpath
+                assertTrue(hasAvailableAlternative(mrc), "Not available: " + mrc.getClass().getName());
+                continue;
+            }
 
             for (Method m : mrc.getClass().getDeclaredMethods()) {
 
@@ -147,6 +152,17 @@ class ReplacementListTest {
 
         }
 
+    }
+
+    /**
+     * @return whether another replacement of the same target class, eg for another version of the library,
+     * is available
+     */
+    private static boolean hasAvailableAlternative(MethodReplacementClass mrc) {
+        return ReplacementList.getList().stream()
+                .filter(other -> other != mrc)
+                .filter(other -> other.getTargetClassName().equals(mrc.getTargetClassName()))
+                .anyMatch(MethodReplacementClass::isAvailable);
     }
 
     private void checkInputParameters(Method m){

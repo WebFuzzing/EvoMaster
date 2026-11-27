@@ -736,4 +736,113 @@ class AsyncApiFitnessTest {
 
         assertEquals(1234L, driver.published.single().replyTimeoutMs)
     }
+
+    @Test
+    fun testNoSettleWindowIsAskedForByDefault() {
+
+        startNcs { replied(DOUBLE_RESULT) }
+
+        evaluate("bessj")
+
+        assertNull(driver.published.single().settleMs)
+    }
+
+    @Test
+    fun testTheSettleWindowIsAskedForInWhiteBox() {
+
+        startNcs("--asyncApiSettleMs=250") { fireAndForget() }
+
+        evaluate("bessj", "expint")
+
+        assertEquals(listOf(250L, 250L), driver.published.map { it.settleMs })
+        //the whole window unless asked otherwise, and no stable window to go with it
+        assertEquals(AsyncApiActionDto.MessageCompletionStrategy.FIXED, driver.published.first().completion)
+        assertNull(driver.published.first().stableMs)
+    }
+
+    @Test
+    fun testCoverageStableIsAskedForWithItsStableWindow() {
+
+        startNcs("--asyncApiSettleMs=2000", "--asyncApiCompletion=COVERAGE_STABLE", "--asyncApiStableMs=150") {
+            fireAndForget()
+        }
+
+        evaluate("bessj")
+
+        val dto = driver.published.single()
+        assertEquals(2000L, dto.settleMs)
+        assertEquals(AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE, dto.completion)
+        assertEquals(150L, dto.stableMs)
+    }
+
+    @Test
+    fun testABlackBoxRunAsksForNoStableCoverageEither() {
+
+        startNcs("$BLACK_BOX=true") { fireAndForget() }
+        //set after start, as EMConfig rejects both in black-box
+        injector.getInstance(EMConfig::class.java).apply {
+            asyncApiSettleMs = 2000
+            asyncApiCompletion = EMConfig.AsyncApiCompletion.COVERAGE_STABLE
+        }
+
+        evaluate("bessj")
+
+        val dto = driver.published.single()
+        assertNull(dto.settleMs)
+        assertNull(dto.completion)
+        assertNull(dto.stableMs)
+    }
+
+    @Test
+    fun testWhyTheControllerStoppedWaitingIsKeptOnTheResult() {
+
+        startNcs("--asyncApiSettleMs=2000", "--asyncApiCompletion=COVERAGE_STABLE") {
+            fireAndForget().apply {
+                settleWaitedMs = 230
+                settleEndedBy = AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE
+            }
+        }
+
+        val result = results(evaluate("bessj")).single()
+
+        assertEquals(230L, result.getSettleWaitedMs())
+        assertEquals(AsyncApiReplyDto.SettleEndReason.COVERAGE_STABLE, result.getSettleEndedBy())
+    }
+
+    @Test
+    fun testABlackBoxRunAsksForNoSettleWindow() {
+
+        /*
+            The window is there so that the code a message reaches is credited to it. A
+            black-box run collects no code coverage, so it would only slow the search down.
+         */
+        startNcs("$BLACK_BOX=true") { fireAndForget() }
+        //set after start, as EMConfig rejects it in black-box
+        injector.getInstance(EMConfig::class.java).asyncApiSettleMs = 250
+
+        evaluate("bessj")
+
+        assertNull(driver.published.single().settleMs)
+    }
+
+    @Test
+    fun testHowLongTheControllerWaitedIsKeptOnTheResult() {
+
+        startNcs("--asyncApiSettleMs=250") { fireAndForget().apply { settleWaitedMs = 251 } }
+
+        val evaluated = evaluate("bessj")
+
+        assertEquals(251L, results(evaluated).single().getSettleWaitedMs())
+    }
+
+    @Test
+    fun testNoWaitIsRecordedWhenTheControllerReportsNone() {
+
+        startNcs { fireAndForget() }
+
+        val evaluated = evaluate("bessj")
+
+        assertNull(results(evaluated).single().getSettleWaitedMs())
+        assertNull(results(evaluated).single().getSettleEndedBy())
+    }
 }

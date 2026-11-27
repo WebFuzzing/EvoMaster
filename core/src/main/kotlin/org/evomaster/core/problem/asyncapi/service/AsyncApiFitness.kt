@@ -9,6 +9,7 @@ import com.webfuzzing.asyncapi.models.AsyncApiReply
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiActionDto
 import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto
+import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
@@ -239,6 +240,8 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
 
         result.setOutcome(outcome)
         reply.waitedMs?.let { result.setWaitedMs(it) }
+        reply.settleWaitedMs?.let { result.setSettleWaitedMs(it) }
+        reply.settleEndedBy?.let { result.setSettleEndedBy(it) }
 
         //what the generated test will publish with, when the driver rendered it
         //lines that are all blank are no script: the writer would publish nothing and assert on it
@@ -424,6 +427,21 @@ class AsyncApiFitness : ApiWsFitness<AsyncApiIndividual>() {
             dto.replyAddress = getReplyAddress(reply, action)
             if (dto.replyAddress != null) {
                 dto.replyTimeoutMs = config.asyncApiReplyTimeoutMs.toLong()
+            }
+        }
+
+        if (!config.blackBox && config.asyncApiSettleMs > 0) {
+            /*
+                Only in white-box mode: the window exists so that the code a message reaches is
+                credited to it, and a black-box run collects no code coverage to credit.
+             */
+            dto.settleMs = config.asyncApiSettleMs.toLong()
+            dto.completion = when (config.asyncApiCompletion) {
+                EMConfig.AsyncApiCompletion.FIXED -> AsyncApiActionDto.MessageCompletionStrategy.FIXED
+                EMConfig.AsyncApiCompletion.COVERAGE_STABLE -> {
+                    dto.stableMs = config.asyncApiStableMs.toLong()
+                    AsyncApiActionDto.MessageCompletionStrategy.COVERAGE_STABLE
+                }
             }
         }
 

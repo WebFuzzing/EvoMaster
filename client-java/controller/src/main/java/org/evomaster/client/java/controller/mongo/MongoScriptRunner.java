@@ -42,7 +42,9 @@ public class MongoScriptRunner {
                 Object document = parseEJSON(insertionDto.data);
                 insertDocument(connection, insertionDto.databaseName, insertionDto.collectionName, document);
                 mongoResults.set(i, true);
-                SimpleLogger.debug(insertionDto.data + " inserted into database: " + insertionDto.databaseName + " and collection: " + insertionDto.collectionName);
+                if(SimpleLogger.isDebug()) {
+                    SimpleLogger.debug(insertionDto.data + " inserted into database: " + insertionDto.databaseName + " and collection: " + insertionDto.collectionName);
+                }
             } catch (Exception e) {
                 final String errorMessage;
                 if (e instanceof  InvocationTargetException) {

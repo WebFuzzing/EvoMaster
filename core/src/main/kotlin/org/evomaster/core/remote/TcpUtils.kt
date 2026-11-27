@@ -13,6 +13,18 @@ object TcpUtils {
 
     private val log : Logger = LoggerFactory.getLogger(TcpUtils::class.java)
 
+    /**
+     * Are we in the cases in which should be fine to resend, as likely the network issue was temporary.
+     *
+     * This has nothing to do with whether the method is idempotent or not.
+     */
+    fun shouldBeSafeToResend(e: ProcessingException): Boolean {
+
+        //at least in Jersey, this seems to happen if using a close connection from the pool.
+        //it might happen sporadically, although in some APIs (eg joinus) seems not so uncommon
+        return isNoHttpResponse(e)
+    }
+
     fun isTooManyRedirections(e: ProcessingException): Boolean {
 
         return (e.cause?.message?.contains("redirected too many") == true) && e.cause is ProtocolException

@@ -1,17 +1,20 @@
 package org.evomaster.e2etests.utils;
 
 import com.webfuzzing.commons.faults.FaultCategory;
+import org.evomaster.client.java.controller.api.dto.problem.asyncapi.AsyncApiReplyDto;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiCallResult;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiIndividual;
 import org.evomaster.core.problem.asyncapi.data.AsyncApiOutcome;
 import org.evomaster.core.problem.enterprise.DetectedFault;
 import org.evomaster.core.search.Solution;
+import org.evomaster.core.search.action.EvaluatedAction;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,14 +29,27 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
     }
 
     /**
+     * The result of every message published, across the whole solution.
+     */
+    protected List<AsyncApiCallResult> allResultsOf(Solution<AsyncApiIndividual> solution) {
+        return evaluatedActions(solution)
+                .map(e -> (AsyncApiCallResult) e.getResult())
+                .collect(Collectors.toList());
+    }
+
+    /**
      * The result of every message published to {@code operation}, across the whole solution.
      */
     protected List<AsyncApiCallResult> resultsOf(Solution<AsyncApiIndividual> solution, String operation) {
-        return solution.getIndividuals().stream()
-                .flatMap(ind -> ind.evaluatedMainActions().stream())
+        return evaluatedActions(solution)
                 .filter(e -> e.getAction().getName().equals(operation))
                 .map(e -> (AsyncApiCallResult) e.getResult())
                 .collect(Collectors.toList());
+    }
+
+    private Stream<EvaluatedAction> evaluatedActions(Solution<AsyncApiIndividual> solution) {
+        return solution.getIndividuals().stream()
+                .flatMap(ind -> ind.evaluatedMainActions().stream());
     }
 
     /**
@@ -64,6 +80,27 @@ public class AsyncApiTestBase extends EnterpriseTestBase {
                 .flatMap(ind -> ind.evaluatedMainActions().stream())
                 .map(e -> (AsyncApiCallResult) e.getResult())
                 .filter(r -> r.getOutcome() == outcome)
+                .count();
+    }
+
+    /**
+     * That the controller kept every published message's action open after the driver returned,
+     * as a settle window asks it to.
+     */
+    protected void assertEverySettled(Solution<AsyncApiIndividual> solution) {
+        List<AsyncApiCallResult> results = allResultsOf(solution);
+        assertTrue(!results.isEmpty(), "With seed " + defaultSeed + ": nothing was published");
+        long unsettled = results.stream().filter(r -> r.getSettleWaitedMs() == null).count();
+        assertTrue(unsettled == 0, "With seed " + defaultSeed + ": " + unsettled + " of " + results.size()
+                + " published messages were not kept open after the driver returned");
+    }
+
+    /**
+     * How many published messages the controller stopped waiting on for {@code end}.
+     */
+    protected long countSettleEnd(Solution<AsyncApiIndividual> solution, AsyncApiReplyDto.SettleEndReason end) {
+        return allResultsOf(solution).stream()
+                .filter(r -> r.getSettleEndedBy() == end)
                 .count();
     }
 

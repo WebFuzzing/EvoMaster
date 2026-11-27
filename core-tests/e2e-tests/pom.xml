@@ -33,6 +33,17 @@
         </dependencies>
     </dependencyManagement>
 
+    <dependencies>
+        <!--
+            Generated JUnit 4 suites are run in-process with the JUnit Platform launcher,
+            which needs the vintage engine to find their tests
+        -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <pluginManagement>
             <plugins>
