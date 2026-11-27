@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
 /**
  *  A representation of typical array, for a fixed type T, ie, no mixed types are allowed here.
  */
-class ArrayGene<T>(
+open class ArrayGene<T>(
         /**
          * The name of this gene
          */
@@ -62,9 +62,9 @@ class ArrayGene<T>(
          *
          */
         elements: MutableList<T> = mutableListOf(),
-        private var openingTag : String = "[",
-        private var closingTag : String = "]",
-        private var separatorTag : String = ", "
+        protected var openingTag : String = "[",
+        protected var closingTag : String = "]",
+        protected var separatorTag : String = ", "
 ) : CollectionGene, CompositeGene(name, elements)
         where T : Gene {
 
@@ -169,6 +169,7 @@ class ArrayGene<T>(
         if (other !is ArrayGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        if (this::class != other::class) return false
         if (this.template::class.simpleName != other.template::class.simpleName) return false
 
         if(this.elements.size != other.elements.size) return false
@@ -294,7 +295,7 @@ class ArrayGene<T>(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-        if(other is ArrayGene<*> && other.template::class.java.simpleName == template::class.java.simpleName){
+        if(other is ArrayGene<*> && this::class == other::class && other.template::class.java.simpleName == template::class.java.simpleName){
 
             killAllChildren()
             val elements = other.elements.mapNotNull { it.copy() as? T}.toMutableList()
@@ -370,7 +371,7 @@ class ArrayGene<T>(
     /**
      * remove an existing element [element] from [elements]
      */
-    fun removeExistingElement(element: T){
+    open fun removeExistingElement(element: T){
         //this is a reference heap check, not based on `equalsTo`
         if (elements.contains(element)){
             killChild(element)
@@ -379,7 +380,7 @@ class ArrayGene<T>(
         }
     }
 
-    private fun createRandomElement(randomness: Randomness) : T? {
+    protected open fun createRandomElement(randomness: Randomness) : T? {
         val gene = template.copy() as T
         if(this.initialized){
             gene.doInitialize(randomness)
@@ -404,7 +405,7 @@ class ArrayGene<T>(
     /**
      * @return whether the active leaf values of [first] and [second] have the same type and value
      */
-    private fun hasSameLeafValue(first: Gene, second: Gene): Boolean {
+    protected fun hasSameLeafValue(first: Gene, second: Gene): Boolean {
         val firstLeaf = first.getLeafGene()
         val secondLeaf = second.getLeafGene()
         return firstLeaf.javaClass == secondLeaf.javaClass &&
@@ -414,7 +415,7 @@ class ArrayGene<T>(
     /**
      * @return whether any two elements applicable to uniqueness checking share the same leaf value
      */
-    private fun hasDuplicateElements(): Boolean {
+    protected fun hasDuplicateElements(): Boolean {
         if (elements.size <= 1) return false
         for (i in 0 until elements.size - 1) {
             if (!isElementApplicableToUniqueCheck(elements[i].getLeafGene())) continue
