@@ -15,6 +15,7 @@ import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.time.SearchStatusUpdater
 import org.evomaster.core.search.service.time.TimeBoxedPhase
 import org.evomaster.core.database.sql.SqlAction
+import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -196,7 +197,7 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
 
             if (copy is RestIndividual) {
                 // TODO: code here will need to be refactored when having updated code for deleting actions
-                removeReferencesToResourceIfCreated(copy, index)
+                RestIndividualBuilder.removeReferencesToResourceIfCreated(copy, index)
                 removeBackwardLinksToAction(copy, index)
             }
 
@@ -312,32 +313,6 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
     }
 
     /**
-     *  If [ind]'s main action at [index] creates a resource, remove references to its location id made by subsequent
-     *  actions.
-     */
-    private fun removeReferencesToResourceIfCreated(ind: RestIndividual, index: Int) {
-        val actions = ind.seeMainExecutableActions()
-
-        if (index !in actions.indices) {
-            throw IllegalArgumentException("Index is out of main actions list bounds")
-        }
-
-        if (index == actions.size - 1) {
-            return
-        }
-
-        if (actions[index].saveCreatedResourceLocation) {
-            val creationLocationId = actions[index].creationLocationId()
-            for (i in index + 1 until actions.size) {
-                if (actions[i].usePreviousLocationId == creationLocationId) {
-                    actions[i].usePreviousLocationId = null
-                }
-            }
-        }
-    }
-
-
-    /**
      *  Remove references to the links of [ind]'s main action at [index] made by the backward links of subsequent
      *  actions.
      */
@@ -353,7 +328,7 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
         }
 
         for (i in index + 1 until actions.size) {
-           if (actions[i].backwardLinkReference?.actualSourceActionLocalId == actions[index].getLocalId()) {
+            if (actions[i].backwardLinkReference?.actualSourceActionLocalId == actions[index].getLocalId()) {
                 actions[i].backwardLinkReference = null
             }
         }

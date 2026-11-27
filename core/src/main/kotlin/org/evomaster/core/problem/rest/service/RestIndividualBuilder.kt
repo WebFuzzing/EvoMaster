@@ -82,6 +82,31 @@ class RestIndividualBuilder {
 
             return ind
         }
+
+        /**
+         *  If [ind]'s main action at [index] creates a resource, remove references to its location id made by subsequent
+         *  actions.
+         */
+        fun removeReferencesToResourceIfCreated(ind: RestIndividual, index: Int) {
+            val actions = ind.seeMainExecutableActions()
+
+            if (index !in actions.indices) {
+                throw IllegalArgumentException("Index is out of main actions list bounds")
+            }
+
+            if (index == actions.size - 1) {
+                return
+            }
+
+            if (actions[index].saveCreatedResourceLocation) {
+                val creationLocationId = actions[index].creationLocationId()
+                for (i in index + 1 until actions.size) {
+                    if (actions[i].usePreviousLocationId == creationLocationId) {
+                        actions[i].usePreviousLocationId = null
+                    }
+                }
+            }
+        }
     }
 
 
