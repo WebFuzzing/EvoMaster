@@ -18,6 +18,7 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.PartMeta
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -1922,6 +1923,37 @@ public void test() throws Exception {
             "Expected DTO variable passed as body argument")
         assertFalse(output.contains("{\"op\":"),
             "Body must not contain raw JSON string representation of a patch operation")
+    }
+
+    @Test
+    fun testMultipartBodyEscapesDollarInKotlin() {
+        val caption = StringGene("caption")
+        val typeGene = EnumGene("contentType", listOf("multipart/form-data"))
+        val bodyParam = BodyParam(ObjectGene("body", listOf(caption)), typeGene, null, mapOf("caption" to PartMeta(isFile = false)))
+
+        val action = RestCallAction("1", HttpVerb.POST, RestPath("/upload"), mutableListOf(bodyParam))
+        val individual = RestIndividual(mutableListOf(action), SampleType.RANDOM)
+        TestUtils.doInitializeIndividualForTesting(individual, Randomness().apply { updateSeed(42L) })
+
+        //set after initialization, which randomizes the values
+        caption.value = "a\$bc"
+        bodyParam.contentTypeGene.index = bodyParam.contentTypeGene.values.indexOf("multipart/form-data")
+
+        val result = RestCallResult(action.getLocalId()).apply { setStatusCode(200) }
+        val ei = EvaluatedIndividual(FitnessValue(0.0), individual, listOf(result))
+
+        listOf(OutputFormat.KOTLIN_JUNIT_5, OutputFormat.JAVA_JUNIT_5).forEach { format ->
+            val config = getConfig(format)
+            config.problemType = EMConfig.ProblemType.REST
+            val writer = RestTestCaseWriter(config, PartialOracles())
+            val output = writer.convertToCompilableTestCode(TestCase(test = ei, name = "test"), "baseUrlOfSut").toString()
+
+            if (format.isKotlin()) {
+                assertTrue(output.contains("\\r\\na\\\$bc\\r\\n"), output)
+            } else {
+                assertTrue(output.contains("\\r\\na\$bc\\r\\n"), output)
+            }
+        }
     }
 
     @Test

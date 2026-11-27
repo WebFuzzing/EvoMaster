@@ -728,10 +728,22 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     createInvocation(a, chainState, cookies, tokens).invoke()
                 }
 
-                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) || TcpUtils.isNoHttpResponse(e) -> {
+                TcpUtils.shouldBeSafeToResend(e) -> {
                     /*
-                        This should not really happen... but it does :( at least on Windows...
+                        This could be sporadic, if client is reusing a socket that was closed
+                        by SUT without Jersey not realizing it yet.
+                        In this case, we just try again without recreating the client.
                      */
+                    try{
+                        createInvocation(a, chainState, cookies, tokens).invoke()
+                    } catch (k: ProcessingException) {
+                        log.warn("Failed to repeat call when no HTTP response: ${k.cause!!.message}")
+                        rcr.setTcpProblem(true)
+                        return false
+                    }
+                }
+
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e)  -> {
                     log.warn("TCP connection to SUT problem: ${e.cause!!.message}")
                     rcr.setTcpProblem(true)
                     return false
@@ -1117,6 +1129,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 body.isXml() -> GeneUtils.EscapeMode.XML
                 body.isForm() -> GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED
                 body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
+                body.isMultipartSupported() -> GeneUtils.EscapeMode.MULTIPART_FORM_DATA
                 else -> {
                     LoggingUtil.uniqueWarn(log,"Cannot handle body type: " + body.contentType() + "." +
                             " It will be treated as TEXT.")
@@ -1127,7 +1140,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val stringToBeSent = body.getRawStringToBeSent(mode = mode, targetFormat = configuration.outputFormat)
             Entity.entity(
                 stringToBeSent,
-                body.contentType()
+                //includes the boundary for multipart
+                body.contentTypeHeader()
             )
         } else if (forms != null) {
             Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)

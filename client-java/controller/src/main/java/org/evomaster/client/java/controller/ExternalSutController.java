@@ -75,6 +75,38 @@ public abstract class ExternalSutController extends SutController {
 
     private volatile boolean needsJdk17Options = false;
 
+    /**
+     * Get full "java" command path based on it version.
+     * It requires an environment variable in the form of JAVA_HOME_$version for that JDK.
+     * Eg, for 17, this function would return the interpolation of: "$JAVA_HOME_17/bin/java".
+     *
+     * This is needed when spawning new processes that need to run specific versions of Java.
+     */
+    public static String getJavaCommandFromEnvironmentVariablesUsingJDK(int version){
+
+        String env;
+        if(version == 8){
+            env = System.getenv("JAVA_HOME_8");
+        } else if(version == 11){
+            env = System.getenv("JAVA_HOME_11");
+        } else if(version == 17){
+            env = System.getenv("JAVA_HOME_17");
+        } else if(version == 21){
+            env = System.getenv("JAVA_HOME_21");
+        } else if(version == 25){
+            env = System.getenv("JAVA_HOME_25");
+        } else {
+            throw new IllegalArgumentException("Unrecognized/unsupported JDK version: " + version);
+        }
+
+        if(env == null || env.isEmpty()){
+            throw new IllegalStateException("Didn't find any valid environment variable called JAVA_HOME_" + version);
+        }
+
+        return Paths.get(env,"bin/java").toAbsolutePath().toString();
+    }
+
+
 
     public final ExternalSutController setJaCoCo(String jaCoCoAgentLocation, String jaCoCoCliLocation, String jaCoCoOutputFile, int port){
         this.jaCoCoAgentLocation = jaCoCoAgentLocation;
@@ -98,8 +130,24 @@ public abstract class ExternalSutController extends SutController {
      * If you are using JDK 17 or above, you must set this to true
      * @param needsJdk17Options
      */
-    public final void setNeedsJdk17Options(boolean needsJdk17Options) {
+    public final void setNeedsOptionsForJdk17(boolean needsJdk17Options) {
         this.needsJdk17Options = needsJdk17Options;
+    }
+
+    /**
+     * Use setNeedsOptionsForJdk17 instead
+     */
+    @Deprecated
+    public final void setNeedsJdk17Options(boolean needsJdk17Options){
+        setNeedsOptionsForJdk17(needsJdk17Options);
+    }
+
+    public final void setNeedsOptionsForJdk21(boolean needsJdk21Options){
+        setNeedsOptionsForJdk17(needsJdk21Options); // no difference so far
+    }
+
+    public final void setNeedsOptionsForJdk25(boolean needsJdk25Options){
+        setNeedsOptionsForJdk17(needsJdk25Options); // no difference so far
     }
 
     public final void setInstrumentation(boolean instrumentation) {
@@ -445,6 +493,14 @@ public abstract class ExternalSutController extends SutController {
             return null;
         }
         return getBootTimeInfoDto(serverController.handleBootTimeObjectiveInfo());
+    }
+
+    @Override
+    public final Long getObjectiveUpdateCount() {
+        if (!isInstrumentationActivated()) {
+            return null;
+        }
+        return serverController.getObjectiveUpdateCount();
     }
 
     @Override

@@ -239,8 +239,11 @@ class TupleGene(
             )
             val map = selected.map { internalGenes.indexOf(it) }
             return map.map {
+                // TODO TupleGeneImpact indexes elements by gene name, so same-named heterogeneous elements (possible in DynamoDB)
+                //  overwrite each other's impact. We pass null on type mismatch for now, but we need a better solution for heterogeneous collections.
+                val impact = (impacts[it] as? GeneImpact)?.takeIf { imp -> imp.validate(internalGenes[it]) }
                 internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(
-                    impact = impacts[it] as? GeneImpact,
+                    impact = impact,
                     gene = internalGenes[it]
                 )
             }
