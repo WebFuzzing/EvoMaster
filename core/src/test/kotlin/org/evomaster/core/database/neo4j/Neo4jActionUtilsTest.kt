@@ -38,8 +38,19 @@ class Neo4jActionUtilsTest {
 
     private fun node(label: String, vararg properties: Neo4jPropertyGene) = Neo4jNodeTemplate(listOf(label), properties.toList())
 
-    private fun action(uniqueKeys: Neo4jUniqueKeys?, vararg nodes: Neo4jNodeTemplate) =
-        Neo4jDbAction(nodes.toList(), emptyList(), "MATCH (n) RETURN n", uniqueKeys)
+    /** An insertion whose nodes get the keys of their labels, as the insert builder gives them. */
+    private fun action(uniqueKeys: Neo4jUniqueKeys?, vararg nodes: Neo4jNodeTemplate) = Neo4jDbAction(
+        nodes.map { Neo4jNodeTemplate(it.labels, it.properties, uniqueKeys?.keysFor(it.labels) ?: emptyList()) },
+        emptyList(),
+        "MATCH (n) RETURN n"
+    )
+
+    /** The data already in the database for every key, as it is placed before the insertions of a test. */
+    private fun existing(uniqueKeys: Neo4jUniqueKeys): List<Neo4jDbAction> =
+        uniqueKeys.existingDataFor(uniqueKeys.keys.map { it.label })
+
+    private fun repair(uniqueKeys: Neo4jUniqueKeys, vararg insertions: Neo4jDbAction): List<Neo4jDbAction> =
+        Neo4jActionUtils.repairUniqueKeys(existing(uniqueKeys) + insertions, randomness)
 
     private fun value(action: Neo4jDbAction, node: Int = 0, property: String = "id"): String =
         action.nodes[node].properties.first { it.key == property }.valueAsText()
@@ -50,7 +61,7 @@ class Neo4jActionUtilsTest {
         val first = action(uniqueKeys, node("Adopter", string("id", "gQNkuJUNO_nF"), string("name", "Ana")))
         val second = action(uniqueKeys, node("Adopter", string("id", "gQNkuJUNO_nF"), string("name", "Ana")))
 
-        val broken = Neo4jActionUtils.repairUniqueKeys(listOf(first, second), randomness)
+        val broken = repair(uniqueKeys, first, second)
 
         assertTrue(broken.isEmpty())
         assertEquals("gQNkuJUNO_nF", value(first))
@@ -64,7 +75,7 @@ class Neo4jActionUtilsTest {
             existing = listOf(listOf(Neo4jInsertionEntryDto("id", Neo4jPropertyTypeDto.INTEGER, "7")))))
         val insertion = action(uniqueKeys, node("Player", integer("id", 7)))
 
-        assertTrue(Neo4jActionUtils.repairUniqueKeys(listOf(insertion), randomness).isEmpty())
+        assertTrue(repair(uniqueKeys, insertion).isEmpty())
         assertNotEquals("7", value(insertion))
     }
 
@@ -74,7 +85,7 @@ class Neo4jActionUtilsTest {
             existing = listOf(listOf(Neo4jInsertionEntryDto("id", Neo4jPropertyTypeDto.INTEGER, "7")))))
         val insertion = action(uniqueKeys, node("Player", string("id", "7")))
 
-        Neo4jActionUtils.repairUniqueKeys(listOf(insertion), randomness)
+        repair(uniqueKeys, insertion)
 
         assertEquals("7", value(insertion))
     }
@@ -85,7 +96,7 @@ class Neo4jActionUtilsTest {
         val first = action(uniqueKeys, node("Pet", string("id", "x")))
         val second = action(uniqueKeys, node("Pet", string("id", "x")))
 
-        Neo4jActionUtils.repairUniqueKeys(listOf(first, second), randomness)
+        repair(uniqueKeys, first, second)
 
         assertEquals("x", value(first))
         assertEquals("x", value(second))
@@ -99,7 +110,7 @@ class Neo4jActionUtilsTest {
         val c = action(uniqueKeys, node("Match", string("white", "w")))
         val d = action(uniqueKeys, node("Match", string("white", "w"), string("black", "b1")))
 
-        Neo4jActionUtils.repairUniqueKeys(listOf(a, b, c, d), randomness)
+        repair(uniqueKeys, a, b, c, d)
 
         assertEquals(listOf("w", "b1"), listOf(value(a, property = "white"), value(a, property = "black")))
         assertEquals(listOf("w", "b2"), listOf(value(b, property = "white"), value(b, property = "black")))
@@ -112,7 +123,7 @@ class Neo4jActionUtilsTest {
         val uniqueKeys = keys(key("Person", "id"))
         val insertion = action(uniqueKeys, node("Person", string("id", "p")), node("Person", string("id", "p")))
 
-        Neo4jActionUtils.repairUniqueKeys(listOf(insertion), randomness)
+        repair(uniqueKeys, insertion)
 
         assertEquals("p", value(insertion, node = 0))
         assertNotEquals("p", value(insertion, node = 1))
@@ -127,7 +138,7 @@ class Neo4jActionUtilsTest {
             node("Flag", Neo4jPropertyGene("flag", Neo4jPropertyTypeDto.BOOLEAN, BooleanGene("flag", true))))
         val later = action(uniqueKeys, node("Person", string("id", "p")))
 
-        val broken = Neo4jActionUtils.repairUniqueKeys(listOf(hopeless, later), randomness)
+        val broken = repair(uniqueKeys, hopeless, later)
 
         assertEquals(listOf(hopeless), broken)
         // the removed insertion no longer holds "p", so the later one keeps it
@@ -169,14 +180,82 @@ class Neo4jActionUtilsTest {
         val first = action(uniqueKeys, node("Adopter", string("id", "x")))
         val second = action(uniqueKeys, node("Adopter", string("id", "x")))
         val hopeless = action(uniqueKeys, node("Flag", Neo4jPropertyGene("flag", Neo4jPropertyTypeDto.BOOLEAN, BooleanGene("flag", false))))
-        individual.addInitializingActions(listOf(first, second, hopeless))
+        val existing = existing(uniqueKeys)
+        individual.addInitializingActions(existing + listOf(first, second, hopeless))
         individual.seeTopGenes().forEach(Gene::markAllAsInitialized)
 
         individual.repairInitializationActions(randomness)
 
         val kept = individual.seeNeo4jDbActions()
-        assertEquals(2, kept.size)
-        assertEquals(1, kept.count { value(it) == "x" })
-        assertTrue(kept.none { it === hopeless })
+        assertEquals(existing, kept.filter { it.representExistingData })
+        val insertions = kept.filter { !it.representExistingData }
+        assertEquals(2, insertions.size)
+        assertEquals(1, insertions.count { value(it) == "x" })
+        assertTrue(insertions.none { it === hopeless })
+    }
+
+    @Test
+    fun theDataAlreadyInTheDatabaseIsNeverRepaired() {
+        val uniqueKeys = keys(key("Player", "id",
+            existing = listOf(listOf(Neo4jInsertionEntryDto("id", Neo4jPropertyTypeDto.INTEGER, "7")))))
+        val existing = existing(uniqueKeys)
+        val insertion = action(uniqueKeys, node("Player", integer("id", 7)))
+
+        val broken = Neo4jActionUtils.repairUniqueKeys(existing + insertion, randomness)
+
+        assertTrue(broken.isEmpty())
+        assertEquals("7", value(existing.single()))
+        assertNotEquals("7", value(insertion))
+    }
+
+    @Test
+    fun theExistingDataOfALabelHoldsOnlyTheValuesOfItsKeysAsImmutableGenes() {
+        val uniqueKeys = keys(
+            key("Player", "id", existing = listOf(
+                listOf(Neo4jInsertionEntryDto("id", Neo4jPropertyTypeDto.INTEGER, "7")),
+                listOf(Neo4jInsertionEntryDto("id", Neo4jPropertyTypeDto.INTEGER, "8")))),
+            key("Move", "id", existing = listOf(
+                listOf(Neo4jInsertionEntryDto("id", Neo4jPropertyTypeDto.INTEGER, "1"))))
+        )
+
+        val existing = uniqueKeys.existingDataFor(listOf("Player"))
+
+        assertEquals(2, existing.size)
+        assertTrue(existing.all { it.representExistingData && it.edges.isEmpty() })
+        assertEquals(setOf("7", "8"), existing.map { value(it) }.toSet())
+        assertTrue(existing.flatMap { it.seeTopGenes() }.none { it.isMutable() })
+        assertTrue(existing.all { it.nodes.single().keys == listOf(Neo4jUniqueKeys.Key("Player", listOf("id"))) })
+        assertTrue((existing.first().copy() as Neo4jDbAction).representExistingData)
+    }
+
+    @Test
+    fun onlyTheExistingDataOfTheLabelsTheInsertionsUseIsMissing() {
+        val uniqueKeys = keys(
+            key("Player", "id", existing = listOf(listOf(Neo4jInsertionEntryDto("id", Neo4jPropertyTypeDto.INTEGER, "7")))),
+            key("Move", "id", existing = listOf(listOf(Neo4jInsertionEntryDto("id", Neo4jPropertyTypeDto.INTEGER, "1"))))
+        )
+        val insertion = action(uniqueKeys, node("Player", integer("id", 8)), node("Pet", string("id", "x")))
+
+        val missing = uniqueKeys.existingDataMissingIn(listOf(insertion))
+
+        assertEquals(listOf("Player"), missing.flatMap { it.nodes }.flatMap { it.labels })
+        assertEquals("7", value(missing.single()))
+    }
+
+    @Test
+    fun theExistingDataAlreadyInTheTestIsNotMissing() {
+        val uniqueKeys = keys(key("Player", "id",
+            existing = listOf(listOf(Neo4jInsertionEntryDto("id", Neo4jPropertyTypeDto.INTEGER, "7")))))
+        val insertion = action(uniqueKeys, node("Player", integer("id", 8)))
+
+        assertTrue(uniqueKeys.existingDataMissingIn(existing(uniqueKeys) + insertion).isEmpty())
+        assertTrue(uniqueKeys.existingDataMissingIn(existing(uniqueKeys)).isEmpty())
+    }
+
+    @Test
+    fun theExistingDataCannotHoldMutableValues() {
+        assertThrows(IllegalArgumentException::class.java) {
+            Neo4jDbAction(listOf(node("Player", integer("id", 7))), emptyList(), "", representExistingData = true)
+        }
     }
 }

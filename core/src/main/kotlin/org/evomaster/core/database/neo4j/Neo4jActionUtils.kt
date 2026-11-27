@@ -12,9 +12,10 @@ object Neo4jActionUtils {
 
     /**
      * Makes the nodes of [actions] stop repeating a unique key, either among themselves or with a value
-     * already in the database. The actions are visited in the order they are executed: the first node
-     * holding a value keeps it, and on a later node that repeats it one of the key's properties is
-     * randomized, until the value is free or [maxNumberOfAttempts] tries are spent.
+     * already in the database. The values in the database come from the actions that represent existing
+     * data, which are never repaired. The actions are visited in order: the first node holding a value
+     * keeps it, and on a later node that repeats it one of the key's properties is randomized, until the
+     * value is free or [maxNumberOfAttempts] tries are spent.
      *
      * Without this, Neo4j rejects the insertion when it enforces the key, and when it does not (eg, an
      * id that only Spring Data assumes unique) the SUT ends up reading two nodes where it expects one
@@ -32,19 +33,20 @@ object Neo4jActionUtils {
             throw IllegalArgumentException("Maximum number of attempts should be non negative but it is: $maxNumberOfAttempts")
         }
 
-        val taken = actions.mapNotNull { it.uniqueKeys }
-            .distinct()
-            .flatMap { it.existing }
+        val (existingData, insertions) = actions.partition { it.representExistingData }
+
+        val taken = existingData
+            .flatMap { it.nodes }
+            .flatMap { valuesOf(it, it.keys) }
             .toMutableSet()
 
         val broken = mutableListOf<Neo4jDbAction>()
 
-        for (action in actions) {
-            val uniqueKeys = action.uniqueKeys ?: continue
+        for (action in insertions) {
             val added = mutableListOf<Neo4jUniqueKeys.Value>()
             var repaired = true
             for (node in action.nodes) {
-                val values = repairNode(node, uniqueKeys.keysFor(node.labels), taken, randomness, maxNumberOfAttempts)
+                val values = repairNode(node, node.keys, taken, randomness, maxNumberOfAttempts)
                 if (values == null) {
                     repaired = false
                     break

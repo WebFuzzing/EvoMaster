@@ -191,14 +191,19 @@ class Neo4jInsertBuilderTest {
     }
 
     @Test
-    fun everyActionGetsTheUniqueKeysAndItsCopiesKeepThem() {
+    fun everyNodeGetsTheUniqueKeysOfItsLabelsAndItsCopiesKeepThem() {
         val uniqueKeys = Neo4jUniqueKeys(Neo4jExistingDataDto().also {
             it.uniqueKeys = mutableListOf(Neo4jUniqueKeyDto().also { k -> k.label = "User"; k.properties = mutableListOf("username") })
         })
+        val userKey = Neo4jUniqueKeys.Key("User", listOf("username"))
 
         val action = Neo4jInsertBuilder.buildInsertActions(listOf(playerWithUser()), emptySet(), null, uniqueKeys).single()
+        val copy = action.copy() as Neo4jDbAction
 
-        assertSame(uniqueKeys, action.uniqueKeys)
-        assertSame(uniqueKeys, (action.copy() as Neo4jDbAction).uniqueKeys)
+        for (a in listOf(action, copy)) {
+            assertEquals(listOf(userKey), a.nodes.single { "User" in it.labels }.keys)
+            assertTrue(a.nodes.single { "Player" in it.labels }.keys.isEmpty())
+            assertFalse(a.representExistingData)
+        }
     }
 }

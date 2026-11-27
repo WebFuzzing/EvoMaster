@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jExisting
 import org.evomaster.client.java.controller.api.dto.database.neo4j.Neo4jUniqueKeyDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jInsertionEntryDto
 import org.evomaster.client.java.controller.api.dto.database.operations.Neo4jPropertyTypeDto
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 
 /**
  * The properties no two nodes with a label can share, as the controller read them when the search
@@ -40,6 +41,35 @@ class Neo4jUniqueKeys(dto: Neo4jExistingDataDto) {
 
     /** The keys that bind a node with these labels. */
     fun keysFor(labels: List<String>): List<Key> = keys.filter { it.label in labels }
+
+    /**
+     * The values of [existing] for the keys of [labels], each as an action that represents a node already
+     * in the database. Placed before the insertions of a test, they make the repair of the insertions see
+     * those values as taken.
+     */
+    fun existingDataFor(labels: Collection<String>): List<Neo4jDbAction> =
+        existing.filter { it.key.label in labels }.map { toExistingDataAction(it) }
+
+    /**
+     * The data already in the database that [actions] lack: the values of the keys their insertions use,
+     * for the labels no action representing existing data covers yet. The values of a label no insertion
+     * uses are left out, as they cannot clash with anything.
+     */
+    fun existingDataMissingIn(actions: List<Neo4jDbAction>): List<Neo4jDbAction> {
+        val (existingData, insertions) = actions.partition { it.representExistingData }
+        val covered = existingData.flatMap { it.nodes }.flatMap { it.labels }.toSet()
+        val used = insertions.flatMap { it.nodes }.flatMap { it.keys }.map { it.label }.toSet()
+        return existingDataFor(used - covered)
+    }
+
+    private fun toExistingDataAction(value: Value): Neo4jDbAction {
+        val properties = value.key.properties.zip(value.values).map { (name, typeAndText) ->
+            val (type, text) = typeAndText
+            Neo4jPropertyGene(name, type, ImmutableDataHolderGene(name, text, type == Neo4jPropertyTypeDto.STRING), fromQuery = false)
+        }
+        val node = Neo4jNodeTemplate(listOf(value.key.label), properties, listOf(value.key))
+        return Neo4jDbAction(listOf(node), emptyList(), "", representExistingData = true)
+    }
 
     /**
      * Whether [keyDto] names a label and at least one property. Without both, the key cannot bind any

@@ -10,7 +10,6 @@ import org.evomaster.core.database.cassandra.CassandraInsertBuilder
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbInsertBuilder
 import org.evomaster.core.database.mongo.MongoDbAction
-import org.evomaster.core.database.neo4j.Neo4jDbAction
 import org.evomaster.core.database.neo4j.Neo4jInsertBuilder
 import org.evomaster.core.database.neo4j.Neo4jSchema
 import org.evomaster.core.database.neo4j.Neo4jUniqueKeys
@@ -685,8 +684,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         uniqueKeys: Neo4jUniqueKeys?
     ): List<EnvironmentAction> {
 
-        val insertionKeysInTest = ind.seeInitializingActions()
-            .filterIsInstance<Neo4jDbAction>()
+        val insertionKeysInTest = ind.seeNeo4jDbActions()
+            .filter { !it.representExistingData }
             .map { it.insertionKey() }
             .toSet()
 
@@ -698,6 +697,13 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 action.seeSchemaGenes().forEach { gene -> gene.randomize(randomness, false) }
                 action.seeTopGenes().forEach { gene -> gene.markAllAsInitialized() }
             }
+        }
+
+        // the repair needs to see the values in the database for the keys the new insertions use
+        val existing = uniqueKeys?.existingDataMissingIn(ind.seeNeo4jDbActions()) ?: emptyList()
+        if (existing.isNotEmpty()) {
+            ind.addInitializingNeo4jDbActions(0, existing)
+            existing.forEach { action -> action.seeTopGenes().forEach { gene -> gene.markAllAsInitialized() } }
         }
 
         return addedActions

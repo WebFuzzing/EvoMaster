@@ -14,7 +14,8 @@ object Neo4jWriter {
 
     /**
      * @param format the format of the tests to be generated
-     * @param actions the evaluated Neo4j actions to generate
+     * @param actions the evaluated Neo4j actions to generate, among which the ones representing existing
+     *                data are skipped
      * @param lines where the generated lines are saved
      * @param groupIndex suffix distinguishing this initialization group
      * @param neo4jInsertionVars previous Neo4j insertion variable names and their result variable names
@@ -28,7 +29,10 @@ object Neo4jWriter {
         neo4jInsertionVars: MutableList<Pair<String, String>>,
         skipFailure: Boolean
     ) {
-        val selected = actions.filter { !skipFailure || it.neo4jResult.getInsertExecutionResult() }
+        // the data already in the database is not inserted again
+        val selected = actions
+            .filter { !it.neo4jAction.representExistingData }
+            .filter { !skipFailure || it.neo4jResult.getInsertExecutionResult() }
         if (selected.isEmpty()) return
 
         val insertionVar = "insertions_neo4j${groupIndex}"

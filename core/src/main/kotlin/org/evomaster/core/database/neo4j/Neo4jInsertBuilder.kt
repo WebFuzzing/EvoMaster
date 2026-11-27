@@ -29,8 +29,8 @@ object Neo4jInsertBuilder {
      *                            database yet, they are inserted when the test runs
      * @param schema what the SUT's entities declare about each label; with it, a node also gets the
      *               properties the query did not fix, with free genes
-     * @param uniqueKeys the keys the inserted nodes must not repeat, handed to each action so that it
-     *                   can be repaired when it does
+     * @param uniqueKeys the keys the inserted nodes must not repeat; each node gets those of its labels,
+     *                   so that it can be repaired when it does
      * @return one action per failed query not already represented by [insertionKeysInTest]
      */
     fun buildInsertActions(
@@ -52,12 +52,12 @@ object Neo4jInsertBuilder {
         val nodeTemplates = nodes.map { node ->
             val labels = node.labels ?: emptyList()
             val fromQuery = toPropertyGenes(node.properties) ?: return null
-            Neo4jNodeTemplate(labels, fromQuery + fromSchema(labels, fromQuery, schema))
+            Neo4jNodeTemplate(labels, fromQuery + fromSchema(labels, fromQuery, schema), uniqueKeys?.keysFor(labels) ?: emptyList())
         }
         val edgeTemplates = (query.edges ?: emptyList()).map { edge ->
             toEdgeOrNull(edge, indexById) ?: return null
         }
-        return Neo4jDbAction(nodeTemplates, edgeTemplates, query.query ?: "", uniqueKeys)
+        return Neo4jDbAction(nodeTemplates, edgeTemplates, query.query ?: "")
     }
 
     private fun toEdgeOrNull(edge: Neo4jEdgeInsertionDto, indexById: Map<Long?, Int>): Neo4jEdgeTemplate? {
