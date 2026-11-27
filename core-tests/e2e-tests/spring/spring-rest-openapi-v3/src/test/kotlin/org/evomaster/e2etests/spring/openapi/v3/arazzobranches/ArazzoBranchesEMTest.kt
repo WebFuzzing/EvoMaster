@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 class ArazzoBranchesEMTest : SpringTestBase() {
 
     companion object {
-        private const val ARAZZO_LOCATION = "src/main/resources/static/pet-coupons-arazzo-branches.yaml"
+        private const val ARAZZO_LOCATION = "src/main/resources/arazzo/pet-coupons-arazzo-branches.yaml"
 
         @BeforeAll
         @JvmStatic
