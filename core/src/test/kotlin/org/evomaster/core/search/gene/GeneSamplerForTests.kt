@@ -108,6 +108,7 @@ object GeneSamplerForTests {
             TaintedMapGene::class -> sampleTaintedMapGene(rand) as T
             TaintedArrayGene::class -> sampleTaintedArrayGene(rand) as T
             ArrayGene::class -> sampleArrayGene(rand) as T
+            ProtectedUniqueArrayGene::class -> sampleProtectedUniqueArrayGene(rand) as T
             Base64StringGene::class -> sampleBase64StringGene(rand) as T
             BigDecimalGene::class -> sampleBigDecimalGene(rand) as T
             BigIntegerGene::class -> sampleBigIntegerGene(rand) as T
@@ -337,7 +338,7 @@ object GeneSamplerForTests {
         return geneClasses
                 .filter { !it.isAbstract }
                 .filter { it.java != CycleObjectGene::class.java && it.java !== LimitObjectGene::class.java }
-                .filter { it.java != ArrayGene::class.java && it.java != SqlMultidimensionalArrayGene::class.java }
+                .filter { it.java != ArrayGene::class.java && it.java != ProtectedUniqueArrayGene::class.java && it.java != SqlMultidimensionalArrayGene::class.java }
                 .filter{ it.java != SqlPrimaryKeyGene::class.java }
         // TODO might filter out some more genes here
     }
@@ -425,6 +426,82 @@ object GeneSamplerForTests {
 
     private fun sampleCqlDurationGene(rand: Randomness): CqlDurationGene {
         return CqlDurationGene("rand CqlDurationGene ${rand.nextInt()}")
+    }
+
+    private fun sampleProtectedUniqueArrayGene(rand: Randomness): ProtectedUniqueArrayGene<*> {
+        val name = "rand ProtectedUniqueArrayGene ${rand.nextInt()}"
+        val count = rand.nextInt(1, 2)
+        val extraMax = rand.nextInt(1, 3)
+        val base = rand.nextInt(-1000, 1000)
+        return when (rand.nextInt(0, 3)) {
+            0 -> {
+                val template = StringGene("elem", minLength = 1, maxLength = 16)
+                val elements = MutableList(count) { i ->
+                    StringGene("elem_$i", value = "seed_${i}_$base", minLength = 1, maxLength = 16)
+                }
+                ProtectedUniqueArrayGene(
+                    name = name,
+                    template = template,
+                    protectedCount = count,
+                    minSize = count,
+                    maxSize = count + extraMax,
+                    elements = elements
+                )
+            }
+            1 -> {
+                val template = IntegerGene("elem", min = -10000, max = 10000)
+                val elements = MutableList(count) { i ->
+                    IntegerGene("elem_$i", value = base + i, min = -10000, max = 10000)
+                }
+                ProtectedUniqueArrayGene(
+                    name = name,
+                    template = template,
+                    protectedCount = count,
+                    minSize = count,
+                    maxSize = count + extraMax,
+                    elements = elements
+                )
+            }
+            2 -> {
+                val template = LongGene("elem", min = -10000L, max = 10000L)
+                val elements = MutableList(count) { i ->
+                    LongGene("elem_$i", value = (base + i).toLong(), min = -10000L, max = 10000L)
+                }
+                ProtectedUniqueArrayGene(
+                    name = name,
+                    template = template,
+                    protectedCount = count,
+                    minSize = count,
+                    maxSize = count + extraMax,
+                    elements = elements
+                )
+            }
+            else -> {
+                val template = BigDecimalGene(
+                    "elem",
+                    min = BigDecimal.valueOf(-10000),
+                    max = BigDecimal.valueOf(10000),
+                    scale = 2
+                )
+                val elements = MutableList(count) { i ->
+                    BigDecimalGene(
+                        "elem_$i",
+                        value = BigDecimal.valueOf((base + i).toLong()).setScale(2),
+                        min = BigDecimal.valueOf(-10000),
+                        max = BigDecimal.valueOf(10000),
+                        scale = 2
+                    )
+                }
+                ProtectedUniqueArrayGene(
+                    name = name,
+                    template = template,
+                    protectedCount = count,
+                    minSize = count,
+                    maxSize = count + extraMax,
+                    elements = elements
+                )
+            }
+        }
     }
 
     fun sampleBackReferenceRxGene(rand: Randomness): BackReferenceRxGene {
