@@ -863,7 +863,9 @@ class EvaluatedIndividual<T>(
 
         val sqlActions = individual.seeInitializingActions().filter { Class.forName(initActionClass).isInstance(it) }
 
-        val allExistingData = sqlActions.filter { it is SqlAction &&  it.representExistingData }
+        val allExistingData = sqlActions.filter {
+            (it is SqlAction && it.representExistingData) || (it is Neo4jDbAction && it.representExistingData)
+        }
         val nonExistingData = sqlActions.filter { !allExistingData.contains(it) }
         val diff = nonExistingData
             .filter { !old.contains(it)}

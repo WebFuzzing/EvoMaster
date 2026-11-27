@@ -340,7 +340,8 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
     /**
      * Transforms and executes the Neo4j actions as one batch of node and relationship insertions
      * against the SUT's database via the controller. An action succeeds when every node and
-     * relationship it holds was inserted.
+     * relationship it holds was inserted. The actions representing data already in the database are
+     * not sent.
      *
      * @param allNeo4jActions Neo4j actions to insert
      * @param actionResults mutable list shared with the caller where the result of each
@@ -356,13 +357,16 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         val neo4jResults = allNeo4jActions.map { Neo4jDbActionResult(it.getLocalId()) }
         actionResults.addAll(neo4jResults)
 
-        val dto = Neo4jDbActionTransformer.transform(allNeo4jActions)
+        val insertions = allNeo4jActions.withIndex().filter { !it.value.representExistingData }
+        if (insertions.isEmpty()) return true
+
+        val dto = Neo4jDbActionTransformer.transform(insertions.map { it.value })
 
         val results = rc.executeNeo4jInsertions(dto)
         if (results != null) {
             var nodeIndex = 0
             var edgeIndex = 0
-            allNeo4jActions.forEachIndexed { actionIndex, action ->
+            insertions.forEach { (actionIndex, action) ->
                 val nodesOk = (nodeIndex until nodeIndex + action.nodes.size).all { results.nodeExecutionResults[it] }
                 val edgesOk = (edgeIndex until edgeIndex + action.edges.size).all { results.edgeExecutionResults[it] }
                 nodeIndex += action.nodes.size

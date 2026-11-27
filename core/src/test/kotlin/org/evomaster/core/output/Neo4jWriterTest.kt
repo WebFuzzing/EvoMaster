@@ -8,6 +8,7 @@ import org.evomaster.core.database.neo4j.Neo4jNodeTemplate
 import org.evomaster.core.database.neo4j.Neo4jPropertyGene
 import org.evomaster.core.search.action.EvaluatedNeo4jDbAction
 import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -75,5 +76,24 @@ class Neo4jWriterTest {
 
         write(OutputFormat.KOTLIN_JUNIT_5, listOf(evaluatedPlayerWithUser(success = false)), groupIndex = "_1", vars = vars, skipFailure = false)
         assertEquals(listOf("insertions_neo4j_1" to "insertions_neo4j_1_result"), vars)
+    }
+
+    @Test
+    fun theDataAlreadyInTheDatabaseIsNotInsertedAgain() {
+        val existing = Neo4jDbAction(
+            listOf(Neo4jNodeTemplate(listOf("User"), listOf(
+                Neo4jPropertyGene("username", Neo4jPropertyTypeDto.STRING, ImmutableDataHolderGene("username", "ana", true))))),
+            emptyList(),
+            "",
+            representExistingData = true
+        )
+        existing.setLocalId("existing")
+        val evaluatedExisting = EvaluatedNeo4jDbAction(existing, Neo4jDbActionResult(existing.getLocalId()))
+
+        assertTrue(write(OutputFormat.KOTLIN_JUNIT_5, listOf(evaluatedExisting)).isBlank())
+
+        val output = write(OutputFormat.KOTLIN_JUNIT_5, listOf(evaluatedExisting, evaluatedPlayerWithUser()))
+        assertTrue(output.contains(".createNode(1L, \"Player\")"), output)
+        assertFalse(output.contains("'ana'"), output)
     }
 }

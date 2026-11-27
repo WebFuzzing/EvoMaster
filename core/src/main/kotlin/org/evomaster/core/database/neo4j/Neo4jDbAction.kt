@@ -10,6 +10,7 @@ import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -32,15 +33,20 @@ data class Neo4jPropertyGene(
     val fromQuery: Boolean = true
 ) {
     /** The value in the text form the controller reads, according to [type]. */
-    fun valueAsText(): String = when (type) {
-        Neo4jPropertyTypeDto.STRING -> when (gene) {
-            is StringGene -> gene.value
-            is EnumGene<*> -> gene.getValueAsRawString()
-            else -> throw IllegalStateException("Unexpected gene for a string property: ${gene::class.simpleName}")
+    fun valueAsText(): String {
+        if (gene is ImmutableDataHolderGene) {
+            return gene.value
         }
-        Neo4jPropertyTypeDto.INTEGER -> (gene as LongGene).value.toString()
-        Neo4jPropertyTypeDto.FLOAT -> (gene as DoubleGene).value.toString()
-        Neo4jPropertyTypeDto.BOOLEAN -> (gene as BooleanGene).value.toString()
+        return when (type) {
+            Neo4jPropertyTypeDto.STRING -> when (gene) {
+                is StringGene -> gene.value
+                is EnumGene<*> -> gene.getValueAsRawString()
+                else -> throw IllegalStateException("Unexpected gene for a string property: ${gene::class.simpleName}")
+            }
+            Neo4jPropertyTypeDto.INTEGER -> (gene as LongGene).value.toString()
+            Neo4jPropertyTypeDto.FLOAT -> (gene as DoubleGene).value.toString()
+            Neo4jPropertyTypeDto.BOOLEAN -> (gene as BooleanGene).value.toString()
+        }
     }
 
     fun copy(): Neo4jPropertyGene = Neo4jPropertyGene(key, type, gene.copy(), fromQuery)
@@ -51,12 +57,14 @@ data class Neo4jPropertyGene(
  *
  * @property labels labels of the node
  * @property properties properties of the node
+ * @property keys the unique keys of [labels]: the values of the node for them cannot be held by any other node
  */
 data class Neo4jNodeTemplate(
     val labels: List<String>,
-    val properties: List<Neo4jPropertyGene>
+    val properties: List<Neo4jPropertyGene>,
+    val keys: List<Neo4jUniqueKeys.Key> = emptyList()
 ) {
-    fun copy(): Neo4jNodeTemplate = Neo4jNodeTemplate(labels, properties.map { it.copy() })
+    fun copy(): Neo4jNodeTemplate = Neo4jNodeTemplate(labels, properties.map { it.copy() }, keys)
 }
 
 /**
@@ -84,14 +92,28 @@ data class Neo4jEdgeTemplate(
  * @property nodes nodes to insert
  * @property edges relationships to insert, referring to [nodes] by index
  * @property query the Cypher text of the query this action was inferred from
+ * @property representExistingData whether this is not an insertion, but a node the database already held
+ *                                 when the search started. It is never executed nor written in the tests,
+ *                                 and only holds the values of a unique key, so that the insertions after
+ *                                 it do not repeat them
  */
 class Neo4jDbAction(
     val nodes: List<Neo4jNodeTemplate>,
     val edges: List<Neo4jEdgeTemplate>,
-    val query: String
+    val query: String,
+    val representExistingData: Boolean = false
 ) : EnvironmentAction(listOf()) {
 
     init {
+        // an action for existing data stands for a node that is never inserted, so nothing in it can change
+        if (representExistingData) {
+            if (edges.isNotEmpty()) {
+                throw IllegalArgumentException("Data already in the database is represented without relationships")
+            }
+            if (allProperties().any { it.gene !is ImmutableDataHolderGene }) {
+                throw IllegalArgumentException("Data already in the database can only have immutable values")
+            }
+        }
         addChildren(allProperties().map { it.gene })
     }
 
@@ -105,14 +127,16 @@ class Neo4jDbAction(
      */
     fun seeSchemaGenes(): List<Gene> = allProperties().filter { !it.fromQuery }.map { it.gene }
 
-    override fun copyContent(): Action = Neo4jDbAction(nodes.map { it.copy() }, edges.map { it.copy() }, query)
+    override fun copyContent(): Action =
+        Neo4jDbAction(nodes.map { it.copy() }, edges.map { it.copy() }, query, representExistingData)
 
-    override fun getName(): String =
-        "Neo4j_INSERT_" + nodes.joinToString("_") { if (it.labels.isEmpty()) "node" else it.labels.joinToString(":") }
+    override fun getName(): String {
+        val prefix = if (representExistingData) "Neo4j_EXISTING_" else "Neo4j_INSERT_"
+        return prefix + nodes.joinToString("_") { if (it.labels.isEmpty()) "node" else it.labels.joinToString(":") }
+    }
 
     override fun getActionGroupKey(): String = Neo4jDbAction::class.java.name
 
-    /** Stable key used to avoid adding the same inferred insertion twice. */
     /**
      * Identifies the failed query this insertion answers: labels, relationships and the properties the
      * query fixed. The properties added from the schema are left out, so that the key still matches the
