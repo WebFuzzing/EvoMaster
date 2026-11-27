@@ -5,12 +5,14 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.FlexibleMapGene
 import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.wrapper.FlexibleGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 internal class MapGeneTest{
 
@@ -64,6 +66,42 @@ internal class MapGeneTest{
         map.addElement(s4)
         //replace the existing pair with s4
         assertTrue(map.getValueAsPrintableString(targetFormat = targetFormat).contains("\"1\":\"bar\"", ignoreCase = true))
+    }
+
+    @Test
+    fun testBigDecimalKeyUniquenessAndReplacement() {
+        val ratingKey1 = BigDecimalGene("rating_1", BigDecimal("9.5"))
+        val player1 = StringGene("player_1", "Messi")
+        val ratingKey2 = BigDecimalGene("rating_2", BigDecimal("8.8"))
+        val player2 = StringGene("player_2", "Modric")
+
+        val map = FixedMapGene(
+            "worldCupRatingToPlayer",
+            BigDecimalGene("ratingTemplate"),
+            StringGene("playerTemplate"),
+            7
+        )
+        map.addElement(PairGene("entry_1", ratingKey1, player1))
+        map.addElement(PairGene("entry_2", ratingKey2, player2))
+
+        val duplicateKeyEntry = PairGene(
+            "entry_3",
+            BigDecimalGene("rating_3", BigDecimal("9.50")),
+            StringGene("player_3", "Di Maria")
+        )
+        assertTrue(map.containsKey(duplicateKeyEntry))
+
+        val distinctKeyEntry = PairGene(
+            "entry_4",
+            BigDecimalGene("rating_4", BigDecimal("9.2")),
+            StringGene("player_4", "Mbappe")
+        )
+        assertFalse(map.containsKey(distinctKeyEntry))
+
+        map.addElement(duplicateKeyEntry)
+        assertEquals(2, map.getAllElements().size)
+        assertTrue(map.getAllElements().any { it.second.value == "Di Maria" })
+        assertFalse(map.getAllElements().any { it.second.value == "Messi" })
     }
 
     @Test
