@@ -10,12 +10,14 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.algorithms.constant.ConstantIndividual
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.HeterogeneousListGene
 import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.impact.impactinfocollection.MutatedGeneWithContext
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
@@ -289,6 +291,89 @@ class TupleGeneTest {
 
         // Verify mismatched leaf (0, 2), mismatched composite (1), and matching leaf (3) were all safely mutated
         assertEquals(setOf(0, 1, 2, 3), mutatedIndices)
+    }
+
+
+    @Test
+    fun emptyTupleThrowsIllegalArgumentException() {
+        val ex = assertThrows(IllegalArgumentException::class.java) {
+            TupleGene("empty", emptyList())
+        }
+        assertEquals("Empty tuple", ex.message)
+    }
+
+    @Test
+    fun rejectsSuperclassHeterogeneousListGeneInComparisonBindingAndImpactValidation() {
+        val tuple = TupleGene(
+            "stats",
+            listOf(StringGene("stats_0", "Messi"), BigDecimalGene("stats_1", BigDecimal("10")))
+        )
+        val hetList = HeterogeneousListGene(
+            "stats",
+            listOf(StringGene("stats_0", "Messi"), BigDecimalGene("stats_1", BigDecimal("10")))
+        )
+
+        assertThrows(IllegalArgumentException::class.java) {
+            tuple.containsSameValueAs(hetList)
+        }
+        assertFalse(tuple.unsafeCopyValueFrom(hetList))
+
+        val tupleImpact = ImpactUtils.createGeneImpact(tuple, tuple.name)
+        assertTrue(tupleImpact is TupleGeneImpact)
+        assertTrue(tupleImpact.validate(tuple))
+        assertFalse(tupleImpact.validate(hetList))
+    }
+
+    @Test
+    fun heterogeneousElementsContainsSameValueAsDoesNotThrow() {
+        val first = TupleGene("t1", listOf(StringGene("a", "Argentina"), IntegerGene("b", 10)))
+        val second = TupleGene("t2", listOf(IntegerGene("a", 10), StringGene("b", "Argentina")))
+        assertFalse(first.containsSameValueAs(second))
+    }
+
+    @Test
+    fun containsSameValueAsHandlesDifferentSizesNamesAndTypes() {
+        val base = TupleGene("tuple", listOf(StringGene("first", "a"), IntegerGene("second", 1)))
+        val same = TupleGene("tuple", listOf(StringGene("first", "a"), IntegerGene("second", 1)))
+        val diffVal = TupleGene("tuple", listOf(StringGene("first", "b"), IntegerGene("second", 1)))
+        val diffSize = TupleGene("tuple", listOf(StringGene("first", "a")))
+        val diffName = TupleGene("tuple", listOf(StringGene("other", "a"), IntegerGene("second", 1)))
+        val diffType = TupleGene("tuple", listOf(IntegerGene("first", 1), IntegerGene("second", 1)))
+
+        assertTrue(base.containsSameValueAs(same))
+        assertFalse(base.containsSameValueAs(diffVal))
+        assertFalse(base.containsSameValueAs(diffSize))
+        assertFalse(base.containsSameValueAs(diffName))
+        assertFalse(base.containsSameValueAs(diffType))
+    }
+
+    @Test
+    fun tupleGeneImpactHandlesMissingOrMismatchedPreviousElements() {
+        val previous = TupleGene("tuple", listOf(StringGene("a", "v1"), IntegerGene("b", 1)))
+        val impact = TupleGeneImpact("tupleId", previous)
+        val current = TupleGene("tuple", listOf(IntegerGene("a", 2), IntegerGene("b", 9), StringGene("missing", "x")))
+
+        impact.countImpactWithMutatedGeneWithContext(
+            gc = MutatedGeneWithContext(current = current, previous = previous),
+            noImpactTargets = setOf(),
+            impactTargets = setOf(1),
+            improvedTargets = setOf(1),
+            onlyManipulation = false
+        )
+
+        assertEquals(0, impact.elements.getValue("a").getTimesToManipulate())
+        assertEquals(0.0, impact.elements.getValue("a").getTimesOfImpacts()[1] ?: 0.0)
+        assertEquals(1, impact.elements.getValue("b").getTimesToManipulate())
+
+        val validOnlyB = TupleGene("tuple", listOf(StringGene("a", "v1"), IntegerGene("b", 10)))
+        impact.countImpactWithMutatedGeneWithContext(
+            gc = MutatedGeneWithContext(current = validOnlyB, previous = previous),
+            noImpactTargets = setOf(),
+            impactTargets = setOf(1),
+            improvedTargets = setOf(1),
+            onlyManipulation = false
+        )
+        assertEquals(1.0, impact.elements.getValue("b").getTimesOfImpacts()[1])
     }
 
     private data class MutationServices(

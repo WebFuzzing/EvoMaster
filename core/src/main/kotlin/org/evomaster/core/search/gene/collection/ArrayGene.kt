@@ -77,18 +77,7 @@ open class ArrayGene<T>(
             maxSize = 0
             killAllChildren()
         }
-
-        if (minSize != null && maxSize != null && minSize!! > maxSize!!){
-            throw IllegalArgumentException(
-                "ArrayGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)") }
-
-        if (maxSize != null && elements.size > maxSize!!) {
-            throw IllegalArgumentException(
-                "ArrayGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
-        }
-        if(initialized && elements.any { !it.initialized }){
-            throw IllegalArgumentException("Creating array marked as initialized but at least one child is not")
-        }
+        validateCollectionSizeBounds("ArrayGene", name, minSize, maxSize, elements.size)
     }
 
     companion object{

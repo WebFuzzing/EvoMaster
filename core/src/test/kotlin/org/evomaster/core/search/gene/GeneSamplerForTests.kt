@@ -109,6 +109,7 @@ object GeneSamplerForTests {
             TaintedArrayGene::class -> sampleTaintedArrayGene(rand) as T
             ArrayGene::class -> sampleArrayGene(rand) as T
             ProtectedUniqueArrayGene::class -> sampleProtectedUniqueArrayGene(rand) as T
+            HeterogeneousListGene::class -> sampleHeterogeneousListGene(rand) as T
             Base64StringGene::class -> sampleBase64StringGene(rand) as T
             BigDecimalGene::class -> sampleBigDecimalGene(rand) as T
             BigIntegerGene::class -> sampleBigIntegerGene(rand) as T
@@ -338,7 +339,7 @@ object GeneSamplerForTests {
         return geneClasses
                 .filter { !it.isAbstract }
                 .filter { it.java != CycleObjectGene::class.java && it.java !== LimitObjectGene::class.java }
-                .filter { it.java != ArrayGene::class.java && it.java != ProtectedUniqueArrayGene::class.java && it.java != SqlMultidimensionalArrayGene::class.java }
+                .filter { it.java != ArrayGene::class.java && it.java != ProtectedUniqueArrayGene::class.java && it.java != HeterogeneousListGene::class.java && it.java != SqlMultidimensionalArrayGene::class.java }
                 .filter{ it.java != SqlPrimaryKeyGene::class.java }
         // TODO might filter out some more genes here
     }
@@ -501,6 +502,39 @@ object GeneSamplerForTests {
                     elements = elements
                 )
             }
+        }
+    }
+
+    private fun sampleHeterogeneousListGene(rand: Randomness): HeterogeneousListGene {
+        val isFixed = rand.nextBoolean()
+        val selection = geneClasses
+            .filter { !it.isAbstract }
+            .filter { it.java != CycleObjectGene::class.java && it.java != LimitObjectGene::class.java }
+            .filter { it.java != ArrayGene::class.java && it.java != ProtectedUniqueArrayGene::class.java }
+            .filter { it.java != HeterogeneousListGene::class.java && it.java != SqlMultidimensionalArrayGene::class.java }
+            .filter { it.java != SqlPrimaryKeyGene::class.java && it.java != SqlForeignKeyGene::class.java }
+            .filter { it.java != SqlRangeGene::class.java && it.java != SqlMultiRangeGene::class.java }
+            .filter { it.java != FlexibleGene::class.java }
+
+        val count = rand.nextInt(0, 3)
+        val elements = List(count) { i ->
+            samplePrintableTemplate(selection, rand).apply { name = "${name}_$i" }
+        }
+
+        return if (isFixed) {
+            HeterogeneousListGene("rand HeterogeneousListGene ${rand.nextInt()}", elements)
+        } else {
+            val template = samplePrintableTemplate(selection, rand)
+            val minSize = rand.choose(listOf(null, count))
+            val maxSize = rand.choose(listOf(null, count + rand.nextInt(1, 3)))
+            HeterogeneousListGene(
+                name = "rand HeterogeneousListGene ${rand.nextInt()}",
+                elements = elements,
+                isFixed = false,
+                template = template,
+                minSize = minSize,
+                maxSize = maxSize
+            )
         }
     }
 
