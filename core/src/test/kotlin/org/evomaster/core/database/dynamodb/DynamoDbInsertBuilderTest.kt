@@ -6,9 +6,15 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDb
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.UUIDGene
 import org.evomaster.core.search.gene.collection.HeterogeneousListGene
 import org.evomaster.core.search.gene.collection.ProtectedUniqueArrayGene
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -32,6 +38,8 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import java.math.BigDecimal
 
 /** Tests inference of DynamoDB initialization actions from failed reads. */
@@ -383,6 +391,7 @@ class DynamoDbInsertBuilderTest {
         assertEquals(dto, roundTripped)
     }
 
+    /** Creates a baseline valid failed query with string, number, and boolean attributes. */
     private fun validQuery(): DynamoDbFailedQuery = DynamoDbFailedQuery(
         "WorldCupPlayers",
         listOf(
@@ -391,6 +400,116 @@ class DynamoDbInsertBuilderTest {
             DynamoDbAttributeValueDto("captain", DynamoDbKeyScalarTypeDto.BOOLEAN, "true")
         )
     )
+
+    @Test
+    fun converterAndExampleInstantsConstrainedToValidDateTimeGenes() {
+        assertTrue(buildMissingKeyGene(DynamoDbKeyScalarTypeDto.STRING, format = "date-time") is DateTimeGene)
+        assertTrue(buildMissingKeyGene(DynamoDbKeyScalarTypeDto.STRING, example = "2026-06-11T19:00:00Z") is DateTimeGene)
+        assertTrue(buildMissingKeyGene(DynamoDbKeyScalarTypeDto.STRING, format = "custom") is StringGene)
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        nullValues = ["null"],
+        value = [
+            "2026-11-16T19:52:39.906338400Z, null, 2026-11-16T19:52:39.906Z",
+            "2026-11-15T19:52:04.370890700Z, date-time, 2026-11-15T19:52:04.370Z",
+            "99999-01-01T00:00:00Z, date-time, 2020-01-01T00:00:00Z"
+        ]
+    )
+    fun truncatesNanosecondsAndFallsBackOutOfRangeDateTime(input: String, format: String?, expectedRaw: String) {
+        val gene = buildPresentGene(DynamoDbValueTypeDto.STRING, input, format) as DateTimeGene
+        assertEquals(expectedRaw, gene.getValueAsRawString())
+    }
+
+    @Test
+    fun buildsIsoLocalTemporalAndUuidGenesForPresentAndMissingKeys() {
+        val localDt = buildPresentGene(DynamoDbValueTypeDto.STRING, "2026-06-11T19:00:00", "local-date-time") as DateTimeGene
+        val localDate = buildPresentGene(DynamoDbValueTypeDto.STRING, "2026-06-11", "date") as DateGene
+        val localTime = buildPresentGene(DynamoDbValueTypeDto.STRING, "19:00:00", "local-time") as TimeGene
+        val uuid = buildPresentGene(DynamoDbValueTypeDto.STRING, "123e4567-e89b-12d3-a456-426614174000", "uuid")
+
+        assertEquals(FormatForDatesAndTimes.ISO_LOCAL, localDt.format)
+        assertEquals(FormatForDatesAndTimes.ISO_LOCAL, localDate.format)
+        assertEquals(FormatForDatesAndTimes.ISO_LOCAL, localTime.format)
+        assertTrue(uuid is UUIDGene)
+
+        assertTrue(buildMissingKeyGene(DynamoDbKeyScalarTypeDto.STRING, format = "local-date-time") is DateTimeGene)
+        assertTrue(buildMissingKeyGene(DynamoDbKeyScalarTypeDto.STRING, format = "date") is DateGene)
+        assertTrue(buildMissingKeyGene(DynamoDbKeyScalarTypeDto.STRING, format = "local-time") is TimeGene)
+        assertTrue(buildMissingKeyGene(DynamoDbKeyScalarTypeDto.STRING, format = "uuid") is UUIDGene)
+    }
+
+    @Test
+    fun respectsIntegralBoundsForFormattedNumbersAndKeepsFloatMutability() {
+        val minByte = BigDecimal.valueOf(Byte.MIN_VALUE.toLong())
+        val maxByte = BigDecimal.valueOf(Byte.MAX_VALUE.toLong())
+        val minShort = BigDecimal.valueOf(Short.MIN_VALUE.toLong())
+        val maxShort = BigDecimal.valueOf(Short.MAX_VALUE.toLong())
+
+        val tiny = buildPresentGene(DynamoDbValueTypeDto.NUMBER, "5", "int8") as BigDecimalGene
+        assertEquals(minByte, tiny.min)
+        assertEquals(maxByte, tiny.max)
+        assertEquals(0, tiny.scale)
+
+        val missingShort = buildMissingKeyGene(DynamoDbKeyScalarTypeDto.NUMBER, format = "int16") as BigDecimalGene
+        assertEquals(minShort, missingShort.min)
+        assertEquals(maxShort, missingShort.max)
+        assertEquals(0, missingShort.scale)
+
+        val tinyOutOfRange = buildPresentGene(DynamoDbValueTypeDto.NUMBER, "500", "int8") as BigDecimalGene
+        assertTrue(tinyOutOfRange.min!! < minByte)
+        assertTrue(tinyOutOfRange.max!! > maxByte)
+        assertTrue(tinyOutOfRange.isLocallyValid())
+
+        val big = buildPresentGene(DynamoDbValueTypeDto.NUMBER, "9999999999999999999999999", "integer") as BigDecimalGene
+        assertTrue(big.min!! < BigDecimal.valueOf(Long.MIN_VALUE))
+        assertTrue(big.max!! > BigDecimal.valueOf(Long.MAX_VALUE))
+        assertEquals(0, big.scale)
+
+        val explicitDecimal = buildPresentGene(DynamoDbValueTypeDto.NUMBER, "12.34", "int32") as BigDecimalGene
+        val unformattedFloat = buildPresentGene(DynamoDbValueTypeDto.NUMBER, "3.5") as BigDecimalGene
+        assertTrue(explicitDecimal.floatingPointMode)
+        assertTrue(unformattedFloat.floatingPointMode)
+    }
+
+    /** Builds a single-attribute failed query and returns the resulting gene for that attribute. */
+    private fun buildPresentGene(
+        type: DynamoDbValueTypeDto,
+        value: String,
+        format: String? = null
+    ): Gene {
+        val query = DynamoDbFailedQuery(
+            "Events",
+            listOf(DynamoDbAttributeValueDto("attr", type, value))
+        ).apply {
+            if (format != null) {
+                primaryKeyFormats = linkedMapOf("attr" to format)
+            }
+        }
+        return DynamoDbInsertBuilder.buildInsertActions(listOf(query), Randomness()).single().attributes.single().gene
+    }
+
+    /** Builds a failed query with one missing primary key and returns its generated gene. */
+    private fun buildMissingKeyGene(
+        type: DynamoDbKeyScalarTypeDto,
+        format: String? = null,
+        example: String? = null
+    ): Gene {
+        val query = DynamoDbFailedQuery(
+            "Events",
+            listOf(DynamoDbAttributeValueDto("seed", DynamoDbValueTypeDto.STRING, "x")),
+            linkedMapOf("key" to type)
+        ).apply {
+            if (format != null) {
+                primaryKeyFormats = linkedMapOf("key" to format)
+            }
+            if (example != null) {
+                primaryKeyValueExamples = linkedMapOf("key" to example)
+            }
+        }
+        return DynamoDbInsertBuilder.buildInsertActions(listOf(query), Randomness()).single().attributes.last().gene
+    }
 
     @Test
     fun playerProfilesItemRoundTripsAndSurvives100SeededMutationsAndImpactCollection() {
@@ -469,5 +588,4 @@ class DynamoDbInsertBuilderTest {
             )
         }
     }
-
 }

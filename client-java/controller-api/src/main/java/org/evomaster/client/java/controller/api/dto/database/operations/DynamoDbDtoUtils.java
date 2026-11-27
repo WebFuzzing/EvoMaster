@@ -38,7 +38,7 @@ public final class DynamoDbDtoUtils {
             return new DynamoDbAttributeValueDto(name, DynamoDbValueTypeDto.STRING, (String) plain);
         }
         if (plain instanceof Number) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbValueTypeDto.NUMBER, plain.toString());
+            return new DynamoDbAttributeValueDto(name, DynamoDbValueTypeDto.NUMBER, formatFiniteNumber((Number) plain));
         }
         if (plain instanceof Boolean) {
             return new DynamoDbAttributeValueDto(name, DynamoDbValueTypeDto.BOOLEAN, plain.toString());
@@ -72,6 +72,19 @@ public final class DynamoDbDtoUtils {
         return result;
     }
 
+    private static String formatFiniteNumber(Number number) {
+        if (number instanceof Double && !Double.isFinite((Double) number)) {
+            throw new IllegalArgumentException("Unsupported non-finite DynamoDB number value: " + number);
+        }
+        if (number instanceof Float && !Float.isFinite((Float) number)) {
+            throw new IllegalArgumentException("Unsupported non-finite DynamoDB number value: " + number);
+        }
+        if (number instanceof BigDecimal) {
+            return ((BigDecimal) number).toPlainString();
+        }
+        return number.toString();
+    }
+
     private static void populateSetValue(DynamoDbAttributeValueDto result, Set<?> inputSet) {
         if (inputSet.isEmpty()) {
             throw new IllegalArgumentException("DynamoDB sets cannot be empty");
@@ -93,7 +106,7 @@ public final class DynamoDbDtoUtils {
                 if (!(element instanceof Number)) {
                     throw new IllegalArgumentException("DynamoDB number sets must contain only numbers");
                 }
-                String text = element.toString();
+                String text = formatFiniteNumber((Number) element);
                 BigDecimal numeric;
                 try {
                     numeric = new BigDecimal(text);
