@@ -50,6 +50,31 @@ interface CollectionGene {
     }
 
     /**
+     * Validates non-negative [minSize]/[maxSize], `minSize <= maxSize`, and optional [initialSize] `<= maxSize`
+     * during collection gene construction without relying on virtual getters before subclass initialization completes.
+     */
+    fun validateCollectionSizeBounds(
+        geneType: String,
+        geneName: String,
+        minSize: Int?,
+        maxSize: Int?,
+        initialSize: Int? = null
+    ) {
+        if (minSize != null && minSize < 0) {
+            throw IllegalArgumentException("$geneType $geneName: minSize ($minSize) cannot be negative")
+        }
+        if (maxSize != null && maxSize < 0) {
+            throw IllegalArgumentException("$geneType $geneName: maxSize ($maxSize) cannot be negative")
+        }
+        if (minSize != null && maxSize != null && minSize > maxSize) {
+            throw IllegalArgumentException("$geneType $geneName: minSize ($minSize) is greater than maxSize ($maxSize)")
+        }
+        if (initialSize != null && maxSize != null && initialSize > maxSize) {
+            throw IllegalArgumentException("$geneType $geneName: More elements ($initialSize) than allowed ($maxSize)")
+        }
+    }
+
+    /**
      * @return if [this] collection is empty, ie, elements is empty
      */
     fun isEmpty() : Boolean

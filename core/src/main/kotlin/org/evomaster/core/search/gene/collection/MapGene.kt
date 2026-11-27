@@ -40,10 +40,7 @@ abstract class MapGene<K, V>(
         }
 
     init {
-        if (minSize != null && maxSize != null && minSize!! > maxSize!!){
-            throw IllegalArgumentException(
-                "MapGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
-        }
+        validateCollectionSizeBounds("MapGene", name, minSize, maxSize, elements.size)
     }
 
     companion object{

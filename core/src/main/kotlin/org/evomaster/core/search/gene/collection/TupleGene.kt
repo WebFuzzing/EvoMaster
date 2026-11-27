@@ -5,7 +5,6 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.wrapper.OptionalGene
-import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.TupleGeneImpact
@@ -17,7 +16,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- *  A tuple is a fixed-size, ordered list of elements, of possible different types.
+ *  A tuple is a fixed-size, non-empty, ordered list of elements, of possible different types.
  *  This is needed for example when representing the inputs of function calls in
  *  GraphQL.
  */
@@ -27,11 +26,10 @@ class TupleGene(
      */
     name: String,
     /**
-     * The actual elements in the array, based on the template. Ie, usually those elements will be clones
-     * of the templated, and then mutated/randomized
-     * note that if the list of gene could be updated, its impact needs to be updated
+     * The actual elements in the tuple.
+     * Note that if the list of genes could be updated, its impact needs to be updated.
      */
-    val elements: List<Gene>,
+    elements: List<Gene>,
     /**
      * In some cases, we want to treat an element differently from the other (the last in particular).
      * This is for example the case of function calls in GQL when the return type is an object, on
@@ -39,18 +37,22 @@ class TupleGene(
      * In these cases, such return object will be part of the tuple, as the last element.
      */
     val lastElementTreatedSpecially: Boolean = false,
-
-    ) : CompositeFixedGene(name, elements) {
-
-    init {
-        if (elements.isEmpty()) {
+) : HeterogeneousListGene(
+    name,
+    elements.also {
+        if (it.isEmpty()) {
             throw IllegalArgumentException("Empty tuple")
         }
-    }
+    },
+    isFixed = true,
+    template = null
+) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(TupleGene::class.java)
     }
+
+    override fun canBeChildless(): Boolean = false
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean {
         return true
@@ -61,14 +63,11 @@ class TupleGene(
     It is a special gene that will be treated with the Boolean selection.
      */
     fun getSpecialGene(): Gene? {
-
         if (lastElementTreatedSpecially) {
             return elements.last()
         }
         return null
-
     }
-
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -76,28 +75,24 @@ class TupleGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-
         val buffer = StringBuffer()
 
         if (mode == GeneUtils.EscapeMode.GQL_NONE_MODE || mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE
-            || mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE) {
-
+            || mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE
+        ) {
             if (lastElementTreatedSpecially) {
                 val returnGene = elements.last()
 
                 // The return is an optional non-active, we do not print the whole tuple
-                if ((returnGene.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (returnGene.getWrappedGene(OptionalGene::class.java))==null)   {
+                if ((returnGene.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (returnGene.getWrappedGene(OptionalGene::class.java)) == null) {
                     //need the name for input and return
                     buffer.append(name)
 
                     //printout the inputs. See later if a refactoring is needed
                     val s = elements.dropLast(1)
-                        //.filter { it !is OptionalGene || it.isActive }
                         .filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
                         .joinToString(",") {
-
                             GraphQLUtils.inputsPrinting(it, targetFormat)
-
                         }.replace("\"", "\\\"")
                     if (s.isNotEmpty()) {
                         buffer.append("(")
@@ -115,46 +110,45 @@ class TupleGene(
                                 targetFormat,
                                 extraCheck = true
                             )
-                        } else
-                            if (returnGene is ObjectGene) {
-                                returnGene.getValueAsPrintableString(
-                                    previousGenes,
-                                    GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
-                                    targetFormat,
-                                    extraCheck = true
-                                )
-                            } else ""
+                        } else if (returnGene is ObjectGene) {
+                            returnGene.getValueAsPrintableString(
+                                previousGenes,
+                                GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
+                                targetFormat,
+                                extraCheck = true
+                            )
+                        } else ""
                     )
                 }
             } else {
                 //tuple contains only inputs
                 //if it is opt , it should be active
-                //val nonOptOrOptActive = elements.filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
-                val nonOptOrOptActive = elements.filter {(it.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (it.getWrappedGene(OptionalGene::class.java) == null) }
-                if (nonOptOrOptActive.isNotEmpty()){
-
-                //need the name for inputs only
-                buffer.append(name)
-
-                //printout only the inputs (that are non opt or opt active), since there is no return (is a primitive type)
-                val s = nonOptOrOptActive
-                    //.filter { it !is OptionalGene || it.isActive }
-                    //.filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
-                    .joinToString(",") {
-                        GraphQLUtils.inputsPrinting(it, targetFormat)
-                    }.replace("\"", "\\\"")
-
-                if (s.isNotEmpty()) {
-                    buffer.append("(")
-                    buffer.append(s)
-                    buffer.append(")")
+                val nonOptOrOptActive = elements.filter {
+                    (it.getWrappedGene(OptionalGene::class.java)?.isActive == true) ||
+                        (it.getWrappedGene(OptionalGene::class.java) == null)
                 }
+                if (nonOptOrOptActive.isNotEmpty()) {
+                    //need the name for inputs only
+                    buffer.append(name)
 
-            }else {
-                //input in the tuple is optional-> print only the name
-                buffer.append(name)}}
+                    //printout only the inputs (that are non opt or opt active), since there is no return (is a primitive type)
+                    val s = nonOptOrOptActive
+                        .joinToString(",") {
+                            GraphQLUtils.inputsPrinting(it, targetFormat)
+                        }.replace("\"", "\\\"")
+
+                    if (s.isNotEmpty()) {
+                        buffer.append("(")
+                        buffer.append(s)
+                        buffer.append(")")
+                    }
+                } else {
+                    //input in the tuple is optional-> print only the name
+                    buffer.append(name)
+                }
+            }
         } else {
-            "[" + elements.filter { it.isPrintable() }.joinTo(buffer, ", ") {
+            return "[" + elements.filter { it.isPrintable() }.joinToString(", ") {
                 it.getValueAsPrintableString(
                     previousGenes,
                     mode,
@@ -163,28 +157,25 @@ class TupleGene(
             } + "]"
         }
         return buffer.toString()
-
-    }
-
-
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        elements.filter { it.isMutable() }.forEach {
-            it.randomize(randomness, false)
-        }
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        if (this.elements.size != other.elements.size) {
+            return false
+        }
         return this.elements.zip(other.elements) { thisElem, otherElem ->
-            thisElem.containsSameValueAs(otherElem)
+            thisElem.name == otherElem.name && thisElem::class == otherElem::class && try {
+                thisElem.containsSameValueAs(otherElem)
+            } catch (_: IllegalArgumentException) {
+                false
+            }
         }.all { it }
     }
 
-
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-
         val gene = other.getPhenotype()
         if (gene is TupleGene
             && elements.size == gene.elements.size
@@ -209,22 +200,12 @@ class TupleGene(
         return false
     }
 
-    override fun isMutable(): Boolean {
-        return elements.any { it.isMutable() }
-    }
-
-    override fun mutationWeight(): Double {
-        return elements.sumOf { it.mutationWeight() }
-    }
-
-
     override fun adaptiveSelectSubsetToMutate(
         randomness: Randomness,
         internalGenes: List<Gene>,
         mwc: MutationWeightControl,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo
     ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
-
         if (additionalGeneMutationInfo.impact != null
             && additionalGeneMutationInfo.impact is TupleGeneImpact
         ) {
@@ -239,8 +220,8 @@ class TupleGene(
             )
             val map = selected.map { internalGenes.indexOf(it) }
             return map.map {
-                // TODO TupleGeneImpact indexes elements by gene name, so same-named heterogeneous elements (possible in DynamoDB)
-                //  overwrite each other's impact. We pass null on type mismatch for now, but we need a better solution for heterogeneous collections.
+                // TupleGeneImpact.elements is keyed by gene name rather than index, so same-named heterogeneous elements
+                // can collide; pass null on type mismatch (collection-style lists should use HeterogeneousListGene).
                 val impact = (impacts[it] as? GeneImpact)?.takeIf { imp -> imp.validate(internalGenes[it]) }
                 internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(
                     impact = impact,
@@ -263,5 +244,4 @@ class TupleGene(
     ): Boolean {
         return false
     }
-
 }

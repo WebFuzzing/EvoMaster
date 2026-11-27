@@ -37,12 +37,12 @@ class TupleGeneImpact (
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.current !is TupleGene)
-            throw IllegalArgumentException("gc.current ${gc.current::class.java.simpleName} should be ObjectGene")
+            throw IllegalArgumentException("gc.current ${gc.current::class.java.simpleName} should be TupleGene")
         if (gc.previous == null){
             gc.current.elements.forEach { gene ->
-                val fImpact = elements.getValue(gene.name) as? GeneImpact ?:throw IllegalArgumentException("impact should be gene impact")
-                // TODO This skips counting gene impact when same-named elements in the collection are heterogeneous (possible in DynamoDB),
-                //  as elements is keyed by gene name. We need a better solution to track impacts for heterogeneous collections.
+                // elements is keyed by gene name rather than index, so skip missing or collided heterogeneous entries
+                // (collection-style lists with unnamed/same-named elements should use HeterogeneousListGene).
+                val fImpact = elements[gene.name] as? GeneImpact ?: return@forEach
                 if (!fImpact.validate(gene)) return@forEach
                 val mutatedGeneWithContext = MutatedGeneWithContext(
                     current =  gene,
@@ -56,18 +56,22 @@ class TupleGeneImpact (
             return
         }
         if (gc.previous !is TupleGene)
-            throw IllegalArgumentException("gc.previous ${gc.previous::class.java.simpleName} should be ObjectGene")
+            throw IllegalArgumentException("gc.previous ${gc.previous::class.java.simpleName} should be TupleGene")
 
         val mutatedElements = gc.current.elements.zip(gc.previous.elements) { cf, pf ->
-            Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
+            val same = cf.name == pf.name && cf::class == pf::class && try {
+                cf.containsSameValueAs(pf)
+            } catch (_: IllegalArgumentException) {
+                false
+            }
+            Pair(Pair(cf, pf), same)
         }.filter { !it.second }.map { it.first }
 
         val onlyManipulation = mutatedElements.size > 1 && impactTargets.isNotEmpty()
 
-        mutatedElements.forEach { g->
-            val fImpact = elements.getValue(g.first.name) as? GeneImpact ?:throw IllegalArgumentException("impact should be gene impact")
-            // TODO This skips counting gene impact when same-named elements in the collection are heterogeneous (possible in DynamoDB),
-            //  as elements is keyed by gene name. We need a better solution to track impacts for heterogeneous collections.
+        mutatedElements.forEach { g ->
+            // elements is keyed by gene name rather than index, so skip missing or collided heterogeneous entries.
+            val fImpact = elements[g.first.name] as? GeneImpact ?: return@forEach
             if (!fImpact.validate(g.first) || !fImpact.validate(g.second)) return@forEach
             val mutatedGeneWithContext = MutatedGeneWithContext(
                 current =  g.first,

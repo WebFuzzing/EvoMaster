@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.impact.impactinfocollection.sql.*
 import org.evomaster.core.search.impact.impactinfocollection.value.*
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.ArrayGeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.value.collection.HeterogeneousListGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.MapGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.EnumGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateGeneImpact
@@ -24,6 +25,7 @@ import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.datetime.TimeOffsetGene
 import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.wrapper.NullableGene
@@ -66,6 +68,7 @@ class ImpactUtils {
                 //is Base64StringGene -> StringGeneImpact(id, gene.data)
                 is ObjectGene -> ObjectGeneImpact(id, gene)
                 is TupleGene -> TupleGeneImpact(id, gene)
+                is HeterogeneousListGene -> HeterogeneousListGeneImpact(id)
                 is MapGene<*, *> -> MapGeneImpact(id)
                 //is PairGene<*, *> -> throw IllegalStateException("do not count impacts for PairGene yet")
                 is ArrayGene<*> -> ArrayGeneImpact(id)
@@ -86,6 +89,7 @@ class ImpactUtils {
                 is SqlPrimaryKeyGene -> SqlPrimaryKeyGeneImpact(id, gene)
                 is SqlForeignKeyGene -> SqlForeignKeyGeneImpact(id)
                 is SqlAutoIncrementGene -> GeneImpact(id)
+                is ImmutableDataHolderGene -> GeneImpact(id)
                 is SqlMultidimensionalArrayGene<*> -> SqlMultidimensionalArrayGeneImpact(id)
                 // regex
                 is RegexGene -> RegexGeneImpact(id, gene)
@@ -325,7 +329,7 @@ class ImpactUtils {
                 g.name == template.name && g::class.java.simpleName == template::class.java.simpleName
                         && (includeSameValue
                             || !try { g.containsSameValueAs(template) }catch (e: Exception){
-                                if (g !is ArrayGene<*> && g !is FixedMapGene<*,*>) throw e else false
+                                if (g !is ArrayGene<*> && g !is FixedMapGene<*,*> && g !is ObjectGene && g !is HeterogeneousListGene) throw e else false
                             }
                         )
             }
