@@ -1,0 +1,121 @@
+arazzo: 1.0.0
+info:
+  title: Fixture of ArazzoRuntimeTest
+  version: 1.0.0
+  description: >-
+    Derived from pet-coupons-arazzo.yaml, but owned by ArazzoRuntimeTest so it can be changed freely.
+    Parameter names match the ones of pet-coupons-openapi.yaml (petId, orderId), which is
+    what ArazzoRuntime needs to find the parameter it has to fill.
+sourceDescriptions:
+  - name: pet-coupons
+    url: ../openapi/pet-coupons-openapi.yaml
+    type: openapi
+workflows:
+  - workflowId: find-pet-then-coupon
+    steps:
+      - stepId: find-pet
+        operationId: findPetsByTags
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_pet_id: $response.body#/0/id
+      - stepId: find-coupons
+        operationId: getPetCoupons
+        parameters:
+          - name: petId
+            in: path
+            value: $steps.find-pet.outputs.my_pet_id
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_coupon_code: $response.body#/couponCode
+  - workflowId: apply-coupon-and-check
+    steps:
+      - stepId: find-pet
+        operationId: findPetsByTags
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_pet_id: $response.body#/0/id
+      - stepId: find-coupons
+        operationId: getPetCoupons
+        parameters:
+          - name: petId
+            in: path
+            value: $steps.find-pet.outputs.my_pet_id
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_coupon_code: $response.body#/couponCode
+      - stepId: place-order
+        workflowId: place-order
+        parameters:
+          - name: pet_id
+            value: $steps.find-pet.outputs.my_pet_id
+          - name: coupon_code
+            value: $steps.find-coupons.outputs.my_coupon_code
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_order_id: $outputs.workflow_order_id
+      - stepId: get-order
+        operationId: getOrderById
+        parameters:
+          - name: orderId
+            in: path
+            value: $steps.place-order.outputs.my_order_id
+        successCriteria:
+          - condition: $statusCode == 200
+  - workflowId: double-order
+    steps:
+      - stepId: find-pet
+        operationId: findPetsByTags
+        successCriteria:
+          - condition: $statusCode == 200
+      - stepId: order-1
+        workflowId: place-order
+        parameters:
+          - name: pet_id
+            value: 111
+          - name: coupon_code
+            value: FIRST
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_order_id: $outputs.workflow_order_id
+      - stepId: order-2
+        workflowId: place-order
+        parameters:
+          - name: pet_id
+            value: 222
+          - name: coupon_code
+            value: SECOND
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          my_order_id: $outputs.workflow_order_id
+  - workflowId: place-order
+    inputs:
+      type: object
+      properties:
+        pet_id:
+          type: integer
+          format: int64
+        coupon_code:
+          type: string
+    steps:
+      - stepId: place-order
+        operationId: placeOrder
+        requestBody:
+          contentType: application/json
+          payload:
+            petId: $inputs.pet_id
+            couponCode: $inputs.coupon_code
+            status: placed
+            complete: false
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          step_order_id: $response.body#/id
+    outputs:
+      workflow_order_id: $steps.place-order.outputs.step_order_id

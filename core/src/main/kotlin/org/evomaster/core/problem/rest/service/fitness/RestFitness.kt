@@ -7,6 +7,7 @@ import org.evomaster.core.database.redis.RedisDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.sql.SqlAction
 import org.evomaster.core.problem.httpws.auth.AuthUtils
+import org.evomaster.core.problem.rest.arazzo.ArazzoRuntime
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
@@ -61,6 +62,8 @@ open class RestFitness : AbstractRestFitness() {
         val chainState = mutableMapOf<String, String>()
         val mainActions = individual.seeMainExecutableActions()
 
+        val arazzoRuntime = ArazzoRuntime(mainActions)
+
         //run the test, one action at a time
         for (i in mainActions.indices) {
 
@@ -84,6 +87,7 @@ open class RestFitness : AbstractRestFitness() {
 
             reportActionIndex(i)
             registerNewAction(a, i)
+            arazzoRuntime?.prepareRequest(a)
 
             val ok = handleRestCall(a, mainActions, actionResults, chainState, cookies, tokens, fv)
             /*
@@ -96,6 +100,8 @@ open class RestFitness : AbstractRestFitness() {
             if (!ok) {
                 break
             }
+
+            arazzoRuntime?.recordResponse(a, actionResults.filterIsInstance<RestCallResult>()[i])
         }
 
         if (log.isTraceEnabled){
