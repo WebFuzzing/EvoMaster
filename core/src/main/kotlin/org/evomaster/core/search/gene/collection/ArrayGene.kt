@@ -112,7 +112,37 @@ class ArrayGene<T>(
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
-        return elements.size >= (minSize ?: 0) && elements.size <= (maxSize ?: Int.MAX_VALUE)
+        return elements.size >= (minSize ?: 0)
+                && elements.size <= (maxSize ?: Int.MAX_VALUE)
+                && !(uniqueElements && hasDuplicateElements())
+    }
+
+    /**
+     * Verify that no duplicate elements were introduced when [uniqueElements] is enabled.
+     */
+    override fun mutationCheck(): Boolean {
+        return !uniqueElements || !hasDuplicateElements()
+    }
+
+    /**
+     * Remove duplicate elements when [uniqueElements] is enabled, keeping the first occurrence
+     * of each distinct element.
+     */
+    override fun repair() {
+        if (!uniqueElements || elements.size <= 1) return
+
+        val kept = mutableListOf<T>()
+        val duplicates = mutableListOf<T>()
+        for (element in elements) {
+            val isDuplicate = isElementApplicableToUniqueCheck(element.getLeafGene()) &&
+                kept.any { hasSameLeafValue(it, element) }
+            if (isDuplicate) {
+                duplicates.add(element)
+            } else {
+                kept.add(element)
+            }
+        }
+        duplicates.forEach { killChild(it) }
     }
 
     override fun copyContent(): Gene {
@@ -372,14 +402,37 @@ class ArrayGene<T>(
     }
 
     /**
+     * @return whether the active leaf values of [first] and [second] have the same type and value
+     */
+    private fun hasSameLeafValue(first: Gene, second: Gene): Boolean {
+        val firstLeaf = first.getLeafGene()
+        val secondLeaf = second.getLeafGene()
+        return firstLeaf.javaClass == secondLeaf.javaClass &&
+            firstLeaf.containsSameValueAs(secondLeaf)
+    }
+
+    /**
+     * @return whether any two elements applicable to uniqueness checking share the same leaf value
+     */
+    private fun hasDuplicateElements(): Boolean {
+        if (elements.size <= 1) return false
+        for (i in 0 until elements.size - 1) {
+            if (!isElementApplicableToUniqueCheck(elements[i].getLeafGene())) continue
+            for (j in i + 1 until elements.size) {
+                if (hasSameLeafValue(elements[i], elements[j])) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    /**
      * @return if the [gene] does exist in [elements]
      */
     fun doesExist(gene: T): Boolean{
-        if (!isElementApplicableToUniqueCheck(ParamUtil.getValueGene(gene))) return false
-        return elements.any {
-            it.getLeafGene().javaClass == gene.getLeafGene().javaClass &&
-            it.getLeafGene().containsSameValueAs(gene.getLeafGene())
-        }
+        if (!isElementApplicableToUniqueCheck(gene.getLeafGene())) return false
+        return elements.any { hasSameLeafValue(it, gene) }
     }
 
     /**

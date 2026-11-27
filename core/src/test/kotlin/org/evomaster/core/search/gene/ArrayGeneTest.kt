@@ -1,5 +1,10 @@
 package org.evomaster.core.search.gene
 
+import com.google.inject.Injector
+import com.google.inject.Module
+import com.netflix.governator.guice.LifecycleInjector
+import org.evomaster.core.BaseModule
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
@@ -11,7 +16,10 @@ import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -21,6 +29,29 @@ import java.math.BigDecimal
 import java.math.BigInteger
 
 class ArrayGeneTest {
+
+    private data class MutationServices(
+        val randomness: Randomness,
+        val apc: AdaptiveParameterControl,
+        val mwc: MutationWeightControl
+    )
+
+    private fun createMutationServices(): MutationServices {
+        val injector: Injector = LifecycleInjector.builder()
+            .withModules(*arrayOf<Module>(BaseModule(arrayOf("--blackBox", "false"), true)))
+            .build().createInjector()
+        injector.getInstance(EMConfig::class.java).apply {
+            stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
+            maxEvaluations = 100
+            seed = 666
+            weightBasedMutationRate = true
+        }
+        return MutationServices(
+            randomness = injector.getInstance(Randomness::class.java).apply { updateSeed(42) },
+            apc = injector.getInstance(AdaptiveParameterControl::class.java),
+            mwc = injector.getInstance(MutationWeightControl::class.java)
+        )
+    }
 
     @Test
     fun testGene() {
@@ -348,5 +379,142 @@ class ArrayGeneTest {
 
     }
 
+    @Test
+    fun testLocallyValidRejectsDuplicateElementsWhenUnique() {
+        val uniqueWithDuplicates = ArrayGene(
+            "roles",
+            template = StringGene("role"),
+            uniqueElements = true,
+            elements = mutableListOf(
+                StringGene("role1", "captain"),
+                StringGene("role2", "captain")
+            )
+        )
+        assertFalse(uniqueWithDuplicates.isLocallyValid())
+
+        val nonUniqueWithDuplicates = ArrayGene(
+            "roles",
+            template = StringGene("role"),
+            uniqueElements = false,
+            elements = mutableListOf(
+                StringGene("role1", "captain"),
+                StringGene("role2", "captain")
+            )
+        )
+        assertTrue(nonUniqueWithDuplicates.isLocallyValid())
+
+        val uniqueRoles = ArrayGene(
+            "roles",
+            template = StringGene("role"),
+            uniqueElements = true,
+            elements = mutableListOf(
+                StringGene("role1", "captain"),
+                StringGene("role2", "striker")
+            )
+        )
+        assertTrue(uniqueRoles.isLocallyValid())
+
+        uniqueRoles.getViewOfElements()[1].value = "captain"
+        assertFalse(uniqueRoles.isLocallyValid())
+    }
+
+    @Test
+    fun testStandardMutationPreservesUniquenessForStringElements() {
+        val services = createMutationServices()
+        val template = StringGene("role", minLength = 0, maxLength = 1)
+        val roles = ArrayGene(
+            "roles",
+            template = template,
+            uniqueElements = true,
+            minSize = 2,
+            maxSize = 2,
+            elements = mutableListOf(
+                StringGene("role1", "", minLength = 0, maxLength = 1),
+                StringGene("role2", "a", minLength = 0, maxLength = 1)
+            )
+        ).apply { doInitialize() }
+
+        repeat(200) {
+            roles.standardMutation(services.randomness, services.apc, services.mwc)
+            assertTrue(roles.isLocallyValid())
+            val values = roles.getViewOfElements().map { it.value }
+            assertEquals(2, values.size)
+            assertEquals(values.size, values.toSet().size)
+        }
+    }
+
+    @Test
+    fun testStandardMutationRepairsDuplicatesWhenRetriesExhausted() {
+        val services = createMutationServices()
+        val positions = listOf("GK", "MF", "FW")
+        val template = EnumGene("position", positions)
+
+        for (strategy in listOf(
+            SubsetGeneMutationSelectionStrategy.DEFAULT,
+            SubsetGeneMutationSelectionStrategy.DETERMINISTIC_WEIGHT
+        )) {
+            repeat(30) {
+                val lineup = ArrayGene(
+                    "lineup",
+                    template = template,
+                    uniqueElements = true,
+                    maxSize = 3,
+                    elements = mutableListOf(
+                        EnumGene("pos1", positions, 0),
+                        EnumGene("pos2", positions, 1),
+                        EnumGene("pos3", positions, 2)
+                    )
+                ).apply { doInitialize() }
+
+                lineup.standardMutation(
+                    services.randomness,
+                    services.apc,
+                    services.mwc,
+                    childrenToMutateSelectionStrategy = strategy
+                )
+                assertTrue(lineup.isLocallyValid())
+                val values = lineup.getViewOfElements().map { it.getValueAsRawString() }
+                assertEquals(values.size, values.toSet().size)
+            }
+        }
+    }
+
+    @Test
+    fun testRepairRemovesDuplicateElementsWhenUnique() {
+        val roles = ArrayGene(
+            "roles",
+            template = StringGene("role"),
+            uniqueElements = true,
+            elements = mutableListOf(
+                StringGene("role1", "captain"),
+                StringGene("role2", "captain"),
+                StringGene("role3", "striker")
+            )
+        )
+
+        assertFalse(roles.isLocallyValid())
+        roles.repair()
+        assertTrue(roles.isLocallyValid())
+        assertEquals(listOf("captain", "striker"), roles.getViewOfElements().map { it.value })
+    }
+
+    @Test
+    fun testSetFromStringValueRevertsOnDuplicatesWhenUnique() {
+        val roles = ArrayGene(
+            "roles",
+            minSize = 1,
+            maxSize = 3,
+            template = StringGene("role"),
+            uniqueElements = true,
+            elements = mutableListOf(
+                StringGene("role1", "captain"),
+                StringGene("role2", "striker")
+            )
+        ).apply { doInitialize() }
+
+        assertFalse(roles.setFromStringValue("captain, captain"))
+        assertTrue(roles.isLocallyValid())
+        assertEquals(listOf("captain", "striker"), roles.getViewOfElements().map { it.value })
+    }
 
 }
