@@ -99,4 +99,16 @@ class StringUtilsTest{
         assertEquals("StromsAElv", StringUtils.convertToAscii("StrømsÆlv"))
         assertEquals("Malostranke_namesti", StringUtils.convertToAscii("Malostranké_náměstí"))
     }
+
+    @Test
+    fun testNormalizeNameAcrossNamingStyles() {
+        assertEquals("playercountry", StringUtils.normalizeName("player_country"))
+        assertEquals("playercountry", StringUtils.normalizeName("player-country"))
+        assertEquals("playercountry", StringUtils.normalizeName("playerCountry"))
+        assertEquals("playercountry", StringUtils.normalizeName("PlayerCountry"))
+        assertEquals("fifaid2022", StringUtils.normalizeName("fifa_id_2022"))
+        assertEquals("fifaid2022", StringUtils.normalizeName("fifaId2022"))
+        assertEquals("", StringUtils.normalizeName("___---   "))
+        assertEquals("", StringUtils.normalizeName(""))
+    }
 }
