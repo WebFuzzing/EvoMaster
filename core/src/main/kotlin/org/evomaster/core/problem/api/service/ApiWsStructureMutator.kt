@@ -7,6 +7,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.cassandra.CassandraDbAction
 import org.evomaster.core.database.cassandra.CassandraInsertBuilder
+import org.evomaster.core.database.dynamodb.DynamoDbAction
 import org.evomaster.core.database.dynamodb.DynamoDbInsertBuilder
 import org.evomaster.core.database.mongo.MongoDbAction
 import org.evomaster.core.database.neo4j.Neo4jDbAction
@@ -653,8 +654,14 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         failedQueries: List<DynamoDbFailedQuery>
     ): List<EnvironmentAction> {
 
+        val existingKeys = ind.seeInitializingActions()
+            .filterIsInstance<DynamoDbAction>()
+            .flatMap { listOf(it.insertionKey(), it.seedKey) }
+            .toSet()
+
         val addedActions = DynamoDbInsertBuilder.buildInsertActions(
             failedQueries,
+            existingKeys,
             randomness
         )
 

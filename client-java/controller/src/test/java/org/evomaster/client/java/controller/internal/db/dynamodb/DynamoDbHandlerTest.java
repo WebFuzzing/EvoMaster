@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbF
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto;
+import org.evomaster.client.java.controller.dynamodb.operations.comparison.EqualsOperation;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbSchemaRegistry;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
@@ -14,7 +15,10 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
+import software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
@@ -324,18 +328,24 @@ public class DynamoDbHandlerTest {
 
     @Test
     public void testRejectsPlayerPredicatesThatCannotDefineAnInsertion() {
-        for (String filter : new String[]{"fifaId > :number", "playerName = :player OR fifaId = :number",
-                "country = :player", "profile.playerName = :player"}) {
+        for (String filter : new String[]{
+                "fifaId <> :number",
+                "playerName = :player OR fifaId = :number",
+                "NOT (country = :country)",
+                "attribute_not_exists(retiredAt)",
+                "contains(positions, :pos)",
+                "profile.playerName = :player"}) {
             SyncDynamoDbClient client = new SyncDynamoDbClient();
             DynamoDbHandler handler = enabledHandler(client);
             Map<String, AttributeValue> values = new HashMap<>();
             values.put(":country", AttributeValue.builder().s("Argentina").build());
             values.put(":player", AttributeValue.builder().s("Lionel Scaloni").build());
             values.put(":number", AttributeValue.builder().n("10").build());
-            QueryRequest request = QueryRequest.builder().tableName(TABLE)
-                    .keyConditionExpression("country = :country").filterExpression(filter)
+            values.put(":pos", AttributeValue.builder().s("forward").build());
+            ScanRequest request = ScanRequest.builder().tableName(TABLE)
+                    .filterExpression(filter)
                     .expressionAttributeValues(values).build();
-            handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.QUERY,
+            handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.SCAN,
                     request, true, 1L));
 
             List<DynamoDbCommandWithDistance> evaluated = handler.getEvaluatedDynamoDbCommands();
@@ -678,17 +688,18 @@ public class DynamoDbHandlerTest {
 
     @Test
     public void testFormatsBigDecimalPlainStringAndIgnoresNonFiniteNumbers() {
+        DynamoDbSeedCollector collector = new DynamoDbSeedCollector();
+        DynamoDbSeedCollector.CollectedSeeds seeds = collector.collect(
+                new EqualsOperation<>("caps", new BigDecimal("1E+5")), null);
+        DynamoDbAttributeValueDto capsDto = seeds.getAttributes().get("caps");
+        assertEquals("100000", capsDto.value);
+        assertEquals(DynamoDbValueTypeDto.NUMBER, capsDto.type);
+        assertNull(collector.collect(new EqualsOperation<>("nanScore", Double.NaN), null));
+        assertNull(collector.collect(new EqualsOperation<>("infScore", Float.POSITIVE_INFINITY), null));
+        assertNull(collector.collect(new EqualsOperation<>("negInfScore", Double.NEGATIVE_INFINITY), null));
+
         DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
         try {
-            java.lang.reflect.Method toAttr = DynamoDbHandler.class.getDeclaredMethod("toAttribute", String.class, Object.class);
-            toAttr.setAccessible(true);
-            DynamoDbAttributeValueDto capsDto = (DynamoDbAttributeValueDto) toAttr.invoke(handler, "caps", new BigDecimal("1E+5"));
-            assertEquals("100000", capsDto.value);
-            assertEquals(DynamoDbValueTypeDto.NUMBER, capsDto.type);
-            assertNull(toAttr.invoke(handler, "nanScore", Double.NaN));
-            assertNull(toAttr.invoke(handler, "infScore", Float.POSITIVE_INFINITY));
-            assertNull(toAttr.invoke(handler, "negInfScore", Double.NEGATIVE_INFINITY));
-
             java.lang.reflect.Method toTemplateAttr = DynamoDbHandler.class.getDeclaredMethod("toTemplateAttribute", String.class, Object.class);
             toTemplateAttr.setAccessible(true);
             DynamoDbAttributeValueDto templateCaps = (DynamoDbAttributeValueDto) toTemplateAttr.invoke(handler, "caps", new BigDecimal("1E+5"));
@@ -700,5 +711,193 @@ public class DynamoDbHandlerTest {
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    public void testBoundarySeedingForOrderingBetweenInAndBeginsWith() {
+        DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
+        Map<String, AttributeValue> values = new HashMap<>();
+        values.put(":country", AttributeValue.builder().s("France").build());
+        values.put(":prefix", AttributeValue.builder().s("Kyl").build());
+        values.put(":minGoals", AttributeValue.builder().n("8").build());
+        values.put(":maxCaps", AttributeValue.builder().n("75").build());
+        values.put(":minRank", AttributeValue.builder().n("1").build());
+        values.put(":maxRank", AttributeValue.builder().n("5").build());
+        values.put(":lowAge", AttributeValue.builder().n("20").build());
+        values.put(":highAge", AttributeValue.builder().n("30").build());
+        values.put(":club1", AttributeValue.builder().s("Real Madrid").build());
+        values.put(":club2", AttributeValue.builder().s("PSG").build());
+        QueryRequest request = QueryRequest.builder()
+                .tableName(TABLE)
+                .keyConditionExpression("country = :country AND begins_with(playerName, :prefix)")
+                .filterExpression("goals > :minGoals AND caps <= :maxCaps AND fifaRank >= :minRank "
+                        + "AND podiums < :maxRank AND age BETWEEN :lowAge AND :highAge AND club IN (:club1, :club2)")
+                .expressionAttributeValues(values)
+                .build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.QUERY,
+                request, true, 1L));
+        handler.getEvaluatedDynamoDbCommands();
+
+        assertEquals(1, handler.getExecutionDto().failedQueries.size());
+        DynamoDbFailedQuery fq = handler.getExecutionDto().failedQueries.get(0);
+        assertAttribute(fq.attributes, "country", DynamoDbKeyScalarTypeDto.STRING, "France");
+        assertAttribute(fq.attributes, "playerName", DynamoDbKeyScalarTypeDto.STRING, "Kyl");
+        assertAttribute(fq.attributes, "goals", DynamoDbKeyScalarTypeDto.NUMBER, "8");
+        assertAttribute(fq.attributes, "caps", DynamoDbKeyScalarTypeDto.NUMBER, "75");
+        assertAttribute(fq.attributes, "fifaRank", DynamoDbKeyScalarTypeDto.NUMBER, "1");
+        assertAttribute(fq.attributes, "podiums", DynamoDbKeyScalarTypeDto.NUMBER, "5");
+        assertAttribute(fq.attributes, "age", DynamoDbKeyScalarTypeDto.NUMBER, "20");
+        assertAttribute(fq.attributes, "club", DynamoDbKeyScalarTypeDto.STRING, "Real Madrid");
+    }
+
+    @Test
+    public void testBestEffortPartialExtractionSkipsUnsupportedSubExpressionsWithoutAborting() {
+        DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
+        Map<String, AttributeValue> values = new HashMap<>();
+        values.put(":country", AttributeValue.builder().s("Uruguay").build());
+        values.put(":now", AttributeValue.builder().s("2026-06-15T00:00:00Z").build());
+        values.put(":pos", AttributeValue.builder().s("striker").build());
+        values.put(":nested", AttributeValue.builder().s("Luis Suarez").build());
+        QueryRequest request = QueryRequest.builder()
+                .tableName(TABLE)
+                .keyConditionExpression("country = :country")
+                .filterExpression("(validTo > :now OR attribute_not_exists(validTo)) "
+                        + "AND NOT (retired = :country) "
+                        + "AND contains(positions, :pos) "
+                        + "AND profile.playerName = :nested")
+                .expressionAttributeValues(values)
+                .build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.QUERY,
+                request, true, 1L));
+        handler.getEvaluatedDynamoDbCommands();
+
+        assertEquals(1, handler.getExecutionDto().failedQueries.size());
+        DynamoDbFailedQuery fq = handler.getExecutionDto().failedQueries.get(0);
+        assertAttribute(fq.attributes, "country", DynamoDbKeyScalarTypeDto.STRING, "Uruguay");
+        assertEquals(Collections.singletonMap("playerName", DynamoDbKeyScalarTypeDto.STRING),
+                fq.missingPrimaryKeyAttributes);
+    }
+
+    @Test
+    public void testFirstValueWinsKeyConditionOverFilterExpression() {
+        DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
+        Map<String, AttributeValue> values = new HashMap<>();
+        values.put(":country", AttributeValue.builder().s("Argentina").build());
+        values.put(":otherCountry", AttributeValue.builder().s("Brazil").build());
+        QueryRequest request = QueryRequest.builder()
+                .tableName(TABLE)
+                .keyConditionExpression("country = :country")
+                .filterExpression("country = :otherCountry")
+                .expressionAttributeValues(values)
+                .build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.QUERY,
+                request, true, 1L));
+        handler.getEvaluatedDynamoDbCommands();
+
+        assertEquals(1, handler.getExecutionDto().failedQueries.size());
+        assertAttribute(handler.getExecutionDto().failedQueries.get(0).attributes,
+                "country", DynamoDbKeyScalarTypeDto.STRING, "Argentina");
+    }
+
+    @Test
+    public void testScanWithFilterExtractsSeedsWhileUnfilteredScanIsSkipped() {
+        DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
+        ScanRequest unfiltered = ScanRequest.builder().tableName(TABLE).build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.SCAN,
+                unfiltered, true, 1L));
+        handler.getEvaluatedDynamoDbCommands();
+        assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
+
+        handler.reset();
+        Map<String, AttributeValue> values = new HashMap<>();
+        values.put(":id", AttributeValue.builder().n("10").build());
+        values.put(":minGoals", AttributeValue.builder().n("12").build());
+        ScanRequest filtered = ScanRequest.builder()
+                .tableName(TABLE)
+                .filterExpression("fifaId = :id AND goals >= :minGoals")
+                .expressionAttributeValues(values)
+                .build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.SCAN,
+                filtered, true, 1L));
+        handler.getEvaluatedDynamoDbCommands();
+
+        assertEquals(1, handler.getExecutionDto().failedQueries.size());
+        DynamoDbFailedQuery fq = handler.getExecutionDto().failedQueries.get(0);
+        assertAttribute(fq.attributes, "fifaId", DynamoDbKeyScalarTypeDto.NUMBER, "10");
+        assertAttribute(fq.attributes, "goals", DynamoDbKeyScalarTypeDto.NUMBER, "12");
+        assertTrue(fq.missingPrimaryKeyAttributes.containsKey("country"));
+        assertTrue(fq.missingPrimaryKeyAttributes.containsKey("playerName"));
+    }
+
+    @Test
+    public void testBatchGetItemExtractsOnlyMissingKeysUpToCandidateCap() {
+        DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
+        List<Map<String, AttributeValue>> keys = Arrays.asList(
+                item("Argentina", "Lionel Messi"), // already present in table
+                item("Brazil", "Pele"),
+                item("France", "Zinedine Zidane"),
+                item("Spain", "Andres Iniesta"),
+                item("Germany", "Miroslav Klose"),
+                item("Italy", "Paolo Maldini")     // 5th missing -> capped at 4
+        );
+        BatchGetItemRequest request = BatchGetItemRequest.builder()
+                .requestItems(Collections.singletonMap(
+                        TABLE, KeysAndAttributes.builder().keys(keys).build()))
+                .build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.BATCH_GET_ITEM,
+                request, true, 1L));
+        handler.getEvaluatedDynamoDbCommands();
+
+        List<DynamoDbFailedQuery> queries = handler.getExecutionDto().failedQueries;
+        assertEquals(DynamoDbHandler.MAX_CANDIDATES_PER_TABLE, queries.size());
+        assertAttribute(queries.get(0).attributes, "playerName", DynamoDbKeyScalarTypeDto.STRING, "Pele");
+        assertAttribute(queries.get(1).attributes, "playerName", DynamoDbKeyScalarTypeDto.STRING, "Zinedine Zidane");
+        assertAttribute(queries.get(2).attributes, "playerName", DynamoDbKeyScalarTypeDto.STRING, "Andres Iniesta");
+        assertAttribute(queries.get(3).attributes, "playerName", DynamoDbKeyScalarTypeDto.STRING, "Miroslav Klose");
+    }
+
+    @Test
+    public void testPrimaryKeyEmptyStringGuardCoercesNonExactAndRejectsExact() {
+        DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
+        Map<String, AttributeValue> beginsWithValues = new HashMap<>();
+        beginsWithValues.put(":country", AttributeValue.builder().s("Croatia").build());
+        beginsWithValues.put(":empty", AttributeValue.builder().s("").build());
+        QueryRequest beginsWithEmpty = QueryRequest.builder()
+                .tableName(TABLE)
+                .keyConditionExpression("country = :country AND begins_with(playerName, :empty)")
+                .expressionAttributeValues(beginsWithValues)
+                .build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.QUERY,
+                beginsWithEmpty, true, 1L));
+        handler.getEvaluatedDynamoDbCommands();
+
+        assertEquals(1, handler.getExecutionDto().failedQueries.size());
+        assertAttribute(handler.getExecutionDto().failedQueries.get(0).attributes,
+                "playerName", DynamoDbKeyScalarTypeDto.STRING, "a");
+
+        handler.reset();
+        QueryRequest exactEmpty = QueryRequest.builder()
+                .tableName(TABLE)
+                .keyConditionExpression("country = :empty")
+                .expressionAttributeValues(Collections.singletonMap(":empty", AttributeValue.builder().s("").build()))
+                .build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.QUERY,
+                exactEmpty, true, 1L));
+        handler.getEvaluatedDynamoDbCommands();
+        assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
+    }
+
+    @Test
+    public void testWriteOperationsRemainExcludedFromInsertionExtraction() {
+        DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
+        UpdateItemRequest update = UpdateItemRequest.builder()
+                .tableName(TABLE)
+                .key(item("Brazil", "Ronaldo"))
+                .conditionExpression("attribute_exists(country)")
+                .build();
+        handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.UPDATE_ITEM,
+                update, false, 1L));
+        handler.getEvaluatedDynamoDbCommands();
+        assertTrue(handler.getExecutionDto().failedQueries.isEmpty());
     }
 }

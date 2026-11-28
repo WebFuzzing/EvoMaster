@@ -10,16 +10,13 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDb
 import org.evomaster.client.java.controller.dynamodb.ReflectionBasedDynamoDbClient;
 import org.evomaster.client.java.controller.dynamodb.DynamoDbRequestParser;
 import org.evomaster.client.java.controller.dynamodb.ParsedDynamoDbRequest;
-import org.evomaster.client.java.controller.dynamodb.operations.AndOperation;
 import org.evomaster.client.java.controller.dynamodb.operations.QueryOperation;
-import org.evomaster.client.java.controller.dynamodb.operations.comparison.EqualsOperation;
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbAttributeFormat;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.evomaster.client.java.utils.SimpleLogger;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -57,9 +54,15 @@ public class DynamoDbHandler {
     /** Parser used to extract predicates and table names from captured requests. */
     private final DynamoDbRequestParser requestParser = new DynamoDbRequestParser();
 
+    /** Maximum number of failed-query insertion candidates emitted per table evaluation. */
+    public static final int MAX_CANDIDATES_PER_TABLE = 4;
+
     /** Calculator used to measure how close table items are to satisfying a request. */
     private final DynamoDbHeuristicsCalculator calculator =
             new DynamoDbHeuristicsCalculator(new TaintHandlerExecutionTracer());
+
+    /** Collector used to extract best-effort scalar seeds from failed-read predicates. */
+    private final DynamoDbSeedCollector seedCollector = new DynamoDbSeedCollector();
 
     /** Whether captured commands should produce heuristic results. */
     private volatile boolean calculateHeuristics;
@@ -246,7 +249,9 @@ public class DynamoDbHandler {
             if (calculateHeuristics) {
                 evaluatedCommands.add(new DynamoDbCommandWithDistance(command, tableName, metrics));
             }
-            if (extractDynamoDbExecution && distance > 0.0d) {
+            //Batch can have distance 0.0 if it satisfies a condition for 1 item, we want to explore all conditions here
+            if (extractDynamoDbExecution
+                    && (distance > 0.0d || command.getOperationName() == DynamoDbOperationNames.BATCH_GET_ITEM)) {
                 registerFailedQuery(command, tableName, parsed, items);
             }
         } catch (RuntimeException e) {
@@ -278,7 +283,7 @@ public class DynamoDbHandler {
     }
 
     /**
-     * Registers one positive-distance DynamoDB read when its conditions can define an insertion item.
+     * Registers failed-read insertion candidates when a supported DynamoDB read's predicates can seed items.
      *
      * @param command intercepted DynamoDB read
      * @param tableName table read by the command
@@ -288,65 +293,112 @@ public class DynamoDbHandler {
     private void registerFailedQuery(DynamoDbCommand command, String tableName, ParsedDynamoDbRequest parsed,
                                      List<Map<String, Object>> items) {
         if (!isInsertionInferableOperation(command.getOperationName())) {
-            // Only GetItem and Query bind equality conditions that can describe a concrete insertion item.
             return;
         }
-
-        Map<String, DynamoDbAttributeValueDto> attributes = extractFlatInsertionAttributes(parsed);
-        if (attributes == null) {
+        if (command.getOperationName() == DynamoDbOperationNames.BATCH_GET_ITEM) {
+            registerBatchGetFailedQueries(command, tableName, parsed, items);
+            return;
+        }
+        DynamoDbSeedCollector.CollectedSeeds seeds = seedCollector.collect(
+                parsed.getKeyCondition(), parsed.getFilterExpression());
+        if (seeds == null) {
             SimpleLogger.debug("Skipping DynamoDB failed-query extraction for table '" + tableName
-                    + "': predicates cannot be flattened to scalar insertion attributes");
+                    + "': predicates yielded no flat scalar insertion seeds");
             return;
         }
-
         DynamoDbPrimaryKey primaryKey = getPrimaryKey(tableName);
         if (primaryKey == null) {
-            // DescribeTable failure was already logged by getPrimaryKey.
             return;
         }
+        registerSeededCandidate(command, tableName, seeds, primaryKey, items);
+    }
+
+    /**
+     * Registers insertion candidates for {@code BatchGetItem} keys not matched by any existing item,
+     * capped at {@link #MAX_CANDIDATES_PER_TABLE}.
+     *
+     * @param command intercepted {@code BatchGetItem} command
+     * @param tableName target table
+     * @param parsed parsed per-table key conditions
+     * @param items existing normalized table items
+     */
+    private void registerBatchGetFailedQueries(DynamoDbCommand command, String tableName, ParsedDynamoDbRequest parsed,
+                                               List<Map<String, Object>> items) {
+        List<QueryOperation> branches = seedCollector.unpackBatchGetBranches(parsed.getKeyCondition());
+        DynamoDbPrimaryKey primaryKey = null;
+        int emitted = 0;
+        for (QueryOperation branch : branches) {
+            if (emitted >= MAX_CANDIDATES_PER_TABLE) {
+                break;
+            }
+            if (isBranchSatisfiedByAnyItem(branch, items)) {
+                continue;
+            }
+            DynamoDbSeedCollector.CollectedSeeds seeds = seedCollector.collect(branch, null);
+            if (seeds == null) {
+                continue;
+            }
+            if (primaryKey == null) {
+                primaryKey = getPrimaryKey(tableName);
+                if (primaryKey == null) {
+                    return;
+                }
+            }
+            if (registerSeededCandidate(command, tableName, seeds, primaryKey, items)) {
+                emitted++;
+            }
+        }
+    }
+
+    /** Returns whether any existing item already satisfies a single key branch. */
+    private boolean isBranchSatisfiedByAnyItem(QueryOperation branch, List<Map<String, Object>> items) {
+        for (Map<String, Object> item : items) {
+            if (calculator.computeExpression(branch, item).isTrue()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Validates, completes, and records one seeded insertion candidate. */
+    private boolean registerSeededCandidate(DynamoDbCommand command, String tableName,
+                                            DynamoDbSeedCollector.CollectedSeeds seeds,
+                                            DynamoDbPrimaryKey primaryKey,
+                                            List<Map<String, Object>> items) {
+        Set<String> primaryKeyNames = primaryKey.getAttributes().keySet();
+        if (!seedCollector.applyPrimaryKeyEmptyStringGuard(seeds, primaryKeyNames)) {
+            SimpleLogger.debug("Skipping DynamoDB failed-query extraction for table '" + tableName
+                    + "': exact empty-string primary key cannot be inserted");
+            return false;
+        }
+        Map<String, DynamoDbAttributeValueDto> attributes = seeds.getAttributes();
         if (!matchesPrimaryKeyTypes(attributes, primaryKey)) {
             SimpleLogger.debug("Skipping DynamoDB failed-query extraction for table '" + tableName
                     + "': inferred attribute types do not match table primary key");
-            return;
+            return false;
         }
-
-        completeFromTableItem(tableName, attributes, primaryKey.getAttributes().keySet(), items);
+        completeFromTableItem(tableName, attributes, primaryKeyNames, items);
         Map<String, DynamoDbKeyScalarTypeDto> missingKeys = computeMissingPrimaryKeys(primaryKey, attributes);
         DynamoDbFailedQuery inferred = addFailedQueryIfAbsent(tableName, attributes, missingKeys);
         if (inferred == null) {
-            // Identical canonical insertion attributes were already recorded during this action.
-            return;
+            return false;
         }
-
         populatePrimaryKeyFormats(command, inferred);
         populatePrimaryKeyValueExamples(missingKeys.keySet(), items, inferred);
+        return true;
     }
 
     /**
      * Returns whether the DynamoDB operation can seed a concrete row from failed-read predicates.
      *
      * @param operationName DynamoDB operation name
-     * @return {@code true} for {@code GetItem} and {@code Query}
+     * @return {@code true} for {@code GetItem}, {@code Query}, {@code Scan}, and {@code BatchGetItem}
      */
     private boolean isInsertionInferableOperation(DynamoDbOperationNames operationName) {
         return operationName == DynamoDbOperationNames.GET_ITEM
-                || operationName == DynamoDbOperationNames.QUERY;
-    }
-
-    /**
-     * Flattens key and filter equality predicates into scalar insertion attributes.
-     *
-     * @param parsed parsed request predicates
-     * @return extracted attribute map, or {@code null} when predicates are empty, non-flat, or conflicting
-     */
-    private Map<String, DynamoDbAttributeValueDto> extractFlatInsertionAttributes(ParsedDynamoDbRequest parsed) {
-        Map<String, DynamoDbAttributeValueDto> attributes = new LinkedHashMap<>();
-        if (!evaluateEqualitiesAsFlatAttributes(parsed.getKeyCondition(), attributes)
-                || !evaluateEqualitiesAsFlatAttributes(parsed.getFilterExpression(), attributes)
-                || attributes.isEmpty()) {
-            return null;
-        }
-        return attributes;
+                || operationName == DynamoDbOperationNames.QUERY
+                || operationName == DynamoDbOperationNames.SCAN
+                || operationName == DynamoDbOperationNames.BATCH_GET_ITEM;
     }
 
     /**
@@ -493,94 +545,6 @@ public class DynamoDbHandler {
         }
         template.forEach(attributes::putIfAbsent);
     }
-
-    /**
-     * Evaluates whether a condition can be represented as flat scalar insertion attributes.
-     * <p>
-     * The condition must be {@code null}, a conjunction, or a top-level equality whose value is a string,
-     * number, or boolean. Equalities are iteratively flattened into {@code attributes}; the method returns
-     * {@code false} for unsupported predicates, nested document paths, or conflicting values for one attribute.
-     * For example, the resolved condition
-     * {@code country = "Argentina" AND (fifaId = 10 AND captain = true)} produces the flat attributes
-     * {@code country -> (STRING, Argentina)}, {@code fifaId -> (NUMBER, 10)}, and
-     * {@code captain -> (BOOLEAN, true)}.
-     * A syntactically supported condition can still fail: {@code country = "Argentina" AND country = "Brazil"}
-     * returns {@code false}, because one flat insertion item cannot assign two different values to {@code country}.
-     *
-     * @param operation condition to evaluate
-     * @param attributes inferred insertion attributes, populated when the condition is supported
-     * @return {@code true} if the condition is representable as flat scalar attributes
-     */
-    private boolean evaluateEqualitiesAsFlatAttributes(
-            QueryOperation operation,
-            Map<String, DynamoDbAttributeValueDto> attributes) {
-        if (operation == null) {
-            return true;
-        }
-
-        List<QueryOperation> pending = new ArrayList<>();
-        pending.add(operation);
-        while (!pending.isEmpty()) {
-            QueryOperation current = pending.remove(pending.size() - 1);
-            if (current instanceof AndOperation) {
-                List<QueryOperation> conditions = ((AndOperation) current).getConditions();
-                for (int i = conditions.size() - 1; i >= 0; i--) {
-                    pending.add(conditions.get(i));
-                }
-                continue;
-            }
-            if (!(current instanceof EqualsOperation<?>)) {
-                return false;
-            }
-
-            EqualsOperation<?> equality = (EqualsOperation<?>) current;
-            String name = equality.getFieldName();
-            if (name == null || name.isEmpty() || name.contains(".") || name.contains("[")) {
-                return false;
-            }
-            DynamoDbAttributeValueDto attribute = toAttribute(name, equality.getValue());
-            if (attribute == null) {
-                return false;
-            }
-            DynamoDbAttributeValueDto existing = attributes.get(name);
-            if (existing != null && (existing.type != attribute.type || !existing.value.equals(attribute.value))) {
-                return false;
-            }
-            attributes.put(name, attribute);
-        }
-        return true;
-    }
-
-    /**
-     * Converts a supported scalar equality value to the DTO used for a DynamoDB insertion attribute.
-     *
-     * @param name attribute name
-     * @param value equality value
-     * @return the corresponding scalar attribute, or {@code null} when the value is unsupported
-     */
-    private DynamoDbAttributeValueDto toAttribute(String name, Object value) {
-        if (value instanceof String) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.STRING, (String) value);
-        }
-        if (value instanceof Number) {
-            if (value instanceof Double && !Double.isFinite((Double) value)) {
-                return null;
-            }
-            if (value instanceof Float && !Float.isFinite((Float) value)) {
-                return null;
-            }
-            if (value instanceof BigDecimal) {
-                return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.NUMBER,
-                        ((BigDecimal) value).toPlainString());
-            }
-            return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.NUMBER, String.valueOf(value));
-        }
-        if (value instanceof Boolean) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbKeyScalarTypeDto.BOOLEAN, String.valueOf(value));
-        }
-        return null;
-    }
-
 
     /**
      * Copies normalized observed values as typed trees, skipping unsupported binary ({@code B}) and

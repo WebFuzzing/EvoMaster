@@ -2,6 +2,7 @@ package org.evomaster.core.database.dynamodb
 
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbInsertionKeyBuilder
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.gene.BooleanGene
@@ -93,7 +94,8 @@ object DynamoDbInsertBuilder {
         randomness: Randomness = Randomness()
     ): List<DynamoDbAction> = failedQueries
         .mapNotNull { toActionOrNull(it, randomness) }
-        .filterNot { it.insertionKey() in existingInsertionKeys }
+        .filterNot { it.insertionKey() in existingInsertionKeys || it.seedKey in existingInsertionKeys }
+        .distinctBy { it.seedKey }
         .distinctBy { it.insertionKey() }
 
     /**
@@ -126,6 +128,7 @@ object DynamoDbInsertBuilder {
             toAttributeOrNull(attribute, formats) ?: return null
         }
 
+        val seedKey = DynamoDbInsertionKeyBuilder.fromAttributes(tableName, queryAttributes)
         val missingKeys = (query.missingPrimaryKeyAttributes ?: emptyMap()).map { (name, type) ->
             if (name.isNullOrBlank() || attributes.any { it.attributeName == name }) return null
             val format = formats?.get(name)
@@ -146,7 +149,7 @@ object DynamoDbInsertBuilder {
         }
         missingKeys.forEach { it.gene.randomize(randomness, false) }
 
-        return DynamoDbAction(tableName, attributes + missingKeys)
+        return DynamoDbAction(tableName, attributes + missingKeys, seedKey)
     }
 
     /** Converts a supported scalar, set, or composite DynamoDB attribute into its evolvable representation. */

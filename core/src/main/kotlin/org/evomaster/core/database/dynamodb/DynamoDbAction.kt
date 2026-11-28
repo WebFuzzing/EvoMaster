@@ -139,10 +139,16 @@ data class DynamoDbAttributeGene(
  *
  * @property tableName target DynamoDB table
  * @property attributes item attributes to insert
+ * @property seedKey canonical key computed from the inferred query seed attributes before
+ *                   randomizing missing primary keys, preventing duplicate insertion bloat across generations
  */
-class DynamoDbAction(
+class DynamoDbAction @JvmOverloads constructor(
     val tableName: String,
-    val attributes: List<DynamoDbAttributeGene>
+    val attributes: List<DynamoDbAttributeGene>,
+    val seedKey: String = DynamoDbInsertionKeyBuilder.fromAttributes(
+        tableName,
+        attributes.map { it.toDto() }
+    )
 ) : EnvironmentAction(listOf()) {
 
     init {
@@ -152,10 +158,11 @@ class DynamoDbAction(
     /** Returns the genes that determine the inserted item values. */
     override fun seeTopGenes(): List<Gene> = attributes.map { it.gene }
 
-    /** Creates an independent action with copies of all attribute genes. */
+    /** Creates an independent action with copies of all attribute genes, preserving [seedKey]. */
     override fun copyContent(): Action = DynamoDbAction(
         tableName,
-        attributes.map { DynamoDbAttributeGene(it.attributeName, it.type, it.gene.copy()) }
+        attributes.map { DynamoDbAttributeGene(it.attributeName, it.type, it.gene.copy()) },
+        seedKey
     )
 
     /** Returns the descriptive name of this insertion action. */
