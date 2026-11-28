@@ -155,4 +155,19 @@ class DynamoDbActionTest {
         assertTrue((gene as ObjectGene).fixedFields.first { it.name == "emptyAwards" } is HeterogeneousListGene)
         assertTrue(gene.fixedFields.first { it.name == "roles" } is ProtectedUniqueArrayGene<*>)
     }
+
+    @Test
+    fun copyPreservesSeedKeyEvenAfterAttributeMutation() {
+        val original = DynamoDbAction(
+            "WorldCupPlayers",
+            listOf(DynamoDbAttributeGene("country", DynamoDbValueType.STRING, StringGene("country", "Argentina"))),
+            "WorldCupPlayers|country:STRING=Argentina"
+        )
+        val copy = original.copy() as DynamoDbAction
+        (copy.attributes.single().gene as StringGene).value = "Uruguay"
+
+        assertEquals("WorldCupPlayers|country:STRING=Argentina", original.seedKey)
+        assertEquals(original.seedKey, copy.seedKey)
+        assertEquals("WorldCupPlayers|country:STRING=Uruguay", copy.insertionKey())
+    }
 }

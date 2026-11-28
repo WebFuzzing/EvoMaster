@@ -62,6 +62,17 @@ public class DynamoDbDtoUtilsTest {
         assertEquals(DynamoDbValueTypeDto.NUMBER, capsDto.type);
         assertEquals("100000", capsDto.value);
 
+        DynamoDbAttributeValueDto scalarCapsDto = DynamoDbDtoUtils.fromScalarValueOrNull("caps", new BigDecimal("1E+5"));
+        assertEquals(DynamoDbValueTypeDto.NUMBER, scalarCapsDto.type);
+        assertEquals("100000", scalarCapsDto.value);
+        assertEquals("Argentina", DynamoDbDtoUtils.fromScalarValueOrNull("country", "Argentina").value);
+        assertEquals("true", DynamoDbDtoUtils.fromScalarValueOrNull("captain", true).value);
+        assertNull(DynamoDbDtoUtils.fromScalarValueOrNull("nan", Double.NaN));
+        assertNull(DynamoDbDtoUtils.fromScalarValueOrNull("inf", Float.POSITIVE_INFINITY));
+        assertNull(DynamoDbDtoUtils.fromScalarValueOrNull("negInf", Double.NEGATIVE_INFINITY));
+        assertNull(DynamoDbDtoUtils.fromScalarValueOrNull("nullVal", null));
+        assertNull(DynamoDbDtoUtils.fromScalarValueOrNull("listVal", Collections.singletonList("Argentina")));
+
         DynamoDbAttributeValueDto nsDto = DynamoDbDtoUtils.fromPlainValue("capsSet", Collections.singleton(new BigDecimal("1E+5")));
         assertEquals(Collections.singletonList("100000"), nsDto.setValue);
 

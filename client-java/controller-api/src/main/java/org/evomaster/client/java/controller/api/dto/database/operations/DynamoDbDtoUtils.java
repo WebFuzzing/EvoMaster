@@ -23,6 +23,29 @@ public final class DynamoDbDtoUtils {
     }
 
     /**
+     * Converts a supported scalar Java value ({@link String}, finite {@link Number}, or {@link Boolean})
+     * into a scalar {@link DynamoDbAttributeValueDto}, returning {@code null} for {@code null},
+     * non-finite floating-point numbers, containers, or unsupported types.
+     *
+     * @param name attribute name, or {@code null} for an unnamed scalar
+     * @param value candidate scalar value
+     * @return scalar attribute DTO, or {@code null} when {@code value} is not a supported finite scalar
+     */
+    public static DynamoDbAttributeValueDto fromScalarValueOrNull(String name, Object value) {
+        if (value instanceof String) {
+            return new DynamoDbAttributeValueDto(name, DynamoDbValueTypeDto.STRING, (String) value);
+        }
+        if (value instanceof Number) {
+            String formatted = tryFormatFiniteNumber((Number) value);
+            return formatted == null ? null : new DynamoDbAttributeValueDto(name, DynamoDbValueTypeDto.NUMBER, formatted);
+        }
+        if (value instanceof Boolean) {
+            return new DynamoDbAttributeValueDto(name, DynamoDbValueTypeDto.BOOLEAN, value.toString());
+        }
+        return null;
+    }
+
+    /**
      * Copies normalized Java values into a typed tree.
      * Map keys and set elements are sorted for deterministic template selection; empty sets,
      * mixed-type sets, binary values ({@code B}), and binary sets ({@code BS}) are unsupported.
@@ -34,14 +57,12 @@ public final class DynamoDbDtoUtils {
      *                                  or the value type is unsupported
      */
     public static DynamoDbAttributeValueDto fromPlainValue(String name, Object plain) {
-        if (plain instanceof String) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbValueTypeDto.STRING, (String) plain);
-        }
-        if (plain instanceof Number) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbValueTypeDto.NUMBER, formatFiniteNumber((Number) plain));
-        }
-        if (plain instanceof Boolean) {
-            return new DynamoDbAttributeValueDto(name, DynamoDbValueTypeDto.BOOLEAN, plain.toString());
+        if (plain instanceof String || plain instanceof Number || plain instanceof Boolean) {
+            DynamoDbAttributeValueDto scalar = fromScalarValueOrNull(name, plain);
+            if (scalar == null) {
+                throw new IllegalArgumentException("Unsupported non-finite DynamoDB number value: " + plain);
+            }
+            return scalar;
         }
         DynamoDbAttributeValueDto result = new DynamoDbAttributeValueDto();
         result.attributeName = name;
@@ -73,11 +94,19 @@ public final class DynamoDbDtoUtils {
     }
 
     private static String formatFiniteNumber(Number number) {
-        if (number instanceof Double && !Double.isFinite((Double) number)) {
+        String formatted = tryFormatFiniteNumber(number);
+        if (formatted == null) {
             throw new IllegalArgumentException("Unsupported non-finite DynamoDB number value: " + number);
         }
+        return formatted;
+    }
+
+    private static String tryFormatFiniteNumber(Number number) {
+        if (number instanceof Double && !Double.isFinite((Double) number)) {
+            return null;
+        }
         if (number instanceof Float && !Float.isFinite((Float) number)) {
-            throw new IllegalArgumentException("Unsupported non-finite DynamoDB number value: " + number);
+            return null;
         }
         if (number instanceof BigDecimal) {
             return ((BigDecimal) number).toPlainString();

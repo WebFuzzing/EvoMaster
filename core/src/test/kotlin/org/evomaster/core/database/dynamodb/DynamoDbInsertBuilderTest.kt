@@ -588,4 +588,18 @@ class DynamoDbInsertBuilderTest {
             )
         }
     }
+
+    @Test
+    fun deduplicatesRepeatedQueriesWithRandomizedMissingPrimaryKeysBySeedKey() {
+        val query = validQuery().apply {
+            missingPrimaryKeyAttributes = linkedMapOf("recordKey" to DynamoDbKeyScalarTypeDto.STRING)
+        }
+        val randomness = Randomness()
+        val firstBatch = DynamoDbInsertBuilder.buildInsertActions(listOf(query, query), randomness)
+        assertEquals(1, firstBatch.size)
+
+        val existingKeys = firstBatch.flatMap { listOf(it.insertionKey(), it.seedKey) }.toSet()
+        val secondBatch = DynamoDbInsertBuilder.buildInsertActions(listOf(query), existingKeys, randomness)
+        assertTrue(secondBatch.isEmpty())
+    }
 }
