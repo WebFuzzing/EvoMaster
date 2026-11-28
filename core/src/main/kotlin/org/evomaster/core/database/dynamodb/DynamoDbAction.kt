@@ -1,6 +1,6 @@
 package org.evomaster.core.database.dynamodb
 
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.Gene
@@ -9,12 +9,12 @@ import org.evomaster.core.search.gene.Gene
  * A typed attribute gene belonging to a DynamoDB item.
  *
  * @property attributeName name of the DynamoDB item attribute
- * @property type supported DynamoDB scalar type
+ * @property type DynamoDB attribute value type
  * @property gene evolvable value for the attribute
  */
 data class DynamoDbAttributeGene(
     val attributeName: String,
-    val type: DynamoDbScalarTypeDto,
+    val type: DynamoDbValueTypeDto,
     val gene: Gene
 )
 

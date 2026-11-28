@@ -2,7 +2,8 @@ package org.evomaster.core.database.dynamodb
 
 import org.evomaster.client.java.controller.api.dto.database.execution.DynamoDbFailedQuery
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbAttributeValueDto
-import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -38,12 +39,12 @@ object DynamoDbInsertBuilder {
         val missingKeys = (query.missingPrimaryKeyAttributes ?: emptyMap()).map { (name, type) ->
             if (name.isNullOrBlank() || attributes.any { it.attributeName == name }) return null
             val gene = when (type) {
-                DynamoDbScalarTypeDto.STRING -> StringGene(name, minLength = 1)
+                DynamoDbKeyScalarTypeDto.STRING -> StringGene(name, minLength = 1)
                 // Seed whole numbers within DynamoDB's 38-digit precision limit.
-                DynamoDbScalarTypeDto.NUMBER -> BigDecimalGene(name, floatingPointMode = false, precision = 38, scale = 0)
+                DynamoDbKeyScalarTypeDto.NUMBER -> BigDecimalGene(name, floatingPointMode = false, precision = 38, scale = 0)
                 else -> return null
             }
-            DynamoDbAttributeGene(name, type, gene)
+            DynamoDbAttributeGene(name, DynamoDbValueTypeDto.fromKeyScalar(type), gene)
         }
         missingKeys.forEach { it.gene.randomize(randomness, false) }
 
@@ -55,11 +56,12 @@ object DynamoDbInsertBuilder {
         val type = attribute.type ?: return null
         val value = attribute.value ?: return null
         val gene = when (type) {
-            DynamoDbScalarTypeDto.STRING -> StringGene(attribute.attributeName, value)
-            DynamoDbScalarTypeDto.NUMBER -> value.toBigDecimalOrNull()?.let {
+            DynamoDbValueTypeDto.STRING -> StringGene(attribute.attributeName, value)
+            DynamoDbValueTypeDto.NUMBER -> value.toBigDecimalOrNull()?.let {
                 BigDecimalGene(attribute.attributeName, it)
             } ?: return null
-            DynamoDbScalarTypeDto.BOOLEAN -> BooleanGene(attribute.attributeName, value.toBoolean())
+            DynamoDbValueTypeDto.BOOLEAN -> BooleanGene(attribute.attributeName, value.toBoolean())
+            else -> return null
         }
 
         return DynamoDbAttributeGene(attribute.attributeName, type, gene)

@@ -6,6 +6,7 @@ import java.util.List;
 
 /**
  * Fluent definition of one DynamoDB item.
+ * Binary ({@code B}) and binary sets ({@code BS}) are intentionally unsupported.
  */
 public interface DynamoDbStatementDsl extends DynamoDbSequenceDsl {
 
@@ -19,6 +20,21 @@ public interface DynamoDbStatementDsl extends DynamoDbSequenceDsl {
      */
     DynamoDbStatementDsl d(String attributeName, String printableValue);
 
-    /** @return the completed insertion DTOs */
+    /**
+     * Adds an attribute using AWS DynamoDB JSON wire representation (e.g. {@code {"M": ...}},
+     * {@code {"L": ...}}, {@code {"SS": [...]}}, {@code {"NS": [...]}}).
+     * Binary ({@code B}) and binary sets ({@code BS}) are intentionally unsupported.
+     *
+     * @param attributeName attribute name
+     * @param ddbJson serialized DynamoDB JSON attribute value
+     * @return this statement
+     */
+    DynamoDbStatementDsl ddbJson(String attributeName, String ddbJson);
+
+    /**
+     * Completes this statement and returns all accumulated insertions.
+     *
+     * @return the completed insertion DTOs
+     */
     List<DynamoDbInsertionDto> dtos();
 }
