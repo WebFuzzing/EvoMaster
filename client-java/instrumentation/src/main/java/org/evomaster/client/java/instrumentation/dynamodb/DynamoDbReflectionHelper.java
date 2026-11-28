@@ -1,5 +1,7 @@
 package org.evomaster.client.java.instrumentation.dynamodb;
 
+import org.evomaster.client.java.utils.SimpleLogger;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -8,6 +10,10 @@ import java.lang.reflect.Modifier;
  * Shared reflection helpers used by DynamoDB parser utilities and captured requests.
  */
 public final class DynamoDbReflectionHelper {
+
+    private static final String DEBUG_NO_SUCH_METHOD_MESSAGE = "Method '%s' not found on %s";
+    private static final String WARN_INVOKE_METHOD_MESSAGE = "Failed to invoke DynamoDB method '%s' on %s: %s";
+    private static final String NULL_TARGET = "null";
 
     /**
      * Utility class, no instances.
@@ -25,7 +31,8 @@ public final class DynamoDbReflectionHelper {
     public static Object invokeNoArg(Object target, String methodName) {
         try {
             return invokeNoArgPropagatingRuntimeExceptions(target, methodName);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            SimpleLogger.uniqueWarn(String.format(WARN_INVOKE_METHOD_MESSAGE, methodName, target == null ? NULL_TARGET : target.getClass().getName(), e));
             return null;
         }
     }
@@ -47,7 +54,13 @@ public final class DynamoDbReflectionHelper {
                 method.setAccessible(true);
             }
             return method.invoke(target);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
+        } catch (NoSuchMethodException e) {
+            SimpleLogger.debug(String.format(DEBUG_NO_SUCH_METHOD_MESSAGE, methodName, target.getClass().getName()));
+            return null;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            Throwable cause = e instanceof InvocationTargetException && e.getCause() != null ? e.getCause() : e;
+            SimpleLogger.uniqueWarn(
+                    String.format(WARN_INVOKE_METHOD_MESSAGE, methodName, target.getClass().getName(), cause));
             return null;
         }
     }

@@ -1,7 +1,7 @@
 package org.evomaster.client.java.instrumentation.dynamodb;
 
 /**
- * Semantic formats for constrained string-backed DynamoDB attributes captured from enhanced-client table schemas.
+ * Semantic formats for constrained DynamoDB attributes captured from enhanced-client table schemas.
  */
 public enum DynamoDbAttributeFormat {
 
@@ -18,7 +18,22 @@ public enum DynamoDbAttributeFormat {
     LOCAL_TIME("local-time"),
 
     /** RFC 4122 36-character UUID string (e.g., {@code UUID}). */
-    UUID("uuid");
+    UUID("uuid"),
+
+    /** 8-bit signed integer attribute (e.g., {@code byte}, {@code Byte}). */
+    INT8("int8"),
+
+    /** 16-bit signed integer attribute (e.g., {@code short}, {@code Short}). */
+    INT16("int16"),
+
+    /** 32-bit signed integer attribute (e.g., {@code int}, {@code Integer}, {@code AtomicInteger}). */
+    INT32("int32"),
+
+    /** 64-bit signed integer attribute (e.g., {@code long}, {@code Long}, {@code AtomicLong}). */
+    INT64("int64"),
+
+    /** Arbitrary-precision integer attribute (e.g., {@code BigInteger}). */
+    INTEGER("integer");
 
     private final String value;
 

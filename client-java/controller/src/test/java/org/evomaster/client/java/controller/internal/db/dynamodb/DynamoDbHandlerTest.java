@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDb
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbKeyScalarTypeDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DynamoDbValueTypeDto;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbCommand;
+import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbSchemaRegistry;
 import org.evomaster.client.java.instrumentation.dynamodb.DynamoDbOperationNames;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.SdkBytes;
@@ -23,6 +24,7 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -568,6 +571,17 @@ public class DynamoDbHandlerTest {
         }
     }
 
+    public static final class FormatExampleDynamoDbClient {
+        public DescribeTableResponse describeTable(DescribeTableRequest request) {
+            return new SyncDynamoDbClient().describeTable(request);
+        }
+
+        public ScanResponse scan(ScanRequest request) {
+            return ScanResponse.builder().items(Collections.singletonList(
+                    item("Brazil", "2026-06-11T19:00:00Z"))).build();
+        }
+    }
+
     @Test
     public void testCompletesNestedDocumentAndSetTemplatesFromObservedTableItems() {
         DynamoDbHandler handler = new DynamoDbHandler();
@@ -625,5 +639,66 @@ public class DynamoDbHandlerTest {
         assertEquals(Arrays.asList("9.5", "10"), jerseyNumbers.setValue);
 
         assertFalse(failed.attributes.stream().anyMatch(a -> "unsupportedBinarySet".equals(a.attributeName)));
+    }
+
+    @Test
+    public void testPopulatesPrimaryKeyFormatsAndValueExamples() {
+        final Object instantConverter = new Object() {
+            public ScalarAttributeType attributeValueType() { return ScalarAttributeType.S; }
+            public Object type() {
+                return new Object() {
+                    public Class<?> rawClass() { return java.time.Instant.class; }
+                };
+            }
+        };
+        DynamoDbSchemaRegistry.register(TABLE, new Object() {
+            public List<String> attributeNames() { return Collections.singletonList("playerName"); }
+            public Object converterForAttribute(Object name) {
+                return "playerName".equals(name) ? instantConverter : null;
+            }
+        });
+        try {
+            DynamoDbHandler handler = enabledHandler(new FormatExampleDynamoDbClient());
+            QueryRequest request = QueryRequest.builder()
+                    .tableName(TABLE)
+                    .keyConditionExpression("country = :c")
+                    .expressionAttributeValues(Collections.singletonMap(":c", AttributeValue.builder().s("Argentina").build()))
+                    .build();
+            handler.handle(new DynamoDbCommand(Collections.singletonList(TABLE), DynamoDbOperationNames.QUERY,
+                    request, true, 1L));
+            handler.getEvaluatedDynamoDbCommands();
+
+            DynamoDbFailedQuery fq = handler.getExecutionDto().failedQueries.get(0);
+            assertEquals("2026-06-11T19:00:00Z", fq.primaryKeyValueExamples.get("playerName"));
+            assertEquals("date-time", fq.primaryKeyFormats.get("playerName"));
+        } finally {
+            DynamoDbSchemaRegistry.register(TABLE, new Object());
+        }
+    }
+
+    @Test
+    public void testFormatsBigDecimalPlainStringAndIgnoresNonFiniteNumbers() {
+        DynamoDbHandler handler = enabledHandler(new SyncDynamoDbClient());
+        try {
+            java.lang.reflect.Method toAttr = DynamoDbHandler.class.getDeclaredMethod("toAttribute", String.class, Object.class);
+            toAttr.setAccessible(true);
+            DynamoDbAttributeValueDto capsDto = (DynamoDbAttributeValueDto) toAttr.invoke(handler, "caps", new BigDecimal("1E+5"));
+            assertEquals("100000", capsDto.value);
+            assertEquals(DynamoDbValueTypeDto.NUMBER, capsDto.type);
+            assertNull(toAttr.invoke(handler, "nanScore", Double.NaN));
+            assertNull(toAttr.invoke(handler, "infScore", Float.POSITIVE_INFINITY));
+            assertNull(toAttr.invoke(handler, "negInfScore", Double.NEGATIVE_INFINITY));
+
+            java.lang.reflect.Method toTemplateAttr = DynamoDbHandler.class.getDeclaredMethod("toTemplateAttribute", String.class, Object.class);
+            toTemplateAttr.setAccessible(true);
+            DynamoDbAttributeValueDto templateCaps = (DynamoDbAttributeValueDto) toTemplateAttr.invoke(handler, "caps", new BigDecimal("1E+5"));
+            assertEquals("100000", templateCaps.value);
+            assertEquals(DynamoDbValueTypeDto.NUMBER, templateCaps.type);
+            assertNull(toTemplateAttr.invoke(handler, "nanScore", Double.NaN));
+            assertNull(toTemplateAttr.invoke(handler, "infScore", Float.POSITIVE_INFINITY));
+            assertNull(toTemplateAttr.invoke(handler, "negInfScore", Double.NEGATIVE_INFINITY));
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
