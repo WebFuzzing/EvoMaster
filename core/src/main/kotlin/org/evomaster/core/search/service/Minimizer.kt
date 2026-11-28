@@ -9,8 +9,10 @@ import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.time.ExecutionPhaseController
 import org.evomaster.core.search.service.time.SearchStatusUpdater
 import org.evomaster.core.search.service.time.TimeBoxedPhase
@@ -27,6 +29,10 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(Minimizer::class.java)
+
+        private val PRUNABLE_DB_INIT_GROUPS = listOf(
+            GroupsOfChildren.INITIALIZATION_DYNAMODB
+        )
     }
 
     @Inject
@@ -57,8 +63,52 @@ class Minimizer<T: Individual> : TimeBoxedPhase {
         return epc.hasPhaseTimedOut(ExecutionPhaseController.Phase.MINIMIZATION)
     }
 
+    private fun prunableDatabaseInitActions(individual: Individual): List<StructuralElement> {
+        if (individual !is EnterpriseIndividual) {
+            return emptyList()
+        }
+        val view = individual.groupsView() ?: return emptyList()
+        return PRUNABLE_DB_INIT_GROUPS.flatMap { view.getAllInGroup(it) }
+    }
+
     private fun pruneNonNeededDatabaseActions(){
-        //TODO
+        if (hasPhaseTimedOut()) {
+            return
+        }
+        archive.updateUniqueCoveredIndividuals { ei ->
+            if (hasPhaseTimedOut()) {
+                return@updateUniqueCoveredIndividuals null
+            }
+            val dbCount = prunableDatabaseInitActions(ei.individual).size
+            if (dbCount == 0) {
+                return@updateUniqueCoveredIndividuals null
+            }
+            val requiredTargets = ei.fitness.getViewOfData()
+                .filter { FitnessValue.isMaxValue(it.value.score) }
+                .keys
+            var bestEi = ei
+            for (i in dbCount - 1 downTo 0) {
+                if (hasPhaseTimedOut()) {
+                    break
+                }
+                @Suppress("UNCHECKED_CAST")
+                val candidate = bestEi.individual.copy() as T
+                val candidateActions = prunableDatabaseInitActions(candidate)
+                if (i !in candidateActions.indices) {
+                    continue
+                }
+                candidate.killChild(candidateActions[i])
+                candidate.cleanBrokenBindingReference()
+                if (!candidate.isValidInitializationActions()) {
+                    continue
+                }
+                val reevaluated = fitness.computeWholeAchievedCoverageForPostProcessing(candidate)
+                if (reevaluated != null && requiredTargets.all { reevaluated.fitness.doesCover(it) }) {
+                    bestEi = reevaluated
+                }
+            }
+            if (bestEi !== ei) bestEi else null
+        }
     }
 
     /**
