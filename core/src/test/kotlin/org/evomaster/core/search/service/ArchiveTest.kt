@@ -483,5 +483,47 @@ class ArchiveTest{
         assertEquals(1, sizes.first())
 
     }
-}
 
+    @Test
+    fun testUpdateUniqueCoveredIndividualsPreservesSharedIdentity() {
+        val a = OneMaxIndividual(2)
+        TestUtils.doInitializeIndividualForTesting(a)
+        a.setValue(0, 1.0)
+        a.setValue(1, 1.0)
+        archive.addIfNeeded(ff.calculateCoverage(a, modifiedSpec = null)!!)
+
+        archive.updateUniqueCoveredIndividuals { ei ->
+            ei.copy()
+        }
+
+        val solution = archive.extractSolution()
+        assertEquals(1, solution.individuals.size)
+        assertEquals(2.0, solution.overall.computeFitnessScore(), 0.001)
+    }
+
+    @Test
+    fun testUpdateUniqueCoveredIndividualsSkipsNullAndCoverageLoss() {
+        val a = OneMaxIndividual(2)
+        TestUtils.doInitializeIndividualForTesting(a)
+        a.setValue(0, 1.0)
+        a.setValue(1, 1.0)
+        val originalEi = ff.calculateCoverage(a, modifiedSpec = null)!!
+        archive.addIfNeeded(originalEi)
+
+        // Returning null leaves archive entry untouched
+        archive.updateUniqueCoveredIndividuals { null }
+        assertEquals(2.0, archive.extractSolution().overall.computeFitnessScore(), 0.001)
+
+        // Returning a replacement that drops target 1 keeps target 1 on the original individual
+        archive.updateUniqueCoveredIndividuals {
+            val degraded = OneMaxIndividual(2)
+            TestUtils.doInitializeIndividualForTesting(degraded)
+            degraded.setValue(0, 1.0)
+            degraded.setValue(1, 0.0)
+            ff.calculateCoverage(degraded, modifiedSpec = null)!!
+        }
+
+        val solution = archive.extractSolution()
+        assertEquals(2.0, solution.overall.computeFitnessScore(), 0.001)
+    }
+}
